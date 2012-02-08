@@ -1,0 +1,185 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "symbol.h"
+#include "tokens.h"
+
+
+#define TOKSIZ_MAX 21
+#define NR_KWD_HASH 32
+/* TODO: move hashfun here */
+
+static struct keyword {
+	char *str;
+	unsigned char tok;
+	struct keyword *next;
+} keywords [] = {"auto", AUTO, NULL,
+		 "break", BREAK, NULL,
+		 "_Bool", CHAR, NULL,
+		 "case", CASE, NULL,
+		 "char", CHAR, NULL,
+		 "const", CONST, NULL,
+		 "continue", CONTINUE, NULL,
+		 "default", DEFAULT, NULL,
+		 "do", DO, NULL,
+		 "double", DOUBLE, NULL,
+		 "else", ELSE, NULL,
+		 "enum", ENUM, NULL,
+		 "extern", EXTERN, NULL,
+		 "float", FLOAT, NULL,
+		 "for", FOR, NULL,
+		 "goto", GOTO, NULL,
+		 "if", IF, NULL,
+		 "int", INT, NULL,
+		 "long", LONG, NULL,
+		 "register", REGISTER, NULL,
+		 "restricted", RESTRICTED, NULL,
+		 "return", RETURN, NULL,
+		 "short", SHORT, NULL,
+		 "signed", SIGNED, NULL,
+		 "sizeof", SIZEOF, NULL,
+		 "static", STATIC, NULL,
+		 "struct", STRUCT, NULL,
+		 "switch", SWITCH, NULL,
+		 "typedef", TYPEDEF, NULL,
+		 "union", UNION, NULL,
+		 "unsigned", UNSIGNED, NULL,
+		 "void", VOID, NULL,
+		 "volatile", VOLATILE, NULL,
+		 "while", WHILE, NULL,
+		 NULL, 0, NULL
+};
+
+static struct keyword *khash[NR_KWD_HASH];
+static FILE *yyin;
+
+unsigned char yytoken;
+unsigned char yyhash;
+size_t yylen;
+char yytext[TOKSIZ_MAX + 1];
+unsigned linenum;
+unsigned columnum;
+const char *filename;
+
+
+union yyval {
+	struct symbol *sym;
+} yyval;
+
+
+
+void init_lex(void)
+{
+	register struct keyword *bp;
+	static unsigned char h;
+
+	for (bp = keywords; bp->str; bp++) {
+		register struct keyword *aux, *ant;
+		h = hashfun(bp->str);
+		if (!(aux = khash[h])) {
+			khash[h] = bp;
+			continue;
+		}
+		ant = aux;
+		while (aux && strcmp(bp->str, aux->str) < 0) {
+			ant = aux;
+			aux = aux->next;
+		}
+		ant->next = bp;
+		bp->next = aux;
+	}
+}
+
+static unsigned char iden(void)
+{
+	register struct keyword *kwp;
+	register char ch;
+	register char *bp = yytext;
+
+	for (yyhash = 0; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
+		if (!isalnum(ch = getc(yyin)) && ch != '_')
+			break;
+		yyhash += ch;
+	}
+	if (bp == yytext + TOKSIZ_MAX)
+		error("identifier too long %s", yytext);
+	ungetc(ch, yyin);
+	*bp = '\0';
+	yylen = bp - yytext;
+	yyhash &= NR_KWD_HASH - 1;
+	for (kwp = khash[yyhash]; kwp; kwp = kwp->next) {
+		if (!strcmp(kwp->str, yytext))
+			return kwp->tok;
+	}
+	return IDENTIFIER;
+}
+
+
+
+unsigned char gettok(void)
+{
+	static unsigned int c;
+	register unsigned char ch;
+	extern char parser_out_home;
+
+	while (isspace(c = getc(yyin)))
+		/* nothing */;
+	if (c == EOF) {
+		if (parser_out_home)
+			error("Find EOF while parsing");
+		else
+			return EOFTOK;
+	}
+	ch = c;
+	if (isalpha(ch) || ch == '_') {
+		ungetc(ch, yyin);
+		ch = iden();
+	} else if (isdigit(ch)) {
+		;
+	} else {
+		switch (ch) {
+		case '&': case '|': 
+			if ((c = getc(yyin)) == ch) {
+				ch |= 0x80; /* TODO */
+				break;
+			} else {
+				ungetc(c, yyin);
+			}
+		case '^': case '=': case '<': case '>':
+		case '*': case '+': case '-': case '/': 
+			if ((c = getc(yyin)) == '=') {
+				ch |= 0x80; /* TODO */
+				break;
+			} else {
+				ungetc(c, yyin);
+			}
+		case ';': case '{': case '}': case '(': case ')': case '~':
+		case '!': case ',': case '?': case '[': case ']': case ':':
+			break;
+		default:
+			error("Incorrect character '%02x", c);
+		}
+	}
+
+return_token:
+	printf("Token = %c (%u)\n", (isprint(ch)) ? ch : ' ', (unsigned) ch);
+	return yytoken = ch;
+}
+
+
+void open_file(const char *file)
+{
+	if (yyin != NULL)
+		fclose(yyin);
+	if (file == NULL) {
+		yyin = stdin;
+		filename = "(stdin)";
+		return;
+	}
+	if ((yyin = fopen(file, "r")) == NULL)
+		die("file '%s' not found", file);
+	filename = file;
+}
