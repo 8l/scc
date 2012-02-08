@@ -58,7 +58,6 @@ static FILE *yyin;
 
 unsigned char yytoken;
 unsigned char yyhash;
-size_t yylen;
 char yytext[TOKSIZ_MAX + 1];
 unsigned linenum;
 unsigned columnum;
@@ -108,7 +107,6 @@ static unsigned char iden(void)
 		error("identifier too long %s", yytext);
 	ungetc(ch, yyin);
 	*bp = '\0';
-	yylen = bp - yytext;
 	yyhash &= NR_KWD_HASH - 1;
 	for (kwp = khash[yyhash]; kwp; kwp = kwp->next) {
 		if (!strcmp(kwp->str, yytext))
@@ -143,6 +141,8 @@ unsigned char gettok(void)
 		switch (ch) {
 		case '&': case '|': 
 			if ((c = getc(yyin)) == ch) {
+				yytext[1] = yytext[0] = ch;
+				yytext[2] = '\0';
 				ch |= 0x80; /* TODO */
 				break;
 			} else {
@@ -151,6 +151,9 @@ unsigned char gettok(void)
 		case '^': case '=': case '<': case '>':
 		case '*': case '+': case '-': case '/': 
 			if ((c = getc(yyin)) == '=') {
+				yytext[0] = ch;
+				yytext[1] = c;
+				yytext[2] = '\0';
 				ch |= 0x80; /* TODO */
 				break;
 			} else {
@@ -158,6 +161,8 @@ unsigned char gettok(void)
 			}
 		case ';': case '{': case '}': case '(': case ')': case '~':
 		case '!': case ',': case '?': case '[': case ']': case ':':
+			yytext[0] = ch;
+			yytext[1] = '\0';
 			break;
 		default:
 			error("Incorrect character '%02x", c);
@@ -165,7 +170,8 @@ unsigned char gettok(void)
 	}
 
 return_token:
-	printf("Token = %c (%u)\n", (isprint(ch)) ? ch : ' ', (unsigned) ch);
+	printf("Token = %c (%u, '%s')\n",
+	       (isprint(ch)) ? ch : ' ', (unsigned) ch, yytext);
 	return yytoken = ch;
 }
 
