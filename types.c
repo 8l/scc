@@ -74,13 +74,13 @@ void ptype(register struct type *t)
 
 				sign = (t->sign) ? "signed" : "unsigned";
 				switch (t->btype) {
-				case INT:     type = "int";         break;
-				case CHAR:    type = "char";        break;
+				case INT:     type = "int";	    break;
+				case CHAR:    type = "char";	    break;
 				case FLOAT:   type = "float";       break;
-				case LONG:    type = "long";        break;
+				case LONG:    type = "long";	    break;
 				case LLONG:   type = "long long";   break;
 				case SHORT:   type = "short";       break;
-				case VOID:    type = "void";        break;
+				case VOID:    type = "void";	    break;
 				case DOUBLE:  type = "double";      break;
 				case LDOUBLE: type = "long double"; break;
 				default:

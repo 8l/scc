@@ -94,7 +94,7 @@ struct type *specifier(void)
 {
 	static char sign, sclass, tqlf, nt;
 	struct type *t = NULL;
-	
+
 	tqlf = sign = sclass = 0;
 	for (;;) {
 		switch (gettok()) {
@@ -133,7 +133,7 @@ struct type *specifier(void)
 		}
 	check_type:
 		if (nt == F_LONG) {
-			if (t == NULL || 
+			if (t == NULL ||
 			    t == T_INT || t == T_UINT || t == T_LONG) {
 				/* nothing */;
 			} else if (t == T_LONG || t == T_ULONG) {
@@ -152,7 +152,7 @@ struct type *specifier(void)
 		} if (nt == F_VOID && sign != 0) {
 			goto incorrect_sign;
 		} if (nt == F_CHAR && sign == 0) {
-			t = T_UCHAR;        /* char by default is unsigned */
+			t = T_UCHAR;	    /* char by default is unsigned */
 		} else if (!(t = types[nt][sign == UNSIGNED])) {
 			goto incorrect_sign;
 		}
