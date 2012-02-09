@@ -47,3 +47,50 @@ struct type *mktype(register struct type *base, unsigned  char op)
 	nt->base = base;
 	return nt;
 }
+
+
+
+
+#ifndef NDEBUG
+#include <stdio.h>
+
+void ptype(register struct type *t)
+{
+	assert(t);
+
+	for (; t; t = t->base) {
+		switch (t->op) {
+		case ARY:
+			fputs("array of ", stdout);
+			break;
+		case PTR:
+			fputs("pointer to ", stdout);
+			break;
+		case FTN:
+			fputs("function that returns ", stdout);
+			break;
+		default: {
+				static char *type, *sign;
+
+				sign = (t->sign) ? "signed" : "unsigned";
+				switch (t->btype) {
+				case INT:     type = "int";         break;
+				case CHAR:    type = "char";        break;
+				case FLOAT:   type = "float";       break;
+				case LONG:    type = "long";        break;
+				case LLONG:   type = "long long";   break;
+				case SHORT:   type = "short";       break;
+				case VOID:    type = "void";        break;
+				case DOUBLE:  type = "double";      break;
+				case LDOUBLE: type = "long double"; break;
+				default:
+					abort();
+				}
+				printf("%s %s", sign, type);
+		}
+		}
+	}
+	putchar('\n');
+}
+
+#endif

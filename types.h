@@ -47,4 +47,11 @@ extern struct type tulong, tllong, tullong, tvoid;
 
 struct type *mktype(register struct type *base, unsigned  char op);
 
+#ifndef NDEBUG
+extern void ptype(register struct type *t);
+#else
+#  define ptype(t)
+#endif
+
+
 #endif

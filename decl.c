@@ -10,34 +10,6 @@
 
 char parser_out_home;
 
-#ifndef NDEBUG
-#include <stdio.h>
-
-static void ptype(register struct type *t)
-{
-	assert(t);
-	
-	for (; t; t = t->base) {
-		switch (t->op) {
-		case ARY:
-			fputs("array of ", stdout);
-			break;
-		case PTR:
-			fputs("pointer to ", stdout);
-			break;
-		case FTN:
-			fputs("function that returns ", stdout);
-			break;
-		default:
-			fputs("primitive data ", stdout);
-			break;
-		}
-	}
-	putchar('\n');
-}
-#else
-#  define ptype(t)
-#endif
 
 
 static unsigned char stack[30];
@@ -47,6 +19,8 @@ static unsigned char *stackp = stack;
 #define pop()   (*--stackp)
 #define empty() (stackp == stack)
 
+
+#include <stdio.h>	/* TODO: remove this */
 
 void decl(void);
 
