@@ -10,7 +10,6 @@
 
 #define TOKSIZ_MAX 21
 #define NR_KWD_HASH 32
-/* TODO: move hashfun here */
 
 static struct keyword {
 	char *str;
@@ -70,6 +69,17 @@ union yyval {
 
 
 
+static unsigned char hashfun(register const char *s)
+{
+	register unsigned char h, ch;
+
+	for (h = 0; ch = *s++; h += ch)
+		/* nothing */;
+	return h;
+}
+
+
+
 void init_lex(void)
 {
 	register struct keyword *bp;
@@ -77,7 +87,7 @@ void init_lex(void)
 
 	for (bp = keywords; bp->str; bp++) {
 		register struct keyword *aux, *ant;
-		h = hashfun(bp->str);
+		h = hashfun(bp->str) % (NR_KWD_HASH - 1);
 		if (!(aux = khash[h]) || strcmp(bp->str, aux->str) < 0) {
 			khash[h] = bp;
 			bp->next = aux;

@@ -27,16 +27,6 @@ struct symhash siden, sgoto, sstruct;
 
 
 
-unsigned char hashfun(register const char *s)
-{
-	register unsigned char h, ch;
-
-	for (h = 0; ch = *s++; h += ch)
-		/* nothing */;
-	return h & NR_SYM_HASH - 1;
-}
-
-
 
 
 void new_ctx(struct symctx *ctx)
@@ -78,11 +68,11 @@ void del_ctx(void)
 
 
 
-struct symbol *pushsym(struct symhash *h, struct symbol *sym)
+struct symbol *pushsym(struct symhash *h, struct symbol *sym, unsigned char hash)
 {
 	static unsigned char key;
-	key = hashfun(sym->str);
 
+	key = hash % NR_SYM_HASH;
 	h->top = sym;
 	sym->next = h->buf[key];
 	return h->buf[key] = sym;
@@ -91,13 +81,11 @@ struct symbol *pushsym(struct symhash *h, struct symbol *sym)
 
 
 
-struct symbol *findsym(struct symhash *h, char *s)
+struct symbol *findsym(struct symhash *h, char *s, unsigned char hash)
 {
 	register struct symbol *bp;
-	static unsigned char key;
 
-	key = hashfun(s);
-	for (bp = h->buf[key]; bp; bp = bp->next) {
+	for (bp = h->buf[hash % NR_SYM_HASH]; bp; bp = bp->next) {
 		if (!strcmp(bp->str, s))
 			return bp;
 	}

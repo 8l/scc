@@ -16,7 +16,5 @@ struct symbol {
 struct symhash;
 extern struct symhash siden, sgoto, sstruct;
 
-extern unsigned char hashfun(register const char *s);
-
 
 #endif
