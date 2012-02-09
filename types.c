@@ -2,18 +2,26 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "tokens.h"
 #include "types.h"
+
 
 #define xcalloc calloc
 
-struct type tschar, tuchar;             /* signed char, unsigned char */
-struct type tshort, tushort;            /* short,  unsigned short */
-struct type tint, tuint;                /* int,  unsigned int */
-struct type tfloat, tdouble, tldouble;	/* float, double, long double */
-struct type tlong, tulong;		/* long, unsgined long */
-struct type tllong, tullong;		/* long long, unsigned long long */
-struct type tvoid;			/* void */
-
+struct type tschar = {.btype = CHAR, .sign = 1};
+struct type tuchar = {.btype = CHAR, .sign = 0};
+struct type tshort = {.btype = SHORT, .sign = 1};
+struct type tushort = {.btype = SHORT, .sign = 0};
+struct type tint = {.btype = INT, .sign = 1};
+struct type tuint = {.btype = SHORT, .sign = 0};
+struct type tfloat = {.btype = FLOAT, .sign = 1};
+struct type tdouble = {.btype = DOUBLE, .sign = 1};
+struct type tldouble = {.btype = LDOUBLE, .sign = 1};
+struct type tlong = {.btype = LONG, .sign = 1};
+struct type tulong = {.btype = LONG, .sign = 0};
+struct type tllong = {.btype = LLONG, .sign = 1};
+struct type tullong = {.btype = LLONG, .sign = 0};
+struct type tvoid = {.btype = VOID, .sign = 0};
 
 struct type *mktype(register struct type *base, unsigned  char op)
 {

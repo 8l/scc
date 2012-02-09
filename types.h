@@ -9,8 +9,12 @@ struct type {
 	struct type *ptr;		/* pointer */
 	struct type *ftn;		/* function */
 	union  {
-		size_t nelem;
-	} u;
+		struct {
+			unsigned btype : 4;
+			unsigned sign : 1;
+		};
+		size_t nelem;		      /* size of array */
+	};
 };
 
 
