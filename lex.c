@@ -78,14 +78,14 @@ void init_lex(void)
 	for (bp = keywords; bp->str; bp++) {
 		register struct keyword *aux, *ant;
 		h = hashfun(bp->str);
-		if (!(aux = khash[h])) {
+		if (!(aux = khash[h]) || strcmp(bp->str, aux->str) < 0) {
 			khash[h] = bp;
+			bp->next = aux;
 			continue;
 		}
-		ant = aux;
-		while (aux && strcmp(bp->str, aux->str) < 0) {
-			ant = aux;
-			aux = aux->next;
+		for (ant = aux; aux; ant = aux, aux = aux->next) {
+			if (strcmp(bp->str, aux->str) < 0)
+				break;
 		}
 		ant->next = bp;
 		bp->next = aux;
