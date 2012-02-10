@@ -93,8 +93,10 @@ struct type *types[][2] = {{T_VOID, NULL},
 struct type *specifier(void)
 {
 	static char sign, sclass, tqlf, nt;
-	struct type *t = NULL;
+	struct type *t;
 
+repeat:
+	t = NULL;
 	tqlf = sign = sclass = 0;
 	for (;;) {
 		switch (gettok()) {
@@ -126,8 +128,20 @@ struct type *specifier(void)
 		case STRUCT:	/* TODO */
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
+		case ';':
+			if (t != NULL) {
+				warning("useless type name in empty "
+					"declaration");
+			}
+			goto repeat;
 		case IDENTIFIER:
-			/* TODO */
+			/* TODO: deal with user types */
+			if (t == NULL) {
+				warning_error(user_opt.implicit_int,
+					      "type defaults to 'int' "
+					      "in declaration of", yytext);
+				return T_INT;
+			}
 		default:
 			return t;
 		}
@@ -234,60 +248,6 @@ void declaration(void)
 		}
 	}
 }
-
-
-#if 0
-void specdcl(void)
-{
-	struct spec_type t = {0, 0, 0};
-
-repeat:
-	parser_out_home = 1;
-	switch (gettok()) {
-	case TYPEDEF:
-	case EXTERN:
-	case STATIC:
-	case AUTO:
-	case REGISTER:
-	case CONST:
-	case VOLATILE:
-	case SIGNED:
-	case UNSIGNED:
-		if (!(t.mods ^= MODIFIER(tok)))
-			error("duplicate '%s'", yytext);
-		goto repeat;
-	case IDENTIFIER:
-		/* This is incorrect!!! */
-		t.type = TYPE(INT);
-		if (user_opt.implicit_int) {
-			warning_error(user_opt.c99,
-				      "type defaults to ‘int’ in declaration"
-				      " of", yytext);
-		}
-		if (gettok() != ';')
-			goto non_end_after_id;
-		return ';';
-	case VOID:
-	case CHAR:
-	case INT:
-	case LONG:
-	case FLOAT:
-	case DOUBLE:
-		if (!(t.type ^= (1 << TYPE(tok))))
-			error("duplicate '%s'", yytext);
-
-	case STRUCT:
-	case UNION:
-	case ENUM:
-	case TYPE_NAME:
-		;
-	}
-
-
-non_end_after_id:
-	error("';' expected");
-}
-#endif
 
 
 
