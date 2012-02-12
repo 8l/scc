@@ -1,17 +1,21 @@
+#include <alloca.h>
 #include <assert.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "cc.h"
 #include "tokens.h"
+#include "symbol.h"
 #include "types.h"
+
 
 /* ANSI C says minimum maximum for indirection level is 12 */
 #define PTRLEVEL_MAX 12
 
 char parser_out_home;
 
-
-
+static unsigned char symhash;
+static char symname[TOKSIZ_MAX + 1];
 static unsigned char stack[30];
 static unsigned char *stackp = stack;
 
@@ -36,7 +40,10 @@ void dirdcl(void)
 		gettok();
 	} else if (yytoken == IDENTIFIER) {
 		gettok();
-		/* here we are!!! */;
+		strcpy(symname, yytext);
+		symhash = yyhash;
+	} else {
+		error("expected '(' or identifier before of '%s'", yytext);
 	}
 
 	for (;;) {
@@ -229,23 +236,26 @@ duplicated:
 void declaration(void)
 {
 	struct type *t;
+	struct symbol *sym;
 
+repeat:
 	t = specifier();
 
 	for (; ; gettok()) {
+		/* TODO: put here savepoint for error recovering */
 		decl();
 		if (yytoken != ',' && yytoken != ';')
 			error("unexpected", yytext);
 		while (!empty())
 			t = mktype(t, pop());
 		ptype(t);
+		sym = alloca(sizeof(*sym));
+		pushsym(siden, sym, symhash);
 
 		if (yytoken == ',')
-			/* add variable */;
-		else if (yytoken == ';') {
-			/* end of sentence */;
-			return;
-		}
+			continue;
+		else if (yytoken == ';')
+			goto repeat;
 	}
 }
 

@@ -8,7 +8,6 @@
 #include "tokens.h"
 
 
-#define TOKSIZ_MAX 21
 #define NR_KWD_HASH 32
 
 static struct keyword {

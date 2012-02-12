@@ -23,7 +23,10 @@ struct symctx {
 
 static struct symctx global_ctx;
 static struct symctx *ctxp = &global_ctx;
-struct symhash siden, sgoto, sstruct;
+struct symhash *siden = (struct symhash *) {0};
+struct symhash *sgoto = (struct symhash *) {0};
+
+struct symhash *sstruct = (struct symhash *) {0};
 
 
 
@@ -31,9 +34,9 @@ struct symhash siden, sgoto, sstruct;
 
 void new_ctx(struct symctx *ctx)
 {
-	ctx->siden = siden.top;
-	ctx->sstruct = sstruct.top;
-	ctx->sgoto = sgoto.top;
+	ctx->siden = siden->top;
+	ctx->sstruct = sstruct->top;
+	ctx->sgoto = sgoto->top;
 	ctx->next = ctxp;
 	ctxp = ctx;
 }
@@ -51,24 +54,27 @@ static void del_hash_ctx(struct symhash *h, struct symbol *const top)
 	lim = h->buf + NR_SYM_HASH;
 	for (bp = h->buf; bp < lim; bp++) {
 		register struct symbol *aux;
-		for (aux = *bp; aux < top; *bp = aux = aux->next)
+		for (aux = *bp; aux < top; *bp = aux = aux->next) {
 			if (aux == h->top)
 				h->top = aux;
+		}
 	}
 }
 
 
 void del_ctx(void)
 {
-	del_hash_ctx(&siden, ctxp->siden);
-	del_hash_ctx(&sstruct, ctxp->sstruct);
-	del_hash_ctx(&sgoto, ctxp->sgoto); /* TODO: correct handling in goto */
+	del_hash_ctx(siden, ctxp->siden);
+	del_hash_ctx(sstruct, ctxp->sstruct);
+	del_hash_ctx(sgoto, ctxp->sgoto); /* TODO: correct handling in goto */
 }
 
 
 
 
-struct symbol *pushsym(struct symhash *h, struct symbol *sym, unsigned char hash)
+struct symbol *pushsym(struct symhash *h,
+		       struct symbol *sym, unsigned char hash)
+
 {
 	static unsigned char key;
 
@@ -91,3 +97,4 @@ struct symbol *findsym(struct symhash *h, char *s, unsigned char hash)
 	}
 	return NULL;
 }
+

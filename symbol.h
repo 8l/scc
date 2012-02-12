@@ -14,7 +14,7 @@ struct symbol {
 
 
 struct symhash;
-extern struct symhash siden, sgoto, sstruct;
+extern struct symhash *siden, *sgoto, *sstruct;
 
 
 #endif
