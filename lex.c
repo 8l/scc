@@ -62,12 +62,6 @@ unsigned columnum;
 const char *filename;
 
 
-union yyval {
-	struct symbol *sym;
-} yyval;
-
-
-
 static unsigned char hashfun(register const char *s)
 {
 	register unsigned char h, ch;

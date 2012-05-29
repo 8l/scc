@@ -32,10 +32,20 @@ enum {
 	CONTINUE, BREAK, RETURN, EOFTOK
 };
 
+
+
+union yyval {
+	struct symbol *sym;
+} yyval;
+
+
+
 extern char yytext[];
 extern unsigned char yyhash;
 extern size_t yylen;
 extern unsigned char yytoken;
+extern union yyval yyval;
+
 
 extern unsigned char gettok(void);
 extern void init_lex(void);
