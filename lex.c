@@ -80,7 +80,7 @@ void init_lex(void)
 
 	for (bp = keywords; bp->str; bp++) {
 		register struct keyword *aux, *ant;
-		h = hashfun(bp->str) % (NR_KWD_HASH - 1);
+		h = hashfun(bp->str) & (NR_KWD_HASH - 1);
 		if (!(aux = khash[h]) || strcmp(bp->str, aux->str) < 0) {
 			khash[h] = bp;
 			bp->next = aux;
@@ -142,7 +142,7 @@ unsigned char gettok(void)
 		;
 	} else {
 		switch (ch) {
-		case '&': case '|': 
+		case '&': case '|':
 			if ((c = getc(yyin)) == ch) {
 				yytext[1] = yytext[0] = ch;
 				yytext[2] = '\0';
@@ -152,7 +152,7 @@ unsigned char gettok(void)
 				ungetc(c, yyin);
 			}
 		case '^': case '=': case '<': case '>':
-		case '*': case '+': case '-': case '/': 
+		case '*': case '+': case '-': case '/':
 			if ((c = getc(yyin)) == '=') {
 				yytext[0] = ch;
 				yytext[1] = c;
