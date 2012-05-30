@@ -72,7 +72,7 @@ void del_ctx(void)
 
 
 
-struct symbol *pushsym(struct symhash *h,
+struct symbol *addsym(struct symhash *h,
 		       struct symbol *sym, unsigned char hash)
 
 {

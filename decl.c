@@ -250,7 +250,7 @@ repeat:
 			t = mktype(t, pop());
 		ptype(t);
 		sym = alloca(sizeof(*sym));
-		pushsym(siden, sym, symhash);
+		addsym(siden, sym, symhash);
 
 		if (yytoken == ',')
 			continue;
