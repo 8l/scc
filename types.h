@@ -3,11 +3,15 @@
 
 
 struct type {
-	unsigned char op;
+	unsigned op    : 5;
 	struct type *base;
-	struct type *ary;               /* array */
-	struct type *ptr;		/* pointer */
-	struct type *ftn;		/* function */
+	struct type *ary;		      /* array */
+	struct type *ptr;		      /* pointer */
+	struct type *ftn;		      /* function */
+	struct type *cnst;		      /* const */
+	struct type *vltl;		      /* volatile */
+	struct type *rstr;		      /* restricted */
+
 	union  {
 		struct {
 			unsigned btype : 4;
@@ -37,13 +41,12 @@ extern struct type tulong, tllong, tullong, tvoid;
 #define T_ULLONG  (&tullong)
 #define T_VOID    (&tvoid)
 
+#define ARY		1
+#define PTR		2
+#define FTN		3
 
-#define ARY             1
-#define PTR             2
-#define FTN             3
-#define T_CONST           8
-#define T_RESTRICTED     16
-#define T_VOLATILE       32
+#define QLF(x)   (VOLATILE - x + 1)
+
 
 struct type *mktype(register struct type *base, unsigned  char op);
 

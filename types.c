@@ -26,7 +26,8 @@ struct type tvoid = {.btype = VOID, .sign = 0};
 struct type *mktype(register struct type *base, unsigned  char op)
 {
 	register struct type **ptr, *nt;
-	assert(op == PTR || op == ARY || op == FTN);
+	assert(op == PTR      || op == ARY	  || op == FTN ||
+	       op == VOLATILE || op == RESTRICTED || op == CONST);
 
 	switch (op) {
 	case PTR:
@@ -37,6 +38,15 @@ struct type *mktype(register struct type *base, unsigned  char op)
 		break;
 	case FTN:
 		ptr = &base->ftn;
+		break;
+	case VOLATILE:
+		ptr = &base->vltl;
+		break;
+	case RESTRICTED:
+		ptr = &base->rstr;
+		break;
+	case CONST:
+		ptr = &base->cnst;
 		break;
 	}
 	if (*ptr)  return *ptr;
@@ -68,6 +78,16 @@ void ptype(register struct type *t)
 			break;
 		case FTN:
 			fputs("function that returns ", stdout);
+			break;
+		case VOLATILE:
+			fputs("volatile ", stdout);
+			break;
+			break;
+		case RESTRICTED:
+			fputs("restricted ", stdout);
+			break;
+		case CONST:
+			fputs("const ", stdout);
 			break;
 		default: {
 				static char *type, *sign;

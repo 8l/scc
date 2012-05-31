@@ -198,32 +198,43 @@ incorrect_sign:
 
 void decl(void)
 {
-	unsigned char ns = 0;
-	unsigned char qlf[PTRLEVEL_MAX];
+	unsigned char qlf[PTRLEVEL_MAX], *bp, *lim;
 
 	puts("decl");
-	for (ns = 0; yytoken == '*'; ns++) {
-		if (ns == PTRLEVEL_MAX)
-			error("Too much indirection levels");
+	lim = qlf + PTRLEVEL_MAX;
+	for (bp = qlf; yytoken == '*' && bp != lim; ++bp) {
+		*bp = 0;
+	repeat_qlf:
 		switch (gettok()) {
 		case CONST:
-			if (!(qlf[ns] ^= 2))
+			if (!(*bp ^= 1))
 				goto duplicated;
-			continue;
+			goto repeat_qlf;
 		case RESTRICTED:
-			if (!(qlf[ns] ^= 4))
+			if (!(*bp ^= 2))
 				goto duplicated;
-			continue;
+			goto repeat_qlf;
 		case VOLATILE:
-			if (!(qlf[ns] ^= 8))
+			if (!(*bp ^= 4))
 				goto duplicated;
-			continue;
+			goto repeat_qlf;
+		default:
+			break;
 		}
 	}
+
+	if (bp == lim)
+		error("Too much indirection levels");
+
 	dirdcl();
 
-	if (ns)
-		push(PTR);	/* TODO: pointer qualifiers */
+	while (bp-- != qlf) {
+		if (*bp & 1)  push(CONST);
+		if (*bp & 2)  push(RESTRICTED);
+		if (*bp & 4)  push(VOLATILE);
+		push(PTR);
+	}
+
 	printf("leaving dcl %c\n", yytoken);
 	return;
 
