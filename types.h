@@ -49,6 +49,11 @@ extern struct type tulong, tllong, tullong, tvoid;
 
 
 struct type *mktype(register struct type *base, unsigned  char op);
+/* ANSI C says minimum maximum for indirection level is 12 */
+#define PTRLEVEL_MAX 12
+
+extern struct type *decl_type(struct type *t);
+extern void pushtype(char op);
 
 #ifndef NDEBUG
 extern void ptype(register struct type *t);

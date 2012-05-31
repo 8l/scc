@@ -5,7 +5,7 @@
 #include "tokens.h"
 #include "types.h"
 
-
+/* TODO: create wrapper file */
 #define xcalloc calloc
 
 struct type tschar = {.btype = CHAR, .sign = 1};
@@ -22,6 +22,26 @@ struct type tulong = {.btype = LONG, .sign = 0};
 struct type tllong = {.btype = LLONG, .sign = 1};
 struct type tullong = {.btype = LLONG, .sign = 0};
 struct type tvoid = {.btype = VOID, .sign = 0};
+
+#define TYPEOP_MAX PTRLEVEL_MAX /* TODO: take a look of the ANSI standard */
+
+static unsigned char stack[TYPEOP_MAX];
+static unsigned char *stackp = stack;
+
+
+void pushtype(char op)
+{
+	if (stackp == stack + TYPEOP_MAX)
+		error("Too much type modifiers");
+	*stackp++ = op;
+}
+
+struct type *decl_type(struct type *t)
+{
+	while (stackp != stack)
+		t = mktype(t, *--stackp);
+	return t;
+}
 
 struct type *mktype(register struct type *base, unsigned  char op)
 {

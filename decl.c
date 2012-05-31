@@ -9,19 +9,10 @@
 #include "types.h"
 
 
-/* ANSI C says minimum maximum for indirection level is 12 */
-#define PTRLEVEL_MAX 12
-
 char parser_out_home;
 
 static unsigned char symhash;
 static char symname[TOKSIZ_MAX + 1];
-static unsigned char stack[30];
-static unsigned char *stackp = stack;
-
-#define push(x) (*stackp++ = (x))
-#define pop()   (*--stackp)
-#define empty() (stackp == stack)
 
 
 #include <stdio.h>	/* TODO: remove this */
@@ -49,14 +40,14 @@ void dirdcl(void)
 	for (;;) {
 		switch (yytoken) {
 		case '(':
-			push(FTN);
+			pushtype(FTN);
 			if (gettok() == ')')
 				gettok();
 			else
 				/* TODO: prototyped function */;
 			continue;
 		case '[':
-			push(ARY);
+			pushtype(ARY);
 			if (gettok() == ']')
 				gettok();
 			else
@@ -229,10 +220,10 @@ void decl(void)
 	dirdcl();
 
 	while (bp-- != qlf) {
-		if (*bp & 1)  push(CONST);
-		if (*bp & 2)  push(RESTRICTED);
-		if (*bp & 4)  push(VOLATILE);
-		push(PTR);
+		if (*bp & 1)  pushtype(CONST);
+		if (*bp & 2)  pushtype(RESTRICTED);
+		if (*bp & 4)  pushtype(VOLATILE);
+		pushtype(PTR);
 	}
 
 	printf("leaving dcl %c\n", yytoken);
@@ -246,22 +237,19 @@ duplicated:
 
 void declaration(void)
 {
-	struct type *t;
+	struct type *t, *spec;
 	struct symbol *sym;
 
 repeat:
-	t = specifier();
+	spec = specifier();
 
 	for (; ; gettok()) {
 		/* TODO: put here savepoint for error recovering */
 		decl();
 		if (yytoken != ',' && yytoken != ';')
 			error("unexpected", yytext);
-		while (!empty())
-			t = mktype(t, pop());
+		t = decl_type(spec);
 		ptype(t);
-		sym = alloca(sizeof(*sym));
-		addsym(siden, sym, symhash);
 
 		if (yytoken == ',')
 			continue;
