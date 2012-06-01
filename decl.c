@@ -17,20 +17,16 @@ static char symname[TOKSIZ_MAX + 1];
 
 #include <stdio.h>	/* TODO: remove this */
 
-void decl(void);
+static void declarator(void);
 
 
-void dirdcl(void)
+static void dirdcl(void)
 {
 	puts("dirdecl");
-	if (yytoken == '(') {
-		gettok();
-		decl();
-		if (yytoken != ')')
-			error("expected ')'");
-		gettok();
-	} else if (yytoken == IDENTIFIER) {
-		gettok();
+	if (accept('(')) {
+		declarator();
+		expect(')');
+	} else if (accept(IDENTIFIER)) {
 		strcpy(symname, yytext);
 		symhash = yyhash;
 	} else {
@@ -38,22 +34,22 @@ void dirdcl(void)
 	}
 
 	for (;;) {
-		switch (yytoken) {
-		case '(':
+		if (accept('(')) {
+			next();
 			pushtype(FTN);
-			if (gettok() == ')')
-				gettok();
+			if (accept(')'))
+				; /* TODO: k&r function */
 			else
 				/* TODO: prototyped function */;
 			continue;
-		case '[':
+		} else if (accept('[')) {
 			pushtype(ARY);
-			if (gettok() == ']')
-				gettok();
+			if (accept(']'))
+				; /* TODO: automatic size array */
 			else
 				/* TODO: specify size of array */;
 			continue;
-		default:
+		} else {
 			printf("leaving dirdcl %c\n", yytoken);
 			return;
 		}
@@ -68,15 +64,15 @@ void dirdcl(void)
  *
  */
 
-struct type *types[][2] = {{T_VOID, NULL},
-			   {T_SCHAR, T_UCHAR},
-			   {T_SHORT, T_USHORT},
-			   {T_INT, T_UINT},
-			   {T_LONG, T_ULONG},
-			   {T_LLONG, T_ULLONG},
-			   {T_FLOAT, NULL},
-			   {T_DOUBLE, NULL},
-			   {T_LDOUBLE, NULL}};
+static struct type *types[][2] = {{T_VOID, NULL},
+				  {T_SCHAR, T_UCHAR},
+				  {T_SHORT, T_USHORT},
+				  {T_INT, T_UINT},
+				  {T_LONG, T_ULONG},
+				  {T_LLONG, T_ULLONG},
+				  {T_FLOAT, NULL},
+				  {T_DOUBLE, NULL},
+				  {T_LDOUBLE, NULL}};
 
 #define F_VOID    0
 #define F_CHAR    1
@@ -88,7 +84,7 @@ struct type *types[][2] = {{T_VOID, NULL},
 #define F_DOUBLE  7
 #define F_LDOUBLE 8
 
-struct type *specifier(void)
+static struct type *specifier(void)
 {
 	static char sign, sclass, tqlf, nt;
 	struct type *t;
@@ -96,8 +92,8 @@ struct type *specifier(void)
 repeat:
 	t = NULL;
 	tqlf = sign = sclass = 0;
-	for (;;) {
-		switch (gettok()) {
+	for (;; next()) {
+		switch (yytoken) {
 		case TYPEDEF:case EXTERN:case STATIC:case AUTO:case REGISTER:
 			if (sclass != 0)
 				error("Two or more storage specifier");
@@ -187,16 +183,16 @@ incorrect_sign:
 #undef F_LDOUBLE
 
 
-void decl(void)
+static void declarator(void)
 {
 	unsigned char qlf[PTRLEVEL_MAX], *bp, *lim;
 
-	puts("decl");
+	puts("declarator");
 	lim = qlf + PTRLEVEL_MAX;
 	for (bp = qlf; yytoken == '*' && bp != lim; ++bp) {
 		*bp = 0;
 	repeat_qlf:
-		switch (gettok()) {
+		switch (next()) {
 		case CONST:
 			if (!(*bp ^= 1))
 				goto duplicated;
@@ -233,43 +229,34 @@ duplicated:
 	error("duplicated '%s'", yytext);
 }
 
-
-
-void declaration(void)
+void decl(void)
 {
 	struct type *t, *spec;
-	struct symbol *sym;
 
-repeat:
 	spec = specifier();
-
-	for (; ; gettok()) {
-		/* TODO: put here savepoint for error recovering */
-		decl();
-		if (yytoken != ',' && yytoken != ';')
-			error("unexpected", yytext);
+	do {
+		declarator();
 		t = decl_type(spec);
-		ptype(t);
-
-		if (yytoken == ',')
-			continue;
-		else if (yytoken == ';')
-			goto repeat;
-	}
+	} while (accept(','));
+	puts("leaving declaration");
 }
 
+void stmt(void)
+{
+	for (;;) {
+		decl();
+		expect(';');
+	}
 
-
-
-#include <stddef.h>
-
+}
 
 int main(int argc, char *argv[])
 {
 	init_lex();
 
 	open_file(NULL);
-	declaration();
+	next();
+	stmt();
 
 	return 0;
 }

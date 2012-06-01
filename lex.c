@@ -120,7 +120,7 @@ static unsigned char iden(void)
 
 
 
-unsigned char gettok(void)
+unsigned char next(void)
 {
 	static unsigned int c;
 	register unsigned char ch;
@@ -178,6 +178,21 @@ return_token:
 	return yytoken = ch;
 }
 
+char accept(unsigned char tok)
+{
+	if (yytoken == tok) {
+		next();
+		return 1;
+	}
+	return 0;
+}
+
+void expect(unsigned char tok)
+{
+	if (yytoken != tok)
+		error("unexpected %s", yytext);
+	next();
+}
 
 void open_file(const char *file)
 {

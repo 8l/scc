@@ -47,6 +47,8 @@ extern unsigned char yytoken;
 extern union yyval yyval;
 
 
-extern unsigned char gettok(void);
 extern void init_lex(void);
+extern unsigned char next(void);
+extern char accept(unsigned char tok);
+extern void expect(unsigned char tok);
 #endif

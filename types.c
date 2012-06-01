@@ -40,6 +40,7 @@ struct type *decl_type(struct type *t)
 {
 	while (stackp != stack)
 		t = mktype(t, *--stackp);
+	ptype(t);
 	return t;
 }
 
