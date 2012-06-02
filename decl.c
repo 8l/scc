@@ -1,19 +1,13 @@
-#include <alloca.h>
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
 #include "cc.h"
 #include "tokens.h"
-#include "symbol.h"
 #include "types.h"
 
 
 char parser_out_home;
-
-static unsigned char symhash;
-static char symname[TOKSIZ_MAX + 1];
-
 
 #include <stdio.h>	/* TODO: remove this */
 
@@ -27,8 +21,7 @@ static void dirdcl(void)
 		declarator();
 		expect(')');
 	} else if (accept(IDENTIFIER)) {
-		strcpy(symname, yytext);
-		symhash = yyhash;
+		;
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
 	}
@@ -222,41 +215,34 @@ static void declarator(void)
 		pushtype(PTR);
 	}
 
-	printf("leaving dcl %c\n", yytoken);
+	puts("leaving dcl");
 	return;
 
 duplicated:
 	error("duplicated '%s'", yytext);
 }
 
-void decl(void)
+char decl(void)
 {
 	struct type *t, *spec;
 
-	spec = specifier();
+	puts("decl");
+	if (!(spec = specifier()))
+		return 0;
 	do {
 		declarator();
 		t = decl_type(spec);
 	} while (accept(','));
-	puts("leaving declaration");
+	expect(';');		/* TODO: initialisation */
+
+	puts("leaving decl");
+	return 1;
 }
 
-void stmt(void)
+char decl_list(void)
 {
-	for (;;) {
-		decl();
-		expect(';');
-	}
-
-}
-
-int main(int argc, char *argv[])
-{
-	init_lex();
-
-	open_file(NULL);
-	next();
-	stmt();
-
-	return 0;
+	puts("decl_list");
+	while (decl())
+		/* nothing */;
+	puts("leaving decl_list");
 }
