@@ -115,20 +115,6 @@ repeat:
 		case STRUCT:	/* TODO */
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
-		case ';':
-			if (t != NULL) {
-				warning("useless type name in empty "
-					"declaration");
-			}
-			goto repeat;
-		case IDENTIFIER:
-			/* TODO: deal with user types */
-			if (t == NULL) {
-				warning_error(user_opt.implicit_int,
-					      "type defaults to 'int' "
-					      "in declaration of", yytext);
-				return T_INT;
-			}
 		default:
 			return t;
 		}
