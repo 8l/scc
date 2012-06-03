@@ -7,12 +7,6 @@
 
 void stmt(void);
 
-void expr(void)
-{
-	puts("expr");
-	puts("leaving expr");
-}
-
 static void do_goto(void)
 {
 	puts("void do_goto");

@@ -232,3 +232,7 @@ char decl_list(void)
 		/* nothing */;
 	puts("leaving decl_list");
 }
+
+void type_name()
+{
+}
