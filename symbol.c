@@ -1,6 +1,6 @@
 
 
-#include <stddef.h>
+#include <string.h>
 
 #include "symbol.h"
 
@@ -97,4 +97,3 @@ struct symbol *findsym(struct symhash *h, char *s, unsigned char hash)
 	}
 	return NULL;
 }
-
