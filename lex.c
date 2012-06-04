@@ -131,8 +131,9 @@ unsigned char next(void)
 	if (c == EOF) {
 		if (parser_out_home)
 			error("Find EOF while parsing");
-		else
-			return EOFTOK;
+		ch = EOFTOK;
+		memcpy(yytext, "EOF", sizeof("EOF"));
+		goto return_token;
 	}
 	ch = c;
 	if (isalpha(ch) || ch == '_') {
