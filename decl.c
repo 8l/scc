@@ -79,10 +79,10 @@ static struct type *types[][2] = {{T_VOID, NULL},
 
 static struct type *specifier(void)
 {
-	static char sign, sclass, tqlf, nt;
-	struct type *t;
+	auto unsigned char sign, sclass, tqlf, nt;
+	auto struct type *t;
 
-repeat:
+	puts("especifier");
 	t = NULL;
 	tqlf = sign = sclass = 0;
 	for (;; next()) {
@@ -92,8 +92,17 @@ repeat:
 				error("Two or more storage specifier");
 			sclass = yytoken;
 			continue;
-		case CONST: case VOLATILE: case RESTRICTED:
-			/* TODO */
+		case CONST:
+			if (!(tqlf ^= T_CONST))
+				goto duplicated_qlf;
+			continue;
+		case RESTRICTED:
+			if (!(tqlf ^= T_RESTRICTED))
+				goto duplicated_qlf;
+			continue;
+		case VOLATILE:
+			if (!(tqlf ^= T_VOLATILE))
+				goto duplicated_qlf;
 			continue;
 		case VOID:   nt = F_VOID;   goto check_type;
 		case CHAR:   nt = F_CHAR;   goto check_type;
@@ -116,6 +125,20 @@ repeat:
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
 		default:
+			if (tqlf) {
+				if (t == NULL) {
+					warning_error(user_opt.implicit_int,
+						      "type defaults to 'int' "
+						      "in declaration of '%s'",
+						      yytext);
+					t = T_INT;
+				}
+				if (tqlf & T_CONST)	  pushtype(CONST);
+				if (tqlf & T_RESTRICTED)  pushtype(RESTRICTED);
+				if (tqlf & T_VOLATILE)	  pushtype(VOLATILE);
+				t = decl_type(t);
+			}
+			puts("leaving especifier");
 			return t;
 		}
 	check_type:
@@ -144,6 +167,8 @@ repeat:
 			goto incorrect_sign;
 		}
 	}
+duplicated_qlf:
+	error("duplicated '%s'", yytext);
 two_or_more_btype:
 	error("two or more basic types");
 incorrect_sign:
@@ -173,15 +198,15 @@ static void declarator(void)
 	repeat_qlf:
 		switch (next()) {
 		case CONST:
-			if (!(*bp ^= 1))
+			if (!(*bp ^= T_CONST))
 				goto duplicated;
 			goto repeat_qlf;
 		case RESTRICTED:
-			if (!(*bp ^= 2))
+			if (!(*bp ^= T_RESTRICTED))
 				goto duplicated;
 			goto repeat_qlf;
 		case VOLATILE:
-			if (!(*bp ^= 4))
+			if (!(*bp ^= T_VOLATILE))
 				goto duplicated;
 			goto repeat_qlf;
 		default:
@@ -195,9 +220,9 @@ static void declarator(void)
 	dirdcl();
 
 	while (bp-- != qlf) {
-		if (*bp & 1)  pushtype(CONST);
-		if (*bp & 2)  pushtype(RESTRICTED);
-		if (*bp & 4)  pushtype(VOLATILE);
+		if (*bp & T_CONST)	 pushtype(CONST);
+		if (*bp & T_RESTRICTED)  pushtype(RESTRICTED);
+		if (*bp & T_VOLATILE)	 pushtype(VOLATILE);
 		pushtype(PTR);
 	}
 

@@ -44,6 +44,9 @@ extern struct type tulong, tllong, tullong, tvoid;
 #define ARY		1
 #define PTR		2
 #define FTN		3
+#define T_CONST		1
+#define T_RESTRICTED	2
+#define T_VOLATILE	4
 
 #define QLF(x)   (VOLATILE - x + 1)
 
