@@ -95,6 +95,22 @@ void init_lex(void)
 	}
 }
 
+static char number(void)
+{
+	register char *bp;
+	register char ch;
+
+	for (bp = yytext; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
+		if (!isdigit(ch = getc(yyin)))
+			break;
+	}
+	if (bp == yytext + TOKSIZ_MAX)
+		error("identifier too long %s", yytext);
+	ungetc(ch, yyin);
+	*bp = '\0';
+	return CONSTANT;
+}
+
 static unsigned char iden(void)
 {
 	register struct keyword *kwp;
@@ -140,7 +156,8 @@ unsigned char next(void)
 		ungetc(ch, yyin);
 		ch = iden();
 	} else if (isdigit(ch)) {
-		;
+		ungetc(ch, yyin);
+		ch = number();
 	} else {
 		switch (ch) {
 		case '&': case '|':
