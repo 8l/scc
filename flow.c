@@ -1,9 +1,11 @@
 
-#include <stddef.h>
+#include <stdio.h>
 
 #include "tokens.h"
 #include "syntax.h"
 
+
+unsigned char nested_level;
 
 void stmt(void);
 
@@ -84,7 +86,6 @@ static void do_switch(void)
 void stmt(void)
 {
 	puts("stmt");
-	unsigned char tok;
 
 	switch (yytoken) {
 	case '{':
@@ -130,7 +131,9 @@ void compound(void)
 {
 	puts("compound");
 	if (accept('{')) {
-		decl_list();
+		++nested_level;
+		while (decl())
+			/* nothing */;
 		while (!accept('}'))
 			stmt();
 	}

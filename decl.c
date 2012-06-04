@@ -5,7 +5,7 @@
 #include "cc.h"
 #include "tokens.h"
 #include "types.h"
-
+#include "syntax.h"
 
 char parser_out_home;
 
@@ -233,31 +233,52 @@ duplicated:
 	error("duplicated '%s'", yytext);
 }
 
-char decl(void)
+unsigned char decl(void)
 {
-	struct type *t, *spec;
+	auto struct type *tp, *tbase;
+	auto unsigned char nd = 0;
 
 	puts("decl");
-	if (!(spec = specifier()))
-		return 0;
-	do {
-		declarator();
-		t = decl_type(spec);
-	} while (accept(','));
-	expect(';');		/* TODO: initialisation */
+	tbase = specifier();
+
+	if (!tbase) {
+		if (nested_level != 0) {
+			puts("leaving decl");
+			return 0;
+		}
+		if (yytoken == IDENTIFIER) {
+			warning_error(user_opt.implicit_int,
+				      "type defaults to 'int' "
+				      "in declaration of '%s'", yytext);
+			tbase = T_INT;
+		} else {
+			error("declaration expected");
+		}
+	}
+	if (yytoken != ';') {
+		do {
+			declarator();
+			tp = decl_type(tbase);
+			if (isfunction(tp) && yytoken == '{') {
+				compound();
+				puts("leaving decl");
+				return 1;
+			}
+			++nd;
+		} while (accept(','));
+	}
+
+	expect(';');
+	if (nd == 0) {
+		warning_error(user_opt.useless_typename,
+			      "useless type name in empty declaration");
+	}
 
 	puts("leaving decl");
 	return 1;
 }
 
-char decl_list(void)
-{
-	puts("decl_list");
-	while (decl())
-		/* nothing */;
-	puts("leaving decl_list");
-}
-
 void type_name()
 {
 }
+

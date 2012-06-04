@@ -65,4 +65,6 @@ extern void ptype(register struct type *t);
 #endif
 
 
+extern unsigned char isfunction(struct type *t);
+
 #endif

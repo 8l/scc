@@ -8,6 +8,7 @@ extern const char *filename;
 struct {
 	unsigned implicit_int : 1;
 	unsigned c99 : 1;
+	unsigned useless_typename : 1;
 } user_opt;
 
 

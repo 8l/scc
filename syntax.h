@@ -1,8 +1,9 @@
 #ifndef SYNTAX_H
 #define SYNTAX_H
 
-extern char decl(void);
+extern unsigned char nested_level;
+
 extern void compound(void);
 extern void expr(void);
-extern char decl_list(void);
+unsigned char decl(void);
 #endif
