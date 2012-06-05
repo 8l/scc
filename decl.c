@@ -125,21 +125,23 @@ static struct type *specifier(void)
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
 		default:
-			if (tqlf) {
-				if (t == NULL) {
-					warning_error(user_opt.implicit_int,
-						      "type defaults to 'int' "
-						      "in declaration of '%s'",
-						      yytext);
-					t = T_INT;
-				}
+			if (t) {
+				return t;
+			} else if (tqlf) {
 				if (tqlf & T_CONST)	  pushtype(CONST);
 				if (tqlf & T_RESTRICTED)  pushtype(RESTRICTED);
 				if (tqlf & T_VOLATILE)	  pushtype(VOLATILE);
-				t = decl_type(t);
+				return decl_type(t);
+			} else if (nested_level == 0 && yytoken == IDENTIFIER) {
+				warning_error(user_opt.implicit_int,
+					      "type defaults to 'int' "
+					      "in declaration of '%s'",
+					      yytext);
+				return T_INT;
+			} else if (nested_level == 0) {
+				error("declaration expected");
 			}
-			puts("leaving especifier");
-			return t;
+			return NULL;
 		}
 	check_type:
 		if (nt == F_LONG) {
@@ -239,30 +241,15 @@ unsigned char decl(void)
 	auto unsigned char nd = 0;
 
 	puts("decl");
-	tbase = specifier();
-
-	if (!tbase) {
-		if (nested_level != 0) {
-			puts("leaving decl");
-			return 0;
-		}
-		if (yytoken == IDENTIFIER) {
-			warning_error(user_opt.implicit_int,
-				      "type defaults to 'int' "
-				      "in declaration of '%s'", yytext);
-			tbase = T_INT;
-		} else {
-			error("declaration expected");
-		}
-	}
+	if (!(tbase = specifier()))
+		return 0;
 	if (yytoken != ';') {
 		do {
 			declarator();
 			tp = decl_type(tbase);
 			if (isfunction(tp) && yytoken == '{') {
 				compound();
-				puts("leaving decl");
-				return 1;
+				goto leaving;
 			}
 			++nd;
 		} while (accept(','));
@@ -273,7 +260,7 @@ unsigned char decl(void)
 		warning_error(user_opt.useless_typename,
 			      "useless type name in empty declaration");
 	}
-
+leaving:
 	puts("leaving decl");
 	return 1;
 }
@@ -281,4 +268,3 @@ unsigned char decl(void)
 void type_name()
 {
 }
-

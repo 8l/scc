@@ -5,5 +5,5 @@ extern unsigned char nested_level;
 
 extern void compound(void);
 extern void expr(void);
-unsigned char decl(void);
+extern unsigned char decl(void);
 #endif
