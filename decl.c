@@ -43,7 +43,7 @@ static void dirdcl(void)
 				/* TODO: specify size of array */;
 			continue;
 		} else {
-			printf("leaving dirdcl %c\n", yytoken);
+			puts("leaving dirdcl");
 			return;
 		}
 	}

@@ -125,7 +125,7 @@ static void shift(void)
 	puts("shift");
 	do
 		add();
-	while (accept(LEFT_OP) || accept(RIGHT_OP));
+	while (accept(LSHIFT_OP) || accept(RSHIFT_OP));
 	puts("leaving shift");
 }
 

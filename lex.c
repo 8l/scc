@@ -104,8 +104,8 @@ static char *toknames[] = {
 	[PTR_OP] = "PTR_OP",
 	[INC_OP] = "INC_OP",
 	[DEC_OP] = "DEC_OP",
-	[LEFT_OP] = "LEFT_OP",
-	[RIGHT_OP] = "RIGHT_OP",
+	[LSHIFT_OP] = "LEFT_OP",
+	[RSHIFT_OP] = "RIGHT_OP",
 	[LE_OP] = "LE_OP",
 	[GE_OP] = "GE_OP",
 	[EQ_OP] = "EQ_OP",
@@ -227,30 +227,76 @@ unsigned char next(void)
 		ungetc(ch, yyin);
 		ch = number();
 	} else {
+		register unsigned char aux;;
+		aux = getc(yyin);
+		yytext[0] = ch;
+		yytext[1] = aux;
+		yytext[2] = '\0';
+
 		switch (ch) {
-		case '&': case '|':
-			if ((c = getc(yyin)) == ch) {
-				yytext[1] = yytext[0] = ch;
-				yytext[2] = '\0';
-				ch |= 0x80; /* TODO */
-				break;
-			} else {
-				ungetc(c, yyin);
+		case '&':
+			switch (aux) {
+			case '&': ch = AND_OP; break;
+			case '=': ch = AND_ASSIGN; break;
+			default:  goto no_doble_character;
 			}
-		case '^': case '=': case '<': case '>':
-		case '*': case '+': case '-': case '/':
-			if ((c = getc(yyin)) == '=') {
-				yytext[0] = ch;
-				yytext[1] = c;
-				yytext[2] = '\0';
-				ch |= 0x80; /* TODO */
-				break;
-			} else {
-				ungetc(c, yyin);
+			break;
+		case '|':
+			switch (aux) {
+			case '|': ch = OR_OP; break;
+			case '=': ch = OR_ASSIGN; break;
+			default: goto no_doble_character;
 			}
-		case ';': case '{': case '}': case '(': case ')': case '~':
-		case '!': case ',': case '?': case '[': case ']': case ':':
-			yytext[0] = ch;
+			break;
+		case '<':
+			switch (aux) {
+			case '<':  ch = LSHIFT_OP; break;
+			case '=':  ch = LSHIFT_ASSIGN; break;
+			default: goto no_doble_character;
+			}
+			break;
+		case '>':
+			switch (aux) {
+			case '<':  ch = RSHIFT_OP; break;
+			case '=':  ch = RSHIFT_ASSIGN; break;
+			default: goto no_doble_character;
+			}
+			break;
+		case '-':
+			switch (aux) {
+			case '-':  ch = DEC_OP; break;
+			case '>':  ch = PTR_OP; break;
+			case '=':  ch = ADD_ASSIGN; break;
+			default: goto no_doble_character;
+			}
+			break;
+		case '=':
+			if (aux == '=') ch = EQ_OP;
+			else goto no_doble_character;
+			break;
+		case '^':
+			if (aux == '=') ch = XOR_ASSIGN;
+			else goto no_doble_character;
+			break;
+		case '*':
+			if (aux == '=') ch = LSHIFT_ASSIGN;
+			else goto no_doble_character;
+			break;
+		case '+':
+			if (aux == '+')  ch = INC_OP;
+			else if (aux == '=') ch = ADD_ASSIGN;
+			else goto no_doble_character;
+			break;
+		case '!':
+			if (aux == '=') {
+				ch = EQ_OP;
+				break;
+			}
+		no_doble_character:
+		case '/': case ';': case '{': case '}':
+		case '(': case ')': case '~': case ',':
+		case '?': case '[': case ']': case ':':
+			ungetc(aux, yyin);
 			yytext[1] = '\0';
 			break;
 		default:
