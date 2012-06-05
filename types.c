@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "cc.h"
 #include "tokens.h"
 #include "types.h"
 

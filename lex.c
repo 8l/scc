@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "cc.h"
 #include "symbol.h"
 #include "tokens.h"
 

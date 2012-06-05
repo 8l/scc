@@ -5,12 +5,15 @@ extern unsigned linenum;
 extern unsigned columnum;
 extern const char *filename;
 
-struct {
-	unsigned implicit_int : 1;
-	unsigned c99 : 1;
-	unsigned useless_typename : 1;
-} user_opt;
 
+struct user_opt {
+	unsigned char implicit_int;
+	unsigned char c99;
+	unsigned char useless_typename;
+};
+
+
+extern  struct user_opt user_opt;
 
 extern void warning(const char *fmt, ...);
 extern void error(const char *fmt, ...);
