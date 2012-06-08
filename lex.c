@@ -211,8 +211,12 @@ unsigned char next(void)
 	register unsigned char ch;
 	extern char parser_out_home;
 
-	while (isspace(c = getc(yyin)))
-		/* nothing */;
+	while (isspace(c = getc(yyin))) {
+		if ((char) c == '\n')
+			++linenum, columnum = 1;
+		else
+			++columnum;
+	}
 	if (c == EOF) {
 		if (parser_out_home)
 			error("Find EOF while parsing");
@@ -343,4 +347,5 @@ void open_file(const char *file)
 	if ((yyin = fopen(file, "r")) == NULL)
 		die("file '%s' not found", file);
 	filename = file;
+	columnum = linenum = 1;
 }
