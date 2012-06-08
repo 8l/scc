@@ -1,99 +1,87 @@
 
-
+#include <stdlib.h>
 #include <string.h>
 
 #include "symbol.h"
 
+#define xmalloc malloc
+#define xstrdup strdup
 #define NR_SYM_HASH 32
 
 struct symhash {
-	struct symbol *buf[NR_SYM_HASH];
+	struct symbol buf[NR_SYM_HASH];
 	struct symbol *top;
 };
 
 
-struct symctx {
-	struct symbol *siden;
-	struct symbol *sstruct;
-	struct symbol *sgoto;
-	struct symctx *next;
-};
+unsigned char nested_level;
+static struct symhash iden_hash;
+static struct symctx ctx_base;
+static struct symctx *ctx_head = &ctx_base;
 
-
-
-static struct symctx global_ctx;
-static struct symctx *ctxp = &global_ctx;
-struct symhash *siden = (struct symhash *) {0};
-struct symhash *sgoto = (struct symhash *) {0};
-
-struct symhash *sstruct = (struct symhash *) {0};
-
-
-
-
-
-void new_ctx(struct symctx *ctx)
-{
-	ctx->siden = siden->top;
-	ctx->sstruct = sstruct->top;
-	ctx->sgoto = sgoto->top;
-	ctx->next = ctxp;
-	ctxp = ctx;
-}
-
-
-/*
- * WARNING: This function is not portable and waits that incremental calls
- * to alloca return decremented address
- */
-static void del_hash_ctx(struct symhash *h, struct symbol *const top)
-{
-	register struct symbol **bp;
-	static struct symbol **lim;
-
-	lim = h->buf + NR_SYM_HASH;
-	for (bp = h->buf; bp < lim; bp++) {
-		register struct symbol *aux;
-		for (aux = *bp; aux < top; *bp = aux = aux->next) {
-			if (aux == h->top)
-				h->top = aux;
-		}
-	}
-}
-
-
-void del_ctx(void)
-{
-	del_hash_ctx(siden, ctxp->siden);
-	del_hash_ctx(sstruct, ctxp->sstruct);
-	del_hash_ctx(sgoto, ctxp->sgoto); /* TODO: correct handling in goto */
-}
-
-
-
-
-struct symbol *addsym(struct symhash *h,
-		       struct symbol *sym, unsigned char hash)
-
-{
-	static unsigned char key;
-
-	key = hash % NR_SYM_HASH;
-	h->top = sym;
-	sym->next = h->buf[key];
-	return h->buf[key] = sym;
-}
-
-
-
-
-struct symbol *findsym(struct symhash *h, char *s, unsigned char hash)
+static void del_hash_ctx(struct symhash *htable, struct symbol *lim)
 {
 	register struct symbol *bp;
 
-	for (bp = h->buf[hash % NR_SYM_HASH]; bp; bp = bp->next) {
+	for (bp = htable->top; bp && bp != lim; bp = bp->next) {
+		register struct symbol *next = bp->h_next, *prev = bp->h_prev;
+		prev->h_next = next;
+		next->h_prev = prev;
+		free(bp->str);
+		free(bp);
+	}
+}
+
+void new_ctx(struct symctx *ctx)
+{
+	++nested_level;
+	ctx->next = ctx_head;
+	ctx_head = ctx;
+	ctx->iden = iden_hash.top;
+}
+
+void del_ctx(void)
+{
+	--nested_level;
+	del_hash_ctx(&iden_hash, ctx_head->next->iden);
+}
+
+struct symbol *addsym(const char *s, unsigned char key)
+{
+	static struct symbol *head;
+	register struct symbol *sym, *next;
+
+	sym = xmalloc(sizeof(*sym));
+	sym->str = xstrdup(s);
+	sym->next = iden_hash.top;
+	iden_hash.top = sym;
+
+	head = &iden_hash.buf[key], next = head->h_next;
+
+	sym->h_next = next;
+	sym->h_prev = next->h_prev;
+	head->h_next = sym;
+	next->h_prev = sym;
+
+	return sym;
+}
+
+struct symbol *lookupsym(char *s, unsigned char key)
+{
+	register struct symbol *bp, *head;
+
+	head = &iden_hash.buf[key];
+	for (bp = head->h_next; bp != head; bp = bp->next) {
 		if (!strcmp(bp->str, s))
 			return bp;
 	}
 	return NULL;
+}
+
+void init_symbol(void)
+{
+	struct symbol *bp;
+
+	for (bp = iden_hash.buf; bp < &iden_hash.buf[NR_SYM_HASH]; ++bp)
+		bp->h_next = bp->h_prev = bp;
 }

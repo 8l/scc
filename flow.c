@@ -1,11 +1,9 @@
 
 #include <stdio.h>
 
+#include "symbol.h"
 #include "tokens.h"
 #include "syntax.h"
-
-
-unsigned char nested_level;
 
 void stmt(void);
 
@@ -131,11 +129,14 @@ void compound(void)
 {
 	puts("compound");
 	if (accept('{')) {
-		++nested_level;
+		struct symctx ctx;
+
+		new_ctx(&ctx);
 		while (decl())
 			/* nothing */;
 		while (!accept('}'))
 			stmt();
+		del_ctx();
 	}
 	puts("leaving compound");
 }

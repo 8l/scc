@@ -6,6 +6,7 @@
 #include "tokens.h"
 #include "types.h"
 #include "syntax.h"
+#include "symbol.h"
 
 char parser_out_home;
 
@@ -20,8 +21,11 @@ static void dirdcl(void)
 	if (accept('(')) {
 		declarator();
 		expect(')');
-	} else if (accept(IDENTIFIER)) {
-		;
+	} else if (yytoken == IDENTIFIER) {
+		if (yyval.sym && yyval.sym->level == nested_level)
+			error("redeclaration of '%s'", yytext);
+		addsym(yytext, yyhash);
+		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
 	}

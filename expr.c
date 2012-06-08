@@ -14,6 +14,8 @@ static void primary(void)
 	puts("primary");
 	switch (yytoken) {
 	case IDENTIFIER:
+		if (!yyval.sym)
+			error("'%s' undeclared", yytext);
 	case CONSTANT:
 	case STRING_LITERAL:
 		next();

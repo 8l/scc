@@ -55,6 +55,7 @@ static struct keyword {
 static struct keyword *khash[NR_KWD_HASH];
 static FILE *yyin;
 
+union yyval yyval;
 unsigned char yytoken;
 unsigned char yyhash;
 char yytext[TOKSIZ_MAX + 1];
@@ -200,6 +201,7 @@ static unsigned char iden(void)
 		if (!strcmp(kwp->str, yytext))
 			return kwp->tok;
 	}
+	yyval.sym = lookupsym(yytext, yyhash);
 	return IDENTIFIER;
 }
 

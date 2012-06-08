@@ -37,10 +37,10 @@ enum {
 
 union yyval {
 	struct symbol *sym;
-} yyval;
+};
 
 
-
+extern union yyval yyval;
 extern char yytext[];
 extern unsigned char yyhash;
 extern size_t yylen;
