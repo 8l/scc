@@ -23,6 +23,7 @@ struct type tulong = {.btype = LONG, .sign = 0};
 struct type tllong = {.btype = LLONG, .sign = 1};
 struct type tullong = {.btype = LLONG, .sign = 0};
 struct type tvoid = {.btype = VOID, .sign = 0};
+struct type tkeyword;
 
 #define TYPEOP_MAX PTRLEVEL_MAX /* TODO: take a look of the ANSI standard */
 

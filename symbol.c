@@ -65,7 +65,8 @@ struct symbol *install(const char *s, unsigned char key)
 		head->h_next = sym;
 		next->h_prev = sym;
 	} else {
-		sym->h_next = sym->h_prev = sym->str = NULL;
+		sym->h_next = sym->h_prev = NULL;
+		sym->str = NULL;
 	}
 	return sym;
 }
@@ -88,4 +89,13 @@ void init_symbol(void)
 
 	for (bp = iden_hash.buf; bp < &iden_hash.buf[NR_SYM_HASH]; ++bp)
 		bp->h_next = bp->h_prev = bp;
+}
+
+unsigned char hashfun(register const char *s)
+{
+	register unsigned char h, ch;
+
+	for (h = 0; ch = *s++; h += ch)
+		/* nothing */;
+	return h;
 }

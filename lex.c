@@ -5,56 +5,12 @@
 #include <ctype.h>
 
 #include "cc.h"
-#include "symbol.h"
 #include "tokens.h"
+#include "symbol.h"
+#include "types.h"
 
 
-#define NR_KWD_HASH 32
-
-static struct keyword {
-	char *str;
-	unsigned char tok;
-	struct keyword *next;
-} keywords [] = {"auto", AUTO, NULL,
-		 "break", BREAK, NULL,
-		 "_Bool", CHAR, NULL,
-		 "case", CASE, NULL,
-		 "char", CHAR, NULL,
-		 "const", CONST, NULL,
-		 "continue", CONTINUE, NULL,
-		 "default", DEFAULT, NULL,
-		 "do", DO, NULL,
-		 "double", DOUBLE, NULL,
-		 "else", ELSE, NULL,
-		 "enum", ENUM, NULL,
-		 "extern", EXTERN, NULL,
-		 "float", FLOAT, NULL,
-		 "for", FOR, NULL,
-		 "goto", GOTO, NULL,
-		 "if", IF, NULL,
-		 "int", INT, NULL,
-		 "long", LONG, NULL,
-		 "register", REGISTER, NULL,
-		 "restricted", RESTRICTED, NULL,
-		 "return", RETURN, NULL,
-		 "short", SHORT, NULL,
-		 "signed", SIGNED, NULL,
-		 "sizeof", SIZEOF, NULL,
-		 "static", STATIC, NULL,
-		 "struct", STRUCT, NULL,
-		 "switch", SWITCH, NULL,
-		 "typedef", TYPEDEF, NULL,
-		 "union", UNION, NULL,
-		 "unsigned", UNSIGNED, NULL,
-		 "void", VOID, NULL,
-		 "volatile", VOLATILE, NULL,
-		 "while", WHILE, NULL,
-		 NULL, 0, NULL
-};
-
-static struct keyword *khash[NR_KWD_HASH];
 static FILE *yyin;
-
 union yyval yyval;
 unsigned char yytoken;
 unsigned char yyhash;
@@ -63,37 +19,6 @@ unsigned linenum;
 unsigned columnum;
 const char *filename;
 
-
-static unsigned char hashfun(register const char *s)
-{
-	register unsigned char h, ch;
-
-	for (h = 0; ch = *s++; h += ch)
-		/* nothing */;
-	return h;
-}
-
-void init_lex(void)
-{
-	register struct keyword *bp;
-	static unsigned char h;
-
-	for (bp = keywords; bp->str; bp++) {
-		register struct keyword *aux, *ant;
-		h = hashfun(bp->str) & (NR_KWD_HASH - 1);
-		if (!(aux = khash[h]) || strcmp(bp->str, aux->str) < 0) {
-			khash[h] = bp;
-			bp->next = aux;
-			continue;
-		}
-		for (ant = aux; aux; ant = aux, aux = aux->next) {
-			if (strcmp(bp->str, aux->str) < 0)
-				break;
-		}
-		ant->next = bp;
-		bp->next = aux;
-	}
-}
 
 static char number(void)
 {
@@ -106,27 +31,17 @@ static char number(void)
 	}
 	if (bp == yytext + TOKSIZ_MAX)
 		error("identifier too long %s", yytext);
-	ungetc(ch, yyin);
 	*bp = '\0';
+	ungetc(ch, yyin);
+
 	return CONSTANT;
-}
-
-static unsigned char keyword(const char *s, unsigned char key)
-{
-	register struct keyword *kwp;
-
-	key &= NR_KWD_HASH - 1;
-	for (kwp = khash[key]; kwp; kwp = kwp->next) {
-		if (!strcmp(kwp->str, yytext))
-			return kwp->tok;
-	}
-	return 0;
 }
 
 static unsigned char iden(void)
 {
 	register char ch;
 	register char *bp = yytext;
+	register struct symbol *sym;
 
 	for (yyhash = 0; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
 		if (!isalnum(ch = getc(yyin)) && ch != '_')
@@ -137,10 +52,10 @@ static unsigned char iden(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-
-	if (ch = keyword(yytext, yyhash))
-		return ch;
-	return IDEN;;
+	if ((sym = lookup(yytext, yyhash)) && sym->type == T_KWD)
+		return sym->tok;
+	yyval.sym = sym;
+	return IDEN;
 }
 
 static unsigned char skip(void)

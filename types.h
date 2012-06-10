@@ -24,7 +24,7 @@ struct type {
 
 extern struct type tschar, tuchar, tshort, tushort, tint, tuint;
 extern struct type tfloat, tdouble, tldouble, tlong;
-extern struct type tulong, tllong, tullong, tvoid;
+extern struct type tulong, tllong, tullong, tvoid, tkeyword;
 
 #define T_SCHAR   (&tschar)
 #define T_UCHAR   (&tuchar)
@@ -40,6 +40,7 @@ extern struct type tulong, tllong, tullong, tvoid;
 #define T_LLONG   (&tllong)
 #define T_ULLONG  (&tullong)
 #define T_VOID    (&tvoid)
+#define T_KWD     (&tkeyword)
 
 #define ARY		1
 #define PTR		2

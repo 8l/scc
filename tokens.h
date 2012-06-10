@@ -33,7 +33,7 @@ enum {
 };
 
 
-
+struct symbol;
 union yyval {
 	struct symbol *sym;
 };
@@ -51,4 +51,5 @@ extern void init_lex(void);
 extern unsigned char next(void);
 extern char accept(unsigned char tok);
 extern void expect(unsigned char tok);
+extern void init_keywords(void);
 #endif
