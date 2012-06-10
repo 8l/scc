@@ -10,7 +10,7 @@ void stmt(void);
 static void do_goto(void)
 {
 	expect(GOTO);
-	expect(IDENTIFIER);
+	expect(IDEN);
 }
 
 static void do_while(void)
@@ -102,7 +102,7 @@ void stmt(void)
 	case DEFAULT:
 		/* TODO */
 		break;
-	case IDENTIFIER:
+	case IDEN:
 		/* TODO: check if it can be a label */
 	default:
 		expr();

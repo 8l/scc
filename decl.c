@@ -20,7 +20,7 @@ static void dirdcl(void)
 	if (accept('(')) {
 		declarator();
 		expect(')');
-	} else if (yytoken == IDENTIFIER) {
+	} else if (yytoken == IDEN) {
 		if (yyval.sym && yyval.sym->level == nested_level)
 			error("redeclaration of '%s'", yytext);
 		addsym(yytext, yyhash);
@@ -133,7 +133,7 @@ static struct type *specifier(void)
 				if (tqlf & T_RESTRICTED)  pushtype(RESTRICTED);
 				if (tqlf & T_VOLATILE)	  pushtype(VOLATILE);
 				return decl_type(t);
-			} else if (nested_level == 0 && yytoken == IDENTIFIER) {
+			} else if (nested_level == 0 && yytoken == IDEN) {
 				warning_error(user_opt.implicit_int,
 					      "type defaults to 'int' "
 					      "in declaration of '%s'",

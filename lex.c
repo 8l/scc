@@ -132,7 +132,7 @@ static unsigned char iden(void)
 			return kwp->tok;
 	}
 	yyval.sym = lookupsym(yytext, yyhash);
-	return IDENTIFIER;
+	return IDEN;;
 }
 
 
@@ -173,60 +173,60 @@ unsigned char next(void)
 		switch (ch) {
 		case '&':
 			switch (aux) {
-			case '&': ch = AND_OP; break;
-			case '=': ch = AND_ASSIGN; break;
+			case '&': ch = AND; break;
+			case '=': ch = AND_EQ; break;
 			default:  goto no_doble_character;
 			}
 			break;
 		case '|':
 			switch (aux) {
-			case '|': ch = OR_OP; break;
-			case '=': ch = OR_ASSIGN; break;
+			case '|': ch = OR; break;
+			case '=': ch = OR_EQ; break;
 			default: goto no_doble_character;
 			}
 			break;
 		case '<':
 			switch (aux) {
-			case '<':  ch = LSHIFT_OP; break;
-			case '=':  ch = LSHIFT_ASSIGN; break;
+			case '<':  ch = LSHIFT; break;
+			case '=':  ch = LSHIFT_EQ; break;
 			default: goto no_doble_character;
 			}
 			break;
 		case '>':
 			switch (aux) {
-			case '<':  ch = RSHIFT_OP; break;
-			case '=':  ch = RSHIFT_ASSIGN; break;
+			case '<':  ch = RSHIFT; break;
+			case '=':  ch = RSHIFT_EQ; break;
 			default: goto no_doble_character;
 			}
 			break;
 		case '-':
 			switch (aux) {
-			case '-':  ch = DEC_OP; break;
-			case '>':  ch = PTR_OP; break;
-			case '=':  ch = ADD_ASSIGN; break;
+			case '-':  ch = DEC; break;
+			case '>':  ch = PTR; break;
+			case '=':  ch = SUB_EQ; break;
 			default: goto no_doble_character;
 			}
 			break;
 		case '=':
-			if (aux == '=') ch = EQ_OP;
+			if (aux == '=') ch = EQ;
 			else goto no_doble_character;
 			break;
 		case '^':
-			if (aux == '=') ch = XOR_ASSIGN;
+			if (aux == '=') ch = XOR_EQ;
 			else goto no_doble_character;
 			break;
 		case '*':
-			if (aux == '=') ch = LSHIFT_ASSIGN;
+			if (aux == '=') ch = LSHIFT_EQ;
 			else goto no_doble_character;
 			break;
 		case '+':
-			if (aux == '+')  ch = INC_OP;
-			else if (aux == '=') ch = ADD_ASSIGN;
+			if (aux == '+')  ch = INC;
+			else if (aux == '=') ch = ADD_EQ;
 			else goto no_doble_character;
 			break;
 		case '!':
 			if (aux == '=') {
-				ch = EQ_OP;
+				ch = NE;
 				break;
 			}
 		no_doble_character:

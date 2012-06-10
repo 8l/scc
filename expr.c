@@ -12,11 +12,10 @@ void expr(void);
 static void primary(void)
 {
 	switch (yytoken) {
-	case IDENTIFIER:
+	case IDEN:
 		if (!yyval.sym)
 			error("'%s' undeclared", yytext);
 	case CONSTANT:
-	case STRING_LITERAL:
 		next();
 		break;
 	case '(':
@@ -43,12 +42,12 @@ static void postfix(void)
 			expect(')');
 			break;
 		case '.':
-		case PTR_OP:
+		case PTR:
 			next();
-			expect(IDENTIFIER);
+			expect(IDEN);
 			break;
-		case INC_OP:
-		case DEC_OP:
+		case INC:
+		case DEC:
 			next();
 			break;
 		default:
@@ -71,8 +70,8 @@ static void unary(void)
 				return;
 			}
 			break;
-		case INC_OP:
-		case DEC_OP:
+		case INC:
+		case DEC:
 			next();
 			break;
 		case '&': case '*': case '-': case '~': case '!': case '+':
@@ -113,21 +112,21 @@ static void shift(void)
 {
 	do
 		add();
-	while (accept(LSHIFT_OP) || accept(RSHIFT_OP));
+	while (accept(LSHIFT) || accept(RSHIFT));
 }
 
 static void relational(void)
 {
 	do
 		shift();
-	while (accept('<') || accept('>') || accept(GE_OP) || accept(LE_OP));
+	while (accept('<') || accept('>') || accept(GE) || accept(LE));
 }
 
 static void equality(void)
 {
 	do
 		relational();
-	while (accept(EQ_OP) || accept(NE_OP));
+	while (accept(EQ) || accept(NE));
 }
 
 static void bit_and(void)
@@ -155,14 +154,14 @@ static void and(void)
 {
 	do
 		bit_or();
-	while (accept(AND_OP));
+	while (accept(AND));
 }
 
 static void or(void)
 {
 	do
 		and();
-	while (accept(OR_OP));
+	while (accept(OR));
 }
 
 static void conditional(void)
@@ -180,16 +179,16 @@ static void assign(void)
 	unary();
 	switch (yytoken) {
 	case '=':
-	case MUL_ASSIGN:
-	case DIV_ASSIGN:
-	case MOD_ASSIGN:
-	case ADD_ASSIGN:
-	case SUB_ASSIGN:
-	case LSHIFT_ASSIGN:
-	case RSHIFT_ASSIGN:
-	case AND_ASSIGN:
-	case XOR_ASSIGN:
-	case OR_ASSIGN:
+	case MUL_EQ:
+	case DIV_EQ:
+	case MOD_EQ:
+	case ADD_EQ:
+	case SUB_EQ:
+	case LSHIFT_EQ:
+	case RSHIFT_EQ:
+	case AND_EQ:
+	case XOR_EQ:
+	case OR_EQ:
 		next();
 		assign();
 		break;
