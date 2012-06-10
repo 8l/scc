@@ -10,10 +10,19 @@
 
 char parser_out_home;
 
-#include <stdio.h>	/* TODO: remove this */
 
 static void declarator(void);
 
+static struct symbol *newiden(char *s, unsigned char key)
+{
+	register struct symbol *sym = lookup(yytext, yyhash);
+
+	if (!sym)
+		sym = install(yytext, yyhash);
+	if (sym->level == nested_level)
+		error("redeclaration of '%s'", yytext);
+	return sym;
+}
 
 static void dirdcl(void)
 {
@@ -21,9 +30,7 @@ static void dirdcl(void)
 		declarator();
 		expect(')');
 	} else if (yytoken == IDEN) {
-		if (yyval.sym && yyval.sym->level == nested_level)
-			error("redeclaration of '%s'", yytext);
-		addsym(yytext, yyhash);
+		newiden(yytext, yyhash);
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);

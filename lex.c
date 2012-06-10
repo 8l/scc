@@ -111,9 +111,20 @@ static char number(void)
 	return CONSTANT;
 }
 
-static unsigned char iden(void)
+static unsigned char keyword(const char *s, unsigned char key)
 {
 	register struct keyword *kwp;
+
+	key &= NR_KWD_HASH - 1;
+	for (kwp = khash[key]; kwp; kwp = kwp->next) {
+		if (!strcmp(kwp->str, yytext))
+			return kwp->tok;
+	}
+	return 0;
+}
+
+static unsigned char iden(void)
+{
 	register char ch;
 	register char *bp = yytext;
 
@@ -124,27 +135,21 @@ static unsigned char iden(void)
 	}
 	if (bp == yytext + TOKSIZ_MAX)
 		error("identifier too long %s", yytext);
-	ungetc(ch, yyin);
 	*bp = '\0';
-	yyhash &= NR_KWD_HASH - 1;
-	for (kwp = khash[yyhash]; kwp; kwp = kwp->next) {
-		if (!strcmp(kwp->str, yytext))
-			return kwp->tok;
-	}
-	yyval.sym = lookupsym(yytext, yyhash);
+	ungetc(ch, yyin);
+
+	if (ch = keyword(yytext, yyhash))
+		return ch;
 	return IDEN;;
 }
 
-
-
-unsigned char next(void)
+static unsigned char skip(void)
 {
-	static unsigned int c;
-	register unsigned char ch;
+	register int c;
 	extern char parser_out_home;
 
 	while (isspace(c = getc(yyin))) {
-		if ((char) c == '\n')
+		if (c == '\n')
 			++linenum, columnum = 1;
 		else
 			++columnum;
@@ -152,97 +157,85 @@ unsigned char next(void)
 	if (c == EOF) {
 		if (parser_out_home)
 			error("Find EOF while parsing");
-		ch = EOFTOK;
-		memcpy(yytext, "EOF", sizeof("EOF"));
-		goto return_token;
+		return 1;
 	}
-	ch = c;
-	if (isalpha(ch) || ch == '_') {
-		ungetc(ch, yyin);
-		ch = iden();
-	} else if (isdigit(ch)) {
-		ungetc(ch, yyin);
-		ch = number();
-	} else {
-		register unsigned char aux;;
-		aux = getc(yyin);
-		yytext[0] = ch;
-		yytext[1] = aux;
-		yytext[2] = '\0';
+	ungetc(c, yyin);
+	return 0;
+}
 
-		switch (ch) {
-		case '&':
-			switch (aux) {
-			case '&': ch = AND; break;
-			case '=': ch = AND_EQ; break;
-			default:  goto no_doble_character;
-			}
-			break;
-		case '|':
-			switch (aux) {
-			case '|': ch = OR; break;
-			case '=': ch = OR_EQ; break;
-			default: goto no_doble_character;
-			}
-			break;
-		case '<':
-			switch (aux) {
-			case '<':  ch = LSHIFT; break;
-			case '=':  ch = LSHIFT_EQ; break;
-			default: goto no_doble_character;
-			}
-			break;
-		case '>':
-			switch (aux) {
-			case '<':  ch = RSHIFT; break;
-			case '=':  ch = RSHIFT_EQ; break;
-			default: goto no_doble_character;
-			}
-			break;
-		case '-':
-			switch (aux) {
-			case '-':  ch = DEC; break;
-			case '>':  ch = PTR; break;
-			case '=':  ch = SUB_EQ; break;
-			default: goto no_doble_character;
-			}
-			break;
-		case '=':
-			if (aux == '=') ch = EQ;
-			else goto no_doble_character;
-			break;
-		case '^':
-			if (aux == '=') ch = XOR_EQ;
-			else goto no_doble_character;
-			break;
-		case '*':
-			if (aux == '=') ch = LSHIFT_EQ;
-			else goto no_doble_character;
-			break;
-		case '+':
-			if (aux == '+')  ch = INC;
-			else if (aux == '=') ch = ADD_EQ;
-			else goto no_doble_character;
-			break;
-		case '!':
-			if (aux == '=') {
-				ch = NE;
-				break;
-			}
-		no_doble_character:
-		case '/': case ';': case '{': case '}':
-		case '(': case ')': case '~': case ',':
-		case '?': case '[': case ']': case ':':
-			ungetc(aux, yyin);
-			yytext[1] = '\0';
-			break;
-		default:
-			error("Incorrect character '%02x", c);
+static unsigned char
+follow(unsigned char op, unsigned char eq, unsigned char rep)
+{
+	register char c;
+
+	if ((c = getc(yyin)) == '=')
+		return eq;
+	else if (c == op && rep)
+		return rep;
+	ungetc(c, yyin);
+	return op;
+}
+
+static unsigned char rel_shift(unsigned char op)
+{
+	static char tokens[2][3] = {
+		{GE, LSHIFT, LSHIFT_EQ},
+		{LE, RSHIFT, RSHIFT_EQ}};
+	register char c;
+	register char *tp = tokens[op == '>'];
+
+	if ((c = getc(yyin)) == '=') {
+		return tp[0];
+	} else if (c == op) {
+		if ((c = getc(yyin)) == '=')
+			return tp[2];
+		op = tp[1];
+	}
+	ungetc(c, yyin);
+	return c;
+}
+
+static unsigned char minus(void)
+{
+	register int c;
+
+	switch (c = getc(yyin)) {
+	case '-': return DEC;
+	case '>': return PTR;
+	case '=': return SUB_EQ;
+	default:
+		ungetc(c, yyin);
+		return '-';
+	}
+}
+
+unsigned char next(void)
+{
+	register unsigned char c;
+
+	if (!skip())
+		c = EOFTOK;
+	if (isalpha(c = getc(yyin)) || c == '_') {
+		ungetc(c, yyin);
+		c = iden();
+	} else if (isdigit(c)) {
+		ungetc(c, yyin);
+		c = number();
+	} else {
+		switch (c) {
+		case '=': c = follow('=', EQ, 0); break;
+		case '^': c = follow('^', XOR_EQ, 0); break;
+		case '*': c = follow('*', MUL_EQ, 0); break;
+		case '!': c = follow('!', NE, 0); break;
+		case '+': c = follow('+', ADD_EQ, INC); break;
+		case '&': c = follow('&', AND_EQ, AND); break;
+		case '|': c = follow('|', OR_EQ, OR); break;
+		case '<': c = rel_shift('<'); break;
+		case '>': c = rel_shift('>'); break;
+		case '-': c = minus(); break;
 		}
 	}
-
-return_token:
-	return yytoken = ch;
+	return yytoken = c;
 }
 
 char accept(unsigned char tok)
