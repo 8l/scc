@@ -76,10 +76,10 @@ static unsigned char skip(void)
 	if (c == EOF) {
 		if (parser_out_home)
 			error("Find EOF while parsing");
-		return 1;
+		return 0;
 	}
 	ungetc(c, yyin);
-	return 0;
+	return 1;
 }
 
 static unsigned char
@@ -132,9 +132,9 @@ unsigned char next(void)
 {
 	register unsigned char c;
 
-	if (!skip())
+	if (!skip()) {
 		c = EOFTOK;
-	if (isalpha(c = getc(yyin)) || c == '_') {
+	} else if (isalpha(c = getc(yyin)) || c == '_') {
 		ungetc(c, yyin);
 		c = iden();
 	} else if (isdigit(c)) {

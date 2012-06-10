@@ -19,7 +19,7 @@ static struct symbol *newiden(char *s, unsigned char key)
 
 	if (!sym)
 		sym = install(yytext, yyhash);
-	if (sym->level == nested_level)
+	else if (sym->level == nested_level)
 		error("redeclaration of '%s'", yytext);
 	return sym;
 }
