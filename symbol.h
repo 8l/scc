@@ -8,12 +8,14 @@ struct type;
 struct symbol {
 	struct type *type;
 	union {
-		struct {	/* used in usual symbols */
+		struct {
 			char *str;
-			unsigned char level;
+			union {
+				unsigned char level;/* used in usual symbols */
+				unsigned char tok;  /* used in keywords */
+			};
 		};
-		unsigned char tok; /* used in keywords */
-		short val;
+		short val;	/* used in integer constant */
 	};
 	struct symbol *next;
 	struct symbol *h_next, *h_prev;
