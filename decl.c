@@ -17,7 +17,6 @@ static void declarator(void);
 
 static void dirdcl(void)
 {
-	puts("dirdecl");
 	if (accept('(')) {
 		declarator();
 		expect(')');
@@ -47,7 +46,6 @@ static void dirdcl(void)
 				/* TODO: specify size of array */;
 			continue;
 		} else {
-			puts("leaving dirdcl");
 			return;
 		}
 	}
@@ -86,7 +84,6 @@ static struct type *specifier(void)
 	auto unsigned char sign, sclass, tqlf, nt;
 	auto struct type *t;
 
-	puts("especifier");
 	t = NULL;
 	tqlf = sign = sclass = 0;
 	for (;; next()) {
@@ -197,7 +194,6 @@ static void declarator(void)
 {
 	unsigned char qlf[PTRLEVEL_MAX], *bp, *lim;
 
-	puts("declarator");
 	lim = qlf + PTRLEVEL_MAX;
 	for (bp = qlf; yytoken == '*' && bp != lim; ++bp) {
 		*bp = 0;
@@ -232,7 +228,6 @@ static void declarator(void)
 		pushtype(PTR);
 	}
 
-	puts("leaving dcl");
 	return;
 
 duplicated:
@@ -244,7 +239,6 @@ unsigned char decl(void)
 	auto struct type *tp, *tbase;
 	auto unsigned char nd = 0;
 
-	puts("decl");
 	if (!(tbase = specifier()))
 		return 0;
 	if (yytoken != ';') {
@@ -253,7 +247,7 @@ unsigned char decl(void)
 			tp = decl_type(tbase);
 			if (isfunction(tp) && yytoken == '{') {
 				compound();
-				goto leaving;
+				return 1;
 			}
 			++nd;
 		} while (accept(','));
@@ -264,8 +258,6 @@ unsigned char decl(void)
 		warning_error(user_opt.useless_typename,
 			      "useless type name in empty declaration");
 	}
-leaving:
-	puts("leaving decl");
 	return 1;
 }
 

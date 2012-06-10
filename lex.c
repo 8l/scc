@@ -73,76 +73,6 @@ static unsigned char hashfun(register const char *s)
 	return h;
 }
 
-#ifndef NDEBUG
-static char *toknames[] = {
-	[INT] = "INT",
-	[CHAR] = "CHAR",
-	[FLOAT] = "FLOAT",
-	[LONG] = "LONG",
-	[LLONG] = "LLONG",
-	[SHORT] = "SHORT",
-	[VOID] = "VOID",
-	[DOUBLE] = "DOUBLE",
-	[LDOUBLE] = "LDOUBLE",
-	[STRUCT] = "STRUCT",
-	[UNION] = "UNION",
-	[ENUM] = "ENUM",
-	[UTYPE] = "UTYPE",
-	[BOOL] = "BOOL",
-	[TYPEDEF] = "TYPEDEF",
-	[EXTERN] = "EXTERN",
-	[STATIC] = "STATIC",
-	[AUTO] = "AUTO",
-	[REGISTER] = "REGISTER",
-	[VOLATILE] = "VOLATILE",
-	[CONST] = "CONST",
-	[RESTRICTED] = "RESTRICTED",
-	[UNSIGNED] = "UNSIGNED",
-	[SIGNED] = "SIGNED",
-	[IDENTIFIER] = "IDENTIFIER",
-	[CONSTANT] = "CONSTANT",
-	[STRING_LITERAL] = "STRING_LITERAL",
-	[SIZEOF] = "SIZEOF",
-	[PTR_OP] = "PTR_OP",
-	[INC_OP] = "INC_OP",
-	[DEC_OP] = "DEC_OP",
-	[LSHIFT_OP] = "LEFT_OP",
-	[RSHIFT_OP] = "RIGHT_OP",
-	[LE_OP] = "LE_OP",
-	[GE_OP] = "GE_OP",
-	[EQ_OP] = "EQ_OP",
-	[NE_OP] = "NE_OP",
-	[AND_OP] = "AND_OP",
-	[OR_OP] = "OR_OP",
-	[MUL_ASSIGN] = "MUL_ASSIGN",
-	[DIV_ASSIGN] = "DIV_ASSIGN",
-	[MOD_ASSIGN] = "MOD_ASSIGN",
-	[ADD_ASSIGN] = "ADD_ASSIGN",
-	[SUB_ASSIGN] = "SUB_ASSIGN",
-	[LSHIFT_ASSIGN] = "LSHIFT_ASSIGN",
-	[RSHIFT_ASSIGN] = "RSHIFT_ASSIGN",
-	[AND_ASSIGN] = "AND_ASSIGN",
-	[XOR_ASSIGN] = "XOR_ASSIGN",
-	[OR_ASSIGN] = "OR_ASSIGN",
-	[TYPE_NAME] = "TYPE_NAME",
-	[ELLIPSIS] = "ELLIPSIS",
-	[CASE] = "CASE",
-	[DEFAULT] = "DEFAULT",
-	[IF] = "IF",
-	[ELSE] = "ELSE",
-	[SWITCH] = "SWITCH",
-	[WHILE] = "WHILE",
-	[DO] = "DO",
-	[FOR] = "FOR",
-	[GOTO] = "GOTO",
-	[CONTINUE] = "CONTINUE",
-	[BREAK] = "BREAK",
-	[RETURN] = "RETURN",
-	[EOFTOK] = "EOFTOK"
-};
-
-#endif
-
 void init_lex(void)
 {
 	register struct keyword *bp;
@@ -312,12 +242,6 @@ unsigned char next(void)
 	}
 
 return_token:
-#ifndef NDEBUG
-	printf(!toknames[ch] ?
-	       "Token = (%u, '%s')\n" :
-	       "Token = (%u, '%s' %s)\n",
-	       (unsigned) ch, yytext, toknames[ch]);
-#endif
 	return yytoken = ch;
 }
 
