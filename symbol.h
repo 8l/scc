@@ -13,6 +13,7 @@ struct symbol {
 			unsigned char level;
 		};
 		unsigned char tok; /* used in keywords */
+		short val;
 	};
 	struct symbol *next;
 	struct symbol *h_next, *h_prev;
@@ -22,7 +23,6 @@ struct symctx {
 	struct symbol *iden;
 	struct symctx *next;
 };
-
 
 extern void new_ctx(struct symctx *ctx);
 extern void del_ctx(void);

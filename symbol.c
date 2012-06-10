@@ -58,8 +58,8 @@ struct symbol *install(const char *s, unsigned char key)
 
 	if (s) {
 		sym->str = xstrdup(s);
-
-		head = &iden_hash.buf[key], next = head->h_next;
+		head = &iden_hash.buf[key & NR_SYM_HASH-1];
+		next = head->h_next;
 		sym->h_next = next;
 		sym->h_prev = next->h_prev;
 		head->h_next = sym;
@@ -75,8 +75,8 @@ struct symbol *lookup(char *s, unsigned char key)
 {
 	register struct symbol *bp, *head;
 
-	head = &iden_hash.buf[key];
-	for (bp = head->h_next; bp != head; bp = bp->next) {
+	head = &iden_hash.buf[key & NR_SYM_HASH-1];
+	for (bp = head->h_next; bp != head; bp = bp->h_next) {
 		if (!strcmp(bp->str, s))
 			return bp;
 	}

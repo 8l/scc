@@ -24,6 +24,7 @@ static char number(void)
 {
 	register char *bp;
 	register char ch;
+	register struct symbol *sym;
 
 	for (bp = yytext; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
 		if (!isdigit(ch = getc(yyin)))
@@ -33,6 +34,9 @@ static char number(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
+	yyval.sym = sym = install(NULL, 0);
+	sym->val = atoi(yytext);
+	sym->type = T_INT;
 
 	return CONSTANT;
 }
