@@ -99,8 +99,8 @@ follow(unsigned char op, unsigned char eq, unsigned char rep)
 static unsigned char rel_shift(unsigned char op)
 {
 	static char tokens[2][3] = {
-		{GE, LSHIFT, LSHIFT_EQ},
-		{LE, RSHIFT, RSHIFT_EQ}};
+		{GE, SHL, SHL_EQ},
+		{LE, SHR, SHR_EQ}};
 	register char c;
 	register char *tp = tokens[op == '>'];
 

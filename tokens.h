@@ -6,27 +6,22 @@
 #define TOKSIZ_MAX 21
 
 /* Don't change this codification because program used it!!! */
-enum {
-  /* types */
-  INT = 1, CHAR, FLOAT, LONG, LLONG, SHORT, VOID, DOUBLE,
-  LDOUBLE, STRUCT, UNION, ENUM, UTYPE, BOOL,
-  /* storage specifier */
-  TYPEDEF, EXTERN, STATIC, AUTO, REGISTER,
-  /* type qualifier */
-  VOLATILE, CONST, RESTRICTED,
-  /* sign specifier */
-  UNSIGNED, SIGNED
-};
-
-
-
-
-enum {
+enum tokens {
+	/* types */
+	INT = 1, CHAR, FLOAT, LONG, LLONG, SHORT, VOID, DOUBLE,
+	LDOUBLE, STRUCT, UNION, ENUM, UTYPE, BOOL,
+	/* storage specifier */
+	TYPEDEF, EXTERN, STATIC, AUTO, REGISTER,
+	/* type qualifier */
+	VOLATILE, CONST, RESTRICTED,
+	/* sign specifier */
+	UNSIGNED, SIGNED,
+	/* other tokens */
 	IDEN = 128, CONSTANT, SIZEOF,
-	PTR, INC, DEC, LSHIFT, RSHIFT,
+	PTR, INC, DEC, SHL, SHR,
 	LE, GE, EQ, NE, AND, OR,
 	MUL_EQ, DIV_EQ, MOD_EQ, ADD_EQ, SUB_EQ, AND_EQ,
-	XOR_EQ, OR_EQ, LSHIFT_EQ, RSHIFT_EQ,
+	XOR_EQ, OR_EQ, SHL_EQ, SHR_EQ,
 	TYPE_NAME, ELLIPSIS,
 	CASE, DEFAULT, IF, ELSE, SWITCH, WHILE, DO, FOR, GOTO,
 	CONTINUE, BREAK, RETURN, EOFTOK, NOTOK

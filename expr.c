@@ -182,8 +182,8 @@ static void shift(void)
 	for (;;) {
 		register void (*fp)(void);
 		switch (yytoken) {
-		case LSHIFT: fp = gen_shl; break;
-		case RSHIFT: fp = gen_shr; break;
+		case SHL: fp = gen_shl; break;
+		case SHR: fp = gen_shr; break;
 		default:
 			fputs("leaving static void shift (void)", stderr);
 			return;
@@ -320,8 +320,8 @@ static void assign(void)
 		case MOD_EQ: fp = gen_a_mod; break;
 		case ADD_EQ: fp = gen_a_add; break;
 		case SUB_EQ: fp = gen_a_sub; break;
-		case LSHIFT_EQ: fp = gen_a_shl; break;
-		case RSHIFT_EQ: fp = gen_a_shr; break;
+		case SHL_EQ: fp = gen_a_shl; break;
+		case SHR_EQ: fp = gen_a_shr; break;
 		case AND_EQ: fp = gen_a_and; break;
 		case XOR_EQ: fp = gen_a_xor; break;
 		case OR_EQ: fp = gen_a_or; break;
