@@ -106,9 +106,9 @@ void stmt(void)
 		/* TODO: check if it can be a label */
 	default:
 		expr();
-		expect(';');
 		break;
 	}
+	expect(';');
 }
 
 void compound(void)
