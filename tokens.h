@@ -29,7 +29,7 @@ enum {
 	XOR_EQ, OR_EQ, LSHIFT_EQ, RSHIFT_EQ,
 	TYPE_NAME, ELLIPSIS,
 	CASE, DEFAULT, IF, ELSE, SWITCH, WHILE, DO, FOR, GOTO,
-	CONTINUE, BREAK, RETURN, EOFTOK
+	CONTINUE, BREAK, RETURN, EOFTOK, NOTOK
 };
 
 
@@ -52,4 +52,5 @@ extern void next(void);
 extern char accept(unsigned char tok);
 extern void expect(unsigned char tok);
 extern void init_keywords(void);
+extern unsigned char ahead(void);
 #endif

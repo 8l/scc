@@ -12,6 +12,7 @@
 
 static FILE *yyin;
 union yyval yyval;
+static unsigned char aheadtok = NOTOK;
 unsigned char yytoken;
 unsigned char yyhash;
 char yytext[TOKSIZ_MAX + 1];
@@ -132,32 +133,46 @@ void next(void)
 {
 	register unsigned char c;
 
-	if (!skip()) {
-		c = EOFTOK;
+	if (aheadtok != NOTOK) {
+		yytoken = aheadtok;
+		aheadtok = NOTOK;
+	} else if (!skip()) {
+		yytoken = EOFTOK;
 	} else if (isalpha(c = getc(yyin)) || c == '_') {
 		ungetc(c, yyin);
-		c = iden();
+		yytoken = iden();
 	} else if (isdigit(c)) {
 		ungetc(c, yyin);
-		c = number();
+		yytoken = number();
 	} else {
 		switch (c) {
-		case '=': c = follow('=', EQ, 0); break;
-		case '^': c = follow('^', XOR_EQ, 0); break;
-		case '*': c = follow('*', MUL_EQ, 0); break;
-		case '!': c = follow('!', NE, 0); break;
-		case '+': c = follow('+', ADD_EQ, INC); break;
-		case '&': c = follow('&', AND_EQ, AND); break;
-		case '|': c = follow('|', OR_EQ, OR); break;
-		case '<': c = rel_shift('<'); break;
-		case '>': c = rel_shift('>'); break;
-		case '-': c = minus(); break;
+		case '=': yytoken = follow('=', EQ, 0); break;
+		case '^': yytoken = follow('^', XOR_EQ, 0); break;
+		case '*': yytoken = follow('*', MUL_EQ, 0); break;
+		case '!': yytoken = follow('!', NE, 0); break;
+		case '+': yytoken = follow('+', ADD_EQ, INC); break;
+		case '&': yytoken = follow('&', AND_EQ, AND); break;
+		case '|': yytoken = follow('|', OR_EQ, OR); break;
+		case '<': yytoken = rel_shift('<'); break;
+		case '>': yytoken = rel_shift('>'); break;
+		case '-': yytoken = minus(); break;
+		default: yytoken = c;
 		}
 	}
-	return yytoken = c;
 }
 
-char accept(unsigned char tok)
+unsigned char ahead(void)
+{
+	static unsigned char oldtok;
+
+	oldtok = yytoken;
+	next();
+	aheadtok = yytoken;
+	yytoken = oldtok;
+	return aheadtok;
+}
+
+char accept(register unsigned char tok)
 {
 	if (yytoken == tok) {
 		next();
