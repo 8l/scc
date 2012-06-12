@@ -181,14 +181,14 @@ char accept(register unsigned char tok)
 	return 0;
 }
 
-void expect(unsigned char tok)
+void expect(register unsigned char tok)
 {
 	if (yytoken != tok)
 		error("unexpected %s", yytext);
 	next();
 }
 
-void open_file(const char *file)
+void open_file(register const char *file)
 {
 	if (yyin != NULL)
 		fclose(yyin);
