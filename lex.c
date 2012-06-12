@@ -128,7 +128,7 @@ static unsigned char minus(void)
 	}
 }
 
-unsigned char next(void)
+void next(void)
 {
 	register unsigned char c;
 

@@ -205,7 +205,8 @@ static void declarator(void)
 	for (bp = qlf; yytoken == '*' && bp != lim; ++bp) {
 		*bp = 0;
 	repeat_qlf:
-		switch (next()) {
+		next();
+		switch (yytoken) {
 		case CONST:
 			if (!(*bp ^= T_CONST))
 				goto duplicated;
