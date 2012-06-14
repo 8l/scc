@@ -3,10 +3,35 @@
 #ifndef SYMBOL_H
 #define SYMBOL_H
 
+#if ! __bool_true_false_are_defined
+# include <stdbool.h>
+#endif
+
+enum namespace {
+	NS_IDEN,
+	NS_KEYWORD,
+	NS_STRUCT,
+	NS_LABEL,
+	NS_TYPEDEF
+};
+
 struct type;
+struct symbol;
+
+struct ctype {
+	bool c_typedef : 1;
+	bool c_extern : 1;
+	bool c_static : 1;
+	bool c_auto : 1;
+	bool c_register : 1;
+	bool c_const : 1;
+	bool c_volatile : 1;
+	struct type *base;
+};
 
 struct symbol {
-	struct type *type;
+	struct ctype ctype;
+	unsigned char ns;
 	union {
 		struct {
 			char *str;

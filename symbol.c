@@ -58,6 +58,7 @@ struct symbol *install(const char *s, unsigned char key)
 
 	if (s) {
 		sym->str = xstrdup(s);
+		sym->ns = NS_IDEN;
 		head = &iden_hash.buf[key & NR_SYM_HASH-1];
 		next = head->h_next;
 		sym->h_next = next;

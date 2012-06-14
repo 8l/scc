@@ -37,7 +37,6 @@ static char number(void)
 	ungetc(ch, yyin);
 	yyval.sym = sym = install(NULL, 0);
 	sym->val = atoi(yytext);
-	sym->type = T_INT;
 
 	return CONSTANT;
 }
@@ -57,7 +56,7 @@ static unsigned char iden(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	if ((sym = lookup(yytext, yyhash)) && sym->type == T_KWD)
+	if ((sym = lookup(yytext, yyhash)) && sym->ns == NS_KEYWORD)
 		return sym->tok;
 	yyval.sym = sym;
 	return IDEN;

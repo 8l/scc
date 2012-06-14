@@ -55,6 +55,6 @@ void init_keywords(void)
 	for (bp = keywords; bp->str; bp++) {
 		sym = install(bp->str, hashfun(bp->str));
 		sym->tok = bp->tok;
-		sym->type = T_KWD;
+		sym->ns = NS_KEYWORD;
 	}
 }
