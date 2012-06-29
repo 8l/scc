@@ -130,8 +130,7 @@ static void listdcl(register struct ctype *cp)
 			warning_error(user_opt.implicit_int,
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
-		}
-		if (tp->op == FTN && yytoken == '{') {
+		} else if (tp->op == FTN && yytoken == '{') {
 			compound();
 			return;
 		}
