@@ -88,7 +88,6 @@ extern struct type tchar, tshort, tint, tulong, tllong, tvoid, tkeyword;
 extern struct type tfloat, tdouble, tldouble, tlong;
 
 
-extern struct type *mktype(register struct type *base, unsigned  char op);
 extern struct type *decl_type(struct type *t);
 extern void pushtype(unsigned char mod);
 extern struct type *btype(struct type *tp, unsigned char tok);

@@ -21,6 +21,58 @@ struct type tbool = {.btype = BOOL};
 static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
+
+static struct type *
+mktype(register struct type *base, unsigned  char op)
+{
+	register struct type **ptr, *nt;
+	assert(op == PTR      || op == ARY	  || op == FTN ||
+	       op == VOLATILE || op == RESTRICT   || op == CONST);
+
+	switch (op) {
+	case PTR:
+		ptr = &base->ptr;
+		break;
+	case ARY:
+		ptr = &base->ary;
+		break;
+	case FTN:
+		ptr = &base->ftn;
+		break;
+	case VOLATILE:
+		ptr = &base->vltl;
+		break;
+	case RESTRICT:
+		ptr = &base->rstr;
+		break;
+	case CONST:
+		ptr = &base->cnst;
+		break;
+	}
+	if (*ptr)  return *ptr;
+
+	nt = xcalloc(sizeof(*base), 1);
+	*ptr = nt;
+	nt->op = op;
+	nt->base = base;
+	return nt;
+}
+
+void pushtype(unsigned char mod)
+{
+	if (stackp == stack + NR_DECLARATORS)
+		error("Too much type declarators");
+	*stackp++ = mod;
+}
+
+struct type *decl_type(struct type *t)
+{
+	while (stackp != stack)
+		t = mktype(t, *--stackp);
+	ptype(t);
+	return t;
+}
+
 struct type *btype(struct type *tp, unsigned char tok)
 {
 	switch (tok) {
@@ -74,56 +126,6 @@ struct type *btype(struct type *tp, unsigned char tok)
 		abort();
 	}
 	error("two or more basic types");
-}
-
-void pushtype(unsigned char mod)
-{
-	if (stackp == stack + NR_DECLARATORS)
-		error("Too much type declarators");
-	*stackp++ = mod;
-}
-
-struct type *decl_type(struct type *t)
-{
-	while (stackp != stack)
-		t = mktype(t, *--stackp);
-	ptype(t);
-	return t;
-}
-
-struct type *mktype(register struct type *base, unsigned  char op)
-{
-	register struct type **ptr, *nt;
-	assert(op == PTR      || op == ARY	  || op == FTN ||
-	       op == VOLATILE || op == RESTRICT   || op == CONST);
-
-	switch (op) {
-	case PTR:
-		ptr = &base->ptr;
-		break;
-	case ARY:
-		ptr = &base->ary;
-		break;
-	case FTN:
-		ptr = &base->ftn;
-		break;
-	case VOLATILE:
-		ptr = &base->vltl;
-		break;
-	case RESTRICT:
-		ptr = &base->rstr;
-		break;
-	case CONST:
-		ptr = &base->cnst;
-		break;
-	}
-	if (*ptr)  return *ptr;
-
-	nt = xcalloc(sizeof(*base), 1);
-	*ptr = nt;
-	nt->op = op;
-	nt->base = base;
-	return nt;
 }
 
 void ctype(struct ctype *cp, unsigned char mod)
@@ -234,7 +236,7 @@ void ptype(register struct type *t)
 				default:
 					abort();
 				}
-				/* printf("%s %s", sign, type); */
+				printf("%s", type);
 		}
 		}
 	}
