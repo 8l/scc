@@ -7,305 +7,319 @@
 #include "syntax.h"
 #include "code.h"
 
-extern void gen_ary(void), gen_call(void), gen_or(void), gen_tern(void),
-	gen_band(void), gen_bxor(void), gen_bor(void), gen_and(void),
-	gen_sizeof(void), gen_field(void), gen_ptr(void), gen_preinc(void),
-	gen_predec(void), gen_addr(void), gen_indir(void), gen_minus(void),
-	gen_plus(void), gen_cpl(void), gen_neg(void), gen_mul(void),
-	gen_div(void), gen_mod(void), gen_add(void), gen_sub(void),
-	gen_shl(void), gen_shr(void), gen_lt(void), gen_gt(void),
-	gen_ge(void), gen_le(void), gen_eq(void), gen_ne(void),
-	gen_a_mul(void), gen_a_div(void), gen_a_mod(void), gen_a_add(void),
-	gen_a_sub(void), gen_a_shl(void), gen_a_shr(void), gen_a_and(void),
-	gen_a_xor(void), gen_a_or(void), gen_postinc(void),
-	gen_postdec(void), gen_assign(void);
+extern nodeop op_ary, op_call, op_field, op_ptr, op_postinc, op_postdec,
+	op_preinc, op_predec, op_addr, op_indir, op_minus, op_plus, op_cpl,
+	op_neg, op_mul, op_div, op_mod, op_add, op_sub, op_shl, op_shr,
+	op_lt, op_gt, op_ge, op_le, op_eq, op_ne, op_band, op_bxor, op_bor,
+	op_and, op_or, op_tern, op_assign, op_a_mul, op_a_div, op_a_mod,
+	op_a_add, op_a_sub, op_a_shl, op_a_shr, op_a_and, op_a_xor, op_a_or;
 
+struct node *expr(void);
 
-void expr(void);
-
-static void primary(void)
+static struct node *primary(void)
 {
+	register struct node *np;
+
 	switch (yytoken) {
 	case IDEN:
 		if (!yyval.sym)
 			error("'%s' undeclared", yytext);
 	case CONSTANT:
 		next();
-		push(yyval.sym);
+		np = leaf(yyval.sym);
 		break;
 	case '(':
 		next();
-		expr();
+		np = expr();
 		expect(')');
 		break;
+	default:
+		error("unexpected element");
 	}
+	return np;
 }
 
-static void postfix(void)
+static struct node *postfix(void)
 {
-	primary();		/* TODO: fix ( case */
+	register struct node *np1, *np2;
+
+	np1 = primary();		/* TODO: fix ( case */
 	for (;;) {
-		register void (*fp)(void);
+		register nodeop *op;
 		switch (yytoken) {
 		case '[':
 			next();
-			expr();
+			np2 = expr();
 			expect(']');
-			gen_ary();
-			continue;
+			op = op_ary;
+			goto node_2_childs; /* TODO: better names */
 		case '(':
 			next();
-			expr();
+			np2 = expr();
 			expect(')');
-			gen_call();
-			continue;
-		case '.':   fp = gen_field; goto expect_iden;
-		case INDIR: fp = gen_ptr; goto expect_iden;
-		case INC:   fp = gen_postinc; goto next;
-		case DEC:   fp = gen_postdec; goto next;
-		default:
-			return;
+			op = op_call;
+			goto node_2_childs;
+		case '.':   op = op_field; goto expect_iden;
+		case INDIR: op = op_ptr; goto expect_iden;
+		case INC:   op = op_postinc; goto next;
+		case DEC:   op = op_postdec; goto next;
+		default:    return np1;
 		}
+	node_2_childs:
+		np1 = op2(op, np1, np2);
+		continue;
 	expect_iden:
 		next();
 		expect(IDEN);
-		fp();
+		np1 = op2(op, np1, leaf(yyval.sym));
 		continue;
 	next:
+		np1 = op1(op, np1);
 		next();
 		continue;
 	}
 }
 
-static void cast(void);
+static struct node *cast(void);
 
-static void unary(void)
+static struct node *unary(void)
 {
-	for (;;) {
-		register void (*fp)(void);
-		switch (yytoken) {
-		case SIZEOF:
-			next();
-			if (accept('(')) {
-				type_name();
-				expect(')');
-			} else {
-				unary();
-			}
-			gen_sizeof();
-			continue;
-		case INC: fp = gen_preinc; goto call_unary;
-		case DEC: fp = gen_predec; goto call_unary;
-		case '&': fp = gen_addr;  goto call_cast;
-		case '*': fp = gen_indir; goto call_cast;
-		case '-': fp = gen_minus; goto call_cast;
-		case '+': fp = gen_plus; goto call_cast;
-		case '~': fp = gen_cpl; goto call_cast;
-		case '!': fp = gen_neg; goto call_cast;
-		default:
-			postfix();
-			return;
+	register nodeop *op;
+
+	switch (yytoken) {
+	case SIZEOF:		/* TODO: Implement sizeof */
+		next();
+		if (accept('(')) {
+			type_name();
+			expect(')');
+		} else {
+			unary();
 		}
-	call_cast:
-		next();
-		cast();
-		fp();
-		return;
-	call_unary:
-		next();
-		unary();
-		fp();
-		return;
+		return leaf(NULL);
+	case INC: op = op_preinc; goto call_unary;
+	case DEC: op = op_predec; goto call_unary;
+	case '&': op = op_addr;  goto call_cast;
+	case '*': op = op_indir; goto call_cast;
+	case '-': op = op_minus; goto call_cast;
+	case '+': op = op_plus; goto call_cast;
+	case '~': op = op_cpl; goto call_cast;
+	case '!': op = op_neg; goto call_cast;
+	default: return postfix();
 	}
+
+call_cast:
+	next();
+	return op1(op, cast());
+
+call_unary:
+	next();
+	return op1(op, unary());
 }
 
-static void cast(void)
+static struct node *cast(void)
 {
-	while (accept('(')) {
+	while (accept('(')) {	/* TODO: Implement casts */
 		type_name();	/* check if it really is a type name */
 		expect(')');
 	}
-	unary();
+	return unary();
 }
 
-static void mul(void)
+static struct node *mul(void)
 {
-	cast();
+	register struct node *np;
+	register nodeop *op;
+
+	np = cast();
 	for (;;) {
-		register void (*fp)(void);
 		switch (yytoken) {
-		case '*': fp = gen_mul; break;
-		case '/': fp = gen_div; break;
-		case '%': fp = gen_mod; break;
-		default:
-			return;
+		case '*': op = op_mul; break;
+		case '/': op = op_div; break;
+		case '%': op = op_mod; break;
+		default:  return np;
 		}
 		next();
-		cast();
-		fp();
+		np = op2(op, np, cast());
 	}
 }
 
-static void add(void)
+static struct node *add(void)
 {
-	mul();
+	register nodeop *op;
+	register struct node *np;
+
+	np = mul();
 	for (;;) {
-		register void (*fp)(void);
 		switch (yytoken) {
-		case '+': fp = gen_add; break;
-		case '-': fp = gen_sub; break;
-		default:
-			return;
+		case '+': op = op_add; break;
+		case '-': op = op_sub; break;
+		default:  return np;
 		}
 		next();
-		mul();
-		fp();
+		np = op2(op, np, mul());
 	}
 }
 
-static void shift(void)
+static struct node *shift(void)
 {
-	add();
+	register nodeop *op;
+	register struct node *np;
+
+	np = add();
 	for (;;) {
-		register void (*fp)(void);
 		switch (yytoken) {
-		case SHL: fp = gen_shl; break;
-		case SHR: fp = gen_shr; break;
-		default:
-			return;
+		case SHL: op = op_shl; break;
+		case SHR: op = op_shr; break;
+		default:  return np;
 		}
 		next();
-		add();
-		fp();
+		np = op2(op, np, add());
 	}
 }
 
-static void relational(void)
+static struct node *relational(void)
 {
-	shift();
+	register nodeop *op;
+	register struct node *np;
+
+	np = shift();
 	for (;;) {
-		register void (*fp)(void);
 		switch (yytoken) {
-		case '<': fp = gen_lt; break;
-		case '>': fp = gen_gt; break;
-		case GE: fp = gen_ge; break;
-		case LE: fp = gen_le; break;
-		default:
-			return;
+		case '<': op = op_lt; break;
+		case '>': op = op_gt; break;
+		case GE:  op = op_ge; break;
+		case LE:  op = op_le; break;
+		default:  return np;
 		}
 		next();
-		shift();
-		fp();
+		np = op2(op, np, shift());
 	}
 }
 
-static void eq(void)
+static struct node *eq(void)
 {
-	relational();
+	register nodeop *op;
+	register struct node *np;
+
+	np = relational();
 	for (;;) {
-		register void (*fp)(void);
 		switch (yytoken) {
-		case EQ: fp = gen_eq; break;
-		case NE: fp = gen_ne; break;
-		default:
-			return;
+		case EQ: op = op_eq; break;
+		case NE: op = op_ne; break;
+		default: return np;
 		}
 		next();
-		relational();
-		fp();
+		np = op2(op, np, relational());
 	}
 }
 
-static void bit_and(void)
+static struct node *bit_and(void)
 {
-	eq();
+	register struct node *np;
+
+	np = eq();
 	while (yytoken == '&') {
 		next();
-		eq();
-		gen_band();
+		np = op2(op_band, np, eq());
 	}
+	return np;
 }
 
-static void bit_xor(void)
+static struct node *bit_xor(void)
 {
-	bit_and();
+	register struct node *np;
+
+	np = bit_and();
 	while (yytoken == '^') {
 		next();
-		bit_and();
-		gen_bxor();
+		np = op2(op_bxor, np, bit_and());
 	}
+	return np;
 }
 
-static void bit_or(void)
+static struct node *bit_or(void)
 {
-	bit_xor();
+	register struct node *np;
+
+	np = bit_xor();
 	while (yytoken == '|') {
 		next();
-		bit_xor();
-		gen_bor();
+		np = op2(op_bor, np, bit_xor());
 	}
+	return np;
 }
 
-static void and(void)
+static struct node *and(void)
 {
-	bit_or();
+	register struct node *np;
+
+	np = bit_or();
 	while (yytoken == AND) {
 		next();
-		bit_or();
-		gen_and();
+		np = op2(op_and, np, bit_or());
 	}
+	return np;
 }
 
-static void or(void)
+static struct node *or(void)
 {
-	and();
+	register struct node *np;
+
+	np = and();
 	while (yytoken == OR) {
 		next();
-		and();
-		gen_or();
+		np = op2(op_or, np, and());
 	}
+	return np;
 }
 
-static void cond(void)
+static struct node *cond(void)
 {
-	or();
+	register struct node *np, *aux;
+
+	np = or();
 	while (yytoken == '?') {
-			expr();
-			expect(':');
-			or();
-			gen_tern();
+		aux = expr();
+		expect(':');
+		np = op3(op_tern, np, aux, or());
 	}
+	return np;
 }
 
-static void assign(void)
+static struct node *assign(void)
 {
-	cond();
+	register nodeop *op;
+	register struct node *np;
+
+	np = cond();
 	for (;;) {
-		register void (*fp)(void);
 		switch (yytoken) {
-		case '=': fp = gen_assign; break;
-		case MUL_EQ: fp = gen_a_mul; break;
-		case DIV_EQ: fp = gen_a_div; break;
-		case MOD_EQ: fp = gen_a_mod; break;
-		case ADD_EQ: fp = gen_a_add; break;
-		case SUB_EQ: fp = gen_a_sub; break;
-		case SHL_EQ: fp = gen_a_shl; break;
-		case SHR_EQ: fp = gen_a_shr; break;
-		case AND_EQ: fp = gen_a_and; break;
-		case XOR_EQ: fp = gen_a_xor; break;
-		case OR_EQ: fp = gen_a_or; break;
-		default:
-			return;
+		case '=': op = op_assign; break;
+		case MUL_EQ: op = op_a_mul; break;
+		case DIV_EQ: op = op_a_div; break;
+		case MOD_EQ: op = op_a_mod; break;
+		case ADD_EQ: op = op_a_add; break;
+		case SUB_EQ: op = op_a_sub; break;
+		case SHL_EQ: op = op_a_shl; break;
+		case SHR_EQ: op = op_a_shr; break;
+		case AND_EQ: op = op_a_and; break;
+		case XOR_EQ: op = op_a_xor; break;
+		case OR_EQ: op = op_a_or; break;
+		default: return np;
 		}
 		next();
-		assign();
-		fp();
+		np = op2(op, np, assign());
 	}
+	return np;
 }
 
-void expr(void)
+struct node *expr(void)
 {
+	register struct node *np;
+
 	do
-		assign();
+		np = assign();
 	while (yytoken == ',');
+
+	return np;
 }

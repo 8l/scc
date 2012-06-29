@@ -1,254 +1,177 @@
-#include <stddef.h>
-
-#include "cc.h"
-#include "code.h"
-#include "symbol.h"
+#include "syntax.h"
 
 
-#define NR_MACHINE_OP 30
-#define NR_SYM_STACK 30
-
-static struct symbol *stack[NR_SYM_STACK];
-static struct symbol **stackp = stack;
-
-void push(register struct symbol *sym)
-{
-	if (stackp == &stack[NR_SYM_STACK])
-		error("out of memory");
-	*stackp++ = sym;
-}
-
-void code(void *data)
+void op_ary(struct node *np)
 {
 }
 
-void execute(void)
+void op_call(struct node *np)
 {
 }
 
-
-
-void gen_ary(void)
+void op_field(struct node *np)
 {
-	puts("gen_ary");
 }
 
-void gen_call(void)
+void op_ptr(struct node *np)
 {
-	puts("gen_call");
 }
 
-void gen_or(void)
+void op_postinc(struct node *np)
 {
-	puts("gen_or");
 }
 
-void gen_tern(void)
+void op_postdec(struct node *np)
 {
-	puts("gen_tern");
 }
 
-void gen_band(void)
+void op_preinc(struct node *np)
 {
-	puts("gen_band");
 }
 
-void gen_bxor(void)
+void op_predec(struct node *np)
 {
-	puts("gen_bxor");
 }
 
-void gen_bor(void)
+void op_addr(struct node *np)
 {
-	puts("gen_bor");
 }
 
-void gen_and(void)
+void op_indir(struct node *np)
 {
-	puts("gen_and");
 }
 
-void gen_sizeof(void)
+void op_minus(struct node *np)
 {
-	puts("gen_sizeof");
 }
 
-void gen_field(void)
+void op_plus(struct node *np)
 {
-	puts("gen_field");
 }
 
-void gen_ptr(void)
+void op_cpl(struct node *np)
 {
-	puts("gen_ptr");
 }
 
-void gen_preinc(void)
+void op_neg(struct node *np)
 {
-	puts("gen_preinc");
 }
 
-void gen_predec(void)
+void op_mul(struct node *np)
 {
-	puts("gen_predec");
 }
 
-void gen_addr(void)
+void op_div(struct node *np)
 {
-	puts("gen_addr");
 }
 
-void gen_indir(void)
+void op_mod(struct node *np)
 {
-	puts("gen_indir");
+}
+void op_add(struct node *np)
+{
 }
 
-void gen_minus(void)
+void op_sub(struct node *np)
 {
-	puts("gen_minus");
 }
 
-void gen_plus(void)
+void op_shl(struct node *np)
 {
-	puts("gen_plus");
 }
 
-void gen_cpl(void)
+void op_shr(struct node *np)
 {
-	puts("gen_cpl");
 }
 
-void gen_neg(void)
+void op_lt(struct node *np)
 {
-	puts("gen_neg");
 }
 
-void gen_mul(void)
+void op_gt(struct node *np)
 {
-	puts("gen_mul");
 }
 
-void gen_div(void)
+void op_ge(struct node *np)
 {
-	puts("gen_div");
 }
 
-void gen_mod(void)
+void op_le(struct node *np)
 {
-	puts("gen_mod");
 }
 
-void gen_add(void)
+void op_eq(struct node *np)
 {
-	puts("gen_add");
 }
 
-void gen_sub(void)
+void op_ne(struct node *np)
 {
-	puts("gen_sub");
 }
 
-void gen_shl(void)
+void op_band(struct node *np)
 {
-	puts("gen_shl");
 }
 
-void gen_shr(void)
+void op_bxor(struct node *np)
 {
-	puts("gen_shr");
 }
 
-void gen_lt(void)
+void op_bor(struct node *np)
 {
-	puts("gen_lt");
 }
 
-void gen_gt(void)
+void op_and(struct node *np)
 {
-	puts("gen_gt");
 }
 
-void gen_ge(void)
+void op_or(struct node *np)
 {
-	puts("gen_ge");
 }
 
-void gen_le(void)
+void op_tern(struct node *np)
 {
-	puts("gen_le");
 }
 
-void gen_eq(void)
+void op_assign(struct node *np)
 {
-	puts("gen_eq");
 }
 
-void gen_ne(void)
+void op_a_mul(struct node *np)
 {
-	puts("gen_ne");
 }
 
-void gen_a_mul(void)
+void op_a_div(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_div(void)
+void op_a_mod(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_mod(void)
+void op_a_add(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_add(void)
+void op_a_sub(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_sub(void)
+void op_a_shl(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_shl(void)
+void op_a_shr(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_shr(void)
+void op_a_and(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_and(void)
+void op_a_xor(struct node *np)
 {
-	puts("gen_a");
 }
 
-void gen_a_xor(void)
+void op_a_or(struct node *np)
 {
-	puts("gen_a");
-}
-
-void gen_a_or(void)
-{
-	puts("gen_a");
-}
-
-void gen_postinc(void)
-{
-	puts("gen_postinc");
-}
-
-void gen_postdec(void)
-{
-	puts("gen_postdec");
-}
-
-void gen_assign(void)
-{
-	puts("gen_assign");
 }
