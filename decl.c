@@ -145,10 +145,11 @@ static void listdcl(register struct ctype *cp)
 
 unsigned char decl(void)
 {
-	static struct ctype ctype;
+	auto struct ctype ctype;
 
 	if (accept(';'))
 		return 1;
+	memset(&ctype, 0, sizeof(ctype));
 	if (!spec(&ctype)) {
 		if (nested_level != 0)
 			return 0;
