@@ -10,6 +10,7 @@ struct user_opt {
 	unsigned char implicit_int;
 	unsigned char c99;
 	unsigned char useless_typename;
+	unsigned char typeqlf_repeat;
 };
 
 

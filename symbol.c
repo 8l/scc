@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cc.h"
 #include "symbol.h"
+#include "tokens.h"
 
 #define xmalloc malloc
 #define xstrdup strdup
@@ -99,4 +101,67 @@ unsigned char hashfun(register const char *s)
 	for (h = 0; ch = *s++; h += ch)
 		/* nothing */;
 	return h;
+}
+
+void ctype(struct ctype *cp, unsigned char mod)
+{
+	extern unsigned char nested_level;
+
+	switch (mod) {
+	case TYPEDEF:
+		if (cp->c_type)
+			goto duplicated;
+		if (cp->c_extrn | cp->c_auto | cp->c_reg | cp->c_static)
+			goto two_storage;
+		cp->c_type = 1;
+		return;
+	case EXTERN:
+		if (cp->c_extrn)
+			goto duplicated;
+		if (cp->c_type | cp->c_auto | cp->c_reg | cp->c_static)
+			goto two_storage;
+		cp->c_extrn = 1;
+		return;
+	case STATIC:
+		if (cp->c_static)
+			goto duplicated;
+		if (cp->c_type | cp->c_extrn | cp->c_auto | cp->c_reg)
+			goto two_storage;
+		cp->c_static = 1;
+		return;
+	case AUTO:
+		if (nested_level != 0)
+			goto bad_file_scope_storage;
+		if (cp->c_type | cp->c_extrn | cp->c_static | cp->c_reg)
+			goto two_storage;
+		if (cp->c_auto)
+			goto duplicated;
+		cp->c_static = 1;
+		return;
+	case REGISTER:
+		if (nested_level != 0)
+			goto bad_file_scope_storage;
+		if (cp->c_type | cp->c_extrn | cp->c_auto | cp->c_static)
+			goto two_storage;
+		if (cp->c_reg)
+			goto duplicated;
+		cp->c_reg = 1;
+		return;
+	case CONST:
+		if (user_opt.typeqlf_repeat && cp->c_reg)
+			goto duplicated;
+		cp->c_const = 1;
+		return;
+	case VOLATILE:
+		if (user_opt.typeqlf_repeat && cp->c_vol)
+			goto duplicated;
+		cp->c_vol = 1;
+		return;
+	}
+bad_file_scope_storage:
+	error("file-scope declaration specifies ‘%s’", yytext);
+two_storage:
+	error("Two or more storage specifier");
+duplicated:
+	error("duplicated '%s'", yytext);
 }

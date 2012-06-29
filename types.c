@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "sizes.h"
 #include "cc.h"
 #include "tokens.h"
 #include "types.h"
@@ -9,33 +10,80 @@
 /* TODO: create wrapper file */
 #define xcalloc calloc
 
-struct type tschar = {.btype = CHAR, .sign = 1};
-struct type tuchar = {.btype = CHAR, .sign = 0};
-struct type tshort = {.btype = SHORT, .sign = 1};
-struct type tushort = {.btype = SHORT, .sign = 0};
-struct type tint = {.btype = INT, .sign = 1};
-struct type tuint = {.btype = SHORT, .sign = 0};
-struct type tfloat = {.btype = FLOAT, .sign = 1};
-struct type tdouble = {.btype = DOUBLE, .sign = 1};
-struct type tldouble = {.btype = LDOUBLE, .sign = 1};
-struct type tlong = {.btype = LONG, .sign = 1};
-struct type tulong = {.btype = LONG, .sign = 0};
-struct type tllong = {.btype = LLONG, .sign = 1};
-struct type tullong = {.btype = LLONG, .sign = 0};
-struct type tvoid = {.btype = VOID, .sign = 0};
-struct type tkeyword;
+struct type tschar = {.btype = CHAR};
+struct type tshort = {.btype = SHORT};
+struct type tint = {.btype = INT};
+struct type tfloat = {.btype = FLOAT};
+struct type tdouble = {.btype = DOUBLE};
+struct type tldouble = {.btype = LDOUBLE};
+struct type tlong = {.btype = LONG};
+struct type tllong = {.btype = LLONG};
+struct type tvoid = {.btype = VOID};
+struct type tbool = {.btype = BOOL};
 
-#define TYPEOP_MAX PTRLEVEL_MAX /* TODO: take a look of the ANSI standard */
-
-static unsigned char stack[TYPEOP_MAX];
+static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
-
-void pushtype(char op)
+struct type *btype(struct type *tp, unsigned char tok)
 {
-	if (stackp == stack + TYPEOP_MAX)
-		error("Too much type modifiers");
-	*stackp++ = op;
+	switch (tok) {
+	case VOID:
+		if (tp == NULL)
+			return T_VOID;
+		break;
+	case BOOL:
+		if (tp == NULL)
+			return T_BOOL;
+		break;
+	case CHAR:
+		if (tp == NULL)
+			return T_CHAR;
+		break;
+	case SHORT:
+		if (tp == NULL || tp == T_INT)
+			return T_SHORT;
+		break;
+	case INT:
+		if (tp == NULL)
+			return T_INT;
+		if (tp == T_SHORT)
+			return T_SHORT;
+		if (tp == T_LONG)
+			return T_LONG;
+		break;
+	case LONG:
+		if (tp == NULL || tp == T_INT)
+			return T_LONG;
+		if (tp == T_LONG)
+			return T_LLONG;
+		if (tp == T_DOUBLE)
+			return T_LDOUBLE;
+		if (tp == T_LLONG)
+			error("'long long long' is too long");
+		if (tp == T_LDOUBLE)
+			error("'long long double' is too long");
+		break;
+	case FLOAT:
+		if (tp == NULL)
+			return T_FLOAT;
+		break;
+	case DOUBLE:
+		if (tp == NULL)
+			return T_DOUBLE;
+		if (tp == T_LONG)
+			return T_LDOUBLE;
+		break;
+	default:
+		abort();
+	}
+	error("two or more basic types");
+}
+
+void pushtype(unsigned char mod)
+{
+	if (stackp == stack + NR_DECLARATORS)
+		error("Too much type declarators");
+	*stackp++ = mod;
 }
 
 struct type *decl_type(struct type *t)
@@ -107,7 +155,7 @@ void ptype(register struct type *t)
 			break;
 			break;
 		case RESTRICT:
-			fputs("restricted ", stdout);
+			fputs("restrict ", stdout);
 			break;
 		case CONST:
 			fputs("const ", stdout);
@@ -115,7 +163,7 @@ void ptype(register struct type *t)
 		default: {
 				static char *type, *sign;
 
-				sign = (t->sign) ? "signed" : "unsigned";
+				/* sign = (t->sign) ? "signed" : "unsigned"; */
 				switch (t->btype) {
 				case INT:     type = "int";	    break;
 				case CHAR:    type = "char";	    break;
@@ -129,7 +177,7 @@ void ptype(register struct type *t)
 				default:
 					abort();
 				}
-				printf("%s %s", sign, type);
+				/* printf("%s %s", sign, type); */
 		}
 		}
 	}
