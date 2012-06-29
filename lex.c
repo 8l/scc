@@ -120,7 +120,7 @@ static unsigned char minus(void)
 
 	switch (c = getc(yyin)) {
 	case '-': return DEC;
-	case '>': return PTR;
+	case '>': return INDIR;
 	case '=': return SUB_EQ;
 	default:
 		ungetc(c, yyin);

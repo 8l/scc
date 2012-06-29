@@ -62,10 +62,10 @@ static void postfix(void)
 			expect(')');
 			gen_call();
 			continue;
-		case '.': fp = gen_field; goto expect_iden;
-		case PTR: fp = gen_ptr; goto expect_iden;
-		case INC: fp = gen_postinc; goto next;
-		case DEC: fp = gen_postdec; goto next;
+		case '.':   fp = gen_field; goto expect_iden;
+		case INDIR: fp = gen_ptr; goto expect_iden;
+		case INC:   fp = gen_postinc; goto next;
+		case DEC:   fp = gen_postdec; goto next;
 		default:
 			fputs("leaving static void postfix(void)", stderr);
 			return;

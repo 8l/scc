@@ -18,7 +18,7 @@ enum tokens {
 	UNSIGNED, SIGNED,
 	/* other tokens */
 	IDEN = 128, CONSTANT, SIZEOF,
-	PTR, INC, DEC, SHL, SHR,
+	INDIR, INC, DEC, SHL, SHR,
 	LE, GE, EQ, NE, AND, OR,
 	MUL_EQ, DIV_EQ, MOD_EQ, ADD_EQ, SUB_EQ, AND_EQ,
 	XOR_EQ, OR_EQ, SHL_EQ, SHR_EQ,
