@@ -5,7 +5,6 @@
 #include "sizes.h"
 #include "cc.h"
 #include "tokens.h"
-#include "types.h"
 #include "syntax.h"
 #include "symbol.h"
 

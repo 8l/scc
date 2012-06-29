@@ -1,7 +1,6 @@
 #include <stddef.h>
 
 #include "tokens.h"
-#include "types.h"
 #include "symbol.h"
 
 

@@ -7,7 +7,6 @@
 #include "cc.h"
 #include "tokens.h"
 #include "symbol.h"
-#include "types.h"
 
 
 static FILE *yyin;
