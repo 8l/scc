@@ -185,9 +185,3 @@ void ptype(register struct type *t)
 }
 
 #endif
-
-
-unsigned char isfunction(struct type *t)
-{
-	return t->op == FTN;
-}
