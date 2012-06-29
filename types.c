@@ -7,9 +7,6 @@
 #include "tokens.h"
 #include "symbol.h"
 
-/* TODO: create wrapper file */
-#define xcalloc calloc
-
 struct type tschar = {.btype = CHAR};
 struct type tshort = {.btype = SHORT};
 struct type tint = {.btype = INT};

@@ -5,8 +5,6 @@
 #include "cc.h"
 #include "symbol.h"
 
-#define xmalloc malloc
-#define xstrdup strdup
 #define NR_SYM_HASH 32
 
 struct symhash {

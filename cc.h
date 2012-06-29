@@ -20,4 +20,7 @@ extern void warning(const char *fmt, ...);
 extern void error(const char *fmt, ...);
 extern void die(const char *fmt, ...);
 extern void warning_error(char flag, const char *fmt, ...);
+extern void *xmalloc(size_t size);
+extern void *xcalloc(size_t nmemb, size_t size);
+extern char *xstrdup(const char *s);
 #endif
