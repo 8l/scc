@@ -38,6 +38,7 @@ struct ctype {
 	bool c_reg : 1;
 	bool c_const : 1;
 	bool c_vol : 1;
+	bool c_unsigned : 1;
 	struct type *base;
 	unsigned char len;
 	char *iden;

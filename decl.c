@@ -68,12 +68,15 @@ static unsigned char spec(register struct ctype *cp)
 		case REGISTER: case CONST:  case VOLATILE:
 			ctype(cp, yytoken);
 			break;
-		case UNSIGNED: case SIGNED:
+		case UNSIGNED:
+			cp->c_unsigned = 1;
+		case SIGNED:
 			if (sign == yytoken)
 				goto duplicated;
 			if (sign)
 				goto signed_and_unsigned;
 			sign = yytoken;
+			break;
 		case VOID:   case CHAR: case SHORT:  case INT: case FLOAT:
 		case DOUBLE: case LONG: case BOOL:
 			cp->base = btype(cp->base, yytoken);
