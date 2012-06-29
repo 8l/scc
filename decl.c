@@ -98,7 +98,8 @@ signed_and_unsigned:
 
 static void declarator(void)
 {
-	unsigned char qlf[NR_DECLARATORS], *bp, *lim;
+	unsigned char qlf[NR_DECLARATORS];
+	register unsigned char *bp, *lim;
 
 	lim = &qlf[NR_DECLARATORS];
 	for (bp = qlf; yytoken == '*' && bp != lim; ++bp) {
@@ -108,17 +109,19 @@ static void declarator(void)
 			switch (yytoken) {
 			case CONST: case VOLATILE: case RESTRICT:
 				*bp++ = yytoken;
-			default:
 				break;
+			default:
+				goto next_pointer;
 			}
 		}
+	next_pointer: ;
 	}
 	if (bp == lim)
 		error("Too much type declarators");
 
 	dirdcl();
 
-	while (bp-- != qlf)
+	for (lim = bp - 1, bp = qlf; bp < lim; ++bp)
 		pushtype(*bp);
 }
 
