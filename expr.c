@@ -25,7 +25,6 @@ void expr(void);
 
 static void primary(void)
 {
-	fputs("static void primary(void)", stderr);
 	switch (yytoken) {
 	case IDEN:
 		if (!yyval.sym)
@@ -40,12 +39,10 @@ static void primary(void)
 		expect(')');
 		break;
 	}
-	fputs("leaving static void primary(void)", stderr);
 }
 
 static void postfix(void)
 {
-	fputs("static void postfix(void)", stderr);
 	primary();		/* TODO: fix ( case */
 	for (;;) {
 		register void (*fp)(void);
@@ -67,7 +64,6 @@ static void postfix(void)
 		case INC:   fp = gen_postinc; goto next;
 		case DEC:   fp = gen_postdec; goto next;
 		default:
-			fputs("leaving static void postfix(void)", stderr);
 			return;
 		}
 	expect_iden:
@@ -85,7 +81,6 @@ static void cast(void);
 
 static void unary(void)
 {
-	fputs("static void unary(void)", stderr);
 	for (;;) {
 		register void (*fp)(void);
 		switch (yytoken) {
@@ -109,7 +104,6 @@ static void unary(void)
 		case '!': fp = gen_neg; goto call_cast;
 		default:
 			postfix();
-			fputs("leaving static void unary(void)", stderr);
 			return;
 		}
 	call_cast:
@@ -127,18 +121,15 @@ static void unary(void)
 
 static void cast(void)
 {
-	fputs("static void cast(void)", stderr);
 	while (accept('(')) {
 		type_name();	/* check if it really is a type name */
 		expect(')');
 	}
 	unary();
-	fputs("leaving static void cast(void)", stderr);
 }
 
 static void mul(void)
 {
-	fputs("static void mul(void)", stderr);
 	cast();
 	for (;;) {
 		register void (*fp)(void);
@@ -147,7 +138,6 @@ static void mul(void)
 		case '/': fp = gen_div; break;
 		case '%': fp = gen_mod; break;
 		default:
-			fputs("leaving static void mul(void)", stderr);
 			return;
 		}
 		next();
@@ -158,7 +148,6 @@ static void mul(void)
 
 static void add(void)
 {
-	fputs("static void add(void)", stderr);
 	mul();
 	for (;;) {
 		register void (*fp)(void);
@@ -166,7 +155,6 @@ static void add(void)
 		case '+': fp = gen_add; break;
 		case '-': fp = gen_sub; break;
 		default:
-			fputs("leaving static void add (void)", stderr);
 			return;
 		}
 		next();
@@ -177,7 +165,6 @@ static void add(void)
 
 static void shift(void)
 {
-	fputs("static void shift(void)", stderr);
 	add();
 	for (;;) {
 		register void (*fp)(void);
@@ -185,7 +172,6 @@ static void shift(void)
 		case SHL: fp = gen_shl; break;
 		case SHR: fp = gen_shr; break;
 		default:
-			fputs("leaving static void shift (void)", stderr);
 			return;
 		}
 		next();
@@ -196,7 +182,6 @@ static void shift(void)
 
 static void relational(void)
 {
-	fputs("static void relational(void)", stderr);
 	shift();
 	for (;;) {
 		register void (*fp)(void);
@@ -206,7 +191,6 @@ static void relational(void)
 		case GE: fp = gen_ge; break;
 		case LE: fp = gen_le; break;
 		default:
-			fputs("leaving static void relational (void)", stderr);
 			return;
 		}
 		next();
@@ -217,7 +201,6 @@ static void relational(void)
 
 static void eq(void)
 {
-	fputs("static void eq(void)", stderr);
 	relational();
 	for (;;) {
 		register void (*fp)(void);
@@ -225,7 +208,6 @@ static void eq(void)
 		case EQ: fp = gen_eq; break;
 		case NE: fp = gen_ne; break;
 		default:
-			fputs("leaving static void eq (void)", stderr);
 			return;
 		}
 		next();
@@ -236,67 +218,56 @@ static void eq(void)
 
 static void bit_and(void)
 {
-	fputs("static void bit_and(void)", stderr);
 	eq();
 	while (yytoken == '&') {
 		next();
 		eq();
 		gen_band();
 	}
-	fputs("leaving static void bit_and (void)", stderr);
 }
 
 static void bit_xor(void)
 {
-	fputs("static void bit_xor(void)", stderr);
 	bit_and();
 	while (yytoken == '^') {
 		next();
 		bit_and();
 		gen_bxor();
 	}
-	fputs("leaving static void bit_xor(void)", stderr);
 }
 
 static void bit_or(void)
 {
-	fputs("static void bit_or(void)", stderr);
 	bit_xor();
 	while (yytoken == '|') {
 		next();
 		bit_xor();
 		gen_bor();
 	}
-	fputs("leaving static void bit_or(void)", stderr);
 }
 
 static void and(void)
 {
-	fputs("static void and(void)", stderr);
 	bit_or();
 	while (yytoken == AND) {
 		next();
 		bit_or();
 		gen_and();
 	}
-	fputs("leaving static void and(void)", stderr);
 }
 
 static void or(void)
 {
-	fputs("static void or(void)", stderr);
 	and();
 	while (yytoken == OR) {
 		next();
 		and();
 		gen_or();
 	}
-	fputs("leaving static void or(void)", stderr);
 }
 
 static void cond(void)
 {
-	fputs("static void cond(void)", stderr);
 	or();
 	while (yytoken == '?') {
 			expr();
@@ -304,12 +275,10 @@ static void cond(void)
 			or();
 			gen_tern();
 	}
-	fputs("leaving static void cond(void)", stderr);
 }
 
 static void assign(void)
 {
-	fputs("static void assign(void)", stderr);
 	cond();
 	for (;;) {
 		register void (*fp)(void);
@@ -326,7 +295,6 @@ static void assign(void)
 		case XOR_EQ: fp = gen_a_xor; break;
 		case OR_EQ: fp = gen_a_or; break;
 		default:
-			fputs("static void assign (void)", stderr);
 			return;
 		}
 		next();
@@ -337,7 +305,6 @@ static void assign(void)
 
 void expr(void)
 {
-	fputs("void expr(void)", stderr);
 	do
 		assign();
 	while (yytoken == ',');
