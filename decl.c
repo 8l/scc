@@ -104,7 +104,7 @@ static struct type *specifier(void)
 			if (!(tqlf ^= T_CONST))
 				goto duplicated_qlf;
 			continue;
-		case RESTRICTED:
+		case RESTRICT:
 			if (!(tqlf ^= T_RESTRICTED))
 				goto duplicated_qlf;
 			continue;
@@ -137,7 +137,7 @@ static struct type *specifier(void)
 				return t;
 			} else if (tqlf) {
 				if (tqlf & T_CONST)	  pushtype(CONST);
-				if (tqlf & T_RESTRICTED)  pushtype(RESTRICTED);
+				if (tqlf & T_RESTRICTED)  pushtype(RESTRICT);
 				if (tqlf & T_VOLATILE)	  pushtype(VOLATILE);
 				return decl_type(t);
 			} else if (nested_level == 0 && yytoken == IDEN) {
@@ -211,7 +211,7 @@ static void declarator(void)
 			if (!(*bp ^= T_CONST))
 				goto duplicated;
 			goto repeat_qlf;
-		case RESTRICTED:
+		case RESTRICT:
 			if (!(*bp ^= T_RESTRICTED))
 				goto duplicated;
 			goto repeat_qlf;
@@ -231,7 +231,7 @@ static void declarator(void)
 
 	while (bp-- != qlf) {
 		if (*bp & T_CONST)	 pushtype(CONST);
-		if (*bp & T_RESTRICTED)  pushtype(RESTRICTED);
+		if (*bp & T_RESTRICTED)  pushtype(RESTRICT);
 		if (*bp & T_VOLATILE)	 pushtype(VOLATILE);
 		pushtype(PTR);
 	}

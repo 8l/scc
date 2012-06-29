@@ -50,7 +50,7 @@ struct type *mktype(register struct type *base, unsigned  char op)
 {
 	register struct type **ptr, *nt;
 	assert(op == PTR      || op == ARY	  || op == FTN ||
-	       op == VOLATILE || op == RESTRICTED || op == CONST);
+	       op == VOLATILE || op == RESTRICT   || op == CONST);
 
 	switch (op) {
 	case PTR:
@@ -65,7 +65,7 @@ struct type *mktype(register struct type *base, unsigned  char op)
 	case VOLATILE:
 		ptr = &base->vltl;
 		break;
-	case RESTRICTED:
+	case RESTRICT:
 		ptr = &base->rstr;
 		break;
 	case CONST:
@@ -106,7 +106,7 @@ void ptype(register struct type *t)
 			fputs("volatile ", stdout);
 			break;
 			break;
-		case RESTRICTED:
+		case RESTRICT:
 			fputs("restricted ", stdout);
 			break;
 		case CONST:

@@ -28,7 +28,7 @@ static struct keyword {
 		 "int", INT,
 		 "long", LONG,
 		 "register", REGISTER,
-		 "restricted", RESTRICTED,
+		 "restricted", RESTRICT,
 		 "return", RETURN,
 		 "short", SHORT,
 		 "signed", SIGNED,

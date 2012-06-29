@@ -13,7 +13,7 @@ enum tokens {
 	/* storage specifier */
 	TYPEDEF, EXTERN, STATIC, AUTO, REGISTER,
 	/* type qualifier */
-	VOLATILE, CONST, RESTRICTED,
+	VOLATILE, CONST, RESTRICT,
 	/* sign specifier */
 	UNSIGNED, SIGNED,
 	/* other tokens */
