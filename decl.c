@@ -119,41 +119,44 @@ static void declarator(void)
 		pushtype(*bp);
 }
 
+static void listdcl(register struct ctype *cp)
+{
+	register  struct type *tp;
+
+	do {
+		declarator();
+		tp = decl_type(cp->base);
+		if (!tp) {
+			warning_error(user_opt.implicit_int,
+				      "type defaults to 'int' in declaration of '%s'",
+				      yytext);
+		}
+		if (tp->op == FTN && yytoken == '{') {
+			compound();
+			return;
+		}
+	} while (accept(','));
+}
+
 unsigned char decl(void)
 {
-	auto struct ctype ctype;
-	auto struct type *tp;
-	auto unsigned char nd = 0;
+	static struct ctype ctype;
 
 	if (accept(';'))
 		return 1;
 	if (!spec(&ctype)) {
-		if (nested_level == 0)
-			warning("data definition has no type or storage class");
-		else
+		if (nested_level != 0)
 			return 0;
+		warning("data definition has no type or storage class");
 	}
-	if (yytoken != ';') {
-		do {
-			declarator();
-			tp = decl_type(ctype.base);
-			if (!tp) {
-				warning_error(user_opt.implicit_int,
-					      "type defaults to 'int' in declaration of '%s'",
-					      yytext);
-			}
-			if (tp->op == FTN && yytoken == '{') {
-				compound();
-				return;
-			}
-			++nd;
-		} while (accept(','));
-	}
-	expect(';');
-	if (nd == 0) {
+	if (yytoken == ';') {
 		warning_error(user_opt.useless_typename,
 			      "useless type name in empty declaration");
+	} else {
+		listdcl(&ctype);
 	}
+	expect(';');
+
 	return 1;
 }
 
