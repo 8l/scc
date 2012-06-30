@@ -18,10 +18,6 @@
 #define T_VOID    (&tvoid)
 #define T_BOOL    (&tbool)
 
-#define ARY		1
-#define PTR		2
-#define FTN		3
-
 enum namespace {
 	NS_IDEN,
 	NS_KEYWORD,
@@ -45,7 +41,7 @@ struct ctype {
 };
 
 struct type {
-	unsigned op    : 5;
+	unsigned char op;
 	struct type *base;
 	struct type *ary;		      /* array */
 	struct type *ptr;		      /* pointer */
@@ -55,9 +51,6 @@ struct type {
 	struct type *rstr;		      /* restricted */
 
 	union  {
-		struct {
-			unsigned btype : 4;
-		};
 		size_t nelem;		      /* size of array */
 	};
 };

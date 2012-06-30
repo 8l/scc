@@ -7,16 +7,16 @@
 #include "tokens.h"
 #include "symbol.h"
 
-struct type tschar = {.btype = CHAR};
-struct type tshort = {.btype = SHORT};
-struct type tint = {.btype = INT};
-struct type tfloat = {.btype = FLOAT};
-struct type tdouble = {.btype = DOUBLE};
-struct type tldouble = {.btype = LDOUBLE};
-struct type tlong = {.btype = LONG};
-struct type tllong = {.btype = LLONG};
-struct type tvoid = {.btype = VOID};
-struct type tbool = {.btype = BOOL};
+struct type tschar = {.op = CHAR};
+struct type tshort = {.op = SHORT};
+struct type tint = {.op = INT};
+struct type tfloat = {.op = FLOAT};
+struct type tdouble = {.op = DOUBLE};
+struct type tldouble = {.op = LDOUBLE};
+struct type tlong = {.op = LONG};
+struct type tllong = {.op = LLONG};
+struct type tvoid = {.op = VOID};
+struct type tbool = {.op = BOOL};
 
 static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
@@ -196,50 +196,27 @@ duplicated:
 
 void ptype(register struct type *t)
 {
+	static const char *strings[] = {
+		[ARY] =      "array of ",
+		[PTR] =      "pointer to ",
+		[FTN] =      "function that returns ",
+		[VOLATILE] = "volatile ",
+		[RESTRICT] = "restrict ",
+		[CONST] =    "const ",
+		[INT] =      "int ",
+		[CHAR] =     "char ",
+		[FLOAT] =    "float ",
+		[LONG] =     "long ",
+		[LLONG] =    "long long ",
+		[SHORT] =    "short ",
+		[VOID] =     "void ",
+		[DOUBLE] =   "double ",
+		[LDOUBLE] =  "long double "
+	};
 	assert(t);
 
-	for (; t; t = t->base) {
-		switch (t->op) {
-		case ARY:
-			fputs("array of ", stdout);
-			break;
-		case PTR:
-			fputs("pointer to ", stdout);
-			break;
-		case FTN:
-			fputs("function that returns ", stdout);
-			break;
-		case VOLATILE:
-			fputs("volatile ", stdout);
-			break;
-			break;
-		case RESTRICT:
-			fputs("restrict ", stdout);
-			break;
-		case CONST:
-			fputs("const ", stdout);
-			break;
-		default: {
-				static char *type, *sign;
-
-				/* sign = (t->sign) ? "signed" : "unsigned"; */
-				switch (t->btype) {
-				case INT:     type = "int";	    break;
-				case CHAR:    type = "char";	    break;
-				case FLOAT:   type = "float";       break;
-				case LONG:    type = "long";	    break;
-				case LLONG:   type = "long long";   break;
-				case SHORT:   type = "short";       break;
-				case VOID:    type = "void";	    break;
-				case DOUBLE:  type = "double";      break;
-				case LDOUBLE: type = "long double"; break;
-				default:
-					abort();
-				}
-				printf("%s", type);
-		}
-		}
-	}
+	for (; t; t = t->base)
+		fputs(strings[t->op], stdout);
 	putchar('\n');
 }
 
