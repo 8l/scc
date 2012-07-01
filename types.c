@@ -25,34 +25,11 @@ static unsigned char *stackp = stack;
 static struct type *
 mktype(register struct type *base, unsigned  char op)
 {
-	register struct type **ptr, *nt;
+	register struct type *nt;
 	assert(op == PTR      || op == ARY	  || op == FTN ||
 	       op == VOLATILE || op == RESTRICT   || op == CONST);
 
-	switch (op) {
-	case PTR:
-		ptr = &base->ptr;
-		break;
-	case ARY:
-		ptr = &base->ary;
-		break;
-	case FTN:
-		ptr = &base->ftn;
-		break;
-	case VOLATILE:
-		ptr = &base->vltl;
-		break;
-	case RESTRICT:
-		ptr = &base->rstr;
-		break;
-	case CONST:
-		ptr = &base->cnst;
-		break;
-	}
-	if (*ptr)  return *ptr;
-
 	nt = xcalloc(sizeof(*base), 1);
-	*ptr = nt;
 	nt->op = op;
 	nt->base = base;
 	return nt;

@@ -41,12 +41,6 @@ struct ctype {
 struct type {
 	unsigned char op;
 	struct type *base;
-	struct type *ary;		      /* array */
-	struct type *ptr;		      /* pointer */
-	struct type *ftn;		      /* function */
-	struct type *cnst;		      /* const */
-	struct type *vltl;		      /* volatile */
-	struct type *rstr;		      /* restricted */
 
 	union  {
 		size_t nelem;		      /* size of array */
