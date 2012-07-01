@@ -7,32 +7,56 @@
 #include "tokens.h"
 #include "symbol.h"
 
-struct type tschar = {.op = CHAR};
-struct type tshort = {.op = SHORT};
-struct type tint = {.op = INT};
-struct type tfloat = {.op = FLOAT};
-struct type tdouble = {.op = DOUBLE};
-struct type tldouble = {.op = LDOUBLE};
-struct type tlong = {.op = LONG};
-struct type tllong = {.op = LLONG};
-struct type tvoid = {.op = VOID};
-struct type tbool = {.op = BOOL};
 
 static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
 
-static struct type *
-mktype(register struct type *base, unsigned  char op)
+struct ctype *newctype(void)
 {
-	register struct type *nt;
-	assert(op == PTR      || op == ARY	  || op == FTN ||
-	       op == VOLATILE || op == RESTRICT   || op == CONST);
+	register struct ctype *tp = xcalloc(sizeof(tp), 1);
 
-	nt = xcalloc(sizeof(*base), 1);
-	nt->op = op;
-	nt->base = base;
-	return nt;
+	++tp->refcnt;
+	return tp;
+}
+
+void delctype(register struct ctype *tp)
+{
+	if (--tp->refcnt == 0) {
+		if (tp->base)
+			delctype(tp->base);
+		free(tp);
+	}
+}
+
+static struct ctype *
+mktype(register struct ctype *tp, unsigned  char op)
+{
+	switch (op) {
+	case PTR: case ARY: case FTN: {
+		register struct ctype *aux = tp;
+
+		++tp->refcnt;
+		tp = newctype();
+		tp->type = op;
+		tp->base = aux;
+		break;
+	}
+	case VOLATILE:
+		tp->c_volatile = 1;
+		break;
+	case RESTRICT:
+		tp->c_restrict = 1;
+		break;
+	case CONST:
+		tp->c_const = 1;
+		break;
+#ifndef NDEBUG
+	default:
+		abort();
+#endif
+	}
+	return tp;
 }
 
 void pushtype(unsigned char mod)
@@ -42,62 +66,57 @@ void pushtype(unsigned char mod)
 	*stackp++ = mod;
 }
 
-struct type *decl_type(struct type *t)
+struct ctype *decl_type(struct ctype *tp)
 {
 	while (stackp != stack)
-		t = mktype(t, *--stackp);
-	ptype(t);
-	return t;
+		tp = mktype(tp, *--stackp);
+	ptype(tp);
+	return tp;
 }
 
-struct type *btype(struct type *tp, unsigned char tok)
+unsigned char btype(unsigned char type, unsigned char tok)
 {
 	switch (tok) {
 	case VOID:
-		if (tp == NULL)
-			return T_VOID;
+		if (!type)
+			return VOID;
 		break;
 	case BOOL:
-		if (tp == NULL)
-			return T_BOOL;
+		if (!type)
+			return BOOL;
 		break;
 	case CHAR:
-		if (tp == NULL)
-			return T_CHAR;
+		if (!type)
+			return CHAR;
 		break;
 	case SHORT:
-		if (tp == NULL || tp == T_INT)
-			return T_SHORT;
+		if (!type || type == INT)
+			return SHORT;
 		break;
 	case INT:
-		if (tp == NULL)
-			return T_INT;
-		if (tp == T_SHORT)
-			return T_SHORT;
-		if (tp == T_LONG)
-			return T_LONG;
+		switch (type) {
+		case 0:     return INT;
+		case SHORT: return INT;
+		case LONG:  return LONG;
+		}
 		break;
 	case LONG:
-		if (tp == NULL || tp == T_INT)
-			return T_LONG;
-		if (tp == T_LONG)
-			return T_LLONG;
-		if (tp == T_DOUBLE)
-			return T_LDOUBLE;
-		if (tp == T_LLONG)
-			error("'long long long' is too long");
-		if (tp == T_LDOUBLE)
-			error("'long long double' is too long");
+		switch (type) {
+		case 0: case INT:          return LONG;
+		case LONG:                 return LLONG;
+		case DOUBLE:               return LDOUBLE;
+		case LLONG: case LDOUBLE:  error("too much long");
+		}
 		break;
 	case FLOAT:
-		if (tp == NULL)
-			return T_FLOAT;
+		if (!type)
+			return FLOAT;
 		break;
 	case DOUBLE:
-		if (tp == NULL)
-			return T_DOUBLE;
-		if (tp == T_LONG)
-			return T_LDOUBLE;
+		if (!type)
+			return DOUBLE;
+		if (type == LONG)
+			return LDOUBLE;
 		break;
 	default:
 		abort();
@@ -171,9 +190,10 @@ duplicated:
 #ifndef NDEBUG
 #include <stdio.h>
 
-void ptype(register struct type *t)
+void ptype(register struct ctype *tp)
 {
 	static const char *strings[] = {
+		[0] =        "[no type]",
 		[ARY] =      "array of ",
 		[PTR] =      "pointer to ",
 		[FTN] =      "function that returns ",
@@ -190,10 +210,10 @@ void ptype(register struct type *t)
 		[DOUBLE] =   "double ",
 		[LDOUBLE] =  "long double "
 	};
-	assert(t);
+	assert(tp);
 
-	for (; t; t = t->base)
-		fputs(strings[t->op], stdout);
+	for (; tp; tp = tp->base)
+		fputs(strings[tp->type], stdout);
 	putchar('\n');
 }
 

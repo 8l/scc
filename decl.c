@@ -77,16 +77,16 @@ static unsigned char spec(register struct ctype *cp)
 				goto signed_and_unsigned;
 			sign = yytoken;
 			break;
-		case VOID:   case CHAR: case SHORT:  case INT: case FLOAT:
-		case DOUBLE: case LONG: case BOOL:
-			cp->base = btype(cp->base, yytoken);
+		case VOID:   case CHAR:   case SHORT:  case INT:
+		case FLOAT:  case DOUBLE: case LONG:   case BOOL:
+			cp->type = btype(cp->type, yytoken);
 			break;
 		case STRUCT:    /* TODO */
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
 		default:
-			if (!cp->base && sign)
-				cp->base = T_INT;
+			if (!cp->type && sign)
+				cp->type = INT;
 			return n;
 		}
 	}
@@ -125,18 +125,18 @@ static void declarator(void)
 		pushtype(*bp);
 }
 
-static unsigned char listdcl(register struct ctype *cp)
+static unsigned char listdcl(register struct ctype *tp)
 {
-	register  struct type *tp;
-
 	do {
+		register  struct ctype *new;
+
 		declarator();
-		tp = decl_type(cp->base);
-		if (!tp) {
+		new = decl_type(tp);
+		if (!new->type) {
 			warning_error(user_opt.implicit_int,
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
-		} else if (tp->op == FTN && yytoken == '{') {
+		} else if (new->type == FTN && yytoken == '{') {
 			compound();
 			return 0;
 		}
@@ -147,12 +147,13 @@ static unsigned char listdcl(register struct ctype *cp)
 
 unsigned char decl(void)
 {
-	auto struct ctype ctype;
+	register struct ctype *tp;
 
 	if (accept(';'))
 		return 1;
-	memset(&ctype, 0, sizeof(ctype));
-	if (!spec(&ctype)) {
+	tp = newctype();
+
+	if (!spec(tp)) {
 		if (nested_level != 0)
 			return 0;
 		warning("data definition has no type or storage class");
@@ -160,10 +161,11 @@ unsigned char decl(void)
 	if (yytoken == ';') {
 		warning_error(user_opt.useless_typename,
 			      "useless type name in empty declaration");
-	} else if (listdcl(&ctype)) { /* in case of not being a function */
+	} else if (listdcl(tp)) { /* in case of not being a function */
 		expect(';');
 	}
 
+	delctype(tp);
 	return 1;
 }
 
