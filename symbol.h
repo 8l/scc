@@ -36,8 +36,6 @@ struct ctype {
 	bool c_vol : 1;
 	bool c_unsigned : 1;
 	struct type *base;
-	unsigned char len;
-	char *iden;
 };
 
 struct type {
