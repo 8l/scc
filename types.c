@@ -113,28 +113,28 @@ void ctype(struct ctype *cp, unsigned char mod)
 	case TYPEDEF:
 		if (cp->c_type)
 			goto duplicated;
-		if (cp->c_extrn | cp->c_auto | cp->c_reg | cp->c_static)
+		if (cp->c_extern | cp->c_auto | cp->c_reg | cp->c_static)
 			goto two_storage;
 		cp->c_type = 1;
 		return;
 	case EXTERN:
-		if (cp->c_extrn)
+		if (cp->c_extern)
 			goto duplicated;
 		if (cp->c_type | cp->c_auto | cp->c_reg | cp->c_static)
 			goto two_storage;
-		cp->c_extrn = 1;
+		cp->c_extern = 1;
 		return;
 	case STATIC:
 		if (cp->c_static)
 			goto duplicated;
-		if (cp->c_type | cp->c_extrn | cp->c_auto | cp->c_reg)
+		if (cp->c_type | cp->c_extern | cp->c_auto | cp->c_reg)
 			goto two_storage;
 		cp->c_static = 1;
 		return;
 	case AUTO:
 		if (nested_level != 0)
 			goto bad_file_scope_storage;
-		if (cp->c_type | cp->c_extrn | cp->c_static | cp->c_reg)
+		if (cp->c_type | cp->c_extern | cp->c_static | cp->c_reg)
 			goto two_storage;
 		if (cp->c_auto)
 			goto duplicated;
@@ -143,7 +143,7 @@ void ctype(struct ctype *cp, unsigned char mod)
 	case REGISTER:
 		if (nested_level != 0)
 			goto bad_file_scope_storage;
-		if (cp->c_type | cp->c_extrn | cp->c_auto | cp->c_static)
+		if (cp->c_type | cp->c_extern | cp->c_auto | cp->c_static)
 			goto two_storage;
 		if (cp->c_reg)
 			goto duplicated;
@@ -155,9 +155,9 @@ void ctype(struct ctype *cp, unsigned char mod)
 		cp->c_const = 1;
 		return;
 	case VOLATILE:
-		if (user_opt.typeqlf_repeat && cp->c_vol)
+		if (user_opt.typeqlf_repeat && cp->c_volatile)
 			goto duplicated;
-		cp->c_vol = 1;
+		cp->c_volatile = 1;
 		return;
 	}
 bad_file_scope_storage:
