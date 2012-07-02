@@ -102,19 +102,19 @@ static void declarator(void)
 	register unsigned char *bp, *lim;
 
 	lim = &qlf[NR_DECLARATORS];
-	for (bp = qlf; yytoken == '*' && bp != lim; ++bp) {
+	for (bp = qlf; yytoken == '*' && bp != lim; next()) {
 		*bp++ = PTR;
-		for (;;) {
+		while (bp != lim) {
 			next();
 			switch (yytoken) {
 			case CONST: case VOLATILE: case RESTRICT:
 				*bp++ = yytoken;
 				break;
 			default:
-				goto next_pointer;
+				goto continue_outer;
 			}
 		}
-	next_pointer: ;
+	continue_outer: ;
 	}
 	if (bp == lim)
 		error("Too much type declarators");
