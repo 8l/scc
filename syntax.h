@@ -7,7 +7,7 @@ extern unsigned char nested_level;
 struct node;
 struct symbol;
 
-typedef void nodeop(struct node *np);
+typedef struct symbol *nodeop(struct node *np);
 
 extern void compound(void);
 extern struct node *expr(void);
