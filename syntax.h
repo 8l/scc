@@ -3,20 +3,35 @@
 
 extern unsigned char nested_level;
 
+enum {
+	OARY, OCALL, OFIELD, OPTR, OPOSTINC, OPOSTDEC,
+	OPREINC, OPREDEC, OADDR, OINDIR, OMINUS, OPLUS,
+	OCPL, ONEG, OMUL, ODIV, OMOD, OADD, OSUB, OSHL,
+	OSHR, OLT, OGT, OGE, OLE, OEQ, ONE, OBAND, OBXOR,
+	OBOR, OAND, OOR, OTERN, OASSIGN, OA_MUL, OA_DIV,
+	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR, OA_AND,
+	OA_XOR, OA_OR
+};
 
 struct node;
 struct symbol;
-
-typedef struct symbol *nodeop(struct node *np);
 
 extern void compound(void);
 extern struct node *expr(void);
 extern unsigned char decl(void);
 extern void type_name(void);
 
-extern struct node *leaf(struct symbol *sym);
-extern struct node *op1(nodeop *op, struct node *np);
-extern struct node *op2(nodeop *op, struct node *np1, struct node *np2);
-extern struct node *op3(nodeop *op,
-			struct node *np1, struct node *np2, struct node *np3);
+extern struct node *
+node3(unsigned char op, struct node *l, struct node *i, struct node *r);
+
+extern struct node *
+node2(unsigned char op, struct node *l, struct node *r);
+
+extern struct node *
+node1(unsigned char op, struct node *i);
+
+extern struct node *
+nodesym(struct symbol *sym);
+
+
 #endif

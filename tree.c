@@ -6,82 +6,77 @@
 #include "syntax.h"
 
 struct node {
-	nodeop *op;
-	struct node *child[];
+	unsigned char op;
 };
 
-#define issym(np) (!(np)->op)
-#define getsym(np) ((struct symbol *)(np)->child[0])
+struct node_op1 {
+	struct node base;
+	struct node *infix;
+};
+
+struct node_op2 {
+	struct node base;
+	struct node *left;
+	struct node *rigth;
+};
+
+struct node_op3 {
+	struct node base;
+	struct node *left;
+	struct node *infix;
+	struct node *rigth;
+};
+
+struct node_sym {
+	struct node base;
+	struct symbol *sym;
+};
 
 
-static struct node *
-node_alloc(unsigned char n)
+#define OSYM 1
+
+struct node *
+nodesym(struct symbol *sym)
 {
-	return xmalloc(sizeof(struct node) + sizeof(struct node *) * n);
-}
+	register struct node_sym *np = xmalloc(sizeof(*np));
 
-static struct node *
-node1(struct node *np1)
-{
-	register struct node *np = node_alloc(1);
-
-	np->child[0] = np1;
-	return np;
-}
-
-static struct node *
-node2(struct node *np1, struct node *np2)
-{
-	register struct node *np =  node_alloc(2);
-
-	np->child[0] = np1;
-	np->child[1] = np2;
-	return np;
-}
-
-static struct node *
-node3(struct node *np1, struct node *np2, struct node *np3)
-{
-	register struct node *np =  node_alloc(2);
-
-	np->child[0] = np1;
-	np->child[1] = np2;
-	np->child[2] = np3;
-	return np;
+	np->base.op = OSYM;
+	np->sym = sym;
+	return (struct node *) np;
 }
 
 struct node *
-leaf(struct symbol *sym)
+node3(unsigned char op, struct node *l, struct node *i, struct node *r)
 {
-	register struct node *new = node1(NULL);
+	register struct node_op3 *np = xmalloc(sizeof(*np));
 
-	new->child[0] = (struct node *) sym;
-	return new;
+	np->base.op = op;
+	np->left = l;
+	np->infix = i;
+	np->rigth = r;
+
+	return (struct node *) np;
 }
 
 struct node *
-op1(nodeop op, struct node *np)
+node2(unsigned char op, struct node *l, struct node *r)
 {
-	register struct node *new = node1(np);
+	register struct node_op2 *np = xmalloc(sizeof(*np));
 
-	new->op = op;
-	return new;
+	np->base.op = op;
+	np->left = l;
+	np->rigth = r;
+
+	return (struct node *) np;
 }
 
 struct node *
-op2(nodeop op, struct node *np1, struct node *np2)
+node1(unsigned char op, struct node *i)
 {
-	register struct node *new = node2(np1, np2);
+	register struct node_op1 *np = xmalloc(sizeof(*np));
 
-	new->op = op;
-	return new;
-}
+	np->base.op = op;
+	np->infix = i;
 
-struct node *
-op3(nodeop op, struct node *np1, struct node *np2, struct node *np3)
-{
-	register struct node *new = node3(np1, np2, np3);
-
-	new->op = op;
-	return new;
+	return (struct node *) np;
 }

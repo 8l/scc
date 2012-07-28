@@ -7,12 +7,6 @@
 #include "syntax.h"
 #include "code.h"
 
-extern nodeop op_ary, op_call, op_field, op_ptr, op_postinc, op_postdec,
-	op_preinc, op_predec, op_addr, op_indir, op_minus, op_plus, op_cpl,
-	op_neg, op_mul, op_div, op_mod, op_add, op_sub, op_shl, op_shr,
-	op_lt, op_gt, op_ge, op_le, op_eq, op_ne, op_band, op_bxor, op_bor,
-	op_and, op_or, op_tern, op_assign, op_a_mul, op_a_div, op_a_mod,
-	op_a_add, op_a_sub, op_a_shl, op_a_shr, op_a_and, op_a_xor, op_a_or;
 
 struct node *expr(void);
 
@@ -26,7 +20,7 @@ static struct node *primary(void)
 			error("'%s' undeclared", yytext);
 	case CONSTANT:
 		next();
-		np = leaf(yyval.sym);
+		np = nodesym(yyval.sym);
 		break;
 	case '(':
 		next();
@@ -45,36 +39,36 @@ static struct node *postfix(void)
 
 	np1 = primary();		/* TODO: fix ( case */
 	for (;;) {
-		register nodeop *op;
+		register unsigned char op;
 		switch (yytoken) {
 		case '[':
 			next();
 			np2 = expr();
 			expect(']');
-			op = op_ary;
+			op = OARY;
 			goto node_2_childs; /* TODO: better names */
 		case '(':
 			next();
 			np2 = expr();
 			expect(')');
-			op = op_call;
+			op = OCALL;
 			goto node_2_childs;
-		case '.':   op = op_field; goto expect_iden;
-		case INDIR: op = op_ptr; goto expect_iden;
-		case INC:   op = op_postinc; goto next;
-		case DEC:   op = op_postdec; goto next;
+		case '.':   op = OFIELD; goto expect_iden;
+		case INDIR: op = OPTR; goto expect_iden;
+		case INC:   op = OPOSTINC; goto next;
+		case DEC:   op = OPOSTDEC; goto next;
 		default:    return np1;
 		}
 	node_2_childs:
-		np1 = op2(op, np1, np2);
+		np1 = node2(op, np1, np2);
 		continue;
 	expect_iden:
 		next();
 		expect(IDEN);
-		np1 = op2(op, np1, leaf(yyval.sym));
+		np1 = node2(op, np1, nodesym(yyval.sym));
 		continue;
 	next:
-		np1 = op1(op, np1);
+		np1 = node1(op, np1);
 		next();
 		continue;
 	}
@@ -84,7 +78,7 @@ static struct node *cast(void);
 
 static struct node *unary(void)
 {
-	register nodeop *op;
+	register unsigned char op;
 
 	switch (yytoken) {
 	case SIZEOF:		/* TODO: Implement sizeof */
@@ -95,25 +89,25 @@ static struct node *unary(void)
 		} else {
 			unary();
 		}
-		return leaf(NULL);
-	case INC: op = op_preinc; goto call_unary;
-	case DEC: op = op_predec; goto call_unary;
-	case '&': op = op_addr;  goto call_cast;
-	case '*': op = op_indir; goto call_cast;
-	case '-': op = op_minus; goto call_cast;
-	case '+': op = op_plus; goto call_cast;
-	case '~': op = op_cpl; goto call_cast;
-	case '!': op = op_neg; goto call_cast;
+		return nodesym(NULL);
+	case INC: op = OPREINC; goto call_unary;
+	case DEC: op = OPREDEC; goto call_unary;
+	case '&': op = OADDR;  goto call_cast;
+	case '*': op = OINDIR; goto call_cast;
+	case '-': op = OMINUS; goto call_cast;
+	case '+': op = OPLUS; goto call_cast;
+	case '~': op = OCPL; goto call_cast;
+	case '!': op = ONEG; goto call_cast;
 	default: return postfix();
 	}
 
 call_cast:
 	next();
-	return op1(op, cast());
+	return node1(op, cast());
 
 call_unary:
 	next();
-	return op1(op, unary());
+	return node1(op, unary());
 }
 
 static struct node *cast(void)
@@ -128,88 +122,88 @@ static struct node *cast(void)
 static struct node *mul(void)
 {
 	register struct node *np;
-	register nodeop *op;
+	register unsigned char op;
 
 	np = cast();
 	for (;;) {
 		switch (yytoken) {
-		case '*': op = op_mul; break;
-		case '/': op = op_div; break;
-		case '%': op = op_mod; break;
+		case '*': op = OMUL; break;
+		case '/': op = ODIV; break;
+		case '%': op = OMOD; break;
 		default:  return np;
 		}
 		next();
-		np = op2(op, np, cast());
+		np = node2(op, np, cast());
 	}
 }
 
 static struct node *add(void)
 {
-	register nodeop *op;
+	register unsigned char op;
 	register struct node *np;
 
 	np = mul();
 	for (;;) {
 		switch (yytoken) {
-		case '+': op = op_add; break;
-		case '-': op = op_sub; break;
+		case '+': op = OADD; break;
+		case '-': op = OSUB; break;
 		default:  return np;
 		}
 		next();
-		np = op2(op, np, mul());
+		np = node2(op, np, mul());
 	}
 }
 
 static struct node *shift(void)
 {
-	register nodeop *op;
+	register unsigned char op;
 	register struct node *np;
 
 	np = add();
 	for (;;) {
 		switch (yytoken) {
-		case SHL: op = op_shl; break;
-		case SHR: op = op_shr; break;
+		case SHL: op = OSHL; break;
+		case SHR: op = OSHR; break;
 		default:  return np;
 		}
 		next();
-		np = op2(op, np, add());
+		np = node2(op, np, add());
 	}
 }
 
 static struct node *relational(void)
 {
-	register nodeop *op;
+	register unsigned char op;
 	register struct node *np;
 
 	np = shift();
 	for (;;) {
 		switch (yytoken) {
-		case '<': op = op_lt; break;
-		case '>': op = op_gt; break;
-		case GE:  op = op_ge; break;
-		case LE:  op = op_le; break;
+		case '<': op = OLT; break;
+		case '>': op = OGT; break;
+		case GE:  op = OGE; break;
+		case LE:  op = OLE; break;
 		default:  return np;
 		}
 		next();
-		np = op2(op, np, shift());
+		np = node2(op, np, shift());
 	}
 }
 
 static struct node *eq(void)
 {
-	register nodeop *op;
+	register unsigned char op;
 	register struct node *np;
 
 	np = relational();
 	for (;;) {
 		switch (yytoken) {
-		case EQ: op = op_eq; break;
-		case NE: op = op_ne; break;
+		case EQ: op = OEQ; break;
+		case NE: op = ONE; break;
 		default: return np;
 		}
 		next();
-		np = op2(op, np, relational());
+		np = node2(op, np, relational());
 	}
 }
 
@@ -220,7 +214,7 @@ static struct node *bit_and(void)
 	np = eq();
 	while (yytoken == '&') {
 		next();
-		np = op2(op_band, np, eq());
+		np = node2(OBAND, np, eq());
 	}
 	return np;
 }
@@ -232,7 +226,7 @@ static struct node *bit_xor(void)
 	np = bit_and();
 	while (yytoken == '^') {
 		next();
-		np = op2(op_bxor, np, bit_and());
+		np = node2(OBXOR, np, bit_and());
 	}
 	return np;
 }
@@ -244,7 +238,7 @@ static struct node *bit_or(void)
 	np = bit_xor();
 	while (yytoken == '|') {
 		next();
-		np = op2(op_bor, np, bit_xor());
+		np = node2(OBOR, np, bit_xor());
 	}
 	return np;
 }
@@ -256,7 +250,7 @@ static struct node *and(void)
 	np = bit_or();
 	while (yytoken == AND) {
 		next();
-		np = op2(op_and, np, bit_or());
+		np = node2(OAND, np, bit_or());
 	}
 	return np;
 }
@@ -268,7 +262,7 @@ static struct node *or(void)
 	np = and();
 	while (yytoken == OR) {
 		next();
-		np = op2(op_or, np, and());
+		np = node2(OOR, np, and());
 	}
 	return np;
 }
@@ -281,34 +275,34 @@ static struct node *cond(void)
 	while (yytoken == '?') {
 		aux = expr();
 		expect(':');
-		np = op3(op_tern, np, aux, or());
+		np = node3(OTERN, np, aux, or());
 	}
 	return np;
 }
 
 static struct node *assign(void)
 {
-	register nodeop *op;
+	register unsigned char op;
 	register struct node *np;
 
 	np = cond();
 	for (;;) {
 		switch (yytoken) {
-		case '=': op = op_assign; break;
-		case MUL_EQ: op = op_a_mul; break;
-		case DIV_EQ: op = op_a_div; break;
-		case MOD_EQ: op = op_a_mod; break;
-		case ADD_EQ: op = op_a_add; break;
-		case SUB_EQ: op = op_a_sub; break;
-		case SHL_EQ: op = op_a_shl; break;
-		case SHR_EQ: op = op_a_shr; break;
-		case AND_EQ: op = op_a_and; break;
-		case XOR_EQ: op = op_a_xor; break;
-		case OR_EQ: op = op_a_or; break;
+		case '=': op = OASSIGN; break;
+		case MUL_EQ: op = OA_MUL; break;
+		case DIV_EQ: op = OA_DIV; break;
+		case MOD_EQ: op = OA_MOD; break;
+		case ADD_EQ: op = OA_ADD; break;
+		case SUB_EQ: op = OA_SUB; break;
+		case SHL_EQ: op = OA_SHL; break;
+		case SHR_EQ: op = OA_SHR; break;
+		case AND_EQ: op = OA_AND; break;
+		case XOR_EQ: op = OA_XOR; break;
+		case OR_EQ: op = OA_OR; break;
 		default: return np;
 		}
 		next();
-		np = op2(op, np, assign());
+		np = node2(op, np, assign());
 	}
 	return np;
 }
