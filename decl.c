@@ -13,12 +13,12 @@ char parser_out_home;
 
 static void declarator(void);
 
-static struct symbol *newiden(char *s, unsigned char key)
+static struct symbol *newiden(char *s)
 {
-	register struct symbol *sym = lookup(yytext, yyhash);
+	register struct symbol *sym = lookup(yytext);
 
 	if (!sym)
-		sym = install(yytext, yyhash);
+		sym = install(yytext);
 	else if (sym->level == nested_level)
 		error("redeclaration of '%s'", yytext);
 	return sym;
@@ -30,7 +30,7 @@ static void dirdcl(void)
 		declarator();
 		expect(')');
 	} else if (yytoken == IDEN) {
-		newiden(yytext, yyhash);
+		newiden(yytext);
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);

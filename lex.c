@@ -13,7 +13,6 @@ static FILE *yyin;
 union yyval yyval;
 static unsigned char aheadtok = NOTOK;
 unsigned char yytoken;
-unsigned char yyhash;
 char yytext[TOKSIZ_MAX + 1];
 unsigned linenum;
 unsigned columnum;
@@ -34,7 +33,7 @@ static char number(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	yyval.sym = sym = install(NULL, 0);
+	yyval.sym = sym = install(NULL);
 	sym->val = atoi(yytext);
 
 	return CONSTANT;
@@ -42,20 +41,18 @@ static char number(void)
 
 static unsigned char iden(void)
 {
-	register char ch;
-	register char *bp = yytext;
+	register char ch, *bp;
 	register struct symbol *sym;
 
-	for (yyhash = 0; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
+	for (bp = yytext; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
 		if (!isalnum(ch = getc(yyin)) && ch != '_')
 			break;
-		yyhash += ch;
 	}
 	if (bp == yytext + TOKSIZ_MAX)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	if ((sym = lookup(yytext, yyhash)) && sym->ns == NS_KEYWORD)
+	if ((sym = lookup(yytext)) && sym->ns == NS_KEYWORD)
 		return sym->tok;
 	yyval.sym = sym;
 	return IDEN;

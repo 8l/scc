@@ -36,7 +36,6 @@ union yyval {
 
 extern union yyval yyval;
 extern char yytext[];
-extern unsigned char yyhash;
 extern size_t yylen;
 extern unsigned char yytoken;
 extern union yyval yyval;

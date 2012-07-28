@@ -45,20 +45,28 @@ void del_ctx(void)
 	del_hash_ctx(&iden_hash, ctx_head->next->iden);
 }
 
-struct symbol *install(const char *s, unsigned char key)
+static inline unsigned char hashfun(register const char *s)
+{
+	register unsigned char h, ch;
+
+	for (h = 0; ch = *s++; h += ch)
+		/* nothing */;
+	return h & NR_SYM_HASH - 1;
+}
+
+struct symbol *install(const char *s)
 {
 	static struct symbol *head;
 	register struct symbol *sym, *next;
 
 	sym = xmalloc(sizeof(*sym));
-
 	sym->next = iden_hash.top;
 	iden_hash.top = sym;
 
 	if (s) {
 		sym->str = xstrdup(s);
 		sym->ns = NS_IDEN;
-		head = &iden_hash.buf[key & NR_SYM_HASH-1];
+		head = &iden_hash.buf[hashfun(s)];
 		next = head->h_next;
 		sym->h_next = next;
 		sym->h_prev = next->h_prev;
@@ -71,11 +79,11 @@ struct symbol *install(const char *s, unsigned char key)
 	return sym;
 }
 
-struct symbol *lookup(char *s, unsigned char key)
+struct symbol *lookup(char *s)
 {
 	register struct symbol *bp, *head;
 
-	head = &iden_hash.buf[key & NR_SYM_HASH-1];
+	head = &iden_hash.buf[hashfun(s)];
 	for (bp = head->h_next; bp != head; bp = bp->h_next) {
 		if (!strcmp(bp->str, s))
 			return bp;
@@ -89,13 +97,4 @@ void init_symbol(void)
 
 	for (bp = iden_hash.buf; bp < &iden_hash.buf[NR_SYM_HASH]; ++bp)
 		bp->h_next = bp->h_prev = bp;
-}
-
-unsigned char hashfun(register const char *s)
-{
-	register unsigned char h, ch;
-
-	for (h = 0; ch = *s++; h += ch)
-		/* nothing */;
-	return h;
 }

@@ -52,7 +52,7 @@ void init_keywords(void)
 
 	init_symbol();
 	for (bp = keywords; bp->str; bp++) {
-		sym = install(bp->str, hashfun(bp->str));
+		sym = install(bp->str);
 		sym->tok = bp->tok;
 		sym->ns = NS_KEYWORD;
 	}
