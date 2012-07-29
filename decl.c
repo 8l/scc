@@ -125,7 +125,7 @@ static void declarator(void)
 		pushtype(*bp);
 }
 
-static unsigned char listdcl(register struct ctype *tp)
+static void listdcl(register struct ctype *tp)
 {
 	do {
 		register  struct ctype *new;
@@ -138,11 +138,10 @@ static unsigned char listdcl(register struct ctype *tp)
 				      yytext);
 		} else if (new->type == FTN && yytoken == '{') {
 			compound();
-			return 0;
+			return;
 		}
 	} while (accept(','));
-
-	return 1;
+	expect(';');
 }
 
 unsigned char decl(void)
@@ -151,21 +150,21 @@ unsigned char decl(void)
 
 	if (accept(';'))
 		return 1;
-	tp = newctype();
 
+	tp = newctype();
 	if (!spec(tp)) {
 		if (curctx != OUTER_CTX)
 			return 0;
 		warning("data definition has no type or storage class");
 	}
-	if (yytoken == ';') {
+	if (accept(';')) {
 		warning_error(options.useless,
 			      "useless type name in empty declaration");
-	} else if (listdcl(tp)) { /* in case of not being a function */
-		expect(';');
+	} else {
+		listdcl(tp);
 	}
-
 	delctype(tp);
+
 	return 1;
 }
 
