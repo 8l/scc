@@ -7,14 +7,13 @@ extern const char *filename;
 
 
 struct user_opt {
-	unsigned char implicit_int;
+	unsigned char implicit;
 	unsigned char c99;
-	unsigned char useless_typename;
-	unsigned char typeqlf_repeat;
+	unsigned char useless;
+	unsigned char repeat;
 };
 
-
-extern  struct user_opt user_opt;
+extern  struct user_opt options;
 
 extern void warning(const char *fmt, ...);
 extern void error(const char *fmt, ...);

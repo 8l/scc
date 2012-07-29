@@ -133,7 +133,7 @@ static unsigned char listdcl(register struct ctype *tp)
 		declarator();
 		new = decl_type(tp);
 		if (!new->type) {
-			warning_error(user_opt.implicit_int,
+			warning_error(options.implicit,
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
 		} else if (new->type == FTN && yytoken == '{') {
@@ -159,7 +159,7 @@ unsigned char decl(void)
 		warning("data definition has no type or storage class");
 	}
 	if (yytoken == ';') {
-		warning_error(user_opt.useless_typename,
+		warning_error(options.useless,
 			      "useless type name in empty declaration");
 	} else if (listdcl(tp)) { /* in case of not being a function */
 		expect(';');
@@ -171,4 +171,5 @@ unsigned char decl(void)
 
 void type_name()
 {
+
 }

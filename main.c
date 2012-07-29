@@ -6,7 +6,7 @@
 #include "syntax.h"
 
 extern void open_file(const char *file);
-struct user_opt user_opt;
+struct user_opt options;
 
 
 

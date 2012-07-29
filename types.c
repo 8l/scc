@@ -169,12 +169,12 @@ void ctype(struct ctype *cp, unsigned char mod)
 		cp->c_reg = 1;
 		return;
 	case CONST:
-		if (user_opt.typeqlf_repeat && cp->c_reg)
+		if (options.repeat && cp->c_reg)
 			goto duplicated;
 		cp->c_const = 1;
 		return;
 	case VOLATILE:
-		if (user_opt.typeqlf_repeat && cp->c_volatile)
+		if (options.repeat && cp->c_volatile)
 			goto duplicated;
 		cp->c_volatile = 1;
 		return;
