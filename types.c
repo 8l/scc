@@ -169,7 +169,7 @@ void ctype(struct ctype *cp, unsigned char mod)
 		cp->c_reg = 1;
 		return;
 	case CONST:
-		if (options.repeat && cp->c_reg)
+		if (options.repeat && cp->c_const)
 			goto duplicated;
 		cp->c_const = 1;
 		return;
