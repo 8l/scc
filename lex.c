@@ -124,6 +124,25 @@ static unsigned char minus(void)
 	}
 }
 
+static unsigned char operator(void)
+{
+	register unsigned char c;
+
+	switch (c = getc(yyin)) {
+	case '=': return follow('=', EQ, 0);
+	case '^': return follow('^', XOR_EQ, 0);
+	case '*': return follow('*', MUL_EQ, 0);
+	case '!': return follow('!', NE, 0);
+	case '+': return follow('+', ADD_EQ, INC);
+	case '&': return follow('&', AND_EQ, AND);
+	case '|': return follow('|', OR_EQ, OR);
+	case '<': return rel_shift('<');
+	case '>': return rel_shift('>');
+	case '-': return minus();
+	default: return c;
+	}
+}
+
 void next(void)
 {
 	register unsigned char c;
@@ -140,19 +159,8 @@ void next(void)
 		ungetc(c, yyin);
 		yytoken = number();
 	} else {
-		switch (c) {
-		case '=': yytoken = follow('=', EQ, 0); break;
-		case '^': yytoken = follow('^', XOR_EQ, 0); break;
-		case '*': yytoken = follow('*', MUL_EQ, 0); break;
-		case '!': yytoken = follow('!', NE, 0); break;
-		case '+': yytoken = follow('+', ADD_EQ, INC); break;
-		case '&': yytoken = follow('&', AND_EQ, AND); break;
-		case '|': yytoken = follow('|', OR_EQ, OR); break;
-		case '<': yytoken = rel_shift('<'); break;
-		case '>': yytoken = rel_shift('>'); break;
-		case '-': yytoken = minus(); break;
-		default: yytoken = c;
-		}
+		ungetc(c, yyin);
+		yytoken = operator();
 	}
 }
 
