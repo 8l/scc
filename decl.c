@@ -19,7 +19,7 @@ static struct symbol *newiden(char *s)
 
 	if (!sym)
 		sym = install(yytext);
-	else if (sym->level == nested_level)
+	else if (sym->ctx == curctx)
 		error("redeclaration of '%s'", yytext);
 	return sym;
 }
@@ -154,7 +154,7 @@ unsigned char decl(void)
 	tp = newctype();
 
 	if (!spec(tp)) {
-		if (nested_level != 0)
+		if (curctx != OUTER_CTX)
 			return 0;
 		warning("data definition has no type or storage class");
 	}

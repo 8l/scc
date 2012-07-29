@@ -114,9 +114,7 @@ void stmt(void)
 void compound(void)
 {
 	if (accept('{')) {
-		struct symctx ctx;
-
-		new_ctx(&ctx);
+		new_ctx();
 		while (decl())
 			/* nothing */;
 		while (!accept('}'))

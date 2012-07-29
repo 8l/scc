@@ -7,6 +7,7 @@
 # include <stdbool.h>
 #endif
 
+#define OUTER_CTX 1
 enum namespace {
 	NS_IDEN,
 	NS_KEYWORD,
@@ -32,24 +33,17 @@ struct ctype {
 
 struct symbol {
 	struct ctype ctype;
+	unsigned char ctx;
 	unsigned char ns;
-	union {
-		struct {
-			char *str;
-			union {
-				unsigned char level;/* used in usual symbols */
-				unsigned char tok;  /* used in keywords */
-			};
+	char *name;
+	struct {
+		union {
+			unsigned char tok;  /* used in keywords */
+			short val;	/* used in integer constant */
 		};
-		short val;	/* used in integer constant */
 	};
 	struct symbol *next;
-	struct symbol *h_next, *h_prev;
-};
-
-struct symctx {
-	struct symbol *iden;
-	struct symctx *next;
+	struct symbol *hash;
 };
 
 extern struct type tchar, tshort, tint, tulong, tllong, tvoid, tkeyword;
@@ -59,10 +53,10 @@ extern struct type tfloat, tdouble, tldouble, tlong;
 extern struct ctype *decl_type(struct ctype *t);
 extern void pushtype(unsigned char mod);
 extern unsigned char btype(unsigned char, unsigned char tok);
-extern void new_ctx(struct symctx *ctx);
+extern void new_ctx(void);
 extern void del_ctx(void);
 extern struct symbol *install(const char *s);
-extern struct symbol *lookup(char *s);
+extern struct symbol *lookup(const char *s);
 extern void ctype(struct ctype *cp, unsigned char mod);
 extern struct ctype *newctype(void);
 extern void delctype(register struct ctype *tp);

@@ -126,7 +126,7 @@ unsigned char btype(unsigned char type, unsigned char tok)
 
 void ctype(struct ctype *cp, unsigned char mod)
 {
-	extern unsigned char nested_level;
+	extern unsigned char curctx;
 
 	switch (mod) {
 	case TYPEDEF:
@@ -151,7 +151,7 @@ void ctype(struct ctype *cp, unsigned char mod)
 		cp->c_static = 1;
 		return;
 	case AUTO:
-		if (nested_level != 0)
+		if (curctx != OUTER_CTX)
 			goto bad_file_scope_storage;
 		if (cp->c_type | cp->c_extern | cp->c_static | cp->c_reg)
 			goto two_storage;
@@ -160,7 +160,7 @@ void ctype(struct ctype *cp, unsigned char mod)
 		cp->c_static = 1;
 		return;
 	case REGISTER:
-		if (nested_level != 0)
+		if (curctx != OUTER_CTX)
 			goto bad_file_scope_storage;
 		if (cp->c_type | cp->c_extern | cp->c_auto | cp->c_static)
 			goto two_storage;

@@ -7,45 +7,13 @@
 
 #define NR_SYM_HASH 32
 
-struct symhash {
-	struct symbol buf[NR_SYM_HASH];
-	struct symbol *top;
-};
+unsigned char curctx;
+
+static struct symbol *htab[NR_SYM_HASH];
+static struct symbol *head;
 
 
-unsigned char nested_level;
-static struct symhash iden_hash;
-static struct symctx ctx_base;
-static struct symctx *ctx_head = &ctx_base;
-
-static void del_hash_ctx(struct symhash *htable, struct symbol *lim)
-{
-	register struct symbol *bp, *next, *prev;
-
-	for (bp = htable->top; bp && bp != lim; bp = bp->next) {
-		next = bp->h_next, prev = bp->h_prev;
-		prev->h_next = next;
-		next->h_prev = prev;
-		free(bp->str);
-		free(bp);
-	}
-}
-
-void new_ctx(struct symctx *ctx)
-{
-	++nested_level;
-	ctx->next = ctx_head;
-	ctx_head = ctx;
-	ctx->iden = iden_hash.top;
-}
-
-void del_ctx(void)
-{
-	--nested_level;
-	del_hash_ctx(&iden_hash, ctx_head->next->iden);
-}
-
-static inline unsigned char hashfun(register const char *s)
+static inline unsigned char hash(register const char *s)
 {
 	register unsigned char h, ch;
 
@@ -54,47 +22,62 @@ static inline unsigned char hashfun(register const char *s)
 	return h & NR_SYM_HASH - 1;
 }
 
+void new_ctx(void)
+{
+	++curctx;
+}
+
+void del_ctx(void)
+{
+	register struct symbol *sym, *aux;
+	static char *s;
+
+	--curctx;
+	for (sym = head; sym; sym = aux) {
+		if (sym->ctx <= curctx)
+			break;
+		if ((s = sym->name) != NULL) {
+			htab[hash(s)] = sym->hash;
+			free(s);
+		}
+		aux = sym->next;
+		free(sym);
+		/* TODO: unlink type  */
+	}
+}
+
 struct symbol *install(const char *s)
 {
-	static struct symbol *head;
-	register struct symbol *sym, *next;
+	register struct symbol *sym;
+	register unsigned char key;
 
 	sym = xmalloc(sizeof(*sym));
-	sym->next = iden_hash.top;
-	iden_hash.top = sym;
+	sym->ctx = curctx;
+	sym->next = head;
+	head = sym;
 
 	if (s) {
-		sym->str = xstrdup(s);
+		sym->name = xstrdup(s);
+		key = hash(s);
+		sym->hash = htab[key];
+		htab[key] = sym;
 		sym->ns = NS_IDEN;
-		head = &iden_hash.buf[hashfun(s)];
-		next = head->h_next;
-		sym->h_next = next;
-		sym->h_prev = next->h_prev;
-		head->h_next = sym;
-		next->h_prev = sym;
 	} else {
-		sym->h_next = sym->h_prev = NULL;
-		sym->str = NULL;
+		sym->hash = NULL;
+		sym->name = NULL;
 	}
 	return sym;
 }
 
-struct symbol *lookup(char *s)
+struct symbol *lookup(const char *s)
 {
-	register struct symbol *bp, *head;
+	register struct symbol *sym;
+	static  unsigned char l;
 
-	head = &iden_hash.buf[hashfun(s)];
-	for (bp = head->h_next; bp != head; bp = bp->h_next) {
-		if (!strcmp(bp->str, s))
-			return bp;
+	l = strlen(s);
+	for (sym = htab[hash(s)]; sym; sym = sym->hash) {
+		if (!memcmp(sym->name, s, l))
+			break;
 	}
-	return NULL;
-}
-
-void init_symbol(void)
-{
-	register struct symbol *bp;
-
-	for (bp = iden_hash.buf; bp < &iden_hash.buf[NR_SYM_HASH]; ++bp)
-		bp->h_next = bp->h_prev = bp;
+	return sym;
 }

@@ -6,7 +6,6 @@
 #include "syntax.h"
 
 extern void open_file(const char *file);
-extern void init_symbol();
 struct user_opt user_opt;
 
 

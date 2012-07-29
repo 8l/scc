@@ -1,7 +1,7 @@
 #ifndef SYNTAX_H
 #define SYNTAX_H
 
-extern unsigned char nested_level;
+extern unsigned char curctx;
 
 enum {
 	OARY, OCALL, OFIELD, OPTR, OPOSTINC, OPOSTDEC,

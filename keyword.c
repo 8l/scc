@@ -48,12 +48,11 @@ void init_keywords(void)
 {
 	register struct keyword *bp;
 	register struct symbol *sym;
-	extern void init_symbol(void);
 
-	init_symbol();
 	for (bp = keywords; bp->str; bp++) {
 		sym = install(bp->str);
 		sym->tok = bp->tok;
 		sym->ns = NS_KEYWORD;
 	}
+	new_ctx();
 }
