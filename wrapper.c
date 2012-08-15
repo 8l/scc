@@ -39,3 +39,13 @@ xstrdup(const char *s)
 
 	return memcpy(p, s, len);
 }
+
+void *
+xrealloc(void *buff, register size_t size)
+{
+	register void *p = realloc(buff, size);
+
+	if (!p)
+		out_of_memory();
+	return p;
+}

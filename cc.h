@@ -24,4 +24,5 @@ extern void warning_error(char flag, const char *fmt, ...);
 extern void *xmalloc(size_t size);
 extern void *xcalloc(size_t nmemb, size_t size);
 extern char *xstrdup(const char *s);
+extern void *xrealloc(void *buff, register size_t size);
 #endif
