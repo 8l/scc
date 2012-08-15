@@ -102,13 +102,14 @@ static void declarator(void)
 	register unsigned char *bp, *lim;
 
 	lim = &qlf[NR_DECLARATORS];
-	for (bp = qlf; yytoken == '*' && bp != lim; next()) {
+	for (bp = qlf; yytoken == '*' && bp != lim; ) {
+		next();
 		*bp++ = PTR;
 		while (bp != lim) {
-			next();
 			switch (yytoken) {
 			case CONST: case VOLATILE: case RESTRICT:
 				*bp++ = yytoken;
+				next();
 				break;
 			default:
 				goto continue_outer;
