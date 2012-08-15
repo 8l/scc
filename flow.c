@@ -122,12 +122,11 @@ stmt(void)
 void
 compound(void)
 {
-	if (accept('{')) {
-		new_ctx();
-		while (decl())
-			/* nothing */;
-		while (!accept('}'))
-			stmt();
-		del_ctx();
-	}
+	expect('{');
+	new_ctx();
+	while (decl())
+		/* nothing */;
+	while (!accept('}'))
+		stmt();
+	del_ctx();
 }
