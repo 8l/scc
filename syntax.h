@@ -10,7 +10,7 @@ enum {
 	OSHR, OLT, OGT, OGE, OLE, OEQ, ONE, OBAND, OBXOR,
 	OBOR, OAND, OOR, OTERN, OASSIGN, OA_MUL, OA_DIV,
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR, OA_AND,
-	OA_XOR, OA_OR, OSYM
+	OA_XOR, OA_OR, OSYM, OCOMP
 };
 
 struct node;
@@ -21,17 +21,15 @@ extern struct node *expr(void);
 extern unsigned char decl(void);
 extern void type_name(void);
 
-extern struct node *
-node3(unsigned char op, struct node *l, struct node *i, struct node *r);
+extern struct node *node3(unsigned char op,
+			  struct node *l, struct node *i, struct node *r);
+extern struct node *node2(unsigned char op, struct node *l, struct node *r);
+extern struct node *node1(unsigned char op, struct node *i);
 
-extern struct node *
-node2(unsigned char op, struct node *l, struct node *r);
-
-extern struct node *
-node1(unsigned char op, struct node *i);
-
-extern struct node *
-nodesym(struct symbol *sym);
+extern struct node *nodesym(struct symbol *sym);
+extern struct node *nodecomp(void);
+extern struct node *addstmt(struct node *np, struct node *stmt);
 
 extern void prtree(register struct node *np);
+
 #endif

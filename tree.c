@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "cc.h"
 #include "syntax.h"
@@ -32,6 +33,12 @@ struct node_op3 {
 struct node_sym {
 	struct node base;
 	struct symbol *sym;
+};
+
+struct node_comp {
+	struct node base;
+	uint8_t nr, alloc;
+	struct node **body;
 };
 
 struct node *
@@ -78,6 +85,39 @@ node1(unsigned char op, struct node *i)
 	np->infix = i;
 
 	return (struct node *) np;
+}
+
+struct node *
+nodecomp(void)
+{
+	register struct node_comp *np = xmalloc(sizeof(*np));
+
+	np->base.op = OCOMP;
+	np->alloc = np->nr = 0;
+	np->body = NULL;
+
+	return (struct node *) np;
+}
+
+struct node *
+addstmt(struct node *p, struct node *stmt)
+{
+	register uint8_t nr, alloc;
+	register struct node_comp *np = (struct node_comp *) p;
+
+	assert(np && np->base.op == OCOMP);
+	nr = ++np->nr, alloc = np->alloc;
+
+#define alloc_nr(x) ((((x)+16)*3)/2)
+	if (nr > alloc) {
+		alloc = alloc_nr(nr);
+		np->body = xrealloc(np->body, alloc * sizeof(*np->body));
+	}
+#undef alloc_nr
+
+	np->body[nr - 1] = stmt;
+	np->alloc = alloc;
+	return p;
 }
 
 void
@@ -131,7 +171,8 @@ prtree(register struct node *np)
 		[OA_AND] = {2, "&="},
 		[OA_XOR] = {2, "^="},
 		[OA_OR] = {2, "|="},
-		[OSYM] = {0, "sym"}
+		[OSYM] = {0, "sym"},
+		[OCOMP] = {255, "comp"}
 	};
 
 	assert(np && np->op < ARRAY_SIZE(optab));
@@ -157,6 +198,15 @@ prtree(register struct node *np)
 		prtree(((struct node_op3 *) np)->infix);
 		prtree(((struct node_op3 *) np)->rigth);
 		break;
+	case 255: {
+		register struct node **bp, **lim;
+
+		bp = ((struct node_comp *) np)->body;
+		lim = bp + ((struct node_comp *) np)->nr;
+		while (bp < lim)
+			prtree(*bp++);
+		break;
+	}
 	}
 	putchar(')');
 }
