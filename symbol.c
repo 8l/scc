@@ -13,7 +13,8 @@ static struct symbol *htab[NR_SYM_HASH];
 static struct symbol *head;
 
 
-static inline unsigned char hash(register const char *s)
+static inline unsigned char
+hash(register const char *s)
 {
 	register unsigned char h, ch;
 
@@ -22,12 +23,14 @@ static inline unsigned char hash(register const char *s)
 	return h & NR_SYM_HASH - 1;
 }
 
-void new_ctx(void)
+void
+new_ctx(void)
 {
 	++curctx;
 }
 
-void del_ctx(void)
+void
+del_ctx(void)
 {
 	register struct symbol *sym, *aux;
 	static char *s;
@@ -46,7 +49,8 @@ void del_ctx(void)
 	}
 }
 
-struct symbol *install(const char *s)
+struct symbol *
+install(const char *s)
 {
 	register struct symbol *sym;
 	register unsigned char key;
@@ -69,7 +73,8 @@ struct symbol *install(const char *s)
 	return sym;
 }
 
-struct symbol *lookup(const char *s)
+struct symbol *
+lookup(const char *s)
 {
 	register struct symbol *sym;
 	static  unsigned char l;

@@ -11,7 +11,8 @@ struct user_opt options;
 
 
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	init_keywords();
 	open_file(NULL);

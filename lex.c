@@ -19,7 +19,8 @@ unsigned columnum;
 const char *filename;
 
 
-static char number(void)
+static char
+number(void)
 {
 	register char *bp;
 	register char ch;
@@ -39,7 +40,8 @@ static char number(void)
 	return CONSTANT;
 }
 
-static unsigned char iden(void)
+static unsigned char
+iden(void)
 {
 	register char ch, *bp;
 	register struct symbol *sym;
@@ -58,7 +60,8 @@ static unsigned char iden(void)
 	return IDEN;
 }
 
-static unsigned char skip(void)
+static unsigned char
+skip(void)
 {
 	register int c;
 	extern char parser_out_home;
@@ -92,7 +95,8 @@ follow(unsigned char op, unsigned char eq, unsigned char rep)
 	return op;
 }
 
-static unsigned char rel_shift(unsigned char op)
+static unsigned char
+rel_shift(unsigned char op)
 {
 	static char tokens[2][3] = {
 		{GE, SHL, SHL_EQ},
@@ -111,7 +115,8 @@ static unsigned char rel_shift(unsigned char op)
 	return c;
 }
 
-static unsigned char minus(void)
+static unsigned char
+minus(void)
 {
 	register int c;
 
@@ -125,7 +130,8 @@ static unsigned char minus(void)
 	}
 }
 
-static unsigned char operator(void)
+static unsigned char
+operator(void)
 {
 	register unsigned char c;
 
@@ -144,7 +150,8 @@ static unsigned char operator(void)
 	}
 }
 
-void next(void)
+void
+next(void)
 {
 	register unsigned char c;
 
@@ -165,7 +172,8 @@ void next(void)
 	}
 }
 
-unsigned char ahead(void)
+unsigned char
+ahead(void)
 {
 	static unsigned char oldtok;
 
@@ -176,7 +184,8 @@ unsigned char ahead(void)
 	return aheadtok;
 }
 
-char accept(register unsigned char tok)
+char
+accept(register unsigned char tok)
 {
 	if (yytoken == tok) {
 		next();
@@ -185,14 +194,16 @@ char accept(register unsigned char tok)
 	return 0;
 }
 
-void expect(register unsigned char tok)
+void
+expect(register unsigned char tok)
 {
 	if (yytoken != tok)
 		error("unexpected %s", yytext);
 	next();
 }
 
-void open_file(register const char *file)
+void
+open_file(register const char *file)
 {
 	if (yyin != NULL)
 		fclose(yyin);

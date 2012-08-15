@@ -44,7 +44,8 @@ static struct keyword {
 		 NULL, 0,
 };
 
-void init_keywords(void)
+void
+init_keywords(void)
 {
 	register struct keyword *bp;
 	register struct symbol *sym;

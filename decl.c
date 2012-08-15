@@ -13,7 +13,8 @@ char parser_out_home;
 
 static void declarator(void);
 
-static struct symbol *newiden(char *s)
+static struct symbol *
+newiden(char *s)
 {
 	register struct symbol *sym = lookup(yytext);
 
@@ -24,7 +25,8 @@ static struct symbol *newiden(char *s)
 	return sym;
 }
 
-static void dirdcl(void)
+static void
+dirdcl(void)
 {
 	if (accept('(')) {
 		declarator();
@@ -58,7 +60,8 @@ static void dirdcl(void)
 	}
 }
 
-static unsigned char spec(register struct ctype *cp)
+static unsigned char
+spec(register struct ctype *cp)
 {
 	register unsigned char sign, n;
 
@@ -96,7 +99,8 @@ signed_and_unsigned:
 	error("both 'signed' and 'unsigned' in declaration specifiers");
 }
 
-static void declarator(void)
+static void
+declarator(void)
 {
 	unsigned char qlf[NR_DECLARATORS];
 	register unsigned char *bp, *lim;
@@ -126,7 +130,8 @@ static void declarator(void)
 		pushtype(*bp);
 }
 
-static void listdcl(register struct ctype *tp)
+static void
+listdcl(register struct ctype *tp)
 {
 	do {
 		register  struct ctype *new;
@@ -145,7 +150,8 @@ static void listdcl(register struct ctype *tp)
 	expect(';');
 }
 
-unsigned char decl(void)
+unsigned char
+decl(void)
 {
 	register struct ctype *tp;
 
@@ -169,7 +175,8 @@ unsigned char decl(void)
 	return 1;
 }
 
-void type_name()
+void
+type_name()
 {
 
 }

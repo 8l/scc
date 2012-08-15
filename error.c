@@ -8,7 +8,8 @@
 
 
 
-static void warning_error_helper(char flag, const char *fmt, va_list va)
+static void
+warning_error_helper(char flag, const char *fmt, va_list va)
 {
 	fprintf(stderr, "%s:%s:%u:%u: ",
 		(!flag) ? "warning" : "error", filename, linenum, columnum);
@@ -18,8 +19,8 @@ static void warning_error_helper(char flag, const char *fmt, va_list va)
 		exit(EXIT_FAILURE); /* TODO: uhmmmm */
 }
 
-
-void warning_error(char flag, const char *fmt, ...)
+void
+warning_error(char flag, const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -27,8 +28,8 @@ void warning_error(char flag, const char *fmt, ...)
 	va_end(va);
 }
 
-
-void error(const char *fmt, ...)
+void
+error(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -36,8 +37,8 @@ void error(const char *fmt, ...)
 	va_end(va);
 }
 
-
-void warning(const char *fmt, ...)
+void
+warning(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
@@ -45,9 +46,8 @@ void warning(const char *fmt, ...)
 	va_end(va);
 }
 
-
-
-void die(const char *fmt, ...)
+void
+die(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);

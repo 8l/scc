@@ -7,13 +7,15 @@
 
 void stmt(void);
 
-static void do_goto(void)
+static void
+do_goto(void)
 {
 	expect(GOTO);
 	expect(IDEN);
 }
 
-static void do_while(void)
+static void
+do_while(void)
 {
 	expect(WHILE);
 	expect('(');
@@ -22,7 +24,8 @@ static void do_while(void)
 	stmt();
 }
 
-static void do_do(void)
+static void
+do_do(void)
 {
 	expect(DO);
 	stmt();
@@ -32,7 +35,8 @@ static void do_do(void)
 	expect(')');
 }
 
-static void do_for(void)
+static void
+do_for(void)
 {
 	expect(FOR);
 	expect('(');
@@ -48,7 +52,8 @@ static void do_for(void)
 	stmt();
 }
 
-static void do_if(void)
+static void
+do_if(void)
 {
 	expect(IF);
 	expect('(');
@@ -60,7 +65,8 @@ static void do_if(void)
 
 }
 
-static void do_switch(void)
+static void
+do_switch(void)
 {
 	expect(SWITCH);
 	expect('(');
@@ -69,7 +75,8 @@ static void do_switch(void)
 	stmt();
 }
 
-void stmt(void)
+void
+stmt(void)
 {
 
 	switch (yytoken) {
@@ -112,7 +119,8 @@ void stmt(void)
 	expect(';');
 }
 
-void compound(void)
+void
+compound(void)
 {
 	if (accept('{')) {
 		new_ctx();

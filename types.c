@@ -12,7 +12,8 @@ static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
 
-struct ctype *newctype(void)
+struct ctype *
+newctype(void)
 {
 	register struct ctype *tp = xcalloc(sizeof(tp), 1);
 
@@ -20,7 +21,8 @@ struct ctype *newctype(void)
 	return tp;
 }
 
-void delctype(register struct ctype *tp)
+void
+delctype(register struct ctype *tp)
 {
 	if (--tp->refcnt == 0) {
 		if (tp->base)
@@ -59,14 +61,16 @@ mktype(register struct ctype *tp, unsigned  char op)
 	return tp;
 }
 
-void pushtype(unsigned char mod)
+void
+pushtype(unsigned char mod)
 {
 	if (stackp == stack + NR_DECLARATORS)
 		error("Too much type declarators");
 	*stackp++ = mod;
 }
 
-struct ctype *decl_type(struct ctype *tp)
+struct ctype *
+decl_type(struct ctype *tp)
 {
 	while (stackp != stack)
 		tp = mktype(tp, *--stackp);
@@ -74,7 +78,8 @@ struct ctype *decl_type(struct ctype *tp)
 	return tp;
 }
 
-unsigned char btype(unsigned char type, unsigned char tok)
+unsigned char
+btype(unsigned char type, unsigned char tok)
 {
 	switch (tok) {
 	case VOID:
@@ -124,7 +129,8 @@ unsigned char btype(unsigned char type, unsigned char tok)
 	error("two or more basic types");
 }
 
-void ctype(struct ctype *cp, unsigned char mod)
+void
+ctype(struct ctype *cp, unsigned char mod)
 {
 	extern unsigned char curctx;
 
@@ -190,7 +196,8 @@ duplicated:
 #ifndef NDEBUG
 #include <stdio.h>
 
-void ptype(register struct ctype *tp)
+void
+ptype(register struct ctype *tp)
 {
 	static const char *strings[] = {
 		[0] =        "[no type]",

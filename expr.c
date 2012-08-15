@@ -10,7 +10,8 @@
 
 struct node *expr(void);
 
-static struct node *primary(void)
+static struct node *
+primary(void)
 {
 	register struct node *np;
 
@@ -33,7 +34,8 @@ static struct node *primary(void)
 	return np;
 }
 
-static struct node *postfix(void)
+static struct node *
+postfix(void)
 {
 	register struct node *np1, *np2;
 
@@ -76,7 +78,8 @@ static struct node *postfix(void)
 
 static struct node *cast(void);
 
-static struct node *unary(void)
+static struct node *
+unary(void)
 {
 	register unsigned char op;
 
@@ -110,7 +113,8 @@ call_unary:
 	return node1(op, unary());
 }
 
-static struct node *cast(void)
+static struct node *
+cast(void)
 {
 	while (accept('(')) {	/* TODO: Implement casts */
 		type_name();	/* check if it really is a type name */
@@ -119,7 +123,8 @@ static struct node *cast(void)
 	return unary();
 }
 
-static struct node *mul(void)
+static struct node *
+mul(void)
 {
 	register struct node *np;
 	register unsigned char op;
@@ -137,7 +142,8 @@ static struct node *mul(void)
 	}
 }
 
-static struct node *add(void)
+static struct node *
+add(void)
 {
 	register unsigned char op;
 	register struct node *np;
@@ -154,7 +160,8 @@ static struct node *add(void)
 	}
 }
 
-static struct node *shift(void)
+static struct node *
+shift(void)
 {
 	register unsigned char op;
 	register struct node *np;
@@ -171,7 +178,8 @@ static struct node *shift(void)
 	}
 }
 
-static struct node *relational(void)
+static struct node *
+relational(void)
 {
 	register unsigned char op;
 	register struct node *np;
@@ -190,7 +198,8 @@ static struct node *relational(void)
 	}
 }
 
-static struct node *eq(void)
+static struct node *
+eq(void)
 {
 	register unsigned char op;
 	register struct node *np;
@@ -207,7 +216,8 @@ static struct node *eq(void)
 	}
 }
 
-static struct node *bit_and(void)
+static struct node *
+bit_and(void)
 {
 	register struct node *np;
 
@@ -219,7 +229,8 @@ static struct node *bit_and(void)
 	return np;
 }
 
-static struct node *bit_xor(void)
+static struct node *
+bit_xor(void)
 {
 	register struct node *np;
 
@@ -231,7 +242,8 @@ static struct node *bit_xor(void)
 	return np;
 }
 
-static struct node *bit_or(void)
+static struct node *
+bit_or(void)
 {
 	register struct node *np;
 
@@ -243,7 +255,8 @@ static struct node *bit_or(void)
 	return np;
 }
 
-static struct node *and(void)
+static struct node *
+and(void)
 {
 	register struct node *np;
 
@@ -255,7 +268,8 @@ static struct node *and(void)
 	return np;
 }
 
-static struct node *or(void)
+static struct node *
+or(void)
 {
 	register struct node *np;
 
@@ -267,7 +281,8 @@ static struct node *or(void)
 	return np;
 }
 
-static struct node *cond(void)
+static struct node *
+cond(void)
 {
 	register struct node *np, *aux;
 
@@ -280,7 +295,8 @@ static struct node *cond(void)
 	return np;
 }
 
-static struct node *assign(void)
+static struct node *
+assign(void)
 {
 	register unsigned char op;
 	register struct node *np;
@@ -307,7 +323,8 @@ static struct node *assign(void)
 	return np;
 }
 
-struct node *expr(void)
+struct node *
+expr(void)
 {
 	register struct node *np;
 
