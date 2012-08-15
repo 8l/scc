@@ -105,7 +105,8 @@ void stmt(void)
 	case IDEN:
 		/* TODO: check if it can be a label */
 	default:
-		expr();
+		prtree(expr());
+		putchar('\n');
 		break;
 	}
 	expect(';');

@@ -1,6 +1,8 @@
 #ifndef CC_H
 #define CC_H
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+
 extern unsigned linenum;
 extern unsigned columnum;
 extern const char *filename;

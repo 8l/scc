@@ -10,7 +10,7 @@ enum {
 	OSHR, OLT, OGT, OGE, OLE, OEQ, ONE, OBAND, OBXOR,
 	OBOR, OAND, OOR, OTERN, OASSIGN, OA_MUL, OA_DIV,
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR, OA_AND,
-	OA_XOR, OA_OR
+	OA_XOR, OA_OR, OSYM
 };
 
 struct node;
@@ -33,5 +33,5 @@ node1(unsigned char op, struct node *i);
 extern struct node *
 nodesym(struct symbol *sym);
 
-
+extern void prtree(register struct node *np);
 #endif
