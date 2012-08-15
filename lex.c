@@ -64,10 +64,11 @@ static unsigned char skip(void)
 	extern char parser_out_home;
 
 	while (isspace(c = getc(yyin))) {
-		if (c == '\n')
-			++linenum, columnum = 1;
-		else
-			++columnum;
+		switch (c) {
+		case '\n': ++linenum, columnum = 1; break;
+		case '\t': columnum += 8;	    break;
+		default:   ++columnum;		    break;
+		}
 	}
 	if (c == EOF) {
 		if (parser_out_home)
