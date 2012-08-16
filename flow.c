@@ -5,16 +5,17 @@
 #include "tokens.h"
 #include "syntax.h"
 
-void stmt(void);
+static struct node *stmt(void);
 
-static void
+static struct node *
 do_goto(void)
 {
 	expect(GOTO);
 	expect(IDEN);
+	return NULL;
 }
 
-static void
+static struct node *
 do_while(void)
 {
 	expect(WHILE);
@@ -22,9 +23,10 @@ do_while(void)
 	expr();
 	expect(')');
 	stmt();
+	return NULL;
 }
 
-static void
+static struct node *
 do_do(void)
 {
 	expect(DO);
@@ -33,9 +35,10 @@ do_do(void)
 	expect('(');
 	expr();
 	expect(')');
+	return NULL;
 }
 
-static void
+static struct node *
 do_for(void)
 {
 	expect(FOR);
@@ -50,9 +53,10 @@ do_for(void)
 		expr();
 	expect(')');
 	stmt();
+	return NULL;
 }
 
-static void
+static struct node *
 do_if(void)
 {
 	expect(IF);
@@ -62,10 +66,11 @@ do_if(void)
 	stmt();
 	if (accept(ELSE))
 		stmt();
+	return NULL;
 
 }
 
-static void
+static struct node *
 do_switch(void)
 {
 	expect(SWITCH);
@@ -73,37 +78,25 @@ do_switch(void)
 	expr();
 	expect(')');
 	stmt();
+	return NULL;
 }
 
-void
+static struct node *
 stmt(void)
 {
+	register struct node *np;
 
 	switch (yytoken) {
-	case '{':
-		compound();
-		break;
-	case SWITCH:
-		do_switch();
-		break;
-	case IF:
-		do_if();
-		break;
-	case FOR:
-		do_for();
-		break;
-	case DO:
-		do_do();
-		break;
-	case WHILE:
-		do_while();
-		break;
+	case '{':      np = compound();  break;
+	case SWITCH:   np = do_switch(); break;
+	case IF:       np = do_if();     break;
+	case FOR:      np = do_for();    break;
+	case DO:       np = do_do();     break;
+	case WHILE:    np = do_while();  break;
 	case CONTINUE:
 	case BREAK:
 	case RETURN:
-	case GOTO:
-		do_goto();
-		break;
+	case GOTO:     np = do_goto();   break;
 	case CASE:
 		/* TODO */
 	case DEFAULT:
@@ -111,22 +104,27 @@ stmt(void)
 		break;
 	case IDEN:
 		/* TODO: check if it can be a label */
-	default:
-		prtree(expr());
-		putchar('\n');
-		break;
+	default: np = expr(); break;
+
 	}
 	expect(';');
+	return np;
 }
 
-void
+struct node *
 compound(void)
 {
+	register struct node *np = nodecomp();
+
 	expect('{');
 	new_ctx();
 	while (decl())
 		/* nothing */;
 	while (!accept('}'))
-		stmt();
+		addstmt(np, stmt());
 	del_ctx();
+
+	prtree(np);
+	putchar('\n');
+	return np;
 }

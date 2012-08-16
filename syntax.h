@@ -16,7 +16,7 @@ enum {
 struct node;
 struct symbol;
 
-extern void compound(void);
+extern struct node *compound(void);
 extern struct node *expr(void);
 extern unsigned char decl(void);
 extern void type_name(void);
