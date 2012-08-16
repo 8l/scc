@@ -55,6 +55,7 @@ extern void pushtype(unsigned char mod);
 extern unsigned char btype(unsigned char, unsigned char tok);
 extern void new_ctx(void);
 extern void del_ctx(void);
+extern void freesyms(void);
 extern struct symbol *install(const char *s);
 extern struct symbol *lookup(const char *s);
 extern void ctype(struct ctype *cp, unsigned char mod);

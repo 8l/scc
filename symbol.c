@@ -10,7 +10,7 @@
 unsigned char curctx;
 
 static struct symbol *htab[NR_SYM_HASH];
-static struct symbol *head;
+static struct symbol *head, *headfun;
 
 
 static inline unsigned char
@@ -32,20 +32,32 @@ new_ctx(void)
 void
 del_ctx(void)
 {
-	register struct symbol *sym, *aux;
+	register struct symbol *sym, *next;
 	static char *s;
 
 	--curctx;
-	for (sym = head; sym; sym = aux) {
+	for (sym = head; sym; sym = next) {
 		if (sym->ctx <= curctx)
 			break;
-		if ((s = sym->name) != NULL) {
+		if ((s = sym->name) != NULL)
 			htab[hash(s)] = sym->hash;
-			free(s);
+		next = sym->next;
+		sym->next = headfun;
+		headfun = sym;
+	}
+}
+
+void
+freesyms(void)
+{
+	register struct symbol *sym, *next;
+
+	if (curctx == OUTER_CTX) {
+		for (sym = headfun; sym; sym = next) {
+			next = sym->next;
+			free(sym->name);
+			free(sym);
 		}
-		aux = sym->next;
-		free(sym);
-		/* TODO: unlink type  */
 	}
 }
 
