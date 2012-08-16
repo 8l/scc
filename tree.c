@@ -132,7 +132,7 @@ prtree(register struct node *np)
 		[OFIELD] = {2, "."},
 		[OPTR] = {2, "->"},
 		[OPOSTINC] = {1, ".++"},
-		[OPOSTDEC] = {1, "++."},
+		[OPOSTDEC] = {1, ".--"},
 		[OPREINC] = {1, "++."},
 		[OPREDEC] = {1, "--."},
 		[OADDR] = {1, "&."},
