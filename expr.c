@@ -298,28 +298,29 @@ cond(void)
 static struct node *
 assign(void)
 {
-	register unsigned char op;
-	register struct node *np;
+	register struct node *np = cond();
 
-	np = cond();
 	for (;;) {
+		register unsigned char op;
+
 		switch (yytoken) {
-		case '=': op = OASSIGN; break;
-		case MUL_EQ: op = OA_MUL; break;
-		case DIV_EQ: op = OA_DIV; break;
-		case MOD_EQ: op = OA_MOD; break;
-		case ADD_EQ: op = OA_ADD; break;
-		case SUB_EQ: op = OA_SUB; break;
-		case SHL_EQ: op = OA_SHL; break;
-		case SHR_EQ: op = OA_SHR; break;
-		case AND_EQ: op = OA_AND; break;
-		case XOR_EQ: op = OA_XOR; break;
-		case OR_EQ: op = OA_OR; break;
-		default: return np;
+		case '=':    op = OASSIGN; break;
+		case MUL_EQ: op = OA_MUL;  break;
+		case DIV_EQ: op = OA_DIV;  break;
+		case MOD_EQ: op = OA_MOD;  break;
+		case ADD_EQ: op = OA_ADD;  break;
+		case SUB_EQ: op = OA_SUB;  break;
+		case SHL_EQ: op = OA_SHL;  break;
+		case SHR_EQ: op = OA_SHR;  break;
+		case AND_EQ: op = OA_AND;  break;
+		case XOR_EQ: op = OA_XOR;  break;
+		case OR_EQ:  op = OA_OR;   break;
+		default:  goto return_np;
 		}
 		next();
 		np = node2(op, np, assign());
 	}
+return_np:
 	return np;
 }
 
