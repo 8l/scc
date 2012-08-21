@@ -120,7 +120,5 @@ compound(void)
 		addstmt(np, stmt());
 	del_ctx();
 
-	prtree(np);
-	putchar('\n');
 	return np;
 }
