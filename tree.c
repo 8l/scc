@@ -41,6 +41,10 @@ struct node_comp {
 	struct node **body;
 };
 
+
+static unsigned char indent;  /* used for pretty printing the tree*/
+
+
 struct node *
 nodesym(struct symbol *sym)
 {
@@ -120,8 +124,8 @@ addstmt(struct node *p, struct node *stmt)
 	return p;
 }
 
-void
-prtree(register struct node *np)
+static void
+prtree_helper(register struct node *np)
 {
 	static struct optab {
 		unsigned char nchild;
@@ -175,29 +179,34 @@ prtree(register struct node *np)
 		[OCOMP] = {255, "comp"},
 		[OSWITCH] = {2, "switch"}
 	};
-
 	assert(np && np->op < ARRAY_SIZE(optab));
 	bp = &optab[np->op];
-	if (bp->nchild)
-		printf("(%s ", bp->txt);
-
+	if (bp->nchild) {
+		register unsigned char i;
+		putchar('\n');
+		for (i = indent; i != 0; --i)
+			putchar(' ');
+		printf("(%s", bp->txt);
+		indent += 2;
+	}
 	switch (bp->nchild) {
 	case 0: {
 		register struct symbol *sym = ((struct node_sym *) np)->sym;
-		printf(" %s", (sym->name) ? sym->name : ".");
+		putchar(' ');
+		fputs((sym->name) ? sym->name : ".", stdout);
 		return;
 	}
 	case 1:
-		prtree(((struct node_op1 *) np)->infix);
+		prtree_helper(((struct node_op1 *) np)->infix);
 		break;
 	case 2:
-		prtree(((struct node_op2 *) np)->left);
-		prtree(((struct node_op2 *) np)->rigth);
+		prtree_helper(((struct node_op2 *) np)->left);
+		prtree_helper(((struct node_op2 *) np)->rigth);
 		break;
 	case 3:
-		prtree(((struct node_op3 *) np)->left);
-		prtree(((struct node_op3 *) np)->infix);
-		prtree(((struct node_op3 *) np)->rigth);
+		prtree_helper(((struct node_op3 *) np)->left);
+		prtree_helper(((struct node_op3 *) np)->infix);
+		prtree_helper(((struct node_op3 *) np)->rigth);
 		break;
 	case 255: {
 		register struct node **bp, **lim;
@@ -205,9 +214,17 @@ prtree(register struct node *np)
 		bp = ((struct node_comp *) np)->body;
 		lim = bp + ((struct node_comp *) np)->nr;
 		while (bp < lim)
-			prtree(*bp++);
+			prtree_helper(*bp++);
 		break;
 	}
 	}
 	putchar(')');
+	indent -= 2;
+}
+
+void
+prtree(register struct node *np)
+{
+	indent = 0;
+	prtree_helper(np);
 }
