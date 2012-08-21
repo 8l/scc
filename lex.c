@@ -160,15 +160,14 @@ next(void)
 		aheadtok = NOTOK;
 	} else if (!skip()) {
 		yytoken = EOFTOK;
-	} else if (isalpha(c = getc(yyin)) || c == '_') {
-		ungetc(c, yyin);
-		yytoken = iden();
-	} else if (isdigit(c)) {
-		ungetc(c, yyin);
-		yytoken = number();
 	} else {
-		ungetc(c, yyin);
-		yytoken = operator();
+		ungetc(c = getc(yyin), yyin);
+		if (isalpha(c) || c == '_')
+			yytoken = iden();
+		else if (isdigit(c))
+			yytoken = number();
+		else
+			yytoken = operator();
 	}
 }
 
