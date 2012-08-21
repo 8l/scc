@@ -172,7 +172,8 @@ prtree(register struct node *np)
 		[OA_XOR] = {2, "^="},
 		[OA_OR] = {2, "|="},
 		[OSYM] = {0, "sym"},
-		[OCOMP] = {255, "comp"}
+		[OCOMP] = {255, "comp"},
+		[OSWITCH] = {2, "switch"}
 	};
 
 	assert(np && np->op < ARRAY_SIZE(optab));

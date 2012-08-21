@@ -73,12 +73,13 @@ do_if(void)
 static struct node *
 do_switch(void)
 {
+	register struct node *e1;
+
 	expect(SWITCH);
 	expect('(');
-	expr();
+	e1 = expr();
 	expect(')');
-	stmt();
-	return NULL;
+	return node2(OSWITCH, e1, stmt());
 }
 
 static struct node *
