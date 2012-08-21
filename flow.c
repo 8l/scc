@@ -87,26 +87,21 @@ stmt(void)
 	register struct node *np;
 
 	switch (yytoken) {
-	case '{':      np = compound();  break;
-	case SWITCH:   np = do_switch(); break;
-	case IF:       np = do_if();     break;
-	case FOR:      np = do_for();    break;
-	case DO:       np = do_do();     break;
-	case WHILE:    np = do_while();  break;
+	case '{':      return compound();
+	case SWITCH:   return do_switch();
+	case IF:       return do_if();
+	case FOR:      return do_for();
+	case DO:       return do_do();
+	case WHILE:    return do_while();
 	case CONTINUE:
 	case BREAK:
 	case RETURN:
-	case GOTO:     np = do_goto();   break;
-	case CASE:
-		/* TODO */
-	case DEFAULT:
-		/* TODO */
-		break;
-	case IDEN:
-		/* TODO: check if it can be a label */
-	default: np = expr(); break;
-
+	case GOTO:     return do_goto();
+	case CASE:     /* TODO */
+	case DEFAULT:  /* TODO */
+	case IDEN:     /* TODO: check if it can be a label */;
 	}
+	np = expr();
 	expect(';');
 	return np;
 }
