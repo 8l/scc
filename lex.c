@@ -112,7 +112,7 @@ rel_shift(unsigned char op)
 		op = tp[1];
 	}
 	ungetc(c, yyin);
-	return c;
+	return op;
 }
 
 static unsigned char
