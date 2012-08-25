@@ -41,19 +41,18 @@ do_do(void)
 static struct node *
 do_for(void)
 {
+	register struct node *exp1, *exp2, *exp3;
+
 	expect(FOR);
 	expect('(');
-	if (yytoken != ';')
-		expr();
+	exp1 = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	if (yytoken != ';')
-		expr();
+	exp2 = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	if (yytoken != ')')
-		expr();
+	exp3 = (yytoken != ')') ? expr() : NULL;
 	expect(')');
-	stmt();
-	return NULL;
+	
+	return node2(OFOR, node3(OFEXP, exp1, exp2, exp3), stmt());
 }
 
 static struct node *

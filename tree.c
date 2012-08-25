@@ -179,6 +179,8 @@ prtree_helper(register struct node *np)
 		[OCOMP] = {255, "comp"},
 		[OSWITCH] = {2, "switch"},
 		[OIF] = {3, "if"},
+		[OFOR] = {2, "for"},
+		[OFEXP] = {3, "efor"}
 	};
 	if (!np) {
 		fputs(" nil", stdout);
