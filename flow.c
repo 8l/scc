@@ -8,7 +8,7 @@
 static struct node *stmt(void);
 
 static struct node *
-do_goto(void)
+_goto(void)
 {
 	expect(GOTO);
 	expect(IDEN);
@@ -16,7 +16,7 @@ do_goto(void)
 }
 
 static struct node *
-do_while(void)
+_while(void)
 {
 	register struct node *cond;
 
@@ -28,7 +28,7 @@ do_while(void)
 }
 
 static struct node *
-do_do(void)
+_do(void)
 {
 	register struct node *cond, *body;
 
@@ -44,7 +44,7 @@ do_do(void)
 }
 
 static struct node *
-do_for(void)
+_for(void)
 {
 	register struct node *exp1, *exp2, *exp3;
 
@@ -61,7 +61,7 @@ do_for(void)
 }
 
 static struct node *
-do_if(void)
+_if(void)
 {
 	register struct node *cond, *body;
 
@@ -75,7 +75,7 @@ do_if(void)
 }
 
 static struct node *
-do_switch(void)
+_switch(void)
 {
 	register struct node *cond;
 
@@ -93,15 +93,15 @@ stmt(void)
 
 	switch (yytoken) {
 	case '{':      return compound();
-	case SWITCH:   return do_switch();
-	case IF:       return do_if();
-	case FOR:      return do_for();
-	case DO:       return do_do();
-	case WHILE:    return do_while();
+	case SWITCH:   return _switch();
+	case IF:       return _if();
+	case FOR:      return _for();
+	case DO:       return _do();
+	case WHILE:    return _while();
 	case CONTINUE:
 	case BREAK:
 	case RETURN:
-	case GOTO:     return do_goto();
+	case GOTO:     return _goto();
 	case CASE:     /* TODO */
 	case DEFAULT:  /* TODO */
 	case IDEN:     /* TODO: check if it can be a label */;
