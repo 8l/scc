@@ -59,15 +59,15 @@ do_for(void)
 static struct node *
 do_if(void)
 {
+	register struct node *cond, *body;
+
 	expect(IF);
 	expect('(');
-	expr();
+	cond = expr();
 	expect(')');
-	stmt();
-	if (accept(ELSE))
-		stmt();
-	return NULL;
+	body = stmt();
 
+	return node3(OIF, cond, body, (accept(ELSE)) ? stmt() : NULL);
 }
 
 static struct node *

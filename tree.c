@@ -177,9 +177,14 @@ prtree_helper(register struct node *np)
 		[OA_OR] = {2, "|="},
 		[OSYM] = {0, "sym"},
 		[OCOMP] = {255, "comp"},
-		[OSWITCH] = {2, "switch"}
+		[OSWITCH] = {2, "switch"},
+		[OIF] = {3, "if"},
 	};
-	assert(np && np->op < ARRAY_SIZE(optab));
+	if (!np) {
+		fputs(" nil", stdout);
+		return;
+	}
+	assert(np->op < ARRAY_SIZE(optab));
 	bp = &optab[np->op];
 	if (bp->nchild) {
 		register unsigned char i;
