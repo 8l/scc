@@ -181,7 +181,8 @@ prtree_helper(register struct node *np)
 		[OIF] = {3, "if"},
 		[OFOR] = {2, "for"},
 		[OFEXP] = {3, "efor"},
-		[ODO] = {2, "do"}
+		[ODO] = {2, "do"},
+		[OWHILE] = {2, "while"},
 	};
 	if (!np) {
 		fputs(" nil", stdout);

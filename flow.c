@@ -18,12 +18,13 @@ do_goto(void)
 static struct node *
 do_while(void)
 {
+	register struct node *cond;
+
 	expect(WHILE);
 	expect('(');
-	expr();
+	cond = expr();
 	expect(')');
-	stmt();
-	return NULL;
+	return node2(OWHILE, cond, stmt());
 }
 
 static struct node *
@@ -76,13 +77,13 @@ do_if(void)
 static struct node *
 do_switch(void)
 {
-	register struct node *e1;
+	register struct node *cond;
 
 	expect(SWITCH);
 	expect('(');
-	e1 = expr();
+	cond = expr();
 	expect(')');
-	return node2(OSWITCH, e1, stmt());
+	return node2(OSWITCH, cond, stmt());
 }
 
 static struct node *
