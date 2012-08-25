@@ -29,13 +29,17 @@ do_while(void)
 static struct node *
 do_do(void)
 {
+	register struct node *cond, *body;
+
 	expect(DO);
-	stmt();
+	body = stmt();
 	expect(WHILE);
 	expect('(');
-	expr();
+	cond = expr();
 	expect(')');
-	return NULL;
+	expect(';');
+
+	return node2(ODO, body, cond);
 }
 
 static struct node *

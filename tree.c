@@ -180,7 +180,8 @@ prtree_helper(register struct node *np)
 		[OSWITCH] = {2, "switch"},
 		[OIF] = {3, "if"},
 		[OFOR] = {2, "for"},
-		[OFEXP] = {3, "efor"}
+		[OFEXP] = {3, "efor"},
+		[ODO] = {2, "do"}
 	};
 	if (!np) {
 		fputs(" nil", stdout);
