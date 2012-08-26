@@ -24,7 +24,6 @@ number(void)
 {
 	register char *bp;
 	register char ch;
-	register struct symbol *sym;
 
 	for (bp = yytext; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
 		if (!isdigit(ch = getc(yyin)))
@@ -34,8 +33,8 @@ number(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	yyval.sym = sym = install(NULL);
-	sym->val = atoi(yytext);
+	yyval.sym = lookup(yytext, NS_ANY, CTX_ANY);
+	yyval.sym->val = atoi(yytext);
 
 	return CONSTANT;
 }
@@ -54,10 +53,9 @@ iden(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	if ((sym = lookup(yytext)) && sym->ns == NS_KEYWORD)
-		return sym->tok;
-	yyval.sym = sym;
-	return IDEN;
+	yyval.sym = lookup(yytext, NS_ANY, CTX_ANY);
+
+	return (yyval.sym->ns == NS_KEYWORD) ? yyval.sym->tok : IDEN;
 }
 
 static unsigned char

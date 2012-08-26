@@ -13,16 +13,22 @@ char parser_out_home;
 
 static void declarator(void);
 
-static struct symbol *
-newiden(char *s)
+static void
+newiden(void)
 {
-	register struct symbol *sym = lookup(yytext);
-
-	if (!sym)
-		sym = install(yytext);
-	else if (sym->ctx == curctx)
-		error("redeclaration of '%s'", yytext);
-	return sym;
+	switch (yyval.sym->ns) {
+	case NS_ANY:        /* First aparrence of the symbol */ 
+		yyval.sym->ns = NS_IDEN;
+		yyval.sym->ctx = curctx;
+		break;
+	case NS_STRUCT: case NS_LABEL: case NS_TYPEDEF:
+		lookup(yytext, NS_IDEN, CTX_ANY);
+	case NS_IDEN:
+		if (yyval.sym->ctx == curctx)
+			error("redeclaration of '%s'", yytext);
+	default:
+		lookup(yytext, NS_IDEN, curctx);
+	}
 }
 
 static void
@@ -32,7 +38,7 @@ dirdcl(void)
 		declarator();
 		expect(')');
 	} else if (yytoken == IDEN) {
-		newiden(yytext);
+		newiden();
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
@@ -162,7 +168,7 @@ decl(void)
 
 	tp = newctype();
 	if (!spec(tp)) {
-		if (curctx != OUTER_CTX)
+		if (curctx != CTX_OUTER)
 			return 0;
 		warning("data definition has no type or storage class");
 	}

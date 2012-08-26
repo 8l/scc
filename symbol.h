@@ -7,13 +7,15 @@
 # include <stdbool.h>
 #endif
 
-#define OUTER_CTX 1
+#define CTX_OUTER 1
+#define CTX_ANY   0
 enum namespace {
 	NS_IDEN,
 	NS_KEYWORD,
 	NS_STRUCT,
 	NS_LABEL,
-	NS_TYPEDEF
+	NS_TYPEDEF,
+	NS_ANY
 };
 
 struct ctype {
@@ -56,8 +58,8 @@ extern unsigned char btype(unsigned char, unsigned char tok);
 extern void new_ctx(void);
 extern void del_ctx(void);
 extern void freesyms(void);
-extern struct symbol *install(const char *s);
-extern struct symbol *lookup(const char *s);
+extern struct symbol *lookup(register const char *s, 
+                             unsigned char ns, unsigned char ctx);
 extern void ctype(struct ctype *cp, unsigned char mod);
 extern struct ctype *newctype(void);
 extern void delctype(register struct ctype *tp);
