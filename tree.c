@@ -183,7 +183,8 @@ prtree_helper(register struct node *np)
 		[OFEXP] = {3, "efor"},
 		[ODO] = {2, "do"},
 		[OWHILE] = {2, "while"},
-		[OLABEL] = {2, "label"}
+		[OLABEL] = {2, "label"},
+		[OGOTO] = {1, "goto"}
 	};
 	if (!np) {
 		fputs(" nil", stdout);

@@ -10,9 +10,16 @@ static struct node *stmt(void);
 static struct node *
 _goto(void)
 {
+	register struct node *np;
+
 	expect(GOTO);
 	expect(IDEN);
-	return NULL;
+	if (yyval.sym->ns != NS_LABEL)
+		yyval.sym = lookup(yytext, NS_LABEL, CTX_ANY);
+	np = node1(OGOTO, nodesym(yyval.sym));
+	expect(';');
+
+	return np;
 }
 
 static struct node *
