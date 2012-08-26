@@ -1,6 +1,10 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#if ! __bool_true_false_are_defined
+# include <stdbool.h>
+#endif
+
 
 /* Don't change this codification because program used it!!! */
 enum tokens {
@@ -35,7 +39,6 @@ extern union yyval yyval;
 extern char yytext[];
 extern size_t yylen;
 extern unsigned char yytoken;
-extern union yyval yyval;
 
 
 extern void init_lex(void);
@@ -43,5 +46,5 @@ extern void next(void);
 extern char accept(unsigned char tok);
 extern void expect(unsigned char tok);
 extern void init_keywords(void);
-extern unsigned char ahead(void);
+extern bool ahead(char c);
 #endif

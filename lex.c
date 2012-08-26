@@ -17,7 +17,6 @@ unsigned columnum;
 const char *filename;
 
 static FILE *yyin;
-static unsigned char aheadtok = NOTOK;
 
 static char
 number(void)
@@ -153,10 +152,7 @@ next(void)
 {
 	register unsigned char c;
 
-	if (aheadtok != NOTOK) {
-		yytoken = aheadtok;
-		aheadtok = NOTOK;
-	} else if (!skip()) {
+	if (!skip()) {
 		yytoken = EOFTOK;
 	} else {
 		ungetc(c = getc(yyin), yyin);
@@ -169,16 +165,14 @@ next(void)
 	}
 }
 
-unsigned char
-ahead(void)
+bool
+ahead(register char tok)
 {
-	static unsigned char oldtok;
+	register char c;
 
-	oldtok = yytoken;
-	next();
-	aheadtok = yytoken;
-	yytoken = oldtok;
-	return aheadtok;
+	skip();
+	ungetc(c = getc(yyin), yyin);
+	return c == tok;
 }
 
 char
