@@ -7,17 +7,17 @@
 #include "cc.h"
 #include "tokens.h"
 #include "symbol.h"
+#include "sizes.h"
 
-
-static FILE *yyin;
 union yyval yyval;
-static unsigned char aheadtok = NOTOK;
 unsigned char yytoken;
-char yytext[TOKSIZ_MAX + 1];
+char yytext[IDENTSIZ + 1];
 unsigned linenum;
 unsigned columnum;
 const char *filename;
 
+static FILE *yyin;
+static unsigned char aheadtok = NOTOK;
 
 static char
 number(void)
@@ -25,11 +25,11 @@ number(void)
 	register char *bp;
 	register char ch;
 
-	for (bp = yytext; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
+	for (bp = yytext; bp < yytext + IDENTSIZ; *bp++ = ch) {
 		if (!isdigit(ch = getc(yyin)))
 			break;
 	}
-	if (bp == yytext + TOKSIZ_MAX)
+	if (bp == yytext + IDENTSIZ)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
@@ -45,11 +45,11 @@ iden(void)
 	register char ch, *bp;
 	register struct symbol *sym;
 
-	for (bp = yytext; bp < yytext + TOKSIZ_MAX; *bp++ = ch) {
+	for (bp = yytext; bp < yytext + IDENTSIZ; *bp++ = ch) {
 		if (!isalnum(ch = getc(yyin)) && ch != '_')
 			break;
 	}
-	if (bp == yytext + TOKSIZ_MAX)
+	if (bp == yytext + IDENTSIZ)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);

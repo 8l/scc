@@ -2,9 +2,6 @@
 #define TOKENS_H
 
 
-
-#define TOKSIZ_MAX 21
-
 /* Don't change this codification because program used it!!! */
 enum tokens {
 	/* types */
