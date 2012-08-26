@@ -87,6 +87,26 @@ _switch(void)
 }
 
 static struct node *
+label(void)
+{
+	register struct symbol *sym;
+
+	if (!ahead(':')) {
+		register struct node *np = expr(); /* it is an identifier */
+		expect(';');                       /* not a label */
+		return np;
+	}
+
+	sym = lookup(yytext, NS_LABEL, CTX_ANY);
+	if (sym->ctx != CTX_ANY)
+		error("label '%s' already defined", yytext);
+
+	sym->ctx = curctx;
+	next(), next();  /* skip IDEN and ':' */
+	return node2(OLABEL, nodesym(sym), stmt());
+}
+
+static struct node *
 stmt(void)
 {
 	register struct node *np;
@@ -104,7 +124,7 @@ stmt(void)
 	case GOTO:     return _goto();
 	case CASE:     /* TODO */
 	case DEFAULT:  /* TODO */
-	case IDEN:     /* TODO: check if it can be a label */;
+	case IDEN:     return label();
 	}
 	np = expr();
 	expect(';');
