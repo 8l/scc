@@ -187,7 +187,8 @@ prtree_helper(register struct node *np)
 		[OGOTO] = {1, "goto"},
 		[OBREAK] = {1, "break"},
 		[OCONT] = {1, "cont"},
-		[ORETURN] = {1, "return"}
+		[ORETURN] = {1, "return"},
+		[OCASE] = {1, "case"}
 	};
 	if (!np) {
 		fputs(" nil", stdout);

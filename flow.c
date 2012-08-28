@@ -188,6 +188,25 @@ _return(void)
 }
 
 static struct node *
+_case(void)
+{
+	register unsigned char *bp;
+	register struct node *np, *exp;
+
+	expect(CASE);
+	exp = expr();
+	/* TODO: check if exp is constant */
+	/* TODO: Check if the type is correct */
+	for (bp = blocks; bp < blockp && *bp != OSWITCH; ++bp)
+		; /* nothing */
+	if (bp == blockp)
+		error("case statement not within switch");
+	np = node1(OCASE, exp);
+	expect(':');
+	return np;
+}
+
+static struct node *
 stmt(void)
 {
 	register struct node *np;
@@ -203,7 +222,7 @@ stmt(void)
 	case BREAK:    return _break();
 	case RETURN:   return _return();
 	case GOTO:     return _goto();
-	case CASE:     /* TODO */
+	case CASE:     return _case();
 	case DEFAULT:  /* TODO */
 	case IDEN:     return label();
 	}
