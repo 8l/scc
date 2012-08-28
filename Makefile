@@ -21,7 +21,7 @@ dep: $(OBJS:.o=.d)
 
 clean:
 	rm -f $(OBJS)
-	rm -f cc
+	rm -f kcc
 
 distclean: clean
 	rm -f *~
