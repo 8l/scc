@@ -184,7 +184,8 @@ prtree_helper(register struct node *np)
 		[ODO] = {2, "do"},
 		[OWHILE] = {2, "while"},
 		[OLABEL] = {2, "label"},
-		[OGOTO] = {1, "goto"}
+		[OGOTO] = {1, "goto"},
+		[OBREAK] = {1, "break"},
 	};
 	if (!np) {
 		fputs(" nil", stdout);

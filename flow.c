@@ -149,6 +149,16 @@ label(void)
 }
 
 static struct node *
+_break(void)
+{
+	expect(BREAK);
+	expect(';');
+	if (blockp == blocks)
+		error("break statement not within loop or switch");
+	return node1(OBREAK, NULL);
+}
+
+static struct node *
 stmt(void)
 {
 	register struct node *np;
@@ -161,7 +171,7 @@ stmt(void)
 	case DO:       return _do();
 	case WHILE:    return _while();
 	case CONTINUE:
-	case BREAK:
+	case BREAK:    return _break();
 	case RETURN:
 	case GOTO:     return _goto();
 	case CASE:     /* TODO */
