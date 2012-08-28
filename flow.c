@@ -207,6 +207,20 @@ _case(void)
 }
 
 static struct node *
+_default(void)
+{
+	register unsigned char *bp;
+
+	expect(DEFAULT);
+	for (bp = blocks; bp < blockp && *bp != OSWITCH; ++bp)
+		; /* nothing */
+	if (bp == blockp)
+		error("default statement not within switch");
+	expect(':');
+	return node1(ODEFAULT, NULL);
+}
+
+static struct node *
 stmt(void)
 {
 	register struct node *np;
@@ -223,7 +237,7 @@ stmt(void)
 	case RETURN:   return _return();
 	case GOTO:     return _goto();
 	case CASE:     return _case();
-	case DEFAULT:  /* TODO */
+	case DEFAULT:  return _default();
 	case IDEN:     return label();
 	}
 	np = expr();
