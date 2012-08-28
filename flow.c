@@ -159,6 +159,22 @@ _break(void)
 }
 
 static struct node *
+_continue(void)
+{
+	register unsigned char *bp;
+
+	expect(CONTINUE);
+	expect(';');
+
+	for (bp = blocks; bp < blockp && *bp == OSWITCH; ++bp)
+		; /* nothing */
+	if (bp == blockp)
+		error("continue statement not within loop");
+
+	return node1(OCONT, NULL);
+}
+
+static struct node *
 stmt(void)
 {
 	register struct node *np;
@@ -170,7 +186,7 @@ stmt(void)
 	case FOR:      return _for();
 	case DO:       return _do();
 	case WHILE:    return _while();
-	case CONTINUE:
+	case CONTINUE: return _continue();
 	case BREAK:    return _break();
 	case RETURN:
 	case GOTO:     return _goto();
