@@ -175,6 +175,19 @@ _continue(void)
 }
 
 static struct node *
+_return(void)
+{
+	register struct node *np;
+	extern struct ctype *curfun;
+
+	expect(RETURN);
+	/* TODO: Check the type of the function, can be void */
+	np = expr();
+	expect(';');
+	return node1(ORETURN, np);
+}
+
+static struct node *
 stmt(void)
 {
 	register struct node *np;
@@ -188,7 +201,7 @@ stmt(void)
 	case WHILE:    return _while();
 	case CONTINUE: return _continue();
 	case BREAK:    return _break();
-	case RETURN:
+	case RETURN:   return _return();
 	case GOTO:     return _goto();
 	case CASE:     /* TODO */
 	case DEFAULT:  /* TODO */
