@@ -1,11 +1,32 @@
 
+#include <assert.h>
 #include <stdio.h>
 
 #include "symbol.h"
 #include "tokens.h"
 #include "syntax.h"
+#include "sizes.h"
 
 static struct node *stmt(void);
+
+
+static unsigned char blocks[NR_BLOCK];
+static unsigned char *blockp = blocks;
+
+static void
+push(register unsigned char b)
+{
+	if (blockp == &blocks[NR_BLOCK])
+		error("Too much nesting levels");
+	*blockp++ = b;
+}
+
+static void
+pop(void)
+{
+	assert(blockp >= blocks);
+	--blockp;
+}
 
 static struct node *
 _goto(void)
@@ -25,19 +46,22 @@ _goto(void)
 static struct node *
 _while(void)
 {
-	register struct node *cond;
+	register struct node *cond, *np;
 
 	expect(WHILE);
 	expect('(');
 	cond = expr();
 	expect(')');
-	return node2(OWHILE, cond, stmt());
+	push(OWHILE);
+	np = node2(OWHILE, cond, stmt());
+	pop();
+	return np;
 }
 
 static struct node *
 _do(void)
 {
-	register struct node *cond, *body;
+	register struct node *cond, *body, *np;
 
 	expect(DO);
 	body = stmt();
@@ -47,13 +71,17 @@ _do(void)
 	expect(')');
 	expect(';');
 
-	return node2(ODO, body, cond);
+	push(ODO);
+	np = node2(ODO, body, cond);
+	pop();
+	return np;
 }
 
 static struct node *
 _for(void)
 {
 	register struct node *exp1, *exp2, *exp3;
+	struct node *np;
 
 	expect(FOR);
 	expect('(');
@@ -63,8 +91,11 @@ _for(void)
 	expect(';');
 	exp3 = (yytoken != ')') ? expr() : NULL;
 	expect(')');
-	
-	return node2(OFOR, node3(OFEXP, exp1, exp2, exp3), stmt());
+
+	push(OFOR);
+	np = node2(OFOR, node3(OFEXP, exp1, exp2, exp3), stmt());
+	pop();
+	return np;
 }
 
 static struct node *
@@ -84,13 +115,17 @@ _if(void)
 static struct node *
 _switch(void)
 {
-	register struct node *cond;
+	register struct node *cond, *np;
 
 	expect(SWITCH);
 	expect('(');
 	cond = expr();
 	expect(')');
-	return node2(OSWITCH, cond, stmt());
+
+	push(OSWITCH);
+	np = node2(OSWITCH, cond, stmt());
+	pop();
+	return np;
 }
 
 static struct node *
