@@ -29,7 +29,8 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		error("unexpected element");
+		np = NULL;
+		break;
 	}
 	return np;
 }

@@ -85,11 +85,11 @@ _for(void)
 
 	expect(FOR);
 	expect('(');
-	exp1 = (yytoken != ';') ? expr() : NULL;
+	exp1 = expr();
 	expect(';');
-	exp2 = (yytoken != ';') ? expr() : NULL;
+	exp2 = expr();
 	expect(';');
-	exp3 = (yytoken != ')') ? expr() : NULL;
+	exp3 = expr();
 	expect(')');
 
 	push(OFOR);
