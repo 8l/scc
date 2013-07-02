@@ -178,12 +178,11 @@ static struct node *
 _return(void)
 {
 	register struct node *np;
-	extern struct ctype *curfun;
 
 	expect(RETURN);
-	/* TODO: Check the type of the function, can be void */
 	np = expr();
 	expect(';');
+
 	return node1(ORETURN, np);
 }
 

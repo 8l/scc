@@ -9,7 +9,7 @@
 #include "symbol.h"
 
 char parser_out_home;
-
+struct ctype *curfun;
 
 static void declarator(void);
 
@@ -140,15 +140,13 @@ static void
 listdcl(register struct ctype *tp)
 {
 	do {
-		register  struct ctype *new;
-
 		declarator();
-		new = decl_type(tp);
-		if (!new->type) {
+		curfun = decl_type(tp);
+		if (!curfun->type) {
 			warning_error(options.implicit,
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
-		} else if (new->type == FTN && yytoken == '{') {
+		} else if (curfun->type == FTN && yytoken == '{') {
 			struct node *np = compound();
 			prtree(np);
 			putchar('\n');
