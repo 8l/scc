@@ -153,14 +153,8 @@ label(void)
 {
 	register struct symbol *sym = yyval.sym;
 
-	if (!ahead(':')) {
-		register struct node *np = expr(); /* it is an identifier */
-		expect(';');                       /* not a label */
-		return np;
-	}
-
 	sym = newlabel(sym, yytext);
-	next(), next();  /* skip IDEN and ':' */
+	next(), next();  	/* skip IDEN and ':' */
 	return node2(OLABEL, nodesym(sym), stmt());
 }
 
@@ -253,7 +247,7 @@ stmt(void)
 	case GOTO:     return _goto();
 	case CASE:     return _case();
 	case DEFAULT:  return _default();
-	case IDEN:     return label();
+	case IDEN:     if (ahead(':')) 	return label();
 	}
 	np = expr();
 	expect(';');
