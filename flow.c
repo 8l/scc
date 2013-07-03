@@ -233,17 +233,17 @@ _default(void)
 static struct node *
 compound(void)
 {
-	register struct node *np = nodecomp();
+	register struct node *lp = nodecomp(), *np;
 
 	expect('{');
 	new_ctx();
-	while (decl())
-		/* nothing */;
+	while (np = decl())
+		addstmt(lp, np);
 	while (!accept('}'))
-		addstmt(np, stmt());
+		addstmt(lp, stmt());
 	del_ctx();
 
-	return np;
+	return lp;
 }
 
 static struct node *
@@ -271,13 +271,16 @@ stmt(void)
 	return np;
 }
 
-void
+struct node *
 function(register struct symbol *sym)
 {
-	register struct node *np;
-
 	curfun = sym;
-	np = node2(OFTN, nodesym(sym), compound());
+	return node1(OFTN, compound());
+}
+
+void
+run(register struct node *np)
+{
 	prtree(np);
 	putchar('\n');
 	freesyms();

@@ -150,49 +150,57 @@ initializer(register struct ctype *tp)
 	return np;
 }
 
-static void
-listdcl(register struct ctype *tp)
+static struct node *
+listdcl(struct ctype *tp)
 {
+	struct node *lp = nodecomp();
+
 	do {
+		register struct node *sp, *np;
+
 		declarator();
 		tp = decl_type(tp);
 		if (!tp->type) {
 			warning_error(options.implicit,
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
-		} else if (tp->type == FTN && yytoken == '{') {
-			function(cursym);
-			return;
 		}
-		if (accept('='))
-			initializer(tp);
+		sp = nodesym(cursym);
+		if (tp->type == FTN && yytoken == '{') {
+			np  = node2(ODEF, sp, function(cursym));
+			return addstmt(lp, np);
+		}
+		np = node2(ODEF, sp, accept('=') ? initializer(tp) : NULL);
+		lp = addstmt(lp, np);
 	} while (accept(','));
 	expect(';');
+
+	return lp;
 }
 
-unsigned char
+struct node *
 decl(void)
 {
 	register struct ctype *tp;
+	register struct node *np = NULL;
 
-	if (accept(';'))
-		return 1;
-
+	while (accept(';'))
+		/* nothing */;
 	tp = newctype();
 	if (!spec(tp)) {
 		if (curctx != CTX_OUTER)
-			return 0;
+			goto end;
 		warning("data definition has no type or storage class");
 	}
 	if (accept(';')) {
 		warning_error(options.useless,
 			      "useless type name in empty declaration");
 	} else {
-		listdcl(tp);
+		np = listdcl(tp);
 	}
-	delctype(tp);
 
-	return 1;
+end:	delctype(tp);
+	return np;
 }
 
 void

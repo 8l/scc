@@ -190,7 +190,8 @@ prtree_helper(register struct node *np)
 		[ORETURN] = {1, "return"},
 		[OCASE] = {1, "case"},
 		[ODEFAULT] = {1, "default"},
-		[OFTN] = {2, "function"}
+		[OFTN] = {1, "function"},
+		[ODEF] = {2, "def"}
 	};
 	if (!np) {
 		fputs(" nil", stdout);
