@@ -130,6 +130,26 @@ declarator(void)
 		pushtype(*bp);
 }
 
+static struct node *
+initializer(register struct ctype *tp)
+{
+	register struct node *np;
+
+	if (accept('{')) {
+		np = nodecomp();
+		addstmt(np, initializer(tp));
+		while (accept(',')) {
+			if (accept('}'))
+				return np;
+			addstmt(np, initializer(tp));
+		}
+		expect('}');
+	} else {
+		np = expr();
+	}
+	return np;
+}
+
 static void
 listdcl(register struct ctype *tp)
 {
@@ -144,6 +164,8 @@ listdcl(register struct ctype *tp)
 			function(cursym);
 			return;
 		}
+		if (accept('='))
+			initializer(tp);
 	} while (accept(','));
 	expect(';');
 }
