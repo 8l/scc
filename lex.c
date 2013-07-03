@@ -32,7 +32,7 @@ number(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	yyval.sym = lookup(yytext, NS_ANY, CTX_ANY);
+	yyval.sym = lookup(yytext, NS_ANY);
 	yyval.sym->val = atoi(yytext);
 
 	return CONSTANT;
@@ -52,7 +52,7 @@ iden(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	yyval.sym = lookup(yytext, NS_ANY, CTX_ANY);
+	yyval.sym = lookup(yytext, NS_ANY);
 
 	return (yyval.sym->ns == NS_KEYWORD) ? yyval.sym->tok : IDEN;
 }

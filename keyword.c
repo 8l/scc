@@ -51,7 +51,7 @@ init_keywords(void)
 	register struct symbol *sym;
 
 	for (bp = keywords; bp->str; bp++) {
-		sym = lookup(bp->str, NS_KEYWORD, CTX_ANY);
+		sym = lookup(bp->str, NS_KEYWORD);
 		sym->tok = bp->tok;
 	}
 	new_ctx();

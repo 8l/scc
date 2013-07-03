@@ -28,16 +28,36 @@ pop(void)
 	--blockp;
 }
 
+static struct symbol*
+newlabel(struct symbol *sym, char *s)
+{
+	switch (sym->ns) {
+	case NS_LABEL:
+		error("label '%s' already defined", yytext);
+	case NS_ANY:
+		sym->ns = NS_LABEL;
+		break;
+	default:
+		lookup(s, NS_LABEL);
+	}
+
+	insert(sym, CTX_FUNC);
+	return sym;
+}
+
 static struct node *
 _goto(void)
 {
 	register struct node *np;
+	register struct symbol *sym;
+
 
 	expect(GOTO);
 	expect(IDEN);
-	if (yyval.sym->ns != NS_LABEL)
-		yyval.sym = lookup(yytext, NS_LABEL, CTX_ANY);
-	np = node1(OGOTO, nodesym(yyval.sym));
+	sym = yyval.sym;
+	if (sym->ns != NS_LABEL)
+		sym = newlabel(sym, yytext);
+	np = node1(OGOTO, nodesym(sym));
 	expect(';');
 
 	return np;
@@ -131,7 +151,7 @@ _switch(void)
 static struct node *
 label(void)
 {
-	register struct symbol *sym;
+	register struct symbol *sym = yyval.sym;
 
 	if (!ahead(':')) {
 		register struct node *np = expr(); /* it is an identifier */
@@ -139,11 +159,7 @@ label(void)
 		return np;
 	}
 
-	sym = lookup(yytext, NS_LABEL, CTX_ANY);
-	if (sym->ctx != CTX_ANY)
-		error("label '%s' already defined", yytext);
-
-	sym->ctx = curctx;
+	sym = newlabel(sym, yytext);
 	next(), next();  /* skip IDEN and ':' */
 	return node2(OLABEL, nodesym(sym), stmt());
 }

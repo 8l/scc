@@ -8,7 +8,9 @@
 #endif
 
 #define CTX_OUTER 1
+#define CTX_FUNC  2
 #define CTX_ANY   0
+
 enum namespace {
 	NS_IDEN,
 	NS_KEYWORD,
@@ -59,8 +61,8 @@ extern unsigned char btype(unsigned char, unsigned char tok);
 extern void new_ctx(void);
 extern void del_ctx(void);
 extern void freesyms(void);
-extern struct symbol *lookup(register const char *s, 
-                             unsigned char ns, unsigned char ctx);
+extern struct symbol *lookup(register const char *s, char ns);
+extern void insert(struct symbol *sym, unsigned char ctx);
 extern void ctype(struct ctype *cp, unsigned char mod);
 extern struct ctype *newctype(void);
 extern void delctype(register struct ctype *tp);

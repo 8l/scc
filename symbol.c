@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -62,28 +63,53 @@ freesyms(void)
 }
 
 struct symbol *
-lookup(register const char *s, unsigned char ns, unsigned char ctx)
+lookup(register const char *s, char ns)
 {
 	register struct symbol *sym;
-	static unsigned char l, key;
+	register unsigned char l;
+	static unsigned char key;
 
 	l = strlen(s);
-	for (sym = htab[hash(s)]; sym; sym = sym->hash) {
-		if (!memcmp(sym->name, s, l) &&
-		    (ns == NS_ANY || ns == sym->ns) &&
-		    (sym->ctx == ctx || ctx == CTX_ANY)) {
+	key = hash(s);
+	for (sym = htab[key]; sym; sym = sym->hash) {
+		if (ns != NS_ANY && ns != sym->ns)
+			continue;
+		if (!memcmp(sym->name, s, l))
 			return sym;
-		}
 	}
 	sym = xmalloc(sizeof(*sym));
 	sym->name = xstrdup(s);
-	sym->ns = ns;
-	sym->ctx = CTX_ANY;
 	sym->next = head;
+	sym->ctx = curctx;
+	sym->ns = ns;
 	head = sym;
-	key = hash(s);
 	sym->hash = htab[key];
 	htab[key] = sym;
 
 	return sym;
+}
+
+void
+insert(struct symbol *sym, unsigned char ctx)
+{
+	register struct symbol *p, *q;
+
+	for (q = p = head; p; q = p, p = p->next) {
+		if (p == sym)
+			break;
+	}
+	assert(p);			/* sym must be in the list */
+	q->next = p->next;		/* remove from the list */
+
+	for (q = p = head; p; q = p, p = p->next) {
+		if (p->ctx <= ctx)
+			break;
+	}
+	if (q == NULL) {
+		head = sym;
+		sym->next = NULL;
+	} else {
+		q->next = sym;
+		sym->next = p;
+	}
 }

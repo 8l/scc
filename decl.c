@@ -11,23 +11,22 @@
 char parser_out_home;
 struct ctype *curfun;
 
+static struct symbol *cursym;
 static void declarator(void);
 
 static void
 newiden(void)
 {
 	switch (yyval.sym->ns) {
-	case NS_ANY:        /* First aparrence of the symbol */ 
+	case NS_ANY:        /* First aparrence of the symbol */
 		yyval.sym->ns = NS_IDEN;
-		yyval.sym->ctx = curctx;
+		cursym = yyval.sym;
 		break;
-	case NS_STRUCT: case NS_LABEL: case NS_TYPEDEF:
-		lookup(yytext, NS_IDEN, CTX_ANY);
 	case NS_IDEN:
 		if (yyval.sym->ctx == curctx)
 			error("redeclaration of '%s'", yytext);
 	default:
-		lookup(yytext, NS_IDEN, curctx);
+		cursym = lookup(yytext, NS_IDEN);
 	}
 }
 
