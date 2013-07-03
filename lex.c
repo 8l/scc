@@ -82,12 +82,16 @@ skip(void)
 static unsigned char
 follow(unsigned char op, unsigned char eq, unsigned char rep)
 {
-	register char c;
+	register char c = getc(yyin);
 
-	if ((c = getc(yyin)) == '=')
+	yytext[1] = c;
+	yytext[2] = '\0';
+	if (c == '=')
 		return eq;
 	else if (c == op && rep)
 		return rep;
+
+	yytext[1] = '\0';
 	ungetc(c, yyin);
 	return op;
 }
@@ -98,15 +102,22 @@ rel_shift(unsigned char op)
 	static char tokens[2][3] = {
 		{GE, SHL, SHL_EQ},
 		{LE, SHR, SHR_EQ}};
-	register char c;
+	register char c = getc(yyin);
 	register char *tp = tokens[op == '>'];
 
-	if ((c = getc(yyin)) == '=') {
+	yytext[1] = c;
+	yytext[2] = '\0';
+	if (c == '=') {
 		return tp[0];
 	} else if (c == op) {
-		if ((c = getc(yyin)) == '=')
+		if ((c = getc(yyin)) == '=')  {
+			yytext[2] = c;
+			yytext[3] = '\0';
 			return tp[2];
+		}
 		op = tp[1];
+	} else {
+		yytext[1] = '\0';
 	}
 	ungetc(c, yyin);
 	return op;
@@ -115,13 +126,15 @@ rel_shift(unsigned char op)
 static unsigned char
 minus(void)
 {
-	register int c;
+	register int c = getc(yyin);
 
-	switch (c = getc(yyin)) {
+	yytext[1] = c;
+	switch (c) {
 	case '-': return DEC;
 	case '>': return INDIR;
 	case '=': return SUB_EQ;
 	default:
+		yytext[1] = '\0';
 		ungetc(c, yyin);
 		return '-';
 	}
@@ -130,9 +143,11 @@ minus(void)
 static unsigned char
 operator(void)
 {
-	register unsigned char c;
+	register unsigned char c = getc(yyin);
 
-	switch (c = getc(yyin)) {
+	yytext[0] = c;
+	yytext[1] = '\0';
+	switch (c) {
 	case '=': return follow('=', EQ, 0);
 	case '^': return follow('^', XOR_EQ, 0);
 	case '*': return follow('*', MUL_EQ, 0);
