@@ -128,8 +128,10 @@ btype(unsigned char type, unsigned char tok)
 		if (type == LONG)
 			return LDOUBLE;
 		break;
+#ifndef NDEBUG
 	default:
 		abort();
+#endif
 	}
 	error("two or more basic types");
 }
