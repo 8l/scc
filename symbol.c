@@ -36,7 +36,6 @@ del_ctx(void)
 	register struct symbol *sym, *next;
 	static char *s;
 
-	--curctx;
 	for (sym = head; sym; sym = next) {
 		if (sym->ctx <= curctx)
 			break;
@@ -46,6 +45,7 @@ del_ctx(void)
 		sym->next = headfun;
 		headfun = sym;
 	}
+	--curctx;
 }
 
 void

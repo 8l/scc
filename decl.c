@@ -149,6 +149,7 @@ listdcl(register struct ctype *tp)
 			struct node *np = compound();
 			prtree(np);
 			putchar('\n');
+			freesyms();
 			return;
 		}
 	} while (accept(','));
