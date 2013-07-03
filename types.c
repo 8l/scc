@@ -74,7 +74,6 @@ decl_type(struct ctype *tp)
 {
 	while (stackp != stack)
 		tp = mktype(tp, *--stackp);
-	ptype(tp);
 	return tp;
 }
 

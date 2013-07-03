@@ -146,10 +146,7 @@ listdcl(register struct ctype *tp)
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
 		} else if (curfun->type == FTN && yytoken == '{') {
-			struct node *np = compound();
-			prtree(np);
-			putchar('\n');
-			freesyms();
+			function(cursym);
 			return;
 		}
 	} while (accept(','));
