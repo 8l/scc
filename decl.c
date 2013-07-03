@@ -52,11 +52,17 @@ dirdcl(void)
 				/* TODO: prototyped function */;
 			continue;
 		} else if (accept('[')) {
+			unsigned len;
+
+			if (accept(']')) {
+				len = 0;
+			} else {
+				expect(CONSTANT);
+				len = yyval.sym->val;
+				expect(']');
+			}
+			pushtype(len);
 			pushtype(ARY);
-			if (accept(']'))
-				; /* TODO: automatic size array */
-			else
-				/* TODO: specify size of array */;
 			continue;
 		} else {
 			return;

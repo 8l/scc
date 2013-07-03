@@ -31,6 +31,7 @@ struct ctype {
 	bool c_volatile : 1;
 	bool c_restrict : 1;
 	bool c_unsigned : 1;
+	unsigned len;
 	struct ctype *base;
 	unsigned char refcnt;
 };
@@ -55,7 +56,7 @@ extern struct type tfloat, tdouble, tldouble, tlong;
 
 
 extern struct ctype *decl_type(struct ctype *t);
-extern void pushtype(unsigned char mod);
+extern void pushtype(unsigned mod);
 extern unsigned char btype(unsigned char, unsigned char tok);
 extern void new_ctx(void);
 extern void del_ctx(void);

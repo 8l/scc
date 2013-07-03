@@ -34,14 +34,20 @@ delctype(register struct ctype *tp)
 static struct ctype *
 mktype(register struct ctype *tp, unsigned  char op)
 {
+	unsigned len;
+
 	switch (op) {
-	case PTR: case ARY: case FTN: {
+	case ARY:
+		assert(stackp != stack);
+		len = *--stackp;
+	case PTR: case FTN: {
 		register struct ctype *aux = tp;
 
 		++tp->refcnt;
 		tp = newctype();
 		tp->type = op;
 		tp->base = aux;
+		tp->len = len;
 		break;
 	}
 	case VOLATILE:
@@ -62,7 +68,7 @@ mktype(register struct ctype *tp, unsigned  char op)
 }
 
 void
-pushtype(unsigned char mod)
+pushtype(unsigned mod)
 {
 	if (stackp == stack + NR_DECLARATORS)
 		error("Too much type declarators");
