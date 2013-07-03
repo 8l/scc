@@ -12,6 +12,7 @@ static struct node *stmt(void);
 
 static unsigned char blocks[NR_BLOCK];
 static unsigned char *blockp = blocks;
+static struct symbol *curfun;
 
 static void
 push(register unsigned char b)
@@ -271,10 +272,11 @@ stmt(void)
 }
 
 void
-function(struct symbol *sym)
+function(register struct symbol *sym)
 {
 	register struct node *np;
 
+	curfun = sym;
 	np = node2(OFTN, nodesym(sym), compound());
 	prtree(np);
 	putchar('\n');

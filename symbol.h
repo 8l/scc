@@ -50,7 +50,6 @@ struct symbol {
 	struct symbol *hash;
 };
 
-extern struct ctype *curfun;
 extern struct type tchar, tshort, tint, tulong, tllong, tvoid, tkeyword;
 extern struct type tfloat, tdouble, tldouble, tlong;
 
