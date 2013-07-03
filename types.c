@@ -129,7 +129,7 @@ btype(unsigned char type, unsigned char tok)
 }
 
 void
-ctype(struct ctype *cp, unsigned char mod)
+storage(struct ctype *cp, unsigned char mod)
 {
 	extern unsigned char curctx;
 
@@ -185,7 +185,7 @@ ctype(struct ctype *cp, unsigned char mod)
 		return;
 	}
 bad_file_scope_storage:
-	error("file-scope declaration specifies ‘%s’", yytext);
+	error("file-scope declaration specifies '%s'", yytext);
 two_storage:
 	error("Two or more storage specifier");
 duplicated:

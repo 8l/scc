@@ -74,7 +74,7 @@ spec(register struct ctype *cp)
 		switch (yytoken) {
 		case TYPEDEF:  case EXTERN: case STATIC: case AUTO:
 		case REGISTER: case CONST:  case VOLATILE:
-			ctype(cp, yytoken);
+			storage(cp, yytoken);
 			break;
 		case UNSIGNED:
 			cp->c_unsigned = 1;

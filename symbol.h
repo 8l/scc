@@ -63,7 +63,7 @@ extern void del_ctx(void);
 extern void freesyms(void);
 extern struct symbol *lookup(register const char *s, char ns);
 extern void insert(struct symbol *sym, unsigned char ctx);
-extern void ctype(struct ctype *cp, unsigned char mod);
+extern void storage(struct ctype *cp, unsigned char mod);
 extern struct ctype *newctype(void);
 extern void delctype(register struct ctype *tp);
 
