@@ -79,9 +79,9 @@ spec(register struct ctype *cp)
 			cp->c_unsigned = 1;
 		case SIGNED:
 			if (sign == yytoken)
-				goto duplicated;
+				error("duplicated '%s'", yytext);
 			if (sign)
-				goto signed_and_unsigned;
+				error("both 'signed' and 'unsigned' in declaration specifiers");
 			sign = yytoken;
 			break;
 		case VOID:   case CHAR:   case SHORT:  case INT:
@@ -97,10 +97,6 @@ spec(register struct ctype *cp)
 			return n;
 		}
 	}
-duplicated:
-	error("duplicated '%s'", yytext);
-signed_and_unsigned:
-	error("both 'signed' and 'unsigned' in declaration specifiers");
 }
 
 static void
