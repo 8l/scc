@@ -88,10 +88,17 @@ spec(register struct ctype *cp)
 				error("duplicated '%s'", yytext);
 			if (sign)
 				error("both 'signed' and 'unsigned' in declaration specifiers");
+			switch (type) {
+			case FLOAT: case DOUBLE: case LDOUBLE:
+				goto float_sign;
+			}
 			sign = yytoken;
 			break;
-		case VOID:   case CHAR:   case SHORT:  case INT:
-		case FLOAT:  case DOUBLE: case LONG:   case BOOL:
+		case FLOAT: case DOUBLE:
+			if (sign)
+				goto float_sign;
+		case VOID:   case CHAR:   case SHORT:
+		case INT:    case LONG:   case BOOL:
 			cp->type = btype(cp->type, yytoken);
 			break;
 		case STRUCT:    /* TODO */
@@ -103,6 +110,8 @@ spec(register struct ctype *cp)
 			return n;
 		}
 	}
+float_sign:
+	error("floating types cannot be signed or unsigned");
 }
 
 static void
