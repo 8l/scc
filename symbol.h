@@ -57,17 +57,16 @@ extern struct type tfloat, tdouble, tldouble, tlong;
 
 extern struct ctype *decl_type(struct ctype *t);
 extern void pushtype(unsigned mod);
-extern unsigned char btype(unsigned char, unsigned char tok);
+extern struct ctype *btype(struct ctype *tp, unsigned char tok);
 extern void new_ctx(void);
 extern void del_ctx(void);
 extern void freesyms(void);
 extern struct symbol *lookup(const char *s, char ns);
 extern struct symbol *find(const char *s, char ns);
 extern void insert(struct symbol *sym, unsigned char ctx);
-extern void storage(struct ctype *cp, unsigned char mod);
+extern struct ctype *storage(struct ctype *tp, unsigned char mod);
 extern struct ctype *newctype(void);
 extern void delctype(struct ctype *tp);
-extern void linkctype(struct ctype *tp, struct symbol *sym);
 
 #ifndef NDEBUG
 extern void ptype(register struct ctype *t);

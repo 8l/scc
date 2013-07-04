@@ -22,15 +22,10 @@ newctype(void)
 }
 
 void
-linkctype(register struct ctype *tp, register struct symbol *sym)
-{
-	sym->ctype = tp;
-	++tp->refcnt;
-}
-
-void
 delctype(register struct ctype *tp)
 {
+	if (!tp)
+		return;
 	if (--tp->refcnt == 0) {
 		if (tp->base)
 			delctype(tp->base);
@@ -90,114 +85,136 @@ decl_type(struct ctype *tp)
 	return tp;
 }
 
-unsigned char
-btype(unsigned char type, unsigned char tok)
+struct ctype *
+btype(struct ctype *tp, unsigned char tok)
 {
+	register unsigned char type;
+
+	if (!tp)
+		tp = newctype();
+
+	type = tp->type;
 	switch (tok) {
 	case VOID:
-		if (!type)
-			return VOID;
+		if (type)
+			goto two_or_more;;
+		type = VOID;
 		break;
 	case BOOL:
-		if (!type)
-			return BOOL;
+		if (type)
+			goto two_or_more;
+		type = BOOL;
 		break;
 	case CHAR:
-		if (!type)
-			return CHAR;
+		if (type)
+			goto two_or_more;
+		type = CHAR;
 		break;
 	case SHORT:
-		if (!type || type == INT)
-			return SHORT;
+		if (type && type != INT)
+			goto two_or_more;
+		type = SHORT;
 		break;
 	case INT:
 		switch (type) {
-		case 0:     return INT;
-		case SHORT: return INT;
-		case LONG:  return LONG;
+		case 0:       type = INT;       break;
+		case SHORT:   type = SHORT;     break;
+		case LONG:    type = LONG;      break;
+		default:      goto two_or_more;
 		}
 		break;
 	case LONG:
 		switch (type) {
-		case 0: case INT:          return LONG;
-		case LONG:                 return LLONG;
-		case DOUBLE:               return LDOUBLE;
-		case LLONG: case LDOUBLE:  error("too much long");
+		case 0:
+		case INT:     type = LONG;      break;
+		case LONG:    type = LLONG;     break;
+		case DOUBLE:  type = LDOUBLE;   break;
+		case LLONG:
+		case LDOUBLE:  error("too much long");
 		}
 		break;
 	case FLOAT:
-		if (!type)
-			return FLOAT;
+		if (type)
+			goto two_or_more;
+		type = FLOAT;
 		break;
 	case DOUBLE:
+		if (type)
+			goto two_or_more;
 		if (!type)
-			return DOUBLE;
-		if (type == LONG)
-			return LDOUBLE;
+			type = DOUBLE;
+		else if (type == LONG)
+			type = LDOUBLE;
 		break;
 #ifndef NDEBUG
 	default:
 		abort();
 #endif
 	}
+	tp->type = type;
+	return tp;
+
+two_or_more:
 	error("two or more basic types");
 }
 
-void
-storage(struct ctype *cp, unsigned char mod)
+struct ctype *
+storage(register struct ctype *tp, unsigned char mod)
 {
 	extern unsigned char curctx;
 
+	if (!tp)
+		tp = newctype();
 	switch (mod) {
 	case TYPEDEF:
-		if (cp->c_type)
+		if (tp->c_type)
 			goto duplicated;
-		if (cp->c_extern | cp->c_auto | cp->c_reg | cp->c_static)
+		if (tp->c_extern | tp->c_auto | tp->c_reg | tp->c_static)
 			goto two_storage;
-		cp->c_type = 1;
-		return;
+		tp->c_type = 1;
+		return tp;
 	case EXTERN:
-		if (cp->c_extern)
+		if (tp->c_extern)
 			goto duplicated;
-		if (cp->c_type | cp->c_auto | cp->c_reg | cp->c_static)
+		if (tp->c_type | tp->c_auto | tp->c_reg | tp->c_static)
 			goto two_storage;
-		cp->c_extern = 1;
-		return;
+		tp->c_extern = 1;
+		return tp;
 	case STATIC:
-		if (cp->c_static)
+		if (tp->c_static)
 			goto duplicated;
-		if (cp->c_type | cp->c_extern | cp->c_auto | cp->c_reg)
+		if (tp->c_type | tp->c_extern | tp->c_auto | tp->c_reg)
 			goto two_storage;
-		cp->c_static = 1;
-		return;
+		tp->c_static = 1;
+		return tp;
 	case AUTO:
 		if (curctx != CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (cp->c_type | cp->c_extern | cp->c_static | cp->c_reg)
+		if (tp->c_type | tp->c_extern | tp->c_static | tp->c_reg)
 			goto two_storage;
-		if (cp->c_auto)
+		if (tp->c_auto)
 			goto duplicated;
-		cp->c_static = 1;
-		return;
+		tp->c_static = 1;
+		return tp;
 	case REGISTER:
 		if (curctx != CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (cp->c_type | cp->c_extern | cp->c_auto | cp->c_static)
+		if (tp->c_type | tp->c_extern | tp->c_auto | tp->c_static)
 			goto two_storage;
-		if (cp->c_reg)
+		if (tp->c_reg)
 			goto duplicated;
-		cp->c_reg = 1;
-		return;
+		tp->c_reg = 1;
+		return tp;
 	case CONST:
-		if (options.repeat && cp->c_const)
+		if (options.repeat && tp->c_const)
 			goto duplicated;
-		cp->c_const = 1;
-		return;
+		tp->c_const = 1;
+		return tp;
 	case VOLATILE:
-		if (options.repeat && cp->c_volatile)
+		if (options.repeat && tp->c_volatile)
 			goto duplicated;
-		cp->c_volatile = 1;
-		return;
+		tp->c_volatile = 1;
+		return tp;
 	}
 bad_file_scope_storage:
 	error("file-scope declaration specifies '%s'", yytext);

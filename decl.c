@@ -70,20 +70,19 @@ dirdcl(void)
 	}
 }
 
-static unsigned char
-spec(register struct ctype *cp)
+struct ctype *
+spec(void)
 {
-	register unsigned char sign, n;
+	static unsigned char sign, type;
+	register struct ctype *tp = NULL;
 
-	for (n = sign = 0; ; ++n, next()) {
+	for (type = sign = 0; ; next()) {
 		switch (yytoken) {
 		case TYPEDEF:  case EXTERN: case STATIC: case AUTO:
 		case REGISTER: case CONST:  case VOLATILE:
-			storage(cp, yytoken);
+			tp = storage(tp, yytoken);
 			break;
-		case UNSIGNED:
-			cp->c_unsigned = 1;
-		case SIGNED:
+		case UNSIGNED: case SIGNED:
 			if (sign == yytoken)
 				error("duplicated '%s'", yytext);
 			if (sign)
@@ -92,22 +91,26 @@ spec(register struct ctype *cp)
 			case FLOAT: case DOUBLE: case LDOUBLE:
 				goto float_sign;
 			}
-			sign = yytoken;
+			if (!tp)
+				tp = newctype();
+			if ((type = sign = yytoken) == UNSIGNED)
+				tp->c_unsigned = 1;
 			break;
 		case FLOAT: case DOUBLE:
 			if (sign)
 				goto float_sign;
 		case VOID:   case CHAR:   case SHORT:
 		case INT:    case LONG:   case BOOL:
-			cp->type = btype(cp->type, yytoken);
+			tp = btype(tp, yytoken);
+			type = tp->type;
 			break;
 		case STRUCT:    /* TODO */
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
 		default:
-			if (!cp->type && sign)
-				cp->type = INT;
-			return n;
+			if (tp && !tp->type && sign)
+				tp->type = INT;
+			return tp;
 		}
 	}
 float_sign:
@@ -181,7 +184,7 @@ listdcl(struct ctype *base)
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
 		}
-		linkctype(tp, cursym);
+		(cursym->ctype = tp)->refcnt++;
 		sp = nodesym(cursym);
 		if (tp->type == FTN && yytoken == '{') {
 			np  = node2(ODEF, sp, function(cursym));
@@ -203,8 +206,7 @@ decl(void)
 
 	while (accept(';'))
 		/* nothing */;
-	tp = newctype();
-	if (!spec(tp)) {
+	if (!(tp = spec())) {
 		if (curctx != CTX_OUTER)
 			goto end;
 		warning("data definition has no type or storage class");
