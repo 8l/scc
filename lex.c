@@ -180,14 +180,14 @@ next(void)
 	}
 }
 
-bool
-ahead(register char tok)
+unsigned char
+ahead(void)
 {
 	register char c;
 
 	skip();
 	ungetc(c = getc(yyin), yyin);
-	return c == tok;
+	return c;
 }
 
 char

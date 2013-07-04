@@ -264,7 +264,7 @@ stmt(void)
 	case GOTO:     return _goto();
 	case CASE:     return _case();
 	case DEFAULT:  return _default();
-	case IDEN:     if (ahead(':')) 	return label();
+	case IDEN:     if (ahead() == ':') return label();
 	}
 	np = expr();
 	expect(';');

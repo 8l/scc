@@ -46,5 +46,5 @@ extern void next(void);
 extern char accept(unsigned char tok);
 extern void expect(unsigned char tok);
 extern void init_keywords(void);
-extern bool ahead(char c);
+extern unsigned char ahead(void);
 #endif
