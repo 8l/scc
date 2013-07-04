@@ -15,9 +15,9 @@ static unsigned char *stackp = stack;
 struct ctype *
 newctype(void)
 {
-	register struct ctype *tp = xcalloc(sizeof(tp), 1);
+	register struct ctype *tp = xcalloc(sizeof(*tp), 1);
 
-	++tp->refcnt;
+	tp->refcnt = 1;
 	return tp;
 }
 
