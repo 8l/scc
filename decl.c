@@ -157,15 +157,16 @@ initializer(register struct ctype *tp)
 }
 
 static struct node *
-listdcl(struct ctype *tp)
+listdcl(struct ctype *base)
 {
 	struct node *lp = nodecomp();
 
 	do {
-		register struct node *sp, *np;
+		struct node *sp, *np;
+		register struct ctype *tp;
 
 		declarator();
-		tp = decl_type(tp);
+		tp = decl_type(base);
 		if (!tp->type) {
 			warning_error(options.implicit,
 				      "type defaults to 'int' in declaration of '%s'",
