@@ -51,9 +51,6 @@ struct symbol {
 	struct symbol *hash;
 };
 
-extern struct type tchar, tshort, tint, tulong, tllong, tvoid, tkeyword;
-extern struct type tfloat, tdouble, tldouble, tlong;
-
 
 extern struct ctype *decl_type(struct ctype *t);
 extern void pushtype(unsigned mod);
