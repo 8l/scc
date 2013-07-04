@@ -22,6 +22,13 @@ newctype(void)
 }
 
 void
+linkctype(register struct ctype *tp, register struct symbol *sym)
+{
+	sym->ctype = tp;
+	++tp->refcnt;
+}
+
+void
 delctype(register struct ctype *tp)
 {
 	if (--tp->refcnt == 0) {

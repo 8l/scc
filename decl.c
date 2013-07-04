@@ -171,6 +171,7 @@ listdcl(struct ctype *tp)
 				      "type defaults to 'int' in declaration of '%s'",
 				      yytext);
 		}
+		linkctype(tp, cursym);
 		sp = nodesym(cursym);
 		if (tp->type == FTN && yytoken == '{') {
 			np  = node2(ODEF, sp, function(cursym));
