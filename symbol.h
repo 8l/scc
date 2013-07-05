@@ -31,6 +31,7 @@ struct ctype {
 	bool c_volatile : 1;
 	bool c_restrict : 1;
 	bool c_unsigned : 1;
+	bool c_signed : 1;
 	unsigned len;
 	struct ctype *base;
 	unsigned char refcnt;

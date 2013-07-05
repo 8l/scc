@@ -76,38 +76,22 @@ dirdcl(register struct ctype *tp)
 struct ctype *
 spec(void)
 {
-	unsigned char sign;
 	register struct ctype *tp = NULL;
 
-	for (sign = 0; ; next()) {
+	for (;; next()) {
 		switch (yytoken) {
 		case TYPEDEF:  case EXTERN: case STATIC: case AUTO:
 		case REGISTER: case CONST:  case VOLATILE:
 			tp = storage(tp, yytoken);
 			break;
 		case UNSIGNED: case SIGNED:
-			if (sign == yytoken)
-				error("duplicated '%s'", yytext);
-			if (sign)
-				error("both 'signed' and 'unsigned' in declaration specifiers");
-			if (!tp)
-				tp = newctype();
-			switch (tp->type) {
-			case FLOAT: case DOUBLE: case LDOUBLE: case BOOL:
-				goto invalid_sign;
-			}
-			if ((sign = yytoken) == UNSIGNED)
-				tp->c_unsigned = 1;
-			break;
-		case FLOAT: case DOUBLE: case BOOL:
-			if (sign)
-				goto invalid_sign;
-		case VOID: case CHAR: case SHORT: case INT: case LONG:
+		case FLOAT:    case DOUBLE: case BOOL:
+		case VOID:     case CHAR:   case SHORT:
+		case INT:      case ENUM:   case LONG:
+		case STRUCT:   case UNION:
 			tp = btype(tp, yytoken);
 			break;
-		case STRUCT:    /* TODO */
-		case UNION:	/* TODO */
-		case ENUM:	/* TODO */
+			/* TODO: ENUM, STRUCT, UNION */
 		case IDEN:
 			if (!tp || !tp->type) {
 				struct symbol *sym;
@@ -133,8 +117,6 @@ spec(void)
 			return tp;
 		}
 	}
-invalid_sign:
-	error("invalid sign modifier");
 }
 
 static void
@@ -226,7 +208,8 @@ decl(void)
 			goto end;
 		tp = newctype();
 		tp->type = INT;
-		warning("data definition has no type or storage class");
+		warning_error(options.implicit,
+		              "data definition has no type or storage class");
 	}
 	if (accept(';')) {
 		warning_error(options.useless,

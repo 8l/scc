@@ -93,15 +93,12 @@ btype(struct ctype *tp, unsigned char tok)
 
 	type = tp->type;
 	switch (tok) {
-	case VOID:
+	case VOID: case BOOL: case STRUCT: case UNION: case ENUM:
 		if (type)
 			goto two_or_more;;
-		type = VOID;
-		break;
-	case BOOL:
-		if (type)
-			goto two_or_more;
-		type = BOOL;
+		type = tok;
+		if (tp->c_signed || tp->c_unsigned)
+			goto invalid_sign;
 		break;
 	case CHAR:
 		if (type)
@@ -135,6 +132,8 @@ btype(struct ctype *tp, unsigned char tok)
 		if (type)
 			goto two_or_more;
 		type = FLOAT;
+		if (tp->c_signed || tp->c_unsigned)
+			goto check_sign;
 		break;
 	case DOUBLE:
 		if (type)
@@ -143,6 +142,27 @@ btype(struct ctype *tp, unsigned char tok)
 			type = DOUBLE;
 		else if (type == LONG)
 			type = LDOUBLE;
+		if (tp->c_signed || tp->c_unsigned)
+			goto check_sign;
+		break;
+	case UNSIGNED:
+		if (tp->c_unsigned)
+			goto duplicated;
+		if (tp->c_signed)
+			goto both_sign;
+		tp->c_unsigned = 1;
+		goto check_sign;
+	case SIGNED:
+		if (tp->c_signed)
+			goto duplicated;
+		if (tp->c_unsigned)
+			goto both_sign;
+		tp->c_signed = 1;
+
+check_sign:	switch (type) {
+		case VOID: case BOOL: case STRUCT: case UNION: case ENUM:
+			goto invalid_sign;
+		}
 		break;
 	default:
 		assert(0);
@@ -150,6 +170,12 @@ btype(struct ctype *tp, unsigned char tok)
 	tp->type = type;
 	return tp;
 
+both_sign:
+	error("both 'signed' and 'unsigned' in declaration specifiers");
+duplicated:
+	error("duplicated '%s'", yytext);
+invalid_sign:
+	error("invalid sign modifier");
 two_or_more:
 	error("two or more basic types");
 }
