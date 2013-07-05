@@ -16,16 +16,16 @@ static void declarator(struct ctype *tp);
 static void
 newiden(struct ctype *tp)
 {
-	register unsigned char sns, ns;
+	register unsigned char yyns, ns;
 
 	ns = tp->c_typedef ? NS_TYPEDEF : NS_IDEN;
-	sns = yyval.sym->ns;
+	yyns = yyval.sym->ns;
 
-	if (sns == NS_ANY) {     /* First appearence of the symbol */
+	if (yyns == NS_ANY) {     /* First appearence of the symbol */
 		yyval.sym->ns = ns;
 		cursym = yyval.sym;
 		return;
-	} else if (ns == sns) {  /* Duplicated symbol */
+	} else if (ns == yyns) {  /* Duplicated symbol */
 		if (yyval.sym->ctx == curctx)
 			error("redeclaration of '%s'", yytext);
 	}
