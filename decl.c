@@ -216,25 +216,22 @@ struct node *
 decl(void)
 {
 	register struct ctype *tp;
-	register struct node *np = NULL;
 
+repeat:
 	if (!(tp = spec())) {
 		if (curctx != CTX_OUTER || yytoken != IDEN)
-			goto end;
+			return NULL;
 		tp = newctype();
 		tp->type = INT;
 		warning_error(options.implicit,
 		              "data definition has no type or storage class");
-	}
-	if (accept(';')) {
+	} else if (accept(';')) {
 		warning_error(options.useless,
 			      "useless type name in empty declaration");
 		delctype(tp);
-	} else {
-		np = listdcl(tp);
+		goto repeat;
 	}
-
-end:	return np;
+	return listdcl(tp);
 }
 
 void
