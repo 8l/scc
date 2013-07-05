@@ -191,7 +191,7 @@ storage(register struct ctype *tp, unsigned char mod)
 		tp->c_static = 1;
 		return tp;
 	case AUTO:
-		if (curctx != CTX_OUTER)
+		if (curctx == CTX_OUTER)
 			goto bad_file_scope_storage;
 		if (tp->c_typedef | tp->c_extern | tp->c_static | tp->c_reg)
 			goto two_storage;
@@ -200,7 +200,7 @@ storage(register struct ctype *tp, unsigned char mod)
 		tp->c_static = 1;
 		return tp;
 	case REGISTER:
-		if (curctx != CTX_OUTER)
+		if (curctx == CTX_OUTER)
 			goto bad_file_scope_storage;
 		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_static)
 			goto two_storage;
