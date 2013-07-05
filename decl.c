@@ -116,10 +116,14 @@ spec(void)
 				sym = (yyval.sym->ns == NS_TYPEDEF) ?
 					yyval.sym : find(yytext, NS_TYPEDEF);
 				if (sym && tok != ';' && tok != ',') {
-					(tp = sym->ctype)->refcnt++;
-					next();
+					if (!tp)
+						tp = newctype();
+					tp->type = TYPEDEF;
+					(tp->base = sym->ctype)->refcnt++;
+					break;
 				}
 			}
+			/* it is not a type name */
 		default:
 			if (!tp || tp->type)
 				return tp;

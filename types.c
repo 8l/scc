@@ -26,8 +26,7 @@ delctype(register struct ctype *tp)
 {
 	if (!tp)
 		return;
-	tp->c_typedef = 0;              /* this flag only is important in */
-	if (--tp->refcnt == 0) {        /* the parsing */
+	if (--tp->refcnt == 0) {
 		if (tp->base)
 			delctype(tp->base);
 		free(tp);
