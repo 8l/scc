@@ -172,6 +172,8 @@ storage(register struct ctype *tp, unsigned char mod)
 			goto duplicated;
 		if (tp->c_extern | tp->c_auto | tp->c_reg | tp->c_static)
 			goto two_storage;
+		if (tp->c_const || tp->c_volatile)
+			goto bad_typedef;
 		tp->c_typedef = 1;
 		return tp;
 	case EXTERN:
@@ -209,14 +211,20 @@ storage(register struct ctype *tp, unsigned char mod)
 	case CONST:
 		if (options.repeat && tp->c_const)
 			goto duplicated;
+		if (tp->c_typedef)
+			goto bad_typedef;
 		tp->c_const = 1;
 		return tp;
 	case VOLATILE:
 		if (options.repeat && tp->c_volatile)
 			goto duplicated;
+		if (tp->c_typedef)
+			goto bad_typedef;
 		tp->c_volatile = 1;
 		return tp;
 	}
+bad_typedef:
+	error("typedef specifies type qualifier");
 bad_file_scope_storage:
 	error("file-scope declaration specifies '%s'", yytext);
 two_storage:
