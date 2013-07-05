@@ -76,10 +76,10 @@ dirdcl(register struct ctype *tp)
 struct ctype *
 spec(void)
 {
-	unsigned char sign, type;
+	unsigned char sign;
 	register struct ctype *tp = NULL;
 
-	for (type = sign = 0; ; next()) {
+	for (sign = 0; ; next()) {
 		switch (yytoken) {
 		case TYPEDEF:  case EXTERN: case STATIC: case AUTO:
 		case REGISTER: case CONST:  case VOLATILE:
@@ -90,13 +90,13 @@ spec(void)
 				error("duplicated '%s'", yytext);
 			if (sign)
 				error("both 'signed' and 'unsigned' in declaration specifiers");
-			switch (type) {
+			if (!tp)
+				tp = newctype();
+			switch (tp->type) {
 			case FLOAT: case DOUBLE: case LDOUBLE: case BOOL:
 				goto invalid_sign;
 			}
-			if (!tp)
-				tp = newctype();
-			if ((type = sign = yytoken) == UNSIGNED)
+			if ((sign = yytoken) == UNSIGNED)
 				tp->c_unsigned = 1;
 			break;
 		case FLOAT: case DOUBLE: case BOOL:
@@ -104,15 +104,14 @@ spec(void)
 				goto invalid_sign;
 		case VOID: case CHAR: case SHORT: case INT: case LONG:
 			tp = btype(tp, yytoken);
-			type = tp->type;
 			break;
 		case STRUCT:    /* TODO */
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
 		case IDEN: {
-			struct symbol *sym;
+			struct symbol *sym = find(yytext, NS_TYPEDEF);
 
-			if ((sym = find(yytext, NS_TYPEDEF)) && !type) {
+			if (sym && (!tp || !tp->type)) {
 				register unsigned char tok = ahead();
 
 				if (tok != ';' && tok != ',')  {
