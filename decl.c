@@ -193,7 +193,7 @@ listdcl(struct ctype *base)
 		struct node *sp, *np;
 		register struct ctype *tp;
 
-		declarator(tp);
+		declarator(base);
 		tp = decl_type(base);
 		(cursym->ctype = tp)->refcnt++;
 		sp = nodesym(cursym);
