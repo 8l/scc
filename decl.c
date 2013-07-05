@@ -11,32 +11,35 @@
 char parser_out_home;
 
 static struct symbol *cursym;
-static void declarator(void);
+static void declarator(struct ctype *tp);
 
 static void
-newiden(void)
+newiden(struct ctype *tp)
 {
-	switch (yyval.sym->ns) {
-	case NS_ANY:        /* First aparrence of the symbol */
-		yyval.sym->ns = NS_IDEN;
+	register unsigned char sns, ns;
+
+	ns = tp->c_type ? NS_TYPEDEF : NS_IDEN;
+	sns = yyval.sym->ns;
+
+	if (sns == NS_ANY) {     /* First appearence of the symbol */
+		yyval.sym->ns = ns;
 		cursym = yyval.sym;
-		break;
-	case NS_IDEN:
+		return;
+	} else if (ns == sns) {  /* Duplicated symbol */
 		if (yyval.sym->ctx == curctx)
 			error("redeclaration of '%s'", yytext);
-	default:
-		cursym = lookup(yytext, NS_IDEN);
 	}
+	cursym = lookup(yytext, ns);
 }
 
 static void
-dirdcl(void)
+dirdcl(register struct ctype *tp)
 {
 	if (accept('(')) {
-		declarator();
+		declarator(tp);
 		expect(')');
 	} else if (yytoken == IDEN) {
-		newiden();
+		newiden(tp);
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
@@ -73,7 +76,7 @@ dirdcl(void)
 struct ctype *
 spec(void)
 {
-	static unsigned char sign, type;
+	unsigned char sign, type;
 	register struct ctype *tp = NULL;
 
 	for (type = sign = 0; ; next()) {
@@ -107,6 +110,18 @@ spec(void)
 		case STRUCT:    /* TODO */
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
+		case IDEN: {
+			struct symbol *sym;
+
+			if ((sym = find(yytext, NS_TYPEDEF)) && !type) {
+				register unsigned char tok = ahead();
+
+				if (tok != ';' && tok != ',')  {
+					(tp = sym->ctype)->refcnt++;
+					next();
+				}
+			}
+			}
 		default:
 			if (tp && !tp->type && sign)
 				tp->type = INT;
@@ -118,7 +133,7 @@ float_sign:
 }
 
 static void
-declarator(void)
+declarator(struct ctype *tp)
 {
 	unsigned char qlf[NR_DECLARATORS];
 	register unsigned char *bp, *lim;
@@ -142,7 +157,7 @@ declarator(void)
 	if (bp == lim)
 		error("Too much type declarators");
 
-	dirdcl();
+	dirdcl(tp);
 
 	for (lim = bp - 1, bp = qlf; bp < lim; ++bp)
 		pushtype(*bp);
@@ -177,7 +192,7 @@ listdcl(struct ctype *base)
 		struct node *sp, *np;
 		register struct ctype *tp;
 
-		declarator();
+		declarator(tp);
 		tp = decl_type(base);
 		if (!tp->type) {
 			warning_error(options.implicit,
@@ -214,12 +229,12 @@ decl(void)
 	if (accept(';')) {
 		warning_error(options.useless,
 			      "useless type name in empty declaration");
+		delctype(tp);
 	} else {
 		np = listdcl(tp);
 	}
 
-end:	delctype(tp);
-	return np;
+end:	return np;
 }
 
 void
