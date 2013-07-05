@@ -108,17 +108,17 @@ spec(void)
 		case STRUCT:    /* TODO */
 		case UNION:	/* TODO */
 		case ENUM:	/* TODO */
-		case IDEN: {
-			struct symbol *sym = find(yytext, NS_TYPEDEF);
+		case IDEN:
+			if (!tp || !tp->type) {
+				struct symbol *sym;
+				unsigned char tok = ahead();
 
-			if (sym && (!tp || !tp->type)) {
-				register unsigned char tok = ahead();
-
-				if (tok != ';' && tok != ',')  {
+				sym = (yyval.sym->ns == NS_TYPEDEF) ?
+					yyval.sym : find(yytext, NS_TYPEDEF);
+				if (sym && tok != ';' && tok != ',') {
 					(tp = sym->ctype)->refcnt++;
 					next();
 				}
-			}
 			}
 		default:
 			if (tp && !tp->type && sign)
