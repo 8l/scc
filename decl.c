@@ -91,19 +91,18 @@ spec(void)
 			if (sign)
 				error("both 'signed' and 'unsigned' in declaration specifiers");
 			switch (type) {
-			case FLOAT: case DOUBLE: case LDOUBLE:
-				goto float_sign;
+			case FLOAT: case DOUBLE: case LDOUBLE: case BOOL:
+				goto invalid_sign;
 			}
 			if (!tp)
 				tp = newctype();
 			if ((type = sign = yytoken) == UNSIGNED)
 				tp->c_unsigned = 1;
 			break;
-		case FLOAT: case DOUBLE:
+		case FLOAT: case DOUBLE: case BOOL:
 			if (sign)
-				goto float_sign;
-		case VOID:   case CHAR:   case SHORT:
-		case INT:    case LONG:   case BOOL:
+				goto invalid_sign;
+		case VOID: case CHAR: case SHORT: case INT: case LONG:
 			tp = btype(tp, yytoken);
 			type = tp->type;
 			break;
@@ -128,8 +127,8 @@ spec(void)
 			return tp;
 		}
 	}
-float_sign:
-	error("floating types cannot be signed or unsigned");
+invalid_sign:
+	error("invalid sign modifier");
 }
 
 static void
