@@ -121,8 +121,11 @@ spec(void)
 				}
 			}
 		default:
-			if (tp && !tp->type && sign)
-				tp->type = INT;
+			if (!tp || tp->type)
+				return tp;
+			warning_error(options.implicit,
+			              "type defaults to 'int' in declaration");
+			tp->type = INT;
 			return tp;
 		}
 	}
@@ -192,11 +195,6 @@ listdcl(struct ctype *base)
 
 		declarator(tp);
 		tp = decl_type(base);
-		if (!tp->type) {
-			warning_error(options.implicit,
-				      "type defaults to 'int' in declaration of '%s'",
-				      yytext);
-		}
 		(cursym->ctype = tp)->refcnt++;
 		sp = nodesym(cursym);
 		if (tp->type == FTN && yytoken == '{') {
