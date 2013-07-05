@@ -13,23 +13,28 @@ char parser_out_home;
 static struct symbol *cursym;
 static void declarator(struct ctype *tp);
 
-static void
-newiden(struct ctype *tp)
+static struct symbol *
+namespace(register unsigned char ns, unsigned char alloc)
 {
-	register unsigned char yyns, ns;
+	register struct symbol *sym = yyval.sym;
+	unsigned char yyns = sym->ns;
 
-	ns = tp->c_typedef ? NS_TYPEDEF : NS_IDEN;
-	yyns = yyval.sym->ns;
-
-	if (yyns == NS_ANY) {     /* First appearence of the symbol */
-		yyval.sym->ns = ns;
-		cursym = yyval.sym;
-		return;
-	} else if (ns == yyns) {  /* Duplicated symbol */
-		if (yyval.sym->ctx == curctx)
+	if (!alloc) {
+		if (yyns == NS_ANY)
+			return NULL;
+		else if (yyns == ns)
+			return sym;
+		else
+			return find(yytext, ns);
+	} else {
+		if (yyns == NS_ANY) {
+			sym->ns = ns;
+			return sym;
+		} else if (yyns == ns && sym->ctx == curctx) {
 			error("redeclaration of '%s'", yytext);
+		}
+		return lookup(yytext, ns);
 	}
-	cursym = lookup(yytext, ns);
 }
 
 static void
@@ -39,7 +44,7 @@ dirdcl(register struct ctype *tp)
 		declarator(tp);
 		expect(')');
 	} else if (yytoken == IDEN) {
-		newiden(tp);
+		cursym = namespace(tp->c_typedef ? NS_TYPEDEF : NS_IDEN, 1);
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
@@ -97,8 +102,7 @@ spec(void)
 				struct symbol *sym;
 				unsigned char tok = ahead();
 
-				sym = (yyval.sym->ns == NS_TYPEDEF) ?
-					yyval.sym : find(yytext, NS_TYPEDEF);
+				sym = namespace(NS_TYPEDEF, 0);
 				if (sym && tok != ';' && tok != ',') {
 					if (!tp)
 						tp = newctype();
