@@ -222,8 +222,10 @@ decl(void)
 	while (accept(';'))
 		/* nothing */;
 	if (!(tp = spec())) {
-		if (curctx != CTX_OUTER)
+		if (curctx != CTX_OUTER || yytoken != IDEN)
 			goto end;
+		tp = newctype();
+		tp->type = INT;
 		warning("data definition has no type or storage class");
 	}
 	if (accept(';')) {
