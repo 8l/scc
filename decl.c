@@ -18,7 +18,7 @@ newiden(struct ctype *tp)
 {
 	register unsigned char sns, ns;
 
-	ns = tp->c_type ? NS_TYPEDEF : NS_IDEN;
+	ns = tp->c_typedef ? NS_TYPEDEF : NS_IDEN;
 	sns = yyval.sym->ns;
 
 	if (sns == NS_ANY) {     /* First appearence of the symbol */

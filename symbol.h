@@ -22,7 +22,7 @@ enum namespace {
 
 struct ctype {
 	unsigned type : 5;
-	bool c_type : 1;
+	bool c_typedef : 1;
 	bool c_extern : 1;
 	bool c_static : 1;
 	bool c_auto : 1;

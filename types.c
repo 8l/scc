@@ -26,7 +26,7 @@ delctype(register struct ctype *tp)
 {
 	if (!tp)
 		return;
-	tp->c_type = 0;              /* this flag only is important in */
+	tp->c_typedef = 0;              /* this flag only is important in */
 	if (--tp->refcnt == 0) {        /* the parsing */
 		if (tp->base)
 			delctype(tp->base);
@@ -168,30 +168,30 @@ storage(register struct ctype *tp, unsigned char mod)
 		tp = newctype();
 	switch (mod) {
 	case TYPEDEF:
-		if (tp->c_type)
+		if (tp->c_typedef)
 			goto duplicated;
 		if (tp->c_extern | tp->c_auto | tp->c_reg | tp->c_static)
 			goto two_storage;
-		tp->c_type = 1;
+		tp->c_typedef = 1;
 		return tp;
 	case EXTERN:
 		if (tp->c_extern)
 			goto duplicated;
-		if (tp->c_type | tp->c_auto | tp->c_reg | tp->c_static)
+		if (tp->c_typedef | tp->c_auto | tp->c_reg | tp->c_static)
 			goto two_storage;
 		tp->c_extern = 1;
 		return tp;
 	case STATIC:
 		if (tp->c_static)
 			goto duplicated;
-		if (tp->c_type | tp->c_extern | tp->c_auto | tp->c_reg)
+		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_reg)
 			goto two_storage;
 		tp->c_static = 1;
 		return tp;
 	case AUTO:
 		if (curctx != CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (tp->c_type | tp->c_extern | tp->c_static | tp->c_reg)
+		if (tp->c_typedef | tp->c_extern | tp->c_static | tp->c_reg)
 			goto two_storage;
 		if (tp->c_auto)
 			goto duplicated;
@@ -200,7 +200,7 @@ storage(register struct ctype *tp, unsigned char mod)
 	case REGISTER:
 		if (curctx != CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (tp->c_type | tp->c_extern | tp->c_auto | tp->c_static)
+		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_static)
 			goto two_storage;
 		if (tp->c_reg)
 			goto duplicated;
