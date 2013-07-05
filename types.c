@@ -61,10 +61,8 @@ mktype(register struct ctype *tp, unsigned  char op)
 	case CONST:
 		tp->c_const = 1;
 		break;
-#ifndef NDEBUG
 	default:
-		abort();
-#endif
+		assert(0);
 	}
 	return tp;
 }
@@ -146,10 +144,8 @@ btype(struct ctype *tp, unsigned char tok)
 		else if (type == LONG)
 			type = LDOUBLE;
 		break;
-#ifndef NDEBUG
 	default:
-		abort();
-#endif
+		assert(0);
 	}
 	tp->type = type;
 	return tp;
