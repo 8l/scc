@@ -218,8 +218,6 @@ decl(void)
 	register struct ctype *tp;
 	register struct node *np = NULL;
 
-	while (accept(';'))
-		/* nothing */;
 	if (!(tp = spec())) {
 		if (curctx != CTX_OUTER || yytoken != IDEN)
 			goto end;
