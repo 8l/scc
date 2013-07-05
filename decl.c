@@ -109,11 +109,24 @@ spec(void)
 			}
 			/* it is not a type name */
 		default:
-			if (!tp || tp->type)
-				return tp;
-			warning_error(options.implicit,
-			              "type defaults to 'int' in declaration");
-			tp->type = INT;
+			if (!tp)
+				return NULL;
+			if (!tp->type) {
+				warning_error(options.implicit,
+			                      "type defaults to 'int' in declaration");
+				tp->type = INT;
+			}
+			if (!tp->c_signed && !tp->c_unsigned) {
+				switch (tp->type) {
+				case CHAR:
+					if (!options.charsign) {
+						tp->c_unsigned = 1;
+						break;
+					}
+				case INT: case SHORT: case LONG: case LLONG:
+					tp->c_signed = 1;
+				}
+			}
 			return tp;
 		}
 	}

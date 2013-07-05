@@ -13,6 +13,7 @@ struct user_opt {
 	unsigned char c99;
 	unsigned char useless;
 	unsigned char repeat;
+	unsigned char charsign;
 };
 
 extern  struct user_opt options;
