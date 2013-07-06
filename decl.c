@@ -52,7 +52,6 @@ dirdcl(register struct ctype *tp)
 
 	for (;;) {
 		if (accept('(')) {
-			next();
 			pushtype(FTN);
 			if (accept(')'))
 				; /* TODO: k&r function */
