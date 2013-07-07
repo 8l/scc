@@ -11,7 +11,7 @@
 char parser_out_home;
 
 static struct symbol *cursym;
-static void declarator(struct ctype *tp);
+static void declarator(struct ctype *tp, unsigned char ns);
 
 static struct symbol *
 namespace(register unsigned char ns, unsigned char alloc)
@@ -38,13 +38,13 @@ namespace(register unsigned char ns, unsigned char alloc)
 }
 
 static void
-dirdcl(register struct ctype *tp)
+dirdcl(register struct ctype *tp, unsigned char ns)
 {
 	if (accept('(')) {
-		declarator(tp);
+		declarator(tp, ns);
 		expect(')');
 	} else if (yytoken == IDEN) {
-		cursym = namespace(tp->c_typedef ? NS_TYPEDEF : NS_IDEN, 1);
+		cursym = namespace(ns, 1);
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
@@ -136,7 +136,7 @@ spec(void)
 }
 
 static void
-declarator(struct ctype *tp)
+declarator(struct ctype *tp, unsigned char ns)
 {
 	unsigned char qlf[NR_DECLARATORS];
 	register unsigned char *bp, *lim;
@@ -160,7 +160,7 @@ declarator(struct ctype *tp)
 	if (bp == lim)
 		error("Too much type declarators");
 
-	dirdcl(tp);
+	dirdcl(tp, ns);
 
 	for (lim = bp - 1, bp = qlf; bp < lim; ++bp)
 		pushtype(*bp);
@@ -195,7 +195,7 @@ listdcl(struct ctype *base)
 		struct node *sp, *np;
 		register struct ctype *tp;
 
-		declarator(base);
+		declarator(base, base->c_typedef ? NS_TYPEDEF : NS_IDEN);
 		tp = decl_type(base);
 		(cursym->ctype = tp)->refcnt++;
 		sp = nodesym(cursym);
@@ -216,8 +216,7 @@ decl(void)
 {
 	register struct ctype *tp;
 
-repeat:
-	if (!(tp = spec())) {
+repeat: if (!(tp = spec())) {
 		if (curctx != CTX_OUTER || yytoken != IDEN)
 			return NULL;
 		tp = newctype();
