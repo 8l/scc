@@ -26,7 +26,7 @@ struct ctype {
 	bool c_extern : 1;
 	bool c_static : 1;
 	bool c_auto : 1;
-	bool c_reg : 1;
+	bool c_register : 1;
 	bool c_const : 1;
 	bool c_volatile : 1;
 	bool c_restrict : 1;

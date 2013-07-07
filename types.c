@@ -191,7 +191,7 @@ storage(register struct ctype *tp, unsigned char mod)
 	case TYPEDEF:
 		if (tp->c_typedef)
 			goto duplicated;
-		if (tp->c_extern | tp->c_auto | tp->c_reg | tp->c_static)
+		if (tp->c_extern | tp->c_auto | tp->c_register | tp->c_static)
 			goto two_storage;
 		if (tp->c_const || tp->c_volatile)
 			goto bad_typedef;
@@ -200,21 +200,21 @@ storage(register struct ctype *tp, unsigned char mod)
 	case EXTERN:
 		if (tp->c_extern)
 			goto duplicated;
-		if (tp->c_typedef | tp->c_auto | tp->c_reg | tp->c_static)
+		if (tp->c_typedef | tp->c_auto | tp->c_register | tp->c_static)
 			goto two_storage;
 		tp->c_extern = 1;
 		return tp;
 	case STATIC:
 		if (tp->c_static)
 			goto duplicated;
-		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_reg)
+		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_register)
 			goto two_storage;
 		tp->c_static = 1;
 		return tp;
 	case AUTO:
 		if (curctx == CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (tp->c_typedef | tp->c_extern | tp->c_static | tp->c_reg)
+		if (tp->c_typedef | tp->c_extern | tp->c_static |tp->c_register)
 			goto two_storage;
 		if (tp->c_auto)
 			goto duplicated;
@@ -225,9 +225,9 @@ storage(register struct ctype *tp, unsigned char mod)
 			goto bad_file_scope_storage;
 		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_static)
 			goto two_storage;
-		if (tp->c_reg)
+		if (tp->c_register)
 			goto duplicated;
-		tp->c_reg = 1;
+		tp->c_register = 1;
 		return tp;
 	case CONST:
 		if (options.repeat && tp->c_const)
