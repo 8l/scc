@@ -10,7 +10,8 @@
 enum tokens {
 	/* types */
 	INT = 1, CHAR, FLOAT, LONG, LLONG, SHORT, VOID, DOUBLE,
-	LDOUBLE, STRUCT, UNION, ENUM, UTYPE, BOOL, ARY, PTR, FTN,
+	LDOUBLE, STRUCT, UNION, ENUM, BOOL, ARY, PTR, FTN,
+	COMPLEX, IMAGINARY,
 	/* storage specifier */
 	TYPEDEF, EXTERN, STATIC, AUTO, REGISTER,
 	/* type qualifier */

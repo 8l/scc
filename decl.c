@@ -89,6 +89,7 @@ spec(void)
 			tp = storage(tp, yytoken);
 			break;
 		case UNSIGNED: case SIGNED:
+		case COMPLEX:  case IMAGINARY:
 		case FLOAT:    case DOUBLE: case BOOL:
 		case VOID:     case CHAR:   case SHORT:
 		case INT:      case ENUM:   case LONG:
