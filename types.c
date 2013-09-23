@@ -17,7 +17,7 @@ newctype(void)
 {
 	register struct ctype *tp = xcalloc(sizeof(*tp), 1);
 
-	tp->refcnt = 1;
+	tp->forward = tp->refcnt = 1;
 	return tp;
 }
 

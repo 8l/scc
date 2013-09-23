@@ -11,6 +11,10 @@
  */
 #define NR_COND   8
 /*
+ * number of defined structs/unions in one translation unit
+ */
+#define NR_MAXSTRUCTS 127
+/*
  * 12 pointer, array, and function declarators (in any combinations)
  *  modifying an arithmetic, a structure, a union, or an incomplete type
  *  in a declaration

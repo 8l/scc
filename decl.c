@@ -11,6 +11,9 @@
 char parser_out_home;
 
 static struct symbol *cursym;
+static unsigned char nr_structs = NS_ANY + 1;
+static unsigned char structbuf[NR_STRUCT_LEVEL], *structp = &structbuf[0];
+
 static void declarator(struct ctype *tp, unsigned char ns);
 
 static struct symbol *
@@ -79,6 +82,9 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 	}
 }
 
+
+static struct ctype *struct_spec(register struct ctype *);
+
 struct ctype *
 spec(void)
 {
@@ -95,10 +101,13 @@ spec(void)
 		case FLOAT:    case DOUBLE: case BOOL:
 		case VOID:     case CHAR:   case SHORT:
 		case INT:      case ENUM:   case LONG:
-		case STRUCT:   case UNION:
 			tp = btype(tp, yytoken);
 			break;
-			/* TODO: ENUM, STRUCT, UNION */
+			/* TODO: ENUM */
+		case STRUCT:   case UNION:
+			tp = btype(tp, yytoken);
+			next();
+			return struct_spec(tp);
 		case IDEN:
 			if (!tp || !tp->type) {
 				struct symbol *sym;
@@ -136,6 +145,60 @@ spec(void)
 			return tp;
 		}
 	}
+}
+
+static struct ctype *
+struct_dcl(unsigned char ns)
+{
+	register struct ctype *tp, *base;
+
+	if (!(base = spec())) {
+		base = newctype();
+		base->type = INT;
+		warning_error(options.implicit,
+		              "data definition has no type or storage class");
+	}
+	if (base->c_typedef  || base->c_static || base->c_auto ||
+	    base->c_register || base->c_extern) {
+		error("storage specifier in a struct/union field declaration");
+	}
+
+	do {                      /* TODO: detect unnamed structs */
+		declarator(base, ns);
+		tp = decl_type(base);
+		(cursym->ctype = tp)->refcnt++;
+	} while (accept(','));
+
+	expect(';');
+	return tp;
+}
+
+static struct ctype *
+struct_spec(register struct ctype *tp)
+{
+	if (yytoken == IDEN) {
+		(namespace(NS_STRUCT, -1)->ctype = tp)->refcnt++;
+		next();
+	}
+
+	if (nr_structs == NR_MAXSTRUCTS)
+		error("too much structs/unions defined");
+	if (structp == &structbuf[NR_STRUCT_LEVEL])
+		error("too much nested structs/unions");
+	tp->c_struct = *structp++ = nr_structs;
+
+	if (!accept('{'))
+		return tp;
+
+	if (!tp->forward)
+		error("struct/union already defined");
+
+	do
+		struct_dcl(tp->c_struct);
+	while (!accept('}'));
+	tp->forward = 0;
+
+	return tp;
 }
 
 static void
@@ -201,6 +264,9 @@ listdcl(struct ctype *base)
 		declarator(base, base->c_typedef ? NS_TYPEDEF : NS_IDEN);
 		tp = decl_type(base);
 		(cursym->ctype = tp)->refcnt++;
+		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
+			error("declaration of variable with incomplete type");
+
 		sp = nodesym(cursym);
 		if (tp->type == FTN && yytoken == '{') {
 			np  = node2(ODEF, sp, function(cursym));
@@ -227,8 +293,18 @@ repeat: if (!(tp = spec())) {
 		warning_error(options.implicit,
 		              "data definition has no type or storage class");
 	} else if (accept(';')) {
-		warning_error(options.useless,
-			      "useless type name in empty declaration");
+		register unsigned char type = tp->type;
+
+		if (type == STRUCT || type == UNION) {
+			if (tp->c_extern || tp->c_static || tp->c_auto ||
+			    tp->c_register || tp->c_const || tp->c_volatile) {
+				warning_error(options.useless,
+				              "useless storage class specifier in empty declaration");
+			}
+		} else {
+			warning_error(options.useless,
+			              "useless type name in empty declaration");
+		}
 		delctype(tp);
 		goto repeat;
 	}

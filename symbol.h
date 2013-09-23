@@ -32,7 +32,11 @@ struct ctype {
 	bool c_restrict : 1;
 	bool c_unsigned : 1;
 	bool c_signed : 1;
-	unsigned len;
+	bool forward : 1;
+	union {
+		unsigned len;
+		unsigned char c_struct;
+	};
 	struct ctype *base;
 	unsigned char refcnt;
 };
