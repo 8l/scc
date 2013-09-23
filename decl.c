@@ -14,7 +14,7 @@ static struct symbol *cursym;
 static void declarator(struct ctype *tp, unsigned char ns);
 
 static struct symbol *
-namespace(register unsigned char ns, unsigned char alloc)
+namespace(register unsigned char ns, signed char alloc)
 {
 	register struct symbol *sym = yyval.sym;
 	unsigned char yyns = sym->ns;
@@ -31,6 +31,8 @@ namespace(register unsigned char ns, unsigned char alloc)
 			sym->ns = ns;
 			return sym;
 		} else if (yyns == ns && sym->ctx == curctx) {
+			if (alloc < 0)
+				return sym;
 			error("redeclaration of '%s'", yytext);
 		}
 		return lookup(yytext, ns);
