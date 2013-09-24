@@ -11,7 +11,7 @@
 #define CTX_FUNC  2
 #define CTX_ANY   0
 
-enum namespace {
+enum {
 	NS_IDEN,
 	NS_KEYWORD,
 	NS_STRUCT,

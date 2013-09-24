@@ -82,8 +82,95 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 	}
 }
 
+static void
+new_struct(register struct ctype *tp)
+{
+	if (yytoken == IDEN) {
+		(namespace(NS_STRUCT, -1)->ctype = tp)->refcnt++;
+		next();
+	}
+	if (nr_structs == NR_MAXSTRUCTS)
+		error("too much structs/unions/enum defined");
+	if (structp == &structbuf[NR_STRUCT_LEVEL])
+		error("too much nested structs/unions");
+	tp->c_struct = *structp++ = nr_structs;
+}
 
-static struct ctype *struct_spec(register struct ctype *);
+static struct ctype * spec(void);
+
+static struct ctype *
+struct_dcl(unsigned char ns)
+{
+	register struct ctype *tp, *base;
+
+	if (!(base = spec())) {
+		base = newctype();
+		base->type = INT;
+		warning_error(options.implicit,
+		              "data definition has no type or storage class");
+	}
+	if (base->c_typedef  || base->c_static || base->c_auto ||
+	    base->c_register || base->c_extern) {
+		error("storage specifier in a struct/union field declaration");
+	}
+
+	do {                      /* TODO: detect unnamed structs */
+		declarator(base, ns);
+		tp = decl_type(base);
+		(cursym->ctype = tp)->refcnt++;
+	} while (accept(','));
+
+	expect(';');
+	return tp;
+}
+
+static struct ctype *
+struct_spec(register struct ctype *tp)
+{
+	new_struct(tp);
+	if (!accept('{'))
+		return tp;
+
+	if (!tp->forward)
+		error("struct/union already defined");
+
+	do
+		struct_dcl(tp->c_struct);
+	while (!accept('}'));
+	tp->forward = 0;
+
+	return tp;
+}
+
+static struct ctype *
+enum_dcl(struct ctype *base)
+{
+	short val = 0;
+
+	new_struct(base);
+	if (!accept('{'))
+		return base;
+
+	do {
+		register struct symbol *sym;
+		register struct ctype *tp = btype(NULL, INT);
+
+		if (yytoken == '}')
+			break;
+
+		expect(IDEN);
+		((sym = namespace(NS_IDEN, 1))->ctype = tp)->refcnt++;
+		if (accept('=')) {
+			expect(CONSTANT);
+			val = yyval.sym->val;
+		}
+		sym->val = val++;
+	} while (accept(','));
+
+	expect('}');
+
+	return base;
+}
 
 struct ctype *
 spec(void)
@@ -100,10 +187,13 @@ spec(void)
 		case COMPLEX:  case IMAGINARY:
 		case FLOAT:    case DOUBLE: case BOOL:
 		case VOID:     case CHAR:   case SHORT:
-		case INT:      case ENUM:   case LONG:
+		case INT:      case LONG:
 			tp = btype(tp, yytoken);
 			break;
-			/* TODO: ENUM */
+		case ENUM:
+			tp = btype(tp, yytoken);
+			next();
+			return enum_dcl(tp);
 		case STRUCT:   case UNION:
 			tp = btype(tp, yytoken);
 			next();
@@ -145,60 +235,6 @@ spec(void)
 			return tp;
 		}
 	}
-}
-
-static struct ctype *
-struct_dcl(unsigned char ns)
-{
-	register struct ctype *tp, *base;
-
-	if (!(base = spec())) {
-		base = newctype();
-		base->type = INT;
-		warning_error(options.implicit,
-		              "data definition has no type or storage class");
-	}
-	if (base->c_typedef  || base->c_static || base->c_auto ||
-	    base->c_register || base->c_extern) {
-		error("storage specifier in a struct/union field declaration");
-	}
-
-	do {                      /* TODO: detect unnamed structs */
-		declarator(base, ns);
-		tp = decl_type(base);
-		(cursym->ctype = tp)->refcnt++;
-	} while (accept(','));
-
-	expect(';');
-	return tp;
-}
-
-static struct ctype *
-struct_spec(register struct ctype *tp)
-{
-	if (yytoken == IDEN) {
-		(namespace(NS_STRUCT, -1)->ctype = tp)->refcnt++;
-		next();
-	}
-
-	if (nr_structs == NR_MAXSTRUCTS)
-		error("too much structs/unions defined");
-	if (structp == &structbuf[NR_STRUCT_LEVEL])
-		error("too much nested structs/unions");
-	tp->c_struct = *structp++ = nr_structs;
-
-	if (!accept('{'))
-		return tp;
-
-	if (!tp->forward)
-		error("struct/union already defined");
-
-	do
-		struct_dcl(tp->c_struct);
-	while (!accept('}'));
-	tp->forward = 0;
-
-	return tp;
 }
 
 static void
@@ -295,7 +331,7 @@ repeat: if (!(tp = spec())) {
 	} else if (accept(';')) {
 		register unsigned char type = tp->type;
 
-		if (type == STRUCT || type == UNION) {
+		if (type == STRUCT || type == UNION || type == ENUM) {
 			if (tp->c_extern || tp->c_static || tp->c_auto ||
 			    tp->c_register || tp->c_const || tp->c_volatile) {
 				warning_error(options.useless,
