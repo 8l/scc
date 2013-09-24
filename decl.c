@@ -106,8 +106,8 @@ struct_dcl(unsigned char ns)
 	if (!(base = spec())) {
 		base = newctype();
 		base->type = INT;
-		warning_error(options.implicit,
-		              "data definition has no type or storage class");
+		warn(options.implicit,
+		     "data definition has no type or storage class");
 	}
 	if (base->c_typedef  || base->c_static || base->c_auto ||
 	    base->c_register || base->c_extern) {
@@ -217,8 +217,8 @@ spec(void)
 			if (!tp)
 				return NULL;
 			if (!tp->type) {
-				warning_error(options.implicit,
-			                      "type defaults to 'int' in declaration");
+				warn(options.implicit,
+			             "type defaults to 'int' in declaration");
 				tp->type = INT;
 			}
 			if (!tp->c_signed && !tp->c_unsigned) {
@@ -326,20 +326,20 @@ repeat: if (!(tp = spec())) {
 			return NULL;
 		tp = newctype();
 		tp->type = INT;
-		warning_error(options.implicit,
-		              "data definition has no type or storage class");
+		warn(options.implicit,
+		     "data definition has no type or storage class");
 	} else if (accept(';')) {
 		register unsigned char type = tp->type;
 
 		if (type == STRUCT || type == UNION || type == ENUM) {
 			if (tp->c_extern || tp->c_static || tp->c_auto ||
 			    tp->c_register || tp->c_const || tp->c_volatile) {
-				warning_error(options.useless,
-				              "useless storage class specifier in empty declaration");
+				warn(options.useless,
+				     "useless storage class specifier in empty declaration");
 			}
 		} else {
-			warning_error(options.useless,
-			              "useless type name in empty declaration");
+			warn(options.useless,
+			     "useless type name in empty declaration");
 		}
 		delctype(tp);
 		goto repeat;

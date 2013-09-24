@@ -9,7 +9,7 @@
 
 
 static void
-warning_error_helper(char flag, const char *fmt, va_list va)
+warn_helper(char flag, const char *fmt, va_list va)
 {
 	fprintf(stderr, "%s:%s:%u:%u: ",
 		(!flag) ? "warning" : "error", filename, linenum, columnum);
@@ -20,11 +20,11 @@ warning_error_helper(char flag, const char *fmt, va_list va)
 }
 
 void
-warning_error(char flag, const char *fmt, ...)
+warn(char flag, const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	warning_error_helper(flag, fmt, va);
+	warn_helper(flag, fmt, va);
 	va_end(va);
 }
 
@@ -33,16 +33,7 @@ error(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	warning_error_helper(1, fmt, va);
-	va_end(va);
-}
-
-void
-warning(const char *fmt, ...)
-{
-	va_list va;
-	va_start(va, fmt);
-	warning_error_helper(0, fmt, va);
+	warn_helper(1, fmt, va);
 	va_end(va);
 }
 
