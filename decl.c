@@ -228,7 +228,7 @@ declarator(struct ctype *tp, unsigned char ns)
 
 	dirdcl(tp, ns);
 
-	for (lim = bp - 1, bp = qlf; bp < lim; ++bp)
+	for (lim = bp, bp = qlf; bp < lim; ++bp)
 		pushtype(*bp);
 }
 
