@@ -225,7 +225,7 @@ spec(void)
 				switch (tp->type) {
 				case CHAR:
 					if (!options.charsign) {
-						tp->c_unsigned = 1;
+				case BOOL:	tp->c_unsigned = 1;
 						break;
 					}
 				case INT: case SHORT: case LONG: case LLONG:
