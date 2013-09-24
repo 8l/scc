@@ -93,7 +93,7 @@ btype(struct ctype *tp, unsigned char tok)
 
 	type = tp->type;
 	switch (tok) {
-	case VOID: case BOOL: case STRUCT: case UNION: case ENUM:
+	case VOID: case BOOL: case STRUCT: case UNION: case ENUM: case BITFLD:
 		if (type)
 			goto two_or_more;;
 		type = tok;

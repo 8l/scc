@@ -122,6 +122,18 @@ struct_dcl(unsigned char ns)
 	do {
 		declarator(base, ns);
 		tp = decl_type(base);
+		if (accept(':')) {
+			expect(CONSTANT);
+			switch (tp->type) {
+			case INT: case BOOL:
+				tp = btype(NULL, BITFLD);
+				tp->len = yyval.sym->val;
+				break;
+			default:
+				error("bit-field '%s' has invalid type",
+				      cursym->name);
+			}
+		}
 		(cursym->ctype = tp)->refcnt++;
 	} while (accept(','));
 
