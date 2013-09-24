@@ -35,7 +35,10 @@ struct ctype {
 	bool forward : 1;
 	union {
 		unsigned len;
-		unsigned char c_struct;
+		struct {
+			struct symbol *sym;
+			unsigned char ns;
+		};
 	};
 	struct ctype *base;
 	unsigned char refcnt;

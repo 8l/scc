@@ -85,15 +85,20 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 static void
 new_struct(register struct ctype *tp)
 {
+	struct symbol *sym = NULL;
+
 	if (yytoken == IDEN) {
-		(namespace(NS_STRUCT, -1)->ctype = tp)->refcnt++;
+		sym = namespace(NS_STRUCT, -1);
+		(sym->ctype = tp)->refcnt++;
 		next();
 	}
 	if (nr_structs == NR_MAXSTRUCTS)
 		error("too much structs/unions/enum defined");
 	if (structp == &structbuf[NR_STRUCT_LEVEL])
 		error("too much nested structs/unions");
-	tp->c_struct = *structp++ = nr_structs;
+	tp->ns = *structp++ = nr_structs;
+	tp->forward = 1;
+	tp->sym = sym;
 }
 
 static struct ctype * spec(void);
@@ -114,7 +119,7 @@ struct_dcl(unsigned char ns)
 		error("storage specifier in a struct/union field declaration");
 	}
 
-	do {                      /* TODO: detect unnamed structs */
+	do {
 		declarator(base, ns);
 		tp = decl_type(base);
 		(cursym->ctype = tp)->refcnt++;
@@ -135,7 +140,7 @@ struct_spec(register struct ctype *tp)
 		error("struct/union already defined");
 
 	do
-		struct_dcl(tp->c_struct);
+		struct_dcl(tp->ns);
 	while (!accept('}'));
 	tp->forward = 0;
 
@@ -336,6 +341,10 @@ repeat: if (!(tp = spec())) {
 			    tp->c_register || tp->c_const || tp->c_volatile) {
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
+			}
+			if (!tp->sym && type != ENUM) {
+				warn(options.useless,
+				     "unnamed struct/union that defines no instances");
 			}
 		} else {
 			warn(options.useless,
