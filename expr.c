@@ -291,7 +291,8 @@ cond(void)
 	while (yytoken == '?') {
 		aux = expr();
 		expect(':');
-		np = node3(OTERN, np, aux, or());
+		np = node(OTERN, np,
+		          node(O2EXP, aux, or()));
 	}
 	return np;
 }

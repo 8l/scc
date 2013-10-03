@@ -23,13 +23,6 @@ struct node_op2 {
 	struct node *rigth;
 };
 
-struct node_op3 {
-	struct node base;
-	struct node *left;
-	struct node *infix;
-	struct node *rigth;
-};
-
 struct node_sym {
 	struct node base;
 	struct symbol *sym;
@@ -52,19 +45,6 @@ nodesym(struct symbol *sym)
 
 	np->base.op = OSYM;
 	np->sym = sym;
-	return (struct node *) np;
-}
-
-struct node *
-node3(unsigned char op, struct node *l, struct node *i, struct node *r)
-{
-	register struct node_op3 *np = xmalloc(sizeof(*np));
-
-	np->base.op = op;
-	np->left = l;
-	np->infix = i;
-	np->rigth = r;
-
 	return (struct node *) np;
 }
 
@@ -163,7 +143,7 @@ prtree_helper(register struct node *np)
 		[OBOR] = {2, "|"},
 		[OAND] = {2, "&&"},
 		[OOR] = {2, "||"},
-		[OTERN] = {3, "?"},
+		[OTERN] = {2, "?"},
 		[OASSIGN] = {2, "="},
 		[OA_MUL] = {2, "*="},
 		[OA_DIV] = {2, "/="},
@@ -178,9 +158,9 @@ prtree_helper(register struct node *np)
 		[OSYM] = {0, "sym"},
 		[OCOMP] = {255, "comp"},
 		[OSWITCH] = {2, "switch"},
-		[OIF] = {3, "if"},
+		[OIF] = {2, "if"},
 		[OFOR] = {2, "for"},
-		[OFEXP] = {3, "efor"},
+		[OFEXP] = {2, "efor"},
 		[ODO] = {2, "do"},
 		[OWHILE] = {2, "while"},
 		[OLABEL] = {2, "label"},
@@ -191,7 +171,8 @@ prtree_helper(register struct node *np)
 		[OCASE] = {1, "case"},
 		[ODEFAULT] = {1, "default"},
 		[OFTN] = {1, "function"},
-		[ODEF] = {2, "def"}
+		[ODEF] = {2, "def"},
+		[O2EXP] = { 2, ":"}
 	};
 	if (!np) {
 		fputs(" nil", stdout);
@@ -220,11 +201,6 @@ prtree_helper(register struct node *np)
 	case 2:
 		prtree_helper(((struct node_op2 *) np)->left);
 		prtree_helper(((struct node_op2 *) np)->rigth);
-		break;
-	case 3:
-		prtree_helper(((struct node_op3 *) np)->left);
-		prtree_helper(((struct node_op3 *) np)->infix);
-		prtree_helper(((struct node_op3 *) np)->rigth);
 		break;
 	case 255: {
 		register struct node **bp, **lim;

@@ -12,7 +12,7 @@ enum opcode {
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR, OA_AND,
 	OA_XOR, OA_OR, OSYM, OCOMP, OSWITCH, OIF, OFOR,
 	OFEXP, ODO, OWHILE, OLABEL, OGOTO, OBREAK, OCONT,
-	ORETURN, OCASE, ODEFAULT, OFTN, ODEF
+	ORETURN, OCASE, ODEFAULT, OFTN, ODEF, O2EXP
 };
 
 struct node;
@@ -23,8 +23,6 @@ extern struct node *decl(void);
 extern void type_name(void);
 extern struct node *function(struct symbol *sym);
 
-extern struct node *node3(unsigned char op,
-			  struct node *l, struct node *i, struct node *r);
 extern struct node *node(unsigned char op, struct node *l, struct node *r);
 extern struct node *node1(unsigned char op, struct node *i);
 

@@ -114,7 +114,9 @@ _for(void)
 	expect(')');
 
 	push(OFOR);
-	np = node(OFOR, node3(OFEXP, exp1, exp2, exp3), stmt());
+	np = node(OFOR, exp1,
+	          node(O2EXP, exp2,
+	               node(O2EXP, exp3, stmt())));
 	pop();
 	return np;
 }
@@ -130,7 +132,8 @@ _if(void)
 	expect(')');
 	body = stmt();
 
-	return node3(OIF, cond, body, (accept(ELSE)) ? stmt() : NULL);
+	return node(OIF, cond,
+	            node(O2EXP, body, (accept(ELSE)) ? stmt() : NULL));
 }
 
 static struct node *
