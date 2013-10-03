@@ -58,7 +58,7 @@ _goto(void)
 	sym = yyval.sym;
 	if (sym->ns != NS_LABEL)
 		sym = newlabel(sym, yytext);
-	np = node1(OGOTO, nodesym(sym));
+	np = node(OGOTO, nodesym(sym), NULL);
 	expect(';');
 
 	return np;
@@ -169,7 +169,7 @@ _break(void)
 	expect(';');
 	if (blockp == blocks)
 		error("break statement not within loop or switch");
-	return node1(OBREAK, NULL);
+	return node(OBREAK, NULL, NULL);
 }
 
 static struct node *
@@ -185,7 +185,7 @@ _continue(void)
 	if (bp == blockp)
 		error("continue statement not within loop");
 
-	return node1(OCONT, NULL);
+	return node(OCONT, NULL, NULL);
 }
 
 static struct node *
@@ -197,7 +197,7 @@ _return(void)
 	np = expr();
 	expect(';');
 
-	return node1(ORETURN, np);
+	return node(ORETURN, np, NULL);
 }
 
 static struct node *
@@ -214,7 +214,7 @@ _case(void)
 		; /* nothing */
 	if (bp == blockp)
 		error("case statement not within switch");
-	np = node1(OCASE, exp);
+	np = node(OCASE, exp, NULL);
 	expect(':');
 	return np;
 }
@@ -230,7 +230,7 @@ _default(void)
 	if (bp == blockp)
 		error("default statement not within switch");
 	expect(':');
-	return node1(ODEFAULT, NULL);
+	return node(ODEFAULT, NULL, NULL);
 }
 
 static struct node *
@@ -278,7 +278,7 @@ struct node *
 function(register struct symbol *sym)
 {
 	curfun = sym;
-	return node1(OFTN, compound());
+	return node(OFTN, compound(), NULL);
 }
 
 void

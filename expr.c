@@ -71,7 +71,7 @@ postfix(void)
 		np1 = node(op, np1, nodesym(yyval.sym));
 		continue;
 	next:
-		np1 = node1(op, np1);
+		np1 = node(op, np1, NULL);
 		next();
 		continue;
 	}
@@ -107,11 +107,11 @@ unary(void)
 
 call_cast:
 	next();
-	return node1(op, cast());
+	return node(op, cast(), NULL);
 
 call_unary:
 	next();
-	return node1(op, unary());
+	return node(op, unary(), NULL);
 }
 
 static struct node *

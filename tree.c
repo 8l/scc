@@ -12,11 +12,6 @@ struct node {
 	unsigned char op;
 };
 
-struct node_op1 {
-	struct node base;
-	struct node *infix;
-};
-
 struct node_op2 {
 	struct node base;
 	struct node *left;
@@ -61,17 +56,6 @@ node(unsigned char op, struct node *l, struct node *r)
 }
 
 struct node *
-node1(unsigned char op, struct node *i)
-{
-	register struct node_op1 *np = xmalloc(sizeof(*np));
-
-	np->base.op = op;
-	np->infix = i;
-
-	return (struct node *) np;
-}
-
-struct node *
 nodecomp(void)
 {
 	register struct node_comp *np = xmalloc(sizeof(*np));
@@ -111,20 +95,20 @@ prtree_helper(register struct node *np)
 		unsigned char nchild;
 		const char *txt;
 	} *bp, optab [] = {
-		[OCALL] = {1, "()"},
+		[OCALL] = {2, "()"},
 		[OARY] = {2, "[]"},
 		[OFIELD] = {2, "."},
 		[OPTR] = {2, "->"},
-		[OPOSTINC] = {1, ".++"},
-		[OPOSTDEC] = {1, ".--"},
-		[OPREINC] = {1, "++."},
-		[OPREDEC] = {1, "--."},
-		[OADDR] = {1, "&."},
-		[OINDIR] = {1, "[*]"},
-		[OMINUS] = {1, "-."},
-		[OPLUS] = {1, "+."},
-		[OCPL] = {1, "~"},
-		[ONEG] = {1, "!"},
+		[OPOSTINC] = {2, ".++"},
+		[OPOSTDEC] = {2, ".--"},
+		[OPREINC] = {2, "++."},
+		[OPREDEC] = {2, "--."},
+		[OADDR] = {2, "&."},
+		[OINDIR] = {2, "[*]"},
+		[OMINUS] = {2, "-."},
+		[OPLUS] = {2, "+."},
+		[OCPL] = {2, "~"},
+		[ONEG] = {2, "!"},
 		[OMUL] = {2, "*"},
 		[ODIV] = {2, "/"},
 		[OMOD] = {2, "%"},
@@ -164,13 +148,13 @@ prtree_helper(register struct node *np)
 		[ODO] = {2, "do"},
 		[OWHILE] = {2, "while"},
 		[OLABEL] = {2, "label"},
-		[OGOTO] = {1, "goto"},
-		[OBREAK] = {1, "break"},
-		[OCONT] = {1, "cont"},
-		[ORETURN] = {1, "return"},
-		[OCASE] = {1, "case"},
-		[ODEFAULT] = {1, "default"},
-		[OFTN] = {1, "function"},
+		[OGOTO] = {2, "goto"},
+		[OBREAK] = {2, "break"},
+		[OCONT] = {2, "cont"},
+		[ORETURN] = {2, "return"},
+		[OCASE] = {2, "case"},
+		[ODEFAULT] = {2, "default"},
+		[OFTN] = {2, "function"},
 		[ODEF] = {2, "def"},
 		[O2EXP] = { 2, ":"}
 	};
@@ -195,9 +179,6 @@ prtree_helper(register struct node *np)
 		fputs((sym->name) ? sym->name : ".", stdout);
 		return;
 	}
-	case 1:
-		prtree_helper(((struct node_op1 *) np)->infix);
-		break;
 	case 2:
 		prtree_helper(((struct node_op2 *) np)->left);
 		prtree_helper(((struct node_op2 *) np)->rigth);

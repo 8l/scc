@@ -24,8 +24,6 @@ extern void type_name(void);
 extern struct node *function(struct symbol *sym);
 
 extern struct node *node(unsigned char op, struct node *l, struct node *r);
-extern struct node *node1(unsigned char op, struct node *i);
-
 extern struct node *nodesym(struct symbol *sym);
 extern struct node *nodecomp(void);
 extern struct node *addstmt(struct node *np, struct node *stmt);
