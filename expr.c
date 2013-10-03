@@ -63,12 +63,12 @@ postfix(void)
 		default:    return np1;
 		}
 	node_2_childs:
-		np1 = node2(op, np1, np2);
+		np1 = node(op, np1, np2);
 		continue;
 	expect_iden:
 		next();
 		expect(IDEN);
-		np1 = node2(op, np1, nodesym(yyval.sym));
+		np1 = node(op, np1, nodesym(yyval.sym));
 		continue;
 	next:
 		np1 = node1(op, np1);
@@ -139,7 +139,7 @@ mul(void)
 		default:  return np;
 		}
 		next();
-		np = node2(op, np, cast());
+		np = node(op, np, cast());
 	}
 }
 
@@ -157,7 +157,7 @@ add(void)
 		default:  return np;
 		}
 		next();
-		np = node2(op, np, mul());
+		np = node(op, np, mul());
 	}
 }
 
@@ -175,7 +175,7 @@ shift(void)
 		default:  return np;
 		}
 		next();
-		np = node2(op, np, add());
+		np = node(op, np, add());
 	}
 }
 
@@ -195,7 +195,7 @@ relational(void)
 		default:  return np;
 		}
 		next();
-		np = node2(op, np, shift());
+		np = node(op, np, shift());
 	}
 }
 
@@ -213,7 +213,7 @@ eq(void)
 		default: return np;
 		}
 		next();
-		np = node2(op, np, relational());
+		np = node(op, np, relational());
 	}
 }
 
@@ -225,7 +225,7 @@ bit_and(void)
 	np = eq();
 	while (yytoken == '&') {
 		next();
-		np = node2(OBAND, np, eq());
+		np = node(OBAND, np, eq());
 	}
 	return np;
 }
@@ -238,7 +238,7 @@ bit_xor(void)
 	np = bit_and();
 	while (yytoken == '^') {
 		next();
-		np = node2(OBXOR, np, bit_and());
+		np = node(OBXOR, np, bit_and());
 	}
 	return np;
 }
@@ -251,7 +251,7 @@ bit_or(void)
 	np = bit_xor();
 	while (yytoken == '|') {
 		next();
-		np = node2(OBOR, np, bit_xor());
+		np = node(OBOR, np, bit_xor());
 	}
 	return np;
 }
@@ -264,7 +264,7 @@ and(void)
 	np = bit_or();
 	while (yytoken == AND) {
 		next();
-		np = node2(OAND, np, bit_or());
+		np = node(OAND, np, bit_or());
 	}
 	return np;
 }
@@ -277,7 +277,7 @@ or(void)
 	np = and();
 	while (yytoken == OR) {
 		next();
-		np = node2(OOR, np, and());
+		np = node(OOR, np, and());
 	}
 	return np;
 }
@@ -319,7 +319,7 @@ assign(void)
 		default:  goto return_np;
 		}
 		next();
-		np = node2(op, np, assign());
+		np = node(op, np, assign());
 	}
 return_np:
 	return np;

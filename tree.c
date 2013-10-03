@@ -69,7 +69,7 @@ node3(unsigned char op, struct node *l, struct node *i, struct node *r)
 }
 
 struct node *
-node2(unsigned char op, struct node *l, struct node *r)
+node(unsigned char op, struct node *l, struct node *r)
 {
 	register struct node_op2 *np = xmalloc(sizeof(*np));
 

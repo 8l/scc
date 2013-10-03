@@ -25,7 +25,7 @@ extern struct node *function(struct symbol *sym);
 
 extern struct node *node3(unsigned char op,
 			  struct node *l, struct node *i, struct node *r);
-extern struct node *node2(unsigned char op, struct node *l, struct node *r);
+extern struct node *node(unsigned char op, struct node *l, struct node *r);
 extern struct node *node1(unsigned char op, struct node *i);
 
 extern struct node *nodesym(struct symbol *sym);

@@ -74,7 +74,7 @@ _while(void)
 	cond = expr();
 	expect(')');
 	push(OWHILE);
-	np = node2(OWHILE, cond, stmt());
+	np = node(OWHILE, cond, stmt());
 	pop();
 	return np;
 }
@@ -93,7 +93,7 @@ _do(void)
 	expect(';');
 
 	push(ODO);
-	np = node2(ODO, body, cond);
+	np = node(ODO, body, cond);
 	pop();
 	return np;
 }
@@ -114,7 +114,7 @@ _for(void)
 	expect(')');
 
 	push(OFOR);
-	np = node2(OFOR, node3(OFEXP, exp1, exp2, exp3), stmt());
+	np = node(OFOR, node3(OFEXP, exp1, exp2, exp3), stmt());
 	pop();
 	return np;
 }
@@ -144,7 +144,7 @@ _switch(void)
 	expect(')');
 
 	push(OSWITCH);
-	np = node2(OSWITCH, cond, stmt());
+	np = node(OSWITCH, cond, stmt());
 	pop();
 	return np;
 }
@@ -156,7 +156,7 @@ label(void)
 
 	sym = newlabel(sym, yytext);
 	next(), next();  	/* skip IDEN and ':' */
-	return node2(OLABEL, nodesym(sym), stmt());
+	return node(OLABEL, nodesym(sym), stmt());
 }
 
 static struct node *

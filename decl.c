@@ -322,10 +322,10 @@ listdcl(struct ctype *base)
 
 		sp = nodesym(cursym);
 		if (tp->type == FTN && yytoken == '{') {
-			np  = node2(ODEF, sp, function(cursym));
+			np  = node(ODEF, sp, function(cursym));
 			return addstmt(lp, np);
 		}
-		np = node2(ODEF, sp, accept('=') ? initializer(tp) : NULL);
+		np = node(ODEF, sp, accept('=') ? initializer(tp) : NULL);
 		lp = addstmt(lp, np);
 	} while (accept(','));
 	expect(';');
