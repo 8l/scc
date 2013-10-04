@@ -11,6 +11,7 @@ extern const char *filename;
 struct user_opt {
 	unsigned char implicit;
 	unsigned char c99;
+	unsigned char mixdcls;
 	unsigned char useless;
 	unsigned char repeat;
 	unsigned char charsign;

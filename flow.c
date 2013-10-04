@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "cc.h"
 #include "symbol.h"
 #include "tokens.h"
 #include "syntax.h"
@@ -234,13 +235,22 @@ static struct node *
 compound(void)
 {
 	register struct node *lp = nodecomp(), *np;
+	unsigned char nodecl = 0;
 
 	expect('{');
 	new_ctx();
-	while (np = decl())
+	while (!accept('}')) {
+		if (np = decl()) {
+			if (nodecl) {
+				warn(options.mixdcls,
+				     "mixed declarations and code");
+			}
+		} else {
+			np = stmt();
+			nodecl = 1;
+		}
 		addstmt(lp, np);
-	while (!accept('}'))
-		addstmt(lp, stmt());
+	}
 	del_ctx();
 
 	return lp;
