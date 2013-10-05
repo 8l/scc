@@ -18,7 +18,7 @@ struct node_op2 {
 	struct node *rigth;
 };
 
-struct node_sym {
+struct nodesym {
 	struct node base;
 	struct symbol *sym;
 };
@@ -36,7 +36,7 @@ static unsigned char indent;  /* used for pretty printing the tree*/
 struct node *
 nodesym(struct symbol *sym)
 {
-	register struct node_sym *np = xmalloc(sizeof(*np));
+	register struct nodesym *np = xmalloc(sizeof(*np));
 
 	np->base.op = OSYM;
 	np->sym = sym;
@@ -174,7 +174,7 @@ prtree_helper(register struct node *np)
 	}
 	switch (bp->nchild) {
 	case 0: {
-		register struct symbol *sym = ((struct node_sym *) np)->sym;
+		register struct symbol *sym = ((struct nodesym *) np)->sym;
 		putchar(' ');
 		fputs((sym->name) ? sym->name : ".", stdout);
 		return;
