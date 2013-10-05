@@ -15,7 +15,7 @@ struct node {
 struct node_op2 {
 	struct node base;
 	struct node *left;
-	struct node *rigth;
+	struct node *right;
 };
 
 struct nodesym {
@@ -50,7 +50,7 @@ node(unsigned char op, struct node *l, struct node *r)
 
 	np->base.op = op;
 	np->left = l;
-	np->rigth = r;
+	np->right = r;
 
 	return (struct node *) np;
 }
@@ -181,7 +181,7 @@ prtree_helper(register struct node *np)
 	}
 	case 2:
 		prtree_helper(((struct node_op2 *) np)->left);
-		prtree_helper(((struct node_op2 *) np)->rigth);
+		prtree_helper(((struct node_op2 *) np)->right);
 		break;
 	case 255: {
 		register struct node **bp, **lim;
