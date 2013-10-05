@@ -21,19 +21,49 @@ static FILE *yyin;
 static char
 number(void)
 {
-	register char *bp;
-	register char ch;
+	register char *bp, ch;
+	static char base;
+
+	if ((ch = getc(yyin)) == '0') {
+		if (toupper(ch = getc(yyin)) == 'X') {
+			base = 16;
+		} else {
+			base = 8;
+			ungetc(ch, yyin);
+		}
+	} else {
+		base = 10;
+		ungetc(ch, yyin);
+	}
 
 	for (bp = yytext; bp < yytext + IDENTSIZ; *bp++ = ch) {
-		if (!isdigit(ch = getc(yyin)))
+		ch = getc(yyin);
+		switch (base) {
+		case 8:
+			if (ch >= '7')
+				goto end;
+			/* passthru */
+		case 10:
+			if (!isdigit(ch))
+				goto end;
 			break;
+		case 16:
+			if (!isxdigit(ch))
+				goto end;
+			break;
+		}
 	}
-	if (bp == yytext + IDENTSIZ)
+
+end:	if (bp == yytext + IDENTSIZ)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
+
+	/*
+	 * TODO: insert always. don't depend of the base and check size
+	 */
 	yyval.sym = lookup(yytext, NS_ANY);
-	yyval.sym->val = atoi(yytext);
+	yyval.sym->val = strtol(yytext, NULL, base);
 
 	return CONSTANT;
 }
