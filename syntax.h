@@ -18,6 +18,11 @@ enum opcode {
 struct node;
 struct symbol;
 
+struct compound {
+	struct node *tree;
+	struct node_op2 *last;
+};
+
 extern struct node *expr(void);
 extern struct node *decl(void);
 extern void type_name(void);
@@ -25,8 +30,8 @@ extern struct node *function(struct symbol *sym);
 
 extern struct node *node(unsigned char op, struct node *l, struct node *r);
 extern struct node *nodesym(struct symbol *sym);
-extern struct node *nodecomp(void);
-extern struct node *addstmt(struct node *np, struct node *stmt);
+extern struct node *addstmt(struct compound *p, struct node *np);
+extern struct node *addstmt(struct compound *p, struct node *np);
 
 extern void prtree(register struct node *np);
 

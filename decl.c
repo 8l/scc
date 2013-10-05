@@ -288,27 +288,29 @@ declarator(struct ctype *tp, unsigned char ns)
 static struct node *
 initializer(register struct ctype *tp)
 {
-	register struct node *np;
-
 	if (accept('{')) {
-		np = nodecomp();
-		addstmt(np, initializer(tp));
+		struct compound c;
+
+		nodecomp(&c);
+		addstmt(&c, initializer(tp));
 		while (accept(',')) {
 			if (accept('}'))
-				return np;
-			addstmt(np, initializer(tp));
+				return c.tree;
+			addstmt(&c, initializer(tp));
 		}
 		expect('}');
+		return c.tree;
 	} else {
-		np = expr();
+		return expr();
 	}
-	return np;
 }
 
 static struct node *
 listdcl(struct ctype *base)
 {
-	struct node *lp = nodecomp();
+	struct compound c;
+
+	nodecomp(&c);
 
 	do {
 		struct node *sp, *np;
@@ -323,14 +325,14 @@ listdcl(struct ctype *base)
 		sp = nodesym(cursym);
 		if (tp->type == FTN && yytoken == '{') {
 			np  = node(ODEF, sp, function(cursym));
-			return addstmt(lp, np);
+			return addstmt(&c, np);
 		}
 		np = node(ODEF, sp, accept('=') ? initializer(tp) : NULL);
-		lp = addstmt(lp, np);
+		addstmt(&c, np);
 	} while (accept(','));
 	expect(';');
 
-	return lp;
+	return c.tree;
 }
 
 struct node *

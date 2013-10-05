@@ -236,17 +236,19 @@ _default(void)
 static struct node *
 compound(void)
 {
-	register struct node *lp = nodecomp(), *np;
+	register struct node *np;
+	struct compound c;
 
+	nodecomp(&c);
 	expect('{');
 	new_ctx();
 	while (np = decl())
-		addstmt(lp, np);
+		addstmt(&c, np);
 	while (!accept('}'))
-		addstmt(lp, stmt());
+		addstmt(&c, stmt());
 	del_ctx();
 
-	return lp;
+	return c.tree;
 }
 
 static struct node *

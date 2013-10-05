@@ -23,12 +23,6 @@ struct nodesym {
 	struct symbol *sym;
 };
 
-struct node_comp {
-	struct node base;
-	uint8_t nr, alloc;
-	struct node **body;
-};
-
 
 static unsigned char indent;  /* used for pretty printing the tree*/
 
@@ -55,37 +49,24 @@ node(unsigned char op, struct node *l, struct node *r)
 	return (struct node *) np;
 }
 
-struct node *
-nodecomp(void)
+void
+nodecomp(register struct compound *p)
 {
-	register struct node_comp *np = xmalloc(sizeof(*np));
-
-	np->base.op = OCOMP;
-	np->alloc = np->nr = 0;
-	np->body = NULL;
-
-	return (struct node *) np;
+	p->tree = node(OCOMP, NULL, NULL);
+	p->last = (struct node_op2 *) p->tree;
 }
 
 struct node *
-addstmt(struct node *p, struct node *stmt)
+addstmt(struct compound *p, struct node *np)
 {
-	register uint8_t nr, alloc;
-	register struct node_comp *np = (struct node_comp *) p;
-
-	assert(np && np->base.op == OCOMP);
-	nr = ++np->nr, alloc = np->alloc;
-
-#define alloc_nr(x) ((((x)+16)*3)/2)
-	if (nr > alloc) {
-		alloc = alloc_nr(nr);
-		np->body = xrealloc(np->body, alloc * sizeof(*np->body));
+	if (!p->last->left) {
+		p->last->left = np;
+	} else {
+		p->last = (struct node_op2 *)
+		   (p->last->right = node(O2EXP, NULL, np));
 	}
-#undef alloc_nr
 
-	np->body[nr - 1] = stmt;
-	np->alloc = alloc;
-	return p;
+	return p->tree;
 }
 
 static void
@@ -140,7 +121,7 @@ prtree_helper(register struct node *np)
 		[OA_XOR] = {2, "^="},
 		[OA_OR] = {2, "|="},
 		[OSYM] = {0, "sym"},
-		[OCOMP] = {255, "comp"},
+		[OCOMP] = {2, "comp"},
 		[OSWITCH] = {2, "switch"},
 		[OIF] = {2, "if"},
 		[OFOR] = {2, "for"},
@@ -183,15 +164,6 @@ prtree_helper(register struct node *np)
 		prtree_helper(((struct node_op2 *) np)->left);
 		prtree_helper(((struct node_op2 *) np)->right);
 		break;
-	case 255: {
-		register struct node **bp, **lim;
-
-		bp = ((struct node_comp *) np)->body;
-		lim = bp + ((struct node_comp *) np)->nr;
-		while (bp < lim)
-			prtree_helper(*bp++);
-		break;
-	}
 	}
 	putchar(')');
 	indent -= 2;
