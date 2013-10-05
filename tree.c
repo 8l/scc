@@ -64,6 +64,18 @@ addstmt(struct compound *p, struct node *np)
 	return p->tree;
 }
 
+bool
+walk(register struct node *np, bool (*fun)(struct node *))
+{
+	struct node_op2 *p;
+
+	if (!np || np->op == OSYM)
+		return 1;
+
+	p = (struct node_op2 *) np;
+	return (*fun)(np) && walk(p->left, fun) && walk(p->right, fun);
+}
+
 void
 prtree(register struct node *np)
 {

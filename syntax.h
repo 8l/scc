@@ -1,6 +1,10 @@
 #ifndef SYNTAX_H
 #define SYNTAX_H
 
+#if ! __bool_true_false_are_defined
+# include <stdbool.h>
+#endif
+
 extern unsigned char curctx;
 
 enum opcode {
@@ -32,7 +36,7 @@ extern struct node *node(unsigned char op, struct node *l, struct node *r);
 extern struct node *nodesym(struct symbol *sym);
 extern struct node *addstmt(struct compound *p, struct node *np);
 extern struct node *addstmt(struct compound *p, struct node *np);
-
+extern bool walk(register struct node *np, bool (*fun)(struct node *));
 extern void prtree(register struct node *np);
 
 #endif
