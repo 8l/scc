@@ -27,8 +27,8 @@ namespace(register unsigned char ns, signed char alloc)
 			return NULL;
 		else if (yyns == ns)
 			return sym;
-		else
-			return find(yytext, ns);
+		else                        /* don't create new symbol */
+			return lookup(yytext, -ns);
 	} else {
 		if (yyns == NS_ANY) {
 			sym->ns = ns;

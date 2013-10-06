@@ -63,36 +63,25 @@ freesyms(void)
 }
 
 struct symbol *
-find(const char *s, register char ns)
+lookup(register const char *s, signed char ns)
 {
 	register struct symbol *sym;
-	static unsigned char l;
-
-	l = strlen(s);
-	for (sym = htab[hash(s)]; sym; sym = sym->hash) {
-		if (ns != NS_ANY && ns != sym->ns)
-			continue;
-		if (!memcmp(sym->name, s, l))
-			return sym;
-	}
-	return NULL;
-}
-
-struct symbol *
-lookup(register const char *s, char ns)
-{
-	register struct symbol *sym;
-	register unsigned char l;
-	static unsigned char key;
+	static unsigned char key, l, ins;
 
 	l = strlen(s);
 	key = hash(s);
+	if (!(ins = ns >= 0))
+		ns = -ns;
+
 	for (sym = htab[key]; sym; sym = sym->hash) {
 		if (ns != NS_ANY && ns != sym->ns)
 			continue;
 		if (!memcmp(sym->name, s, l))
 			return sym;
 	}
+
+	if (!ins)
+		return NULL;
 	sym = xmalloc(sizeof(*sym));
 	sym->name = xstrdup(s);
 	sym->next = head;
