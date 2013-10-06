@@ -58,11 +58,7 @@ end:	if (bp == yytext + IDENTSIZ)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-
-	/*
-	 * TODO: insert always. don't depend of the base and check size
-	 */
-	yyval.sym = lookup(yytext, NS_ANY);
+	yyval.sym = lookup(NULL, NS_ANY);
 	yyval.sym->val = strtol(yytext, NULL, base);
 
 	return CONSTANT;

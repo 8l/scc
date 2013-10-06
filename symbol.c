@@ -68,6 +68,13 @@ lookup(register const char *s, signed char ns)
 	register struct symbol *sym;
 	static unsigned char key, l, ins;
 
+
+	if (s == NULL) {
+		sym = xmalloc(sizeof(*sym));
+		sym->next = head;
+		return sym;
+	}
+
 	l = strlen(s);
 	key = hash(s);
 	if (!(ins = ns >= 0))
