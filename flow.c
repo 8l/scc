@@ -59,7 +59,7 @@ _goto(void)
 	sym = yyval.sym;
 	if (sym->ns != NS_LABEL)
 		sym = newlabel(sym, yytext);
-	np = node1(OGOTO, nodesym(sym));
+	np = node(OGOTO, nodesym(sym), NULL);
 	expect(';');
 
 	return np;
@@ -75,7 +75,7 @@ _while(void)
 	cond = expr();
 	expect(')');
 	push(OWHILE);
-	np = node2(OWHILE, cond, stmt());
+	np = node(OWHILE, cond, stmt());
 	pop();
 	return np;
 }
@@ -94,7 +94,7 @@ _do(void)
 	expect(';');
 
 	push(ODO);
-	np = node2(ODO, body, cond);
+	np = node(ODO, body, cond);
 	pop();
 	return np;
 }
@@ -115,7 +115,9 @@ _for(void)
 	expect(')');
 
 	push(OFOR);
-	np = node2(OFOR, node3(OFEXP, exp1, exp2, exp3), stmt());
+	np = node(OFOR, exp1,
+	          node(O2EXP, exp2,
+	               node(O2EXP, exp3, stmt())));
 	pop();
 	return np;
 }
@@ -131,7 +133,8 @@ _if(void)
 	expect(')');
 	body = stmt();
 
-	return node3(OIF, cond, body, (accept(ELSE)) ? stmt() : NULL);
+	return node(OIF, cond,
+	            node(O2EXP, body, (accept(ELSE)) ? stmt() : NULL));
 }
 
 static struct node *
@@ -145,7 +148,7 @@ _switch(void)
 	expect(')');
 
 	push(OSWITCH);
-	np = node2(OSWITCH, cond, stmt());
+	np = node(OSWITCH, cond, stmt());
 	pop();
 	return np;
 }
@@ -157,7 +160,7 @@ label(void)
 
 	sym = newlabel(sym, yytext);
 	next(), next();  	/* skip IDEN and ':' */
-	return node2(OLABEL, nodesym(sym), stmt());
+	return node(OLABEL, nodesym(sym), stmt());
 }
 
 static struct node *
@@ -167,7 +170,7 @@ _break(void)
 	expect(';');
 	if (blockp == blocks)
 		error("break statement not within loop or switch");
-	return node1(OBREAK, NULL);
+	return node(OBREAK, NULL, NULL);
 }
 
 static struct node *
@@ -183,7 +186,7 @@ _continue(void)
 	if (bp == blockp)
 		error("continue statement not within loop");
 
-	return node1(OCONT, NULL);
+	return node(OCONT, NULL, NULL);
 }
 
 static struct node *
@@ -195,7 +198,7 @@ _return(void)
 	np = expr();
 	expect(';');
 
-	return node1(ORETURN, np);
+	return node(ORETURN, np, NULL);
 }
 
 static struct node *
@@ -212,7 +215,7 @@ _case(void)
 		; /* nothing */
 	if (bp == blockp)
 		error("case statement not within switch");
-	np = node1(OCASE, exp);
+	np = node(OCASE, exp, NULL);
 	expect(':');
 	return np;
 }
@@ -228,15 +231,17 @@ _default(void)
 	if (bp == blockp)
 		error("default statement not within switch");
 	expect(':');
-	return node1(ODEFAULT, NULL);
+	return node(ODEFAULT, NULL, NULL);
 }
 
 static struct node *
 compound(void)
 {
-	register struct node *lp = nodecomp(), *np;
+	register struct node *np;
 	unsigned char nodecl = 0;
+	struct compound c;
 
+	c.tree = NULL;
 	expect('{');
 	new_ctx();
 	while (!accept('}')) {
@@ -249,11 +254,11 @@ compound(void)
 			np = stmt();
 			nodecl = 1;
 		}
-		addstmt(lp, np);
+		addstmt(&c, np);
 	}
 	del_ctx();
 
-	return lp;
+	return c.tree;
 }
 
 static struct node *
@@ -285,7 +290,7 @@ struct node *
 function(register struct symbol *sym)
 {
 	curfun = sym;
-	return node1(OFTN, compound());
+	return node(OFTN, compound(), NULL);
 }
 
 void

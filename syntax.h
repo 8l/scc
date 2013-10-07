@@ -1,6 +1,10 @@
 #ifndef SYNTAX_H
 #define SYNTAX_H
 
+#if ! __bool_true_false_are_defined
+# include <stdbool.h>
+#endif
+
 extern unsigned char curctx;
 
 enum opcode {
@@ -12,26 +16,26 @@ enum opcode {
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR, OA_AND,
 	OA_XOR, OA_OR, OSYM, OCOMP, OSWITCH, OIF, OFOR,
 	OFEXP, ODO, OWHILE, OLABEL, OGOTO, OBREAK, OCONT,
-	ORETURN, OCASE, ODEFAULT, OFTN, ODEF
+	ORETURN, OCASE, ODEFAULT, OFTN, ODEF, O2EXP
 };
 
 struct node;
 struct symbol;
+
+struct compound {
+	struct node *tree;
+	struct node_op2 *last;
+};
 
 extern struct node *expr(void);
 extern struct node *decl(void);
 extern void type_name(void);
 extern struct node *function(struct symbol *sym);
 
-extern struct node *node3(unsigned char op,
-			  struct node *l, struct node *i, struct node *r);
-extern struct node *node2(unsigned char op, struct node *l, struct node *r);
-extern struct node *node1(unsigned char op, struct node *i);
-
+extern struct node *node(unsigned char op, struct node *l, struct node *r);
 extern struct node *nodesym(struct symbol *sym);
-extern struct node *nodecomp(void);
-extern struct node *addstmt(struct node *np, struct node *stmt);
-
+extern struct node *addstmt(struct compound *p, struct node *np);
+extern bool walk(register struct node *np, bool (*fun)(struct node *));
 extern void prtree(register struct node *np);
 
 #endif
