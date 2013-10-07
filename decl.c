@@ -114,10 +114,8 @@ struct_dcl(unsigned char ns)
 		warn(options.implicit,
 		     "data definition has no type or storage class");
 	}
-	if (base->c_typedef  || base->c_static || base->c_auto ||
-	    base->c_register || base->c_extern) {
+	if (HAS_STORAGE(base))
 		error("storage specifier in a struct/union field declaration");
-	}
 
 	do {
 		declarator(base, ns);
@@ -351,8 +349,7 @@ repeat: if (!(tp = spec())) {
 		register unsigned char type = tp->type;
 
 		if (type == STRUCT || type == UNION || type == ENUM) {
-			if (tp->c_extern || tp->c_static || tp->c_auto ||
-			    tp->c_register || tp->c_const || tp->c_volatile) {
+			if (HAS_STORAGE(tp) || HAS_QUALIF(tp)) {
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
 			}

@@ -59,6 +59,10 @@ struct symbol {
 	struct symbol *hash;
 };
 
+#define HAS_STORAGE(tp) ((tp)->c_extern || (tp)->c_static ||\
+                         (tp)->c_auto || (tp)->c_register || (tp)->c_typedef)
+
+#define HAS_QUALIF(tp)  ((tp)->c_const || (tp)->c_volatile)
 
 extern struct ctype *decl_type(struct ctype *t);
 extern void pushtype(unsigned mod);
