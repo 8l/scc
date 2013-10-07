@@ -239,7 +239,7 @@ compound(void)
 	register struct node *np;
 	struct compound c;
 
-	nodecomp(&c);
+	c.tree = NULL;
 	expect('{');
 	new_ctx();
 	while (np = decl())

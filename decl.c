@@ -291,7 +291,7 @@ initializer(register struct ctype *tp)
 	if (accept('{')) {
 		struct compound c;
 
-		nodecomp(&c);
+		c.tree = NULL;
 		addstmt(&c, initializer(tp));
 		while (accept(',')) {
 			if (accept('}'))
@@ -310,7 +310,7 @@ listdcl(struct ctype *base)
 {
 	struct compound c;
 
-	nodecomp(&c);
+	c.tree = NULL;
 
 	do {
 		struct node *sp, *np;

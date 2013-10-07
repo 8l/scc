@@ -44,21 +44,16 @@ node(unsigned char op, struct node *l, struct node *r)
 	return (struct node *) np;
 }
 
-void
-nodecomp(register struct compound *p)
-{
-	p->tree = node(OCOMP, NULL, NULL);
-	p->last = (struct node_op2 *) p->tree;
-}
-
 struct node *
 addstmt(struct compound *p, struct node *np)
 {
-	if (!p->last->left) {
-		p->last->left = np;
+	if (!p->tree) {
+		p->tree = node(OCOMP, NULL, NULL);
+		p->last = (struct node_op2 *) p->tree;
+		p->last->right = np;
 	} else {
 		p->last = (struct node_op2 *)
-		   (p->last->right = node(O2EXP, NULL, np));
+		   (p->last->left = node(O2EXP, NULL, np));
 	}
 
 	return p->tree;
