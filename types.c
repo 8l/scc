@@ -17,7 +17,7 @@ newctype(void)
 {
 	register struct ctype *tp = xcalloc(sizeof(*tp), 1);
 
-	tp->forward = tp->refcnt = 1;
+	tp->forward = 1;
 	return tp;
 }
 
@@ -26,11 +26,9 @@ delctype(register struct ctype *tp)
 {
 	if (!tp)
 		return;
-	if (--tp->refcnt == 0) {
-		if (tp->base)
-			delctype(tp->base);
-		free(tp);
-	}
+	if (tp->base)
+		delctype(tp->base);
+	free(tp);
 }
 
 static struct ctype *
@@ -45,7 +43,6 @@ mktype(register struct ctype *tp, unsigned  char op)
 	case PTR: case FTN: {
 		register struct ctype *aux = tp;
 
-		++tp->refcnt;
 		tp = newctype();
 		tp->type = op;
 		tp->base = aux;
@@ -78,9 +75,12 @@ pushtype(unsigned mod)
 struct ctype *
 decl_type(struct ctype *tp)
 {
+	struct ctype *new = xmalloc(sizeof(*new));
+	*new = *tp;
+
 	while (stackp != stack)
-		tp = mktype(tp, *--stackp);
-	return tp;
+		new = mktype(new, *--stackp);
+	return new;
 }
 
 struct ctype *

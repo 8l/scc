@@ -89,7 +89,7 @@ new_struct(register struct ctype *tp)
 
 	if (yytoken == IDEN) {
 		sym = namespace(NS_STRUCT, -1);
-		(sym->ctype = tp)->refcnt++;
+		sym->ctype = tp;
 		next();
 	}
 	if (nr_structs == NR_MAXSTRUCTS)
@@ -132,9 +132,10 @@ struct_dcl(unsigned char ns)
 				      cursym->name);
 			}
 		}
-		(cursym->ctype = tp)->refcnt++;
+		cursym->ctype = tp;
 	} while (accept(','));
 
+	delctype(base);
 	expect(';');
 	return tp;
 }
@@ -143,17 +144,17 @@ static struct ctype *
 struct_spec(register struct ctype *tp)
 {
 	new_struct(tp);
+
 	if (!accept('{'))
 		return tp;
-
 	if (!tp->forward)
 		error("struct/union already defined");
 
 	do
 		struct_dcl(tp->ns);
 	while (!accept('}'));
-	tp->forward = 0;
 
+	tp->forward = 0;
 	return tp;
 }
 
@@ -174,7 +175,8 @@ enum_dcl(struct ctype *base)
 			break;
 
 		expect(IDEN);
-		((sym = namespace(NS_IDEN, 1))->ctype = tp)->refcnt++;
+		sym = namespace(NS_IDEN, 1);
+		sym->ctype = tp;
 		if (accept('=')) {
 			expect(CONSTANT);
 			val = yyval.sym->val;
@@ -223,7 +225,7 @@ spec(void)
 					if (!tp)
 						tp = newctype();
 					tp->type = TYPEDEF;
-					(tp->base = sym->ctype)->refcnt++;
+					tp->base = sym->ctype;
 					break;
 				}
 			}
@@ -311,49 +313,49 @@ listdcl(struct ctype *base)
 	c.tree = NULL;
 
 	do {
-		struct node *sp, *np;
+		struct node *np;
 		register struct ctype *tp;
 
 		declarator(base, base->c_typedef ? NS_TYPEDEF : NS_IDEN);
-		tp = decl_type(base);
-		(cursym->ctype = tp)->refcnt++;
+		tp = cursym->ctype = decl_type(base);
 		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
 			error("declaration of variable with incomplete type");
 
-		sp = nodesym(cursym);
+		np = nodesym(cursym);
 		if (tp->type == FTN && yytoken == '{') {
-			np  = node(ODEF, sp, function(cursym));
+			np  = node(ODEF, np, function(cursym));
 			return addstmt(&c, np);
 		}
-		np = node(ODEF, sp, accept('=') ? initializer(tp) : NULL);
+		np = node(ODEF, np, accept('=') ? initializer(tp) : NULL);
 		addstmt(&c, np);
 	} while (accept(','));
-	expect(';');
 
+	delctype(base);
+	expect(';');
 	return c.tree;
 }
 
 struct node *
 decl(void)
 {
-	register struct ctype *tp;
+	register struct ctype *base;
 
-repeat: if (!(tp = spec())) {
+repeat: if (!(base = spec())) {
 		if (curctx != CTX_OUTER || yytoken != IDEN)
 			return NULL;
-		tp = newctype();
-		tp->type = INT;
+		base = newctype();
+		base->type = INT;
 		warn(options.implicit,
 		     "data definition has no type or storage class");
 	} else if (accept(';')) {
-		register unsigned char type = tp->type;
+		register unsigned char type = base->type;
 
 		if (type == STRUCT || type == UNION || type == ENUM) {
-			if (HAS_STORAGE(tp) || HAS_QUALIF(tp)) {
+			if (HAS_STORAGE(base) || HAS_QUALIF(base)) {
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
 			}
-			if (!tp->sym && type != ENUM) {
+			if (!base->sym && type != ENUM) {
 				warn(options.useless,
 				     "unnamed struct/union that defines no instances");
 			}
@@ -361,10 +363,10 @@ repeat: if (!(tp = spec())) {
 			warn(options.useless,
 			     "useless type name in empty declaration");
 		}
-		delctype(tp);
+		delctype(base);
 		goto repeat;
 	}
-	return listdcl(tp);
+	return listdcl(base);
 }
 
 void

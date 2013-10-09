@@ -41,7 +41,6 @@ struct ctype {
 		};
 	};
 	struct ctype *base;
-	unsigned char refcnt;
 };
 
 struct symbol {
