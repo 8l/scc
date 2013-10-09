@@ -6,7 +6,7 @@ of optimizations for the programmer.
 After a lot of years seeing compilers for z80 I notice that it is very
 hard for a C compiler generates a good code for a 8 bit processor like
 z80, with a expensive indirect addressing mode, so the best solution
-is don't try that compiler optimize the code and use C as a macro
+is to not try that compiler optimize the code and use C as a macro
 macro assembler.
 
 In order to get this last, we need a compiler that does exactly the
