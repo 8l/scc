@@ -101,10 +101,10 @@ new_struct(register struct ctype *tp)
 	tp->sym = sym;
 }
 
-static struct ctype * spec(void);
+static struct ctype *spec(void);
 
 static struct ctype *
-struct_dcl(unsigned char ns)
+field_dcl(unsigned char ns)
 {
 	register struct ctype *tp, *base;
 
@@ -141,7 +141,7 @@ struct_dcl(unsigned char ns)
 }
 
 static struct ctype *
-struct_spec(register struct ctype *tp)
+struct_dcl(register struct ctype *tp)
 {
 	new_struct(tp);
 
@@ -151,7 +151,7 @@ struct_spec(register struct ctype *tp)
 		error("struct/union already defined");
 
 	do
-		struct_dcl(tp->ns);
+		field_dcl(tp->ns);
 	while (!accept('}'));
 
 	tp->forward = 0;
@@ -214,7 +214,7 @@ spec(void)
 		case STRUCT:   case UNION:
 			tp = btype(tp, yytoken);
 			next();
-			return struct_spec(tp);
+			return struct_dcl(tp);
 		case IDEN:
 			if (!tp || !tp->type) {
 				struct symbol *sym;
