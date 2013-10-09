@@ -8,6 +8,9 @@
 #include "syntax.h"
 #include "symbol.h"
 
+#define NOALLOC_NS    0
+#define ALLOCDUP_NS   1
+#define ALLOC_NS      2
 char parser_out_home;
 
 static struct symbol *cursym;
@@ -17,24 +20,24 @@ static unsigned char structbuf[NR_STRUCT_LEVEL], *structp = &structbuf[0];
 static void declarator(struct ctype *tp, unsigned char ns);
 
 static struct symbol *
-namespace(register unsigned char ns, signed char alloc)
+namespace(register unsigned char ns, char alloc)
 {
 	register struct symbol *sym = yyval.sym;
 	unsigned char yyns = sym->ns;
 
-	if (!alloc) {
+	if (alloc == NOALLOC_NS) {
 		if (yyns == NS_ANY)
 			return NULL;
 		else if (yyns == ns)
 			return sym;
 		else                        /* don't create new symbol */
-			return lookup(yytext, -ns);
+			return lookup(yytext, NOINSERT(ns));
 	} else {
 		if (yyns == NS_ANY) {
 			sym->ns = ns;
 			return sym;
 		} else if (yyns == ns && sym->ctx == curctx) {
-			if (alloc < 0)
+			if (alloc == ALLOCDUP_NS)
 				return sym;
 			error("redeclaration of '%s'", yytext);
 		}
@@ -49,7 +52,7 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 		declarator(tp, ns);
 		expect(')');
 	} else if (yytoken == IDEN) {
-		cursym = namespace(ns, 1);
+		cursym = namespace(ns, ALLOC_NS);
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
@@ -88,7 +91,7 @@ new_struct(register struct ctype *tp)
 	struct symbol *sym = NULL;
 
 	if (yytoken == IDEN) {
-		sym = namespace(NS_STRUCT, -1);
+		sym = namespace(NS_STRUCT, ALLOCDUP_NS);
 		sym->ctype = tp;
 		next();
 	}
@@ -175,7 +178,7 @@ enum_dcl(struct ctype *base)
 			break;
 
 		expect(IDEN);
-		sym = namespace(NS_IDEN, 1);
+		sym = namespace(NS_IDEN, ALLOC_NS);
 		sym->ctype = tp;
 		if (accept('=')) {
 			expect(CONSTANT);
@@ -220,7 +223,7 @@ spec(void)
 				struct symbol *sym;
 				unsigned char tok = ahead();
 
-				sym = namespace(NS_TYPEDEF, 0);
+				sym = namespace(NS_TYPEDEF, NOALLOC_NS);
 				if (sym && tok != ';' && tok != ',') {
 					if (!tp)
 						tp = newctype();

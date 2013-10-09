@@ -11,6 +11,8 @@
 #define CTX_FUNC  2
 #define CTX_ANY   0
 
+#define NOINSERT(x) (-x)
+
 enum {
 	NS_IDEN,
 	NS_KEYWORD,
