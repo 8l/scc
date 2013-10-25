@@ -7,9 +7,8 @@
 # include <stdbool.h>
 #endif
 
-#define CTX_OUTER 1
-#define CTX_FUNC  2
-#define CTX_ANY   0
+#define CTX_OUTER 0
+#define CTX_FUNC  1
 
 #define NOINSERT(x) (-x)
 
@@ -52,7 +51,6 @@ struct symbol {
 	char *name;
 	struct {
 		union {
-			unsigned char tok;  /* used in keywords */
 			short val;	/* used in integer constant */
 		};
 	};
@@ -76,6 +74,7 @@ extern void insert(struct symbol *sym, unsigned char ctx);
 extern struct ctype *storage(struct ctype *tp, unsigned char mod);
 extern struct ctype *newctype(void);
 extern void delctype(struct ctype *tp);
+extern unsigned char hash(register const char *s);
 
 #ifndef NDEBUG
 extern void ptype(register struct ctype *t);

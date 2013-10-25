@@ -9,6 +9,8 @@
 #include "symbol.h"
 #include "sizes.h"
 
+#define NR_KEYW_HASH 16
+
 union yyval yyval;
 unsigned char yytoken;
 char yytext[IDENTSIZ + 1];
@@ -16,7 +18,15 @@ unsigned linenum;
 unsigned columnum;
 const char *filename;
 
+struct keyword {
+	char *str;
+	unsigned char tok;
+	struct keyword *next;
+};
+
 static FILE *yyin;
+static struct keyword *ktab[NR_KEYW_HASH];
+
 
 static char
 number(void)
@@ -64,11 +74,75 @@ end:	if (bp == yytext + IDENTSIZ)
 	return CONSTANT;
 }
 
+void
+init_keywords(void)
+{
+	static struct keyword buff[] = {
+		{"auto", AUTO, NULL},
+		{"break", BREAK, NULL},
+		{"_Bool", CHAR, NULL},
+		{"_Complex", COMPLEX, NULL},
+		{"case", CASE, NULL},
+		{"char", CHAR, NULL},
+		{"const", CONST, NULL},
+		{"continue", CONTINUE, NULL},
+		{"default", DEFAULT, NULL},
+		{"do", DO, NULL},
+		{"double", DOUBLE, NULL},
+		{"else", ELSE, NULL},
+		{"enum", ENUM, NULL},
+		{"extern", EXTERN, NULL},
+		{"float", FLOAT, NULL},
+		{"for", FOR, NULL},
+		{"goto", GOTO, NULL},
+		{"if", IF, NULL},
+		{"int", INT, NULL},
+		{"_Imaginary", IMAGINARY, NULL},
+		{"long", LONG, NULL},
+		{"register", REGISTER, NULL},
+		{"restricted", RESTRICT, NULL},
+		{"return", RETURN, NULL},
+		{"short", SHORT, NULL},
+		{"signed", SIGNED, NULL},
+		{"sizeof", SIZEOF, NULL},
+		{"static", STATIC, NULL},
+		{"struct", STRUCT, NULL},
+		{"switch", SWITCH, NULL},
+		{"typedef", TYPEDEF, NULL},
+		{"union", UNION, NULL},
+		{"unsigned", UNSIGNED, NULL},
+		{"void", VOID, NULL},
+		{"volatile", VOLATILE, NULL},
+		{"while", WHILE, NULL},
+		{NULL, 0, NULL},
+	};
+	register struct keyword *bp;
+
+	for (bp = buff;  bp->str; ++bp) {
+		register unsigned char h = hash(bp->str) & NR_KEYW_HASH-1;
+		bp->next = ktab[h];
+		ktab[h] = bp;
+	}
+}
+
+static unsigned char
+keyword(char *s)
+{
+	register struct keyword *bp;
+
+	for (bp = ktab[hash(s) & NR_KEYW_HASH-1]; bp; bp = bp->next) {
+		if (!strcmp(bp->str, s))
+			return bp->tok;
+	}
+	return 0;
+}
+
 static unsigned char
 iden(void)
 {
 	register char ch, *bp;
 	register struct symbol *sym;
+	static unsigned char tok;
 
 	for (bp = yytext; bp < yytext + IDENTSIZ; *bp++ = ch) {
 		if (!isalnum(ch = getc(yyin)) && ch != '_')
@@ -78,9 +152,12 @@ iden(void)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	yyval.sym = lookup(yytext, NS_ANY);
 
-	return (yyval.sym->ns == NS_KEYWORD) ? yyval.sym->tok : IDEN;
+	if (tok = keyword(yytext))
+		return tok;
+
+	yyval.sym = lookup(yytext, NS_ANY);
+	return IDEN;
 }
 
 static unsigned char

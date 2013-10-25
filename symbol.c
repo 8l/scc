@@ -14,14 +14,14 @@ static struct symbol *htab[NR_SYM_HASH];
 static struct symbol *head, *headfun;
 
 
-static inline unsigned char
+unsigned char
 hash(register const char *s)
 {
 	register unsigned char h, ch;
 
 	for (h = 0; ch = *s++; h += ch)
 		/* nothing */;
-	return h & NR_SYM_HASH - 1;
+	return h;
 }
 
 void
@@ -40,7 +40,7 @@ del_ctx(void)
 		if (sym->ctx <= curctx)
 			break;
 		if ((s = sym->name) != NULL)
-			htab[hash(s)] = sym->hash;
+			htab[hash(s) & NR_SYM_HASH - 1] = sym->hash;
 		next = sym->next;
 		sym->next = headfun;
 		headfun = sym;
@@ -76,7 +76,7 @@ lookup(register const char *s, signed char ns)
 	}
 
 	l = strlen(s);
-	key = hash(s);
+	key = hash(s) & NR_SYM_HASH - 1;
 	if (!(ins = ns >= 0))
 		ns = -ns;
 
