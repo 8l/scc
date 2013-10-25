@@ -48,7 +48,7 @@ newlabel(struct symbol *sym, char *s)
 }
 
 static struct node *
-_goto(void)
+Goto(void)
 {
 	register struct node *np;
 	register struct symbol *sym;
@@ -66,7 +66,7 @@ _goto(void)
 }
 
 static struct node *
-_while(void)
+While(void)
 {
 	register struct node *cond, *np;
 
@@ -81,7 +81,7 @@ _while(void)
 }
 
 static struct node *
-_do(void)
+Do(void)
 {
 	register struct node *cond, *body, *np;
 
@@ -100,7 +100,7 @@ _do(void)
 }
 
 static struct node *
-_for(void)
+For(void)
 {
 	register struct node *exp1, *exp2, *exp3;
 	struct node *np;
@@ -123,7 +123,7 @@ _for(void)
 }
 
 static struct node *
-_if(void)
+If(void)
 {
 	register struct node *cond, *body;
 
@@ -138,7 +138,7 @@ _if(void)
 }
 
 static struct node *
-_switch(void)
+Switch(void)
 {
 	register struct node *cond, *np;
 
@@ -164,7 +164,7 @@ label(void)
 }
 
 static struct node *
-_break(void)
+Break(void)
 {
 	expect(BREAK);
 	expect(';');
@@ -174,7 +174,7 @@ _break(void)
 }
 
 static struct node *
-_continue(void)
+Continue(void)
 {
 	register unsigned char *bp;
 
@@ -190,7 +190,7 @@ _continue(void)
 }
 
 static struct node *
-_return(void)
+Return(void)
 {
 	register struct node *np;
 
@@ -202,7 +202,7 @@ _return(void)
 }
 
 static struct node *
-_case(void)
+Case(void)
 {
 	register unsigned char *bp;
 	register struct node *np, *exp;
@@ -221,7 +221,7 @@ _case(void)
 }
 
 static struct node *
-_default(void)
+Default(void)
 {
 	register unsigned char *bp;
 
@@ -268,17 +268,17 @@ stmt(void)
 
 	switch (yytoken) {
 	case '{':      return compound();
-	case SWITCH:   return _switch();
-	case IF:       return _if();
-	case FOR:      return _for();
-	case DO:       return _do();
-	case WHILE:    return _while();
-	case CONTINUE: return _continue();
-	case BREAK:    return _break();
-	case RETURN:   return _return();
-	case GOTO:     return _goto();
-	case CASE:     return _case();
-	case DEFAULT:  return _default();
+	case SWITCH:   return Switch();
+	case IF:       return If();
+	case FOR:      return For();
+	case DO:       return Do();
+	case WHILE:    return While();
+	case CONTINUE: return Continue();
+	case BREAK:    return Break();
+	case RETURN:   return Return();
+	case GOTO:     return Goto();
+	case CASE:     return Case();
+	case DEFAULT:  return Default();
 	case IDEN:     if (ahead() == ':') return label();
 	}
 	np = expr();
