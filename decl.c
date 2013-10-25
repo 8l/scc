@@ -40,7 +40,6 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 				; /* TODO: k&r function */
 			else
 				/* TODO: prototyped function */;
-			continue;
 		} else if (accept('[')) {
 			unsigned len;
 
@@ -53,7 +52,6 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 			}
 			pushtype(len);
 			pushtype(ARY);
-			continue;
 		} else {
 			return;
 		}
