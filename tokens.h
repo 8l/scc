@@ -31,12 +31,8 @@ enum tokens {
 
 
 struct symbol;
-union yyval {
-	struct symbol *sym;
-};
 
 
-extern union yyval yyval;
 extern char yytext[];
 extern size_t yylen;
 extern unsigned char yytoken;

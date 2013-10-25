@@ -66,19 +66,17 @@ struct symbol *
 lookup(register const char *s, signed char ns)
 {
 	register struct symbol *sym;
-	static unsigned char key, l, ins;
+	static unsigned char key, l;
 
 
 	if (s == NULL) {
-		sym = xmalloc(sizeof(*sym));
+		sym = xcalloc(1, sizeof(*sym));
 		sym->next = head;
 		return sym;
 	}
 
 	l = strlen(s);
 	key = hash(s) & NR_SYM_HASH - 1;
-	if (!(ins = ns >= 0))
-		ns = -ns;
 
 	for (sym = htab[key]; sym; sym = sym->hash) {
 		if (ns != NS_ANY && ns != sym->ns)
@@ -87,9 +85,7 @@ lookup(register const char *s, signed char ns)
 			return sym;
 	}
 
-	if (!ins)
-		return NULL;
-	sym = xmalloc(sizeof(*sym));
+	sym = xcalloc(1, sizeof(*sym));
 	sym->name = xstrdup(s);
 	sym->next = head;
 	sym->ctx = curctx;

@@ -11,7 +11,6 @@
 
 #define NR_KEYW_HASH 16
 
-union yyval yyval;
 unsigned char yytoken;
 char yytext[IDENTSIZ + 1];
 unsigned linenum;
@@ -68,8 +67,6 @@ end:	if (bp == yytext + IDENTSIZ)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	yyval.sym = lookup(NULL, NS_ANY);
-	yyval.sym->val = strtol(yytext, NULL, base);
 
 	return CONSTANT;
 }
@@ -153,11 +150,7 @@ iden(void)
 	*bp = '\0';
 	ungetc(ch, yyin);
 
-	if (tok = keyword(yytext))
-		return tok;
-
-	yyval.sym = lookup(yytext, NS_ANY);
-	return IDEN;
+	return (tok = keyword(yytext)) ? tok : IDEN;
 }
 
 static unsigned char

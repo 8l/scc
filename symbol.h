@@ -10,8 +10,6 @@
 #define CTX_OUTER 0
 #define CTX_FUNC  1
 
-#define NOINSERT(x) (-x)
-
 enum {
 	NS_IDEN,
 	NS_KEYWORD,
@@ -52,6 +50,7 @@ struct symbol {
 	struct {
 		union {
 			short val;	/* used in integer constant */
+			unsigned char label;
 		};
 	};
 	struct symbol *next;

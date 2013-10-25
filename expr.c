@@ -14,14 +14,20 @@ static struct node *
 primary(void)
 {
 	register struct node *np;
+	register struct symbol *sym;
 
 	switch (yytoken) {
 	case IDEN:
-		if (!yyval.sym)
+		sym = lookup(yytext, NS_IDEN);
+		if (!sym->ctype)
 			error("'%s' undeclared", yytext);
-	case CONSTANT:
 		next();
-		np = nodesym(yyval.sym);
+		np = nodesym(sym);
+		break;
+	case CONSTANT:
+		sym = lookup(NULL, NS_IDEN);
+		next();
+		np = nodesym(sym);
 		break;
 	case '(':
 		next();
@@ -68,7 +74,7 @@ postfix(void)
 	expect_iden:
 		next();
 		expect(IDEN);
-		np1 = node(op, np1, nodesym(yyval.sym));
+		np1 = node(op, np1, nodesym(lookup(yytext, NS_IDEN)));
 		continue;
 	next:
 		np1 = node(op, np1, NULL);

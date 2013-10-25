@@ -8,9 +8,6 @@
 #include "syntax.h"
 #include "symbol.h"
 
-#define NOALLOC_NS    0
-#define ALLOCDUP_NS   1
-#define ALLOC_NS      2
 char parser_out_home;
 
 static struct symbol *cursym;
@@ -19,32 +16,6 @@ static unsigned char structbuf[NR_STRUCT_LEVEL], *structp = &structbuf[0];
 
 static void declarator(struct ctype *tp, unsigned char ns);
 
-static struct symbol *
-namespace(register unsigned char ns, char alloc)
-{
-	register struct symbol *sym = yyval.sym;
-	unsigned char yyns = sym->ns;
-
-	if (alloc == NOALLOC_NS) {
-		if (yyns == NS_ANY)
-			return NULL;
-		else if (yyns == ns)
-			return sym;
-		else                        /* don't create new symbol */
-			return lookup(yytext, NOINSERT(ns));
-	} else {
-		if (yyns == NS_ANY) {
-			sym->ns = ns;
-			return sym;
-		} else if (yyns == ns && sym->ctx == curctx) {
-			if (alloc == ALLOCDUP_NS)
-				return sym;
-			error("redeclaration of '%s'", yytext);
-		}
-		return lookup(yytext, ns);
-	}
-}
-
 static void
 dirdcl(register struct ctype *tp, unsigned char ns)
 {
@@ -52,7 +23,11 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 		declarator(tp, ns);
 		expect(')');
 	} else if (yytoken == IDEN) {
-		cursym = namespace(ns, ALLOC_NS);
+		cursym = lookup(yytext, ns);
+		if (!cursym->ctype)
+			cursym->ctx = curctx;
+		else if (cursym->ctx == curctx)
+			error("redeclaration of '%s'", yytext);
 		next();
 	} else {
 		error("expected '(' or identifier before of '%s'", yytext);
@@ -73,7 +48,7 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 				len = 0;
 			} else {
 				expect(CONSTANT);
-				len = yyval.sym->val;
+				len = atoi(yytext);
 				expect(']');
 			}
 			pushtype(len);
@@ -91,7 +66,7 @@ new_struct(register struct ctype *tp)
 	struct symbol *sym = NULL;
 
 	if (yytoken == IDEN) {
-		sym = namespace(NS_STRUCT, ALLOCDUP_NS);
+		sym = lookup(yytext, NS_STRUCT);
 		sym->ctype = tp;
 		next();
 	}
@@ -128,7 +103,7 @@ field_dcl(unsigned char ns)
 			switch (tp->type) {
 			case INT: case BOOL:
 				tp = btype(NULL, BITFLD);
-				tp->len = yyval.sym->val;
+				tp->len = atoi(yytext);
 				break;
 			default:
 				error("bit-field '%s' has invalid type",
@@ -178,11 +153,11 @@ enum_dcl(struct ctype *base)
 			break;
 
 		expect(IDEN);
-		sym = namespace(NS_IDEN, ALLOC_NS);
+		sym = lookup(yytext, NS_IDEN);
 		sym->ctype = tp;
 		if (accept('=')) {
 			expect(CONSTANT);
-			val = yyval.sym->val;
+			val = atoi(yytext);
 		}
 		sym->val = val++;
 	} while (accept(','));
@@ -223,8 +198,9 @@ spec(void)
 				struct symbol *sym;
 				unsigned char tok = ahead();
 
-				sym = namespace(NS_TYPEDEF, NOALLOC_NS);
-				if (sym && tok != ';' && tok != ',') {
+				sym = lookup(yytext, NS_TYPEDEF);
+				if (sym && sym->ctype &&
+				    tok != ';' && tok != ',') {
 					if (!tp)
 						tp = newctype();
 					tp->type = TYPEDEF;

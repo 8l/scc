@@ -30,23 +30,6 @@ pop(void)
 	--blockp;
 }
 
-static struct symbol*
-newlabel(struct symbol *sym, char *s)
-{
-	switch (sym->ns) {
-	case NS_LABEL:
-		error("label '%s' already defined", yytext);
-	case NS_ANY:
-		sym->ns = NS_LABEL;
-		break;
-	default:
-		lookup(s, NS_LABEL);
-	}
-
-	insert(sym, CTX_FUNC);
-	return sym;
-}
-
 static struct node *
 Goto(void)
 {
@@ -56,9 +39,7 @@ Goto(void)
 
 	expect(GOTO);
 	expect(IDEN);
-	sym = yyval.sym;
-	if (sym->ns != NS_LABEL)
-		sym = newlabel(sym, yytext);
+	sym = lookup(yytext, NS_LABEL);
 	np = node(OGOTO, nodesym(sym), NULL);
 	expect(';');
 
@@ -156,9 +137,12 @@ Switch(void)
 static struct node *
 label(void)
 {
-	register struct symbol *sym = yyval.sym;
+	register struct symbol *sym = lookup(yytext, NS_LABEL);
 
-	sym = newlabel(sym, yytext);
+	if (sym->label)
+		error("label '%s' already defined", yytext);
+	insert(sym, CTX_FUNC);
+	sym->label = 1;
 	next(), next();  	/* skip IDEN and ':' */
 	return node(OLABEL, nodesym(sym), stmt());
 }
