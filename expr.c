@@ -67,13 +67,12 @@ postfix(void)
 		case DEC:   op = OPOSTDEC; goto next;
 		default:    return np1;
 		}
-	node_2_childs:
-		np1 = node(op, np1, np2);
-		continue;
 	expect_iden:
 		next();
 		expect(IDEN);
-		np1 = node(op, np1, nodesym(lookup(yytext, NS_IDEN)));
+		np2 = nodesym(lookup(yytext, NS_IDEN));
+	node_2_childs:
+		np1 = node(op, np1, np2);
 		continue;
 	next:
 		np1 = node(op, np1, NULL);
