@@ -5,7 +5,6 @@
 #include "tokens.h"
 #include "symbol.h"
 #include "syntax.h"
-#include "code.h"
 
 
 struct node *expr(void);
