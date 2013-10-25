@@ -31,7 +31,7 @@ enum tokens {
 
 
 struct symbol;
-
+extern struct symbol *yyval;
 
 extern char yytext[];
 extern size_t yylen;

@@ -47,7 +47,7 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 				len = 0;
 			} else {
 				expect(CONSTANT);
-				len = atoi(yytext);
+				len = yyval->i;
 				expect(']');
 			}
 			pushtype(len);
@@ -101,7 +101,7 @@ field_dcl(unsigned char ns)
 			switch (tp->type) {
 			case INT: case BOOL:
 				tp = btype(NULL, BITFLD);
-				tp->len = atoi(yytext);
+				tp->len = yyval->i;
 				break;
 			default:
 				error("bit-field '%s' has invalid type",
@@ -155,9 +155,9 @@ enum_dcl(struct ctype *base)
 		sym->ctype = tp;
 		if (accept('=')) {
 			expect(CONSTANT);
-			val = atoi(yytext);
+			val = yyval->i;
 		}
-		sym->val = val++;
+		sym->i = val++;
 	} while (accept(','));
 
 	expect('}');

@@ -24,7 +24,7 @@ primary(void)
 		np = nodesym(sym);
 		break;
 	case CONSTANT:
-		sym = lookup(NULL, NS_IDEN);
+		sym = yyval;
 		next();
 		np = nodesym(sym);
 		break;

@@ -26,12 +26,58 @@ struct keyword {
 static FILE *yyin;
 static struct keyword *ktab[NR_KEYW_HASH];
 
+struct symbol *yyval;
+
+struct symbol *
+integer(char *s, char base)
+{
+	register struct ctype *tp;
+	register struct symbol *sym;
+	static long long v;
+	static char ch;
+
+	tp = btype(NULL, INT);
+
+type:	switch (ch = toupper(getc(yyin))) {
+	case 'L':
+		tp = btype(tp, LONG);
+		goto type;
+	case 'U':
+		tp = btype(tp, UNSIGNED);
+		goto type;
+	default:
+		ungetc(ch, yyin);
+	}
+
+	v = strtoll(s, NULL, base);
+	sym = lookup(NULL, NS_IDEN);
+	sym->ctype = tp;
+
+	switch (sym->ctype->type) {
+	case INT:
+		sym->i = v;
+		break;
+	case SHORT:
+		sym->s = v;
+		break;
+	case LONG:
+		sym->l = xmalloc(sizeof(long));
+		*sym->l = v;
+		break;
+	case LLONG:
+		sym->ll = xmalloc(sizeof(long long));
+		*sym->ll = v;
+		break;
+	}
+
+	return sym;
+}
 
 static char
 number(void)
 {
 	register char *bp, ch;
-	static char base;
+	static char base, type, sign;
 
 	if ((ch = getc(yyin)) == '0') {
 		if (toupper(ch = getc(yyin)) == 'X') {
@@ -67,6 +113,7 @@ end:	if (bp == yytext + IDENTSIZ)
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
+	yyval = integer(yytext, base);
 
 	return CONSTANT;
 }

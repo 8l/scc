@@ -49,7 +49,11 @@ struct symbol {
 	char *name;
 	struct {
 		union {
-			short val;	/* used in integer constant */
+			char c;   /* numerical constants */
+			short s;
+			int i;
+			long *l;
+			long long *ll;
 			unsigned char label;
 		};
 	};
