@@ -197,8 +197,7 @@ specifier(void)
 				unsigned char tok = ahead();
 
 				sym = lookup(yytext, NS_TYPEDEF);
-				if (sym && sym->ctype &&
-				    tok != ';' && tok != ',') {
+				if (sym->ctype && tok != ';' && tok != ',') {
 					if (!tp)
 						tp = newctype();
 					tp->type = TYPEDEF;
