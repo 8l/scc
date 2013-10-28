@@ -306,7 +306,6 @@ listdcl(struct ctype *base)
 		addstmt(&c, np);
 	} while (accept(','));
 
-	delctype(base);
 	expect(';');
 	return c.tree;
 }
@@ -315,6 +314,7 @@ struct node *
 decl(void)
 {
 	register struct ctype *base;
+	struct node *np;
 
 repeat: if (!(base = specifier())) {
 		if (curctx != CTX_OUTER || yytoken != IDEN)
@@ -343,7 +343,9 @@ repeat: if (!(base = specifier())) {
 		delctype(base);
 		goto repeat;
 	}
-	return listdcl(base);
+	np = listdcl(base);
+	delctype(base);
+	return np;
 }
 
 void
