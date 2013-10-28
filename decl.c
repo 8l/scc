@@ -207,9 +207,13 @@ specifier(void)
 			}
 			/* it is not a type name */
 		default:
-			if (!tp)
-				return NULL;
-			if (!tp->type) {
+			if (!tp) {
+				if (curctx != CTX_OUTER || yytoken != IDEN)
+					return NULL;
+				tp = ctype(tp, INT);
+				warn(options.implicit,
+					"data definition has no type or storage class");
+			} else if (!tp->type) {
 				warn(options.implicit,
 			             "type defaults to 'int' in declaration");
 				tp->type = INT;
@@ -316,14 +320,10 @@ decl(void)
 	register struct ctype *base;
 	struct node *np;
 
-repeat: if (!(base = specifier())) {
-		if (curctx != CTX_OUTER || yytoken != IDEN)
-			return NULL;
-		base = newctype();
-		base->type = INT;
-		warn(options.implicit,
-		     "data definition has no type or storage class");
-	} else if (accept(';')) {
+repeat: if (!(base = specifier()))
+		return NULL;
+
+	if (accept(';')) {
 		register unsigned char type = base->type;
 
 		switch (type) {
