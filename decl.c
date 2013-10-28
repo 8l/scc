@@ -77,14 +77,14 @@ newstruct(register struct ctype *tp)
 	tp->sym = sym;
 }
 
-static struct ctype *spec(void);
+static struct ctype *specifier(void);
 
 static struct ctype *
 fielddcl(unsigned char ns)
 {
 	register struct ctype *tp, *base;
 
-	if (!(base = spec())) {
+	if (!(base = specifier())) {
 		base = newctype();
 		base->type = INT;
 		warn(options.implicit,
@@ -166,7 +166,7 @@ enumdcl(struct ctype *base)
 }
 
 struct ctype *
-spec(void)
+specifier(void)
 {
 	register struct ctype *tp = NULL;
 
@@ -317,7 +317,7 @@ decl(void)
 {
 	register struct ctype *base;
 
-repeat: if (!(base = spec())) {
+repeat: if (!(base = specifier())) {
 		if (curctx != CTX_OUTER || yytoken != IDEN)
 			return NULL;
 		base = newctype();
