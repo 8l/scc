@@ -100,7 +100,7 @@ fielddcl(unsigned char ns)
 			expect(CONSTANT);
 			switch (tp->type) {
 			case INT: case BOOL:
-				tp = btype(NULL, BITFLD);
+				tp = ctype(NULL, BITFLD);
 				tp->len = yyval->i;
 				break;
 			default:
@@ -145,7 +145,7 @@ enumdcl(struct ctype *base)
 
 	do {
 		register struct symbol *sym;
-		register struct ctype *tp = btype(NULL, INT);
+		register struct ctype *tp = ctype(NULL, INT);
 
 		if (yytoken == '}')
 			break;
@@ -181,14 +181,14 @@ spec(void)
 		case FLOAT:    case DOUBLE: case BOOL:
 		case VOID:     case CHAR:   case SHORT:
 		case INT:      case LONG:
-			tp = btype(tp, yytoken);
+			tp = ctype(tp, yytoken);
 			break;
 		case ENUM:
-			tp = btype(tp, yytoken);
+			tp = ctype(tp, yytoken);
 			next();
 			return enumdcl(tp);
 		case STRUCT:   case UNION:
-			tp = btype(tp, yytoken);
+			tp = ctype(tp, yytoken);
 			next();
 			return structdcl(tp);
 		case IDEN:

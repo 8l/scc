@@ -36,14 +36,14 @@ integer(char *s, char base)
 	static long long v;
 	static char ch;
 
-	tp = btype(NULL, INT);
+	tp = ctype(NULL, INT);
 
 type:	switch (ch = toupper(getc(yyin))) {
 	case 'L':
-		tp = btype(tp, LONG);
+		tp = ctype(tp, LONG);
 		goto type;
 	case 'U':
-		tp = btype(tp, UNSIGNED);
+		tp = ctype(tp, UNSIGNED);
 		goto type;
 	default:
 		ungetc(ch, yyin);

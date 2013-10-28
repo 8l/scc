@@ -68,7 +68,7 @@ struct symbol {
 
 extern struct ctype *decl_type(struct ctype *t);
 extern void pushtype(unsigned mod);
-extern struct ctype *btype(struct ctype *tp, unsigned char tok);
+extern struct ctype *ctype(struct ctype *tp, unsigned char tok);
 extern void new_ctx(void);
 extern void del_ctx(void);
 extern void freesyms(void);

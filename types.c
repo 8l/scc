@@ -84,7 +84,7 @@ decl_type(struct ctype *tp)
 }
 
 struct ctype *
-btype(struct ctype *tp, unsigned char tok)
+ctype(struct ctype *tp, unsigned char tok)
 {
 	register unsigned char type;
 
