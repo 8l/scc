@@ -327,7 +327,8 @@ repeat: if (!(base = specifier())) {
 	} else if (accept(';')) {
 		register unsigned char type = base->type;
 
-		if (type == STRUCT || type == UNION || type == ENUM) {
+		switch (type) {
+		case STRUCT: case UNION: case ENUM:
 			if (HAS_STORAGE(base) || HAS_QUALIF(base)) {
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
@@ -336,7 +337,7 @@ repeat: if (!(base = specifier())) {
 				warn(options.useless,
 				     "unnamed struct/union that defines no instances");
 			}
-		} else {
+		default:
 			warn(options.useless,
 			     "useless type name in empty declaration");
 		}
