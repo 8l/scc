@@ -328,7 +328,8 @@ ahead(void)
 {
 	register char c;
 
-	skip();
+	if (!skip())
+		return EOFTOK;
 	ungetc(c = getc(yyin), yyin);
 	return c;
 }
