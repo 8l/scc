@@ -17,7 +17,7 @@ static unsigned char structbuf[NR_STRUCT_LEVEL], *structp = &structbuf[0];
 static void declarator(struct ctype *tp, unsigned char ns);
 
 static void
-dirdcl(register struct ctype *tp, unsigned char ns)
+directdcl(register struct ctype *tp, unsigned char ns)
 {
 	if (accept('(')) {
 		declarator(tp, ns);
@@ -59,7 +59,7 @@ dirdcl(register struct ctype *tp, unsigned char ns)
 }
 
 static void
-new_struct(register struct ctype *tp)
+newstruct(register struct ctype *tp)
 {
 	struct symbol *sym = NULL;
 
@@ -80,7 +80,7 @@ new_struct(register struct ctype *tp)
 static struct ctype *spec(void);
 
 static struct ctype *
-field_dcl(unsigned char ns)
+fielddcl(unsigned char ns)
 {
 	register struct ctype *tp, *base;
 
@@ -117,9 +117,9 @@ field_dcl(unsigned char ns)
 }
 
 static struct ctype *
-struct_dcl(register struct ctype *tp)
+structdcl(register struct ctype *tp)
 {
-	new_struct(tp);
+	newstruct(tp);
 
 	if (!accept('{'))
 		return tp;
@@ -127,7 +127,7 @@ struct_dcl(register struct ctype *tp)
 		error("struct/union already defined");
 
 	do
-		field_dcl(tp->ns);
+		fielddcl(tp->ns);
 	while (!accept('}'));
 
 	tp->forward = 0;
@@ -135,11 +135,11 @@ struct_dcl(register struct ctype *tp)
 }
 
 static struct ctype *
-enum_dcl(struct ctype *base)
+enumdcl(struct ctype *base)
 {
 	short val = 0;
 
-	new_struct(base);
+	newstruct(base);
 	if (!accept('{'))
 		return base;
 
@@ -186,11 +186,11 @@ spec(void)
 		case ENUM:
 			tp = btype(tp, yytoken);
 			next();
-			return enum_dcl(tp);
+			return enumdcl(tp);
 		case STRUCT:   case UNION:
 			tp = btype(tp, yytoken);
 			next();
-			return struct_dcl(tp);
+			return structdcl(tp);
 		case IDEN:
 			if (!tp || !tp->type) {
 				struct symbol *sym;
@@ -256,7 +256,7 @@ declarator(struct ctype *tp, unsigned char ns)
 	if (bp == lim)
 		error("Too much type declarators");
 
-	dirdcl(tp, ns);
+	directdcl(tp, ns);
 
 	for (lim = bp, bp = qlf; bp < lim; ++bp)
 		pushtype(*bp);
