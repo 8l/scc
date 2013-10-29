@@ -11,7 +11,7 @@
 char parser_out_home;
 
 static struct symbol *cursym;
-static unsigned char nr_structs = NS_ANY + 1;
+static unsigned char nr_structs = NS_STRUCT;
 static unsigned char structbuf[NR_STRUCT_LEVEL], *structp = &structbuf[0];
 
 static void declarator(struct ctype *tp, unsigned char ns);

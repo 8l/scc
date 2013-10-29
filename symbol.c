@@ -79,9 +79,7 @@ lookup(register const char *s, signed char ns)
 	key = hash(s) & NR_SYM_HASH - 1;
 
 	for (sym = htab[key]; sym; sym = sym->hash) {
-		if (ns != NS_ANY && ns != sym->ns)
-			continue;
-		if (!memcmp(sym->name, s, l))
+		if (ns == sym->ns && !memcmp(sym->name, s, l))
 			return sym;
 	}
 
