@@ -12,7 +12,7 @@ char parser_out_home;
 
 static struct symbol *cursym;
 static unsigned char nr_structs = NS_STRUCT;
-static unsigned char structbuf[NR_STRUCT_LEVEL], *structp = &structbuf[0];
+static unsigned char nested_struct;
 
 static void declarator(struct ctype *tp, unsigned char ns);
 
@@ -59,7 +59,7 @@ directdcl(register struct ctype *tp, unsigned char ns)
 }
 
 static void
-newstruct(register struct ctype *tp)
+aggregate(register struct ctype *tp)
 {
 	struct symbol *sym = NULL;
 
@@ -68,11 +68,9 @@ newstruct(register struct ctype *tp)
 		sym->ctype = tp;
 		next();
 	}
-	if (nr_structs == NR_MAXSTRUCTS)
+	if (nr_structs == NS_STRUCT + NR_MAXSTRUCTS)
 		error("too much structs/unions/enum defined");
-	if (structp == &structbuf[NR_STRUCT_LEVEL])
-		error("too much nested structs/unions");
-	tp->ns = *structp++ = nr_structs;
+	tp->ns = ++nr_structs;
 	tp->forward = 1;
 	tp->sym = sym;
 }
@@ -119,8 +117,11 @@ fielddcl(unsigned char ns)
 static struct ctype *
 structdcl(register struct ctype *tp)
 {
-	newstruct(tp);
+	aggregate(tp);
+	if (nested_struct == NR_STRUCT_LEVEL)
+		error("too much nested structs/unions");
 
+	++nested_struct;
 	if (!accept('{'))
 		return tp;
 	if (!tp->forward)
@@ -129,6 +130,7 @@ structdcl(register struct ctype *tp)
 	do
 		fielddcl(tp->ns);
 	while (!accept('}'));
+	--nested_struct;
 
 	tp->forward = 0;
 	return tp;
@@ -139,7 +141,7 @@ enumdcl(struct ctype *base)
 {
 	short val = 0;
 
-	newstruct(base);
+	aggregate(base);
 	if (!accept('{'))
 		return base;
 
