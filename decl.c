@@ -149,12 +149,11 @@ enumdcl(struct ctype *base)
 		register struct symbol *sym;
 		register struct ctype *tp = ctype(NULL, INT);
 
-		if (yytoken == '}')
+		if (yytoken != IDEN)
 			break;
-
-		expect(IDEN);
 		sym = lookup(yytext, NS_IDEN);
 		sym->ctype = tp;
+		next();
 		if (accept('=')) {
 			expect(CONSTANT);
 			val = yyval->i;
