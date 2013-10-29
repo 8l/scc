@@ -192,21 +192,21 @@ specifier(void)
 			next();
 			return structdcl(tp);
 		case IDEN:
+			/* TODO: remove NS_TYPEDEF */
+			if (tp && tp->c_typedef && !tp->type)
+				goto check_type;
 			if (!tp || !tp->type) {
-				struct symbol *sym;
-				unsigned char tok = ahead();
+				struct symbol *sym = lookup(yytext, NS_TYPEDEF);
 
-				sym = lookup(yytext, NS_TYPEDEF);
-				if (sym->ctype && tok != ';' && tok != ',') {
-					if (!tp)
-						tp = newctype();
-					tp->type = TYPEDEF;
+				if (sym->ctype) {
+					tp = ctype(tp, TYPEDEF);
 					tp->base = sym->ctype;
 					break;
 				}
 			}
 			/* it is not a type name */
 		default:
+		check_type:
 			if (!tp) {
 				if (curctx != CTX_OUTER || yytoken != IDEN)
 					return NULL;

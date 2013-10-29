@@ -164,6 +164,12 @@ check_sign:	switch (type) {
 			goto invalid_sign;
 		}
 		break;
+	case TYPEDEF:
+		assert(!type);
+		if (tp->c_signed || tp->c_unsigned)
+			goto invalid_sign;
+		type = TYPEDEF;
+		break;
 	default:
 		assert(0);
 	}
