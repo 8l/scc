@@ -193,13 +193,11 @@ specifier(void)
 			next();
 			return structdcl(tp);
 		case IDEN:
-			/* TODO: remove NS_TYPEDEF */
-			if (tp && tp->c_typedef && !tp->type)
-				goto check_type;
 			if (!tp || !tp->type) {
-				struct symbol *sym = lookup(yytext, NS_TYPEDEF);
+				register struct symbol *sym;
 
-				if (sym->ctype) {
+				sym = lookup(yytext, NS_IDEN);
+				if (sym->ctype && sym->ctype->c_typedef) {
 					tp = ctype(tp, TYPEDEF);
 					tp->base = sym->ctype;
 					break;
@@ -297,7 +295,7 @@ listdcl(struct ctype *base)
 		struct node *np;
 		register struct ctype *tp;
 
-		declarator(base, base->c_typedef ? NS_TYPEDEF : NS_IDEN);
+		declarator(base, NS_IDEN);
 		tp = cursym->ctype = decl_type(base);
 		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
 			error("declaration of variable with incomplete type");

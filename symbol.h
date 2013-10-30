@@ -14,7 +14,6 @@ enum {
 	NS_IDEN,
 	NS_KEYWORD,
 	NS_LABEL,
-	NS_TYPEDEF,
 	NS_STRUCT
 };
 
