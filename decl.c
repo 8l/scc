@@ -11,8 +11,8 @@
 char parser_out_home;
 
 static struct symbol *cursym;
-static unsigned char nr_structs = NS_STRUCT;
-static unsigned char nested_struct;
+static unsigned char nr_tags = NS_TAG;
+static unsigned char nested_tags;
 
 static void declarator(struct ctype *tp, unsigned char ns);
 
@@ -64,13 +64,13 @@ aggregate(register struct ctype *tp)
 	struct symbol *sym = NULL;
 
 	if (yytoken == IDEN) {
-		sym = lookup(yytext, NS_STRUCT);
+		sym = lookup(yytext, NS_TAG);
 		sym->ctype = tp;
 		next();
 	}
-	if (nr_structs == NS_STRUCT + NR_MAXSTRUCTS)
+	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
 		error("too much structs/unions/enum defined");
-	tp->ns = ++nr_structs;
+	tp->ns = ++nr_tags;
 	tp->forward = 1;
 	tp->sym = sym;
 }
@@ -117,10 +117,10 @@ static struct ctype *
 structdcl(register struct ctype *tp)
 {
 	aggregate(tp);
-	if (nested_struct == NR_STRUCT_LEVEL)
+	if (nested_tags == NR_STRUCT_LEVEL)
 		error("too much nested structs/unions");
 
-	++nested_struct;
+	++nested_tags;
 	if (!accept('{'))
 		return tp;
 	if (!tp->forward)
@@ -129,7 +129,7 @@ structdcl(register struct ctype *tp)
 	do
 		fielddcl(tp->ns);
 	while (!accept('}'));
-	--nested_struct;
+	--nested_tags;
 
 	tp->forward = 0;
 	return tp;

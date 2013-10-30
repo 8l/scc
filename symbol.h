@@ -14,7 +14,7 @@ enum {
 	NS_IDEN,
 	NS_KEYWORD,
 	NS_LABEL,
-	NS_STRUCT
+	NS_TAG
 };
 
 struct ctype {
