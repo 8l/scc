@@ -83,8 +83,7 @@ fielddcl(unsigned char ns)
 	register struct ctype *tp, *base;
 
 	if (!(base = specifier())) {
-		base = newctype();
-		base->type = INT;
+		base = ctype(NULL, INT);
 		warn(options.implicit,
 		     "data definition has no type or storage class");
 	}

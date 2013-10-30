@@ -73,7 +73,6 @@ extern void freesyms(void);
 extern struct symbol *lookup(const char *s, signed char ns);
 extern void insert(struct symbol *sym, unsigned char ctx);
 extern struct ctype *storage(struct ctype *tp, unsigned char mod);
-extern struct ctype *newctype(void);
 extern void delctype(struct ctype *tp);
 extern unsigned char hash(register const char *s);
 

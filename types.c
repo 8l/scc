@@ -1,6 +1,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "sizes.h"
 #include "cc.h"
@@ -11,14 +12,11 @@
 static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
-
-struct ctype *
-newctype(void)
+void
+initctype(register struct ctype *tp)
 {
-	register struct ctype *tp = xcalloc(sizeof(*tp), 1);
-
+	memset(tp, 0, sizeof(*tp));
 	tp->forward = 1;
-	return tp;
 }
 
 void
@@ -43,7 +41,8 @@ mktype(register struct ctype *tp, unsigned  char op)
 	case PTR: case FTN: {
 		register struct ctype *aux = tp;
 
-		tp = newctype();
+		tp = xmalloc(sizeof(*tp));
+		initctype(tp);
 		tp->type = op;
 		tp->base = aux;
 		tp->len = len;
@@ -88,8 +87,10 @@ ctype(struct ctype *tp, unsigned char tok)
 {
 	register unsigned char type;
 
-	if (!tp)
-		tp = newctype();
+	if (!tp) {
+		tp = xmalloc(sizeof(*tp));
+		initctype(tp);
+	}
 
 	type = tp->type;
 	switch (tok) {
@@ -191,8 +192,10 @@ storage(register struct ctype *tp, unsigned char mod)
 {
 	extern unsigned char curctx;
 
-	if (!tp)
-		tp = newctype();
+	if (!tp) {
+		tp = xmalloc(sizeof(*tp));
+		initctype(tp);
+	}
 	switch (mod) {
 	case TYPEDEF:
 		if (tp->c_typedef)
