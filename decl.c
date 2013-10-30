@@ -75,24 +75,23 @@ aggregate(register struct ctype *tp)
 	tp->sym = sym;
 }
 
-static struct ctype *specifier(void);
+static bool specifier(struct ctype *);
 
 static struct ctype *
 fielddcl(unsigned char ns)
 {
-	register struct ctype *tp, *base;
+	struct ctype base;
+	register struct ctype *tp;
 
-	if (!(base = specifier())) {
-		base = ctype(NULL, INT);
-		warn(options.implicit,
-		     "data definition has no type or storage class");
-	}
-	if (HAS_STORAGE(base))
+	initctype(&base);
+	specifier(&base);
+
+	if (HAS_STORAGE(&base))
 		error("storage specifier in a struct/union field declaration");
 
 	do {
-		declarator(base, ns);
-		tp = decl_type(base);
+		declarator(&base, ns);
+		tp = decl_type(&base);
 		if (accept(':')) {
 			expect(CONSTANT);
 			switch (tp->type) {
@@ -108,7 +107,6 @@ fielddcl(unsigned char ns)
 		cursym->ctype = tp;
 	} while (accept(','));
 
-	delctype(base);
 	expect(';');
 	return tp;
 }
@@ -165,11 +163,9 @@ enumdcl(struct ctype *base)
 	return base;
 }
 
-struct ctype *
-specifier(void)
+bool
+specifier(register struct ctype *tp)
 {
-	register struct ctype *tp = NULL;
-
 	for (;; next()) {
 		switch (yytoken) {
 		case TYPEDEF:  case EXTERN: case STATIC: case AUTO:
@@ -192,7 +188,7 @@ specifier(void)
 			next();
 			return structdcl(tp);
 		case IDEN:
-			if (!tp || !tp->type) {
+			if (!tp->tdef && !tp->sdef) {
 				register struct symbol *sym;
 
 				sym = lookup(yytext, NS_IDEN);
@@ -205,16 +201,18 @@ specifier(void)
 			/* it is not a type name */
 		default:
 		check_type:
-			if (!tp) {
+			if (!tp->tdef && !tp->sdef) {
+				/* TODO: Allow no type in structs and union */
 				if (curctx != CTX_OUTER || yytoken != IDEN)
-					return NULL;
+					return false;
 				tp = ctype(tp, INT);
+				tp = storage(tp, STATIC);
 				warn(options.implicit,
 					"data definition has no type or storage class");
-			} else if (!tp->type) {
+			} else if (!tp->tdef) {
 				warn(options.implicit,
 			             "type defaults to 'int' in declaration");
-				tp->type = INT;
+				tp = ctype(tp, INT);
 			}
 			if (!tp->c_signed && !tp->c_unsigned) {
 				switch (tp->type) {
@@ -227,7 +225,7 @@ specifier(void)
 					tp->c_signed = 1;
 				}
 			}
-			return tp;
+			return true;
 		}
 	}
 }
@@ -315,22 +313,24 @@ listdcl(struct ctype *base)
 struct node *
 decl(void)
 {
-	register struct ctype *base;
+	struct ctype base;
 	struct node *np;
 
-repeat: if (!(base = specifier()))
+repeat: initctype(&base);
+
+	if (!specifier(&base))
 		return NULL;
 
 	if (accept(';')) {
-		register unsigned char type = base->type;
+		register unsigned char type = base.type;
 
 		switch (type) {
 		case STRUCT: case UNION: case ENUM:
-			if (HAS_STORAGE(base) || HAS_QUALIF(base)) {
+			if (HAS_STORAGE(&base) || HAS_QUALIF(&base)) {
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
 			}
-			if (!base->sym && type != ENUM) {
+			if (base.sym && type != ENUM) {
 				warn(options.useless,
 				     "unnamed struct/union that defines no instances");
 			}
@@ -338,11 +338,9 @@ repeat: if (!(base = specifier()))
 			warn(options.useless,
 			     "useless type name in empty declaration");
 		}
-		delctype(base);
 		goto repeat;
 	}
-	np = listdcl(base);
-	delctype(base);
+	np = listdcl(&base);
 	return np;
 }
 

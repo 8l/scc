@@ -30,6 +30,8 @@ struct ctype {
 	bool c_unsigned : 1;
 	bool c_signed : 1;
 	bool forward : 1;
+	bool tdef: 1;
+	bool sdef: 1;
 	union {
 		unsigned len;
 		struct {
@@ -75,6 +77,7 @@ extern void insert(struct symbol *sym, unsigned char ctx);
 extern struct ctype *storage(struct ctype *tp, unsigned char mod);
 extern void delctype(struct ctype *tp);
 extern unsigned char hash(register const char *s);
+extern void initctype(register struct ctype *tp);
 
 #ifndef NDEBUG
 extern void ptype(register struct ctype *t);

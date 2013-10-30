@@ -60,6 +60,7 @@ mktype(register struct ctype *tp, unsigned  char op)
 	default:
 		assert(0);
 	}
+	tp->tdef = 1;
 	return tp;
 }
 
@@ -174,6 +175,7 @@ check_sign:	switch (type) {
 	default:
 		assert(0);
 	}
+	tp->tdef = 1;
 	tp->type = type;
 	return tp;
 
@@ -196,6 +198,8 @@ storage(register struct ctype *tp, unsigned char mod)
 		tp = xmalloc(sizeof(*tp));
 		initctype(tp);
 	}
+
+	tp->sdef = 1;
 	switch (mod) {
 	case TYPEDEF:
 		if (tp->c_typedef)
@@ -252,6 +256,8 @@ storage(register struct ctype *tp, unsigned char mod)
 			goto bad_typedef;
 		tp->c_volatile = 1;
 		return tp;
+	default:
+		assert(0);
 	}
 bad_typedef:
 	error("typedef specifies type qualifier");
