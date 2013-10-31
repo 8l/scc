@@ -12,11 +12,21 @@
 static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
-void
+struct ctype *
 initctype(register struct ctype *tp)
 {
 	memset(tp, 0, sizeof(*tp));
+	tp->type = INT;
 	tp->forward = 1;
+	return tp;
+}
+
+struct storage *
+initstore(register struct storage *store)
+{
+	memset(store, 0, sizeof(*store));
+	store->c_auto = 1;
+	return store;
 }
 
 void
@@ -60,7 +70,6 @@ mktype(register struct ctype *tp, unsigned  char op)
 	default:
 		assert(0);
 	}
-	tp->tdef = 1;
 	return tp;
 }
 
@@ -88,12 +97,13 @@ ctype(struct ctype *tp, unsigned char tok)
 {
 	register unsigned char type;
 
-	if (!tp) {
-		tp = xmalloc(sizeof(*tp));
-		initctype(tp);
+	if (!tp->defined) {
+		tp->type = 0;
+		tp->defined = 1;
 	}
-
 	type = tp->type;
+
+
 	switch (tok) {
 	case VOID: case BOOL: case STRUCT: case UNION: case ENUM: case BITFLD:
 		if (type)
@@ -175,7 +185,6 @@ check_sign:	switch (type) {
 	default:
 		assert(0);
 	}
-	tp->tdef = 1;
 	tp->type = type;
 	return tp;
 
@@ -189,76 +198,77 @@ two_or_more:
 	error("two or more basic types");
 }
 
-struct ctype *
-storage(register struct ctype *tp, unsigned char mod)
+struct storage*
+storage(register struct storage *sp, unsigned char mod)
 {
 	extern unsigned char curctx;
 
-	if (!tp) {
-		tp = xmalloc(sizeof(*tp));
-		initctype(tp);
+	if (!sp->defined) {
+		sp->c_auto = 0;
+		sp->defined = 1;
 	}
 
-	tp->sdef = 1;
 	switch (mod) {
 	case TYPEDEF:
-		if (tp->c_typedef)
+		if (sp->c_typedef)
 			goto duplicated;
-		if (tp->c_extern | tp->c_auto | tp->c_register | tp->c_static)
+		if (sp->c_extern | sp->c_auto | sp->c_register | sp->c_static)
 			goto two_storage;
-		if (tp->c_const || tp->c_volatile)
+		if (sp->c_const || sp->c_volatile)
 			goto bad_typedef;
-		tp->c_typedef = 1;
-		return tp;
+		sp->c_typedef = 1;
+		break;
 	case EXTERN:
-		if (tp->c_extern)
+		if (sp->c_extern)
 			goto duplicated;
-		if (tp->c_typedef | tp->c_auto | tp->c_register | tp->c_static)
+		if (sp->c_typedef | sp->c_auto | sp->c_register | sp->c_static)
 			goto two_storage;
-		tp->c_extern = 1;
-		return tp;
+		sp->c_extern = 1;
+		break;
 	case STATIC:
-		if (tp->c_static)
+		if (sp->c_static)
 			goto duplicated;
-		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_register)
+		if (sp->c_typedef | sp->c_extern | sp->c_auto | sp->c_register)
 			goto two_storage;
-		tp->c_static = 1;
-		return tp;
+		sp->c_static = 1;
+		break;
 	case AUTO:
 		if (curctx == CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (tp->c_typedef | tp->c_extern | tp->c_static |tp->c_register)
+		if (sp->c_typedef | sp->c_extern | sp->c_static |sp->c_register)
 			goto two_storage;
-		if (tp->c_auto)
+		if (sp->c_auto)
 			goto duplicated;
-		tp->c_static = 1;
-		return tp;
+		sp->c_static = 1;
+		break;
 	case REGISTER:
 		if (curctx == CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (tp->c_typedef | tp->c_extern | tp->c_auto | tp->c_static)
+		if (sp->c_typedef | sp->c_extern | sp->c_auto | sp->c_static)
 			goto two_storage;
-		if (tp->c_register)
+		if (sp->c_register)
 			goto duplicated;
-		tp->c_register = 1;
-		return tp;
+		sp->c_register = 1;
+		break;
 	case CONST:
-		if (options.repeat && tp->c_const)
+		if (options.repeat && sp->c_const)
 			goto duplicated;
-		if (tp->c_typedef)
+		if (sp->c_typedef)
 			goto bad_typedef;
-		tp->c_const = 1;
-		return tp;
+		sp->c_const = 1;
+		break;
 	case VOLATILE:
-		if (options.repeat && tp->c_volatile)
+		if (options.repeat && sp->c_volatile)
 			goto duplicated;
-		if (tp->c_typedef)
+		if (sp->c_typedef)
 			goto bad_typedef;
-		tp->c_volatile = 1;
-		return tp;
+		sp->c_volatile = 1;
+		break;
 	default:
 		assert(0);
 	}
+	return sp;
+
 bad_typedef:
 	error("typedef specifies type qualifier");
 bad_file_scope_storage:

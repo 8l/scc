@@ -31,12 +31,12 @@ struct symbol *yyval;
 struct symbol *
 integer(char *s, char base)
 {
-	register struct ctype *tp;
+	static struct ctype *tp;
 	register struct symbol *sym;
 	static long long v;
 	static char ch;
 
-	tp = ctype(NULL, INT);
+	tp = initctype(xmalloc(sizeof(*tp)));
 
 type:	switch (ch = toupper(getc(yyin))) {
 	case 'L':

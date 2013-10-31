@@ -75,18 +75,20 @@ aggregate(register struct ctype *tp)
 	tp->sym = sym;
 }
 
-static bool specifier(struct ctype *);
+static bool specifier(struct ctype *, struct storage *);
 
 static struct ctype *
 fielddcl(unsigned char ns)
 {
 	struct ctype base;
+	struct storage store;
 	register struct ctype *tp;
 
 	initctype(&base);
-	specifier(&base);
+	initstore(&store);
+	specifier(&base, &store);
 
-	if (HAS_STORAGE(&base))
+	if (store.defined)
 		error("storage specifier in a struct/union field declaration");
 
 	do {
@@ -164,13 +166,13 @@ enumdcl(struct ctype *base)
 }
 
 bool
-specifier(register struct ctype *tp)
+specifier(register struct ctype *tp, register struct storage *store)
 {
 	for (;; next()) {
 		switch (yytoken) {
 		case TYPEDEF:  case EXTERN: case STATIC: case AUTO:
 		case REGISTER: case CONST:  case VOLATILE:
-			tp = storage(tp, yytoken);
+			store = storage(store, yytoken);
 			break;
 		case UNSIGNED: case SIGNED:
 		case COMPLEX:  case IMAGINARY:
@@ -188,11 +190,11 @@ specifier(register struct ctype *tp)
 			next();
 			return structdcl(tp);
 		case IDEN:
-			if (!tp->tdef && !tp->sdef) {
+			if (!tp->defined && !store->defined) {
 				register struct symbol *sym;
 
 				sym = lookup(yytext, NS_IDEN);
-				if (sym->ctype && sym->ctype->c_typedef) {
+				if (sym->ctype && sym->store.c_typedef) {
 					tp = ctype(tp, TYPEDEF);
 					tp->base = sym->ctype;
 					break;
@@ -201,15 +203,15 @@ specifier(register struct ctype *tp)
 			/* it is not a type name */
 		default:
 		check_type:
-			if (!tp->tdef && !tp->sdef) {
+			/* TODO: simplify this checks */
+			if (!tp->defined && !store->defined) {
 				/* TODO: Allow no type in structs and union */
 				if (curctx != CTX_OUTER || yytoken != IDEN)
 					return false;
-				tp = ctype(tp, INT);
-				tp = storage(tp, STATIC);
+				store->c_auto = false;
 				warn(options.implicit,
-					"data definition has no type or storage class");
-			} else if (!tp->tdef) {
+				     "data definition has no type or storage class");
+			} else if (!tp->defined) {
 				warn(options.implicit,
 			             "type defaults to 'int' in declaration");
 				tp = ctype(tp, INT);
@@ -282,7 +284,7 @@ initializer(register struct ctype *tp)
 }
 
 static struct node *
-listdcl(struct ctype *base)
+listdcl(struct ctype *base, struct storage *store)
 {
 	struct compound c;
 
@@ -293,6 +295,7 @@ listdcl(struct ctype *base)
 		register struct ctype *tp;
 
 		declarator(base, NS_IDEN);
+		cursym->store = *store;
 		tp = cursym->ctype = decl_type(base);
 		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
 			error("declaration of variable with incomplete type");
@@ -314,11 +317,13 @@ struct node *
 decl(void)
 {
 	struct ctype base;
+	struct storage store;
 	struct node *np;
 
 repeat: initctype(&base);
+	initstore(&store);
 
-	if (!specifier(&base))
+	if (!specifier(&base, &store))
 		return NULL;
 
 	if (accept(';')) {
@@ -326,7 +331,7 @@ repeat: initctype(&base);
 
 		switch (type) {
 		case STRUCT: case UNION: case ENUM:
-			if (HAS_STORAGE(&base) || HAS_QUALIF(&base)) {
+			if (store.defined) {
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
 			}
@@ -340,7 +345,7 @@ repeat: initctype(&base);
 		}
 		goto repeat;
 	}
-	np = listdcl(&base);
+	np = listdcl(&base, &store);
 	return np;
 }
 
