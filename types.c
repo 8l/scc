@@ -31,8 +31,11 @@ initctype(register struct ctype *tp)
 struct storage *
 initstore(register struct storage *store)
 {
+	extern unsigned char curctx;
 	memset(store, 0, sizeof(*store));
-	store->c_auto = 1;
+
+	if (curctx != CTX_OUTER)
+		store->c_auto = 1;
 	return store;
 }
 

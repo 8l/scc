@@ -217,19 +217,14 @@ specifier(register struct ctype *tp,
 			}
 			/* it is not a type name */
 		default:
-		check_type:
-			/* TODO: simplify this checks */
-			if (!tp->defined && !store->defined && !qlf->defined) {
-				/* TODO: Allow no type in structs and union */
-				if (curctx != CTX_OUTER || yytoken != IDEN)
+			if (!tp->defined) {
+				if (!store->defined &&
+				    !qlf->defined   &&
+				    curctx != CTX_OUTER ) {
 					return false;
-				store->c_auto = false;
+				}
 				warn(options.implicit,
-				     "data definition has no type or storage class");
-			} else if (!tp->defined) {
-				warn(options.implicit,
-			             "type defaults to 'int' in declaration");
-				tp = ctype(tp, INT);
+				     "type defaults to 'int' in declaration");
 			}
 			if (!tp->c_signed && !tp->c_unsigned) {
 				switch (tp->type) {
