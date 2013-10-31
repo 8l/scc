@@ -12,6 +12,13 @@
 static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
+struct qualifier *
+initqlf(struct qualifier *qlf)
+{
+	memset(qlf, 0, sizeof(*qlf));
+	return qlf;
+}
+
 struct ctype *
 initctype(register struct ctype *tp)
 {
@@ -198,85 +205,68 @@ two_or_more:
 	error("two or more basic types");
 }
 
-struct storage*
+struct qualifier *
+qualifier(register struct qualifier *qlf, unsigned char mod)
+{
+	switch (mod) {
+	case CONST:
+		if (options.repeat && qlf->c_const)
+			goto duplicated;
+		qlf->c_const = 1;
+		break;
+	case VOLATILE:
+		if (options.repeat && qlf->c_volatile)
+			goto duplicated;
+		qlf->c_volatile = 1;
+		break;
+	default:
+		assert(0);
+	}
+
+	qlf->defined = 1;
+	return qlf;
+duplicated:
+	error("duplicated '%s'", yytext);
+}
+
+struct storage *
 storage(register struct storage *sp, unsigned char mod)
 {
 	extern unsigned char curctx;
 
-	if (!sp->defined) {
+	if (!sp->defined)
 		sp->c_auto = 0;
-		sp->defined = 1;
-	}
+	else
+		error("Two or more storage specifier");
 
 	switch (mod) {
 	case TYPEDEF:
-		if (sp->c_typedef)
-			goto duplicated;
-		if (sp->c_extern | sp->c_auto | sp->c_register | sp->c_static)
-			goto two_storage;
-		if (sp->c_const || sp->c_volatile)
-			goto bad_typedef;
 		sp->c_typedef = 1;
 		break;
 	case EXTERN:
-		if (sp->c_extern)
-			goto duplicated;
-		if (sp->c_typedef | sp->c_auto | sp->c_register | sp->c_static)
-			goto two_storage;
 		sp->c_extern = 1;
 		break;
 	case STATIC:
-		if (sp->c_static)
-			goto duplicated;
-		if (sp->c_typedef | sp->c_extern | sp->c_auto | sp->c_register)
-			goto two_storage;
 		sp->c_static = 1;
 		break;
 	case AUTO:
 		if (curctx == CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (sp->c_typedef | sp->c_extern | sp->c_static |sp->c_register)
-			goto two_storage;
-		if (sp->c_auto)
-			goto duplicated;
-		sp->c_static = 1;
+		sp->c_auto = 1;
 		break;
 	case REGISTER:
 		if (curctx == CTX_OUTER)
 			goto bad_file_scope_storage;
-		if (sp->c_typedef | sp->c_extern | sp->c_auto | sp->c_static)
-			goto two_storage;
-		if (sp->c_register)
-			goto duplicated;
 		sp->c_register = 1;
-		break;
-	case CONST:
-		if (options.repeat && sp->c_const)
-			goto duplicated;
-		if (sp->c_typedef)
-			goto bad_typedef;
-		sp->c_const = 1;
-		break;
-	case VOLATILE:
-		if (options.repeat && sp->c_volatile)
-			goto duplicated;
-		if (sp->c_typedef)
-			goto bad_typedef;
-		sp->c_volatile = 1;
 		break;
 	default:
 		assert(0);
 	}
+	sp->defined = 1;
 	return sp;
 
-bad_typedef:
-	error("typedef specifies type qualifier");
 bad_file_scope_storage:
 	error("file-scope declaration specifies '%s'", yytext);
-two_storage:
-	error("Two or more storage specifier");
-duplicated:
-	error("duplicated '%s'", yytext);
 }
 
 #ifndef NDEBUG

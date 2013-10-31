@@ -82,18 +82,21 @@ aggregate(register struct ctype *tp)
 	tp->sym = sym;
 }
 
-static bool specifier(struct ctype *, struct storage *);
+static bool
+specifier(register struct ctype *, struct storage *, struct qualifier *);
 
 static struct ctype *
 fielddcl(unsigned char ns)
 {
 	struct ctype base;
 	struct storage store;
+	struct qualifier qlf;
 	register struct ctype *tp;
 
 	initctype(&base);
 	initstore(&store);
-	specifier(&base, &store);
+	initqlf(&qlf);
+	specifier(&base, &store, &qlf);
 
 	if (store.defined)
 		error("storage specifier in a struct/union field declaration");
@@ -114,6 +117,7 @@ fielddcl(unsigned char ns)
 			}
 		}
 		cursym->ctype = tp;
+		cursym->qlf = qlf;
 	} while (accept(','));
 
 	expect(';');
@@ -173,12 +177,16 @@ enumdcl(struct ctype *base)
 }
 
 bool
-specifier(register struct ctype *tp, register struct storage *store)
+specifier(register struct ctype *tp,
+          struct storage *store, struct qualifier *qlf)
 {
 	for (;; next()) {
 		switch (yytoken) {
-		case TYPEDEF:  case EXTERN: case STATIC: case AUTO:
-		case REGISTER: case CONST:  case VOLATILE:
+		case CONST:  case VOLATILE:
+			qlf = qualifier(qlf, yytoken);
+			break;
+		case TYPEDEF:  case EXTERN: case STATIC:
+		case AUTO:     case REGISTER:
 			store = storage(store, yytoken);
 			break;
 		case UNSIGNED: case SIGNED:
@@ -197,7 +205,7 @@ specifier(register struct ctype *tp, register struct storage *store)
 			next();
 			return structdcl(tp);
 		case IDEN:
-			if (!tp->defined && !store->defined) {
+			if (!tp->defined && !store->defined && !qlf->defined) {
 				register struct symbol *sym;
 
 				sym = lookup(yytext, NS_IDEN);
@@ -211,7 +219,7 @@ specifier(register struct ctype *tp, register struct storage *store)
 		default:
 		check_type:
 			/* TODO: simplify this checks */
-			if (!tp->defined && !store->defined) {
+			if (!tp->defined && !store->defined && !qlf->defined) {
 				/* TODO: Allow no type in structs and union */
 				if (curctx != CTX_OUTER || yytoken != IDEN)
 					return false;
@@ -294,7 +302,7 @@ initializer(register struct ctype *tp)
 }
 
 static struct node *
-listdcl(struct ctype *base, struct storage *store)
+listdcl(struct ctype *base, struct storage *store, struct qualifier *qlf)
 {
 	struct compound c;
 	char fun;
@@ -307,6 +315,7 @@ listdcl(struct ctype *base, struct storage *store)
 
 		declarator(base, NS_IDEN);
 		cursym->store = *store;
+		cursym->qlf = *qlf;
 		tp = cursym->ctype = decl_type(base);
 		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
 			error("declaration of variable with incomplete type");
@@ -328,12 +337,14 @@ decl(void)
 {
 	struct ctype base;
 	struct storage store;
+	struct qualifier qlf;
 	struct node *np;
 
 repeat: initctype(&base);
 	initstore(&store);
+	initqlf(&qlf);
 
-	if (!specifier(&base, &store))
+	if (!specifier(&base, &store, &qlf))
 		return NULL;
 
 	if (accept(';')) {
@@ -345,6 +356,10 @@ repeat: initctype(&base);
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
 			}
+			if (qlf.defined) {
+				warn(options.useless,
+				     "useless type qualifier in empty declaration");
+			}
 			if (base.sym && type != ENUM) {
 				warn(options.useless,
 				     "unnamed struct/union that defines no instances");
@@ -355,7 +370,7 @@ repeat: initctype(&base);
 		}
 		goto repeat;
 	}
-	np = listdcl(&base, &store);
+	np = listdcl(&base, &store, &qlf);
 	return np;
 }
 
