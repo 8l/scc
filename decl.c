@@ -85,7 +85,7 @@ aggregate(register struct ctype *tp)
 static bool
 specifier(register struct ctype *, struct storage *, struct qualifier *);
 
-static struct ctype *
+static void
 fielddcl(unsigned char ns)
 {
 	struct ctype base;
@@ -121,10 +121,9 @@ fielddcl(unsigned char ns)
 	} while (accept(','));
 
 	expect(';');
-	return tp;
 }
 
-static struct ctype *
+static void
 structdcl(register struct ctype *tp)
 {
 	aggregate(tp);
@@ -133,7 +132,7 @@ structdcl(register struct ctype *tp)
 
 	++nested_tags;
 	if (!accept('{'))
-		return tp;
+		return;
 	if (!tp->forward)
 		error("struct/union already defined");
 
@@ -143,17 +142,16 @@ structdcl(register struct ctype *tp)
 	--nested_tags;
 
 	tp->forward = 0;
-	return tp;
 }
 
-static struct ctype *
+static void
 enumdcl(struct ctype *base)
 {
 	short val = 0;
 
 	aggregate(base);
 	if (!accept('{'))
-		return base;
+		return;
 
 	do {
 		register struct symbol *sym;
@@ -172,8 +170,6 @@ enumdcl(struct ctype *base)
 	} while (accept(','));
 
 	expect('}');
-
-	return base;
 }
 
 bool
@@ -199,11 +195,13 @@ specifier(register struct ctype *tp,
 		case ENUM:
 			tp = ctype(tp, yytoken);
 			next();
-			return enumdcl(tp);
+			enumdcl(tp);
+			return true;
 		case STRUCT:   case UNION:
 			tp = ctype(tp, yytoken);
 			next();
-			return structdcl(tp);
+			structdcl(tp);
+			return true;
 		case IDEN:
 			if (!tp->defined) {
 				register struct symbol *sym;
