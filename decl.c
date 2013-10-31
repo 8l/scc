@@ -205,7 +205,7 @@ specifier(register struct ctype *tp,
 			next();
 			return structdcl(tp);
 		case IDEN:
-			if (!tp->defined && !store->defined && !qlf->defined) {
+			if (!tp->defined) {
 				register struct symbol *sym;
 
 				sym = lookup(yytext, NS_IDEN);
