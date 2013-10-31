@@ -217,32 +217,36 @@ specifier(register struct ctype *tp,
 			}
 			/* it is not a type name */
 		default:
-			if (!tp->defined) {
-				if (!store->defined &&
-				    !qlf->defined   &&
-				    curctx != CTX_OUTER &&
-				    nested_tags == 0) {
-					return false;
-				}
-				warn(options.implicit,
-				     "type defaults to 'int' in declaration");
-			}
-			if (nested_tags > 0 && (qlf->defined || store->defined))
-				error("type qualifer or store specifier in field declaration");
-			if (!tp->c_signed && !tp->c_unsigned) {
-				switch (tp->type) {
-				case CHAR:
-					if (!options.charsign) {
-				case BOOL:	tp->c_unsigned = 1;
-						break;
-					}
-				case INT: case SHORT: case LONG: case LLONG:
-					tp->c_signed = 1;
-				}
-			}
-			return true;
+			goto check_type;
 		}
 	}
+
+check_type:
+	if (!tp->defined) {
+		if (!store->defined &&
+		    !qlf->defined &&
+		    curctx != CTX_OUTER &&
+		    nested_tags == 0) {
+			return false;
+		}
+		warn(options.implicit,
+		     "type defaults to 'int' in declaration");
+	}
+	if (nested_tags > 0 && (qlf->defined || store->defined))
+		error("type qualifer or store specifier in field declaration");
+
+	if (!tp->c_signed && !tp->c_unsigned) {
+		switch (tp->type) {
+		case CHAR:
+			if (!options.charsign) {
+		case BOOL:	tp->c_unsigned = 1;
+				break;
+			}
+		case INT: case SHORT: case LONG: case LLONG:
+			tp->c_signed = 1;
+		}
+	}
+	return true;
 }
 
 static void
