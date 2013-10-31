@@ -266,6 +266,9 @@ declarator(struct ctype *tp, unsigned char ns)
 static struct node *
 initializer(register struct ctype *tp)
 {
+	if (!accept('='))
+		return NULL;
+	next();
 	if (accept('{')) {
 		struct compound c;
 
@@ -287,11 +290,12 @@ static struct node *
 listdcl(struct ctype *base, struct storage *store)
 {
 	struct compound c;
+	char fun;
 
 	c.tree = NULL;
 
 	do {
-		struct node *np;
+		struct node *np, *aux;
 		register struct ctype *tp;
 
 		declarator(base, NS_IDEN);
@@ -301,15 +305,13 @@ listdcl(struct ctype *base, struct storage *store)
 			error("declaration of variable with incomplete type");
 
 		np = nodesym(cursym);
-		if (tp->type == FTN && yytoken == '{') {
-			np  = node(ODEF, np, function(cursym));
-			return addstmt(&c, np);
-		}
-		np = node(ODEF, np, accept('=') ? initializer(tp) : NULL);
-		addstmt(&c, np);
-	} while (accept(','));
+		fun = tp->type == FTN && yytoken == '{';
+		aux = fun ? function(cursym) : initializer(tp);
+		addstmt(&c, node(ODEF, np, aux));
+	} while (!fun && accept(','));
 
-	expect(';');
+	if (!fun)
+		expect(';');
 	return c.tree;
 }
 
