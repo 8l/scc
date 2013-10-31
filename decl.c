@@ -9,7 +9,13 @@
 #include "symbol.h"
 
 char parser_out_home;
-
+/*
+ * Number of nested declarations:
+ * Number of nested struct declarations
+ * +1 for the function declaration
+ * +1 for the field declaration
+ */
+static struct symbol *symstack[NR_STRUCT_LEVEL + 1 + 1], **symstackp = symstack;
 static struct symbol *cursym;
 static unsigned char nr_tags = NS_TAG;
 static unsigned char nested_tags;
@@ -23,7 +29,8 @@ directdcl(register struct ctype *tp, unsigned char ns)
 		declarator(tp, ns);
 		expect(')');
 	} else if (yytoken == IDEN) {
-		cursym = lookup(yytext, ns);
+		/* we can't overflow due to the check in structdcl */
+		*symstackp++ = cursym = lookup(yytext, ns);
 		if (!cursym->ctype)
 			cursym->ctx = curctx;
 		else if (cursym->ctx == curctx)
@@ -308,6 +315,7 @@ listdcl(struct ctype *base, struct storage *store)
 		fun = tp->type == FTN && yytoken == '{';
 		aux = fun ? function(cursym) : initializer(tp);
 		addstmt(&c, node(ODEF, np, aux));
+		cursym = *--symstackp;
 	} while (!fun && accept(','));
 
 	if (!fun)
