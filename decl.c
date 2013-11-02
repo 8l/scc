@@ -338,7 +338,6 @@ decl(void)
 	struct ctype base;
 	struct storage store;
 	struct qualifier qlf;
-	struct node *np;
 
 repeat: initctype(&base);
 	initstore(&store);
@@ -374,8 +373,7 @@ repeat: initctype(&base);
 			return NULL;
 		goto repeat;
 	}
-	np = listdcl(&base, &store, &qlf);
-	return np;
+	return listdcl(&base, &store, &qlf);
 }
 
 void
