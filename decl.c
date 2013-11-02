@@ -351,7 +351,12 @@ repeat: initctype(&base);
 		register unsigned char type = base.type;
 
 		switch (type) {
-		case STRUCT: case UNION: case ENUM:
+		case STRUCT: case UNION:
+			if (!base.sym) {
+				warn(options.useless,
+				     "unnamed struct/union that defines no instances");
+			}
+		case ENUM:
 			if (store.defined) {
 				warn(options.useless,
 				     "useless storage class specifier in empty declaration");
@@ -360,14 +365,13 @@ repeat: initctype(&base);
 				warn(options.useless,
 				     "useless type qualifier in empty declaration");
 			}
-			if (base.sym && type != ENUM) {
-				warn(options.useless,
-				     "unnamed struct/union that defines no instances");
-			}
+			break;
 		default:
 			warn(options.useless,
 			     "useless type name in empty declaration");
 		}
+		if (yytoken == EOFTOK)
+			return NULL;
 		goto repeat;
 	}
 	np = listdcl(&base, &store, &qlf);
