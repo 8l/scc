@@ -1,23 +1,20 @@
 
 OBJS = types.o decl.o lex.o error.o symbol.o flow.o main.o expr.o \
 	wrapper.o tree.o
-LIBS =
 
 all: kcc
 
 kcc: $(OBJS)
 	$(CC) $(LDFLAGS) $(CFLAGS) $(LIBS) $(OBJS) -o $@
 
-%.d: %.c
-	$(CC) -M $(CPPFLAGS) $< | \
-	sed -e 's,/usr/[^ ]*,,g' | \
-	egrep -v '^ *\\$$' > $@
-
 .PHONY: clean distclean dep
 
-dep: $(OBJS:.o=.d)
-	cat Makefile $? > makefile
-	rm -f *.d
+dep:
+	(cat Makefile; \
+	for i in $(OBJS:.o=.c); \
+	do \
+		$(CC) -MM $(CPPFLAGS) $$i; \
+	done) > makefile
 
 clean:
 	rm -f $(OBJS)
@@ -25,9 +22,8 @@ clean:
 
 distclean: clean
 	rm -f *~
-	rm -f *.d
+	rm -f tags
+	rm -f cscope.*
 	rm -f makefile
-
-
 
 ###Dependencies
