@@ -130,12 +130,12 @@ structdcl(register struct ctype *tp)
 	if (nested_tags == NR_STRUCT_LEVEL)
 		error("too much nested structs/unions");
 
-	++nested_tags;
 	if (!accept('{'))
 		return;
 	if (!tp->forward)
 		error("struct/union already defined");
 
+	++nested_tags;
 	do
 		fielddcl(tp->ns);
 	while (!accept('}'));
