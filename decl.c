@@ -71,8 +71,15 @@ aggregate(register struct ctype *tp)
 	struct symbol *sym = NULL;
 
 	if (yytoken == IDEN) {
+		register struct ctype *aux;
+
 		sym = lookup(yytext, NS_TAG);
-		sym->ctype = tp;
+		if (aux = sym->ctype) {
+			if (!aux->forward)
+				error("struct/union already defined");
+			delctype(aux);
+		}
+		sym->ctype = xmalloc(sizeof(*tp));
 		next();
 	}
 	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
@@ -126,14 +133,14 @@ fielddcl(unsigned char ns)
 static void
 structdcl(register struct ctype *tp)
 {
+	struct symbol *sym;
+
 	aggregate(tp);
 	if (nested_tags == NR_STRUCT_LEVEL)
 		error("too much nested structs/unions");
 
 	if (!accept('{'))
 		return;
-	if (!tp->forward)
-		error("struct/union already defined");
 
 	++nested_tags;
 	do
@@ -142,6 +149,8 @@ structdcl(register struct ctype *tp)
 	--nested_tags;
 
 	tp->forward = 0;
+	if (sym = tp->sym)
+		*sym->ctype = *tp;
 }
 
 static void
