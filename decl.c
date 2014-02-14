@@ -65,28 +65,37 @@ directdcl(register struct ctype *tp, unsigned char ns)
 	}
 }
 
-static void
+/* TODO: Add the type to the symbol */
+static struct symbol *
 aggregate(register struct ctype *tp)
 {
 	struct symbol *sym = NULL;
+	tp->forward = 1;
 
 	if (yytoken == IDEN) {
 		register struct ctype *aux;
 
 		sym = lookup(yytext, NS_TAG);
 		if (aux = sym->ctype) {
-			if (!aux->forward)
-				error("struct/union already defined");
-			delctype(aux);
-		}
-		sym->ctype = xmalloc(sizeof(*tp));
-		next();
+			if (aux->type != tp->type) {
+				error("'%s' defined as wrong kind of tag",
+				      yytext);
+			}
+			*tp = *aux;
+		} else {
+			sym->ctype = xmalloc(sizeof(*tp));
+			tp->sym = sym;
+			tp->ns = ++nr_tags; /* FIX: It is only necessary */
+		}                           /*      in struct and union  */
+		next();                     /* This way of handling nr_tag */
+	} else {                            /* is incorrect once is incorrect*/
+		tp->ns = ++nr_tags;         /* it will be incorrect forever*/
 	}
+
 	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
 		error("too much structs/unions/enum defined");
-	tp->ns = ++nr_tags;
-	tp->forward = 1;
-	tp->sym = sym;
+
+	return sym;
 }
 
 static bool
@@ -135,12 +144,16 @@ structdcl(register struct ctype *tp)
 {
 	struct symbol *sym;
 
-	aggregate(tp);
-	if (nested_tags == NR_STRUCT_LEVEL)
-		error("too much nested structs/unions");
+	sym = aggregate(tp);
 
 	if (!accept('{'))
 		return;
+
+	if (sym && !sym->ctype->forward)
+		error("struct/union already defined");
+
+	if (nested_tags == NR_STRUCT_LEVEL)
+		error("too much nested structs/unions");
 
 	++nested_tags;
 	do
