@@ -73,7 +73,6 @@ Do(void)
 	expect('(');
 	cond = expr();
 	expect(')');
-	expect(';');
 
 	push(ODO);
 	np = node(ODO, body, cond);
