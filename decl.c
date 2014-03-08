@@ -97,48 +97,6 @@ aggregate(register struct ctype *tp)
 	return sym;
 }
 
-static bool
-specifier(register struct ctype *, struct storage *, struct qualifier *);
-
-static void
-fielddcl(unsigned char ns)
-{
-	struct ctype base;
-	struct storage store;
-	struct qualifier qlf;
-	register struct ctype *tp;
-	struct symbol *sym;
-
-	initctype(&base);
-	initstore(&store);
-	initqlf(&qlf);
-	specifier(&base, &store, &qlf);
-
-	if (store.defined)
-		error("storage specifier in a struct/union field declaration");
-
-	do {
-		sym = declarator(&base, ns);
-		tp = decl_type(&base);
-		if (accept(':')) {
-			expect(CONSTANT);
-			switch (tp->type) {
-			case INT: case BOOL:
-				tp = ctype(NULL, BITFLD);
-				tp->len = yyval->i;
-				break;
-			default:
-				error("bit-field '%s' has invalid type",
-				      sym->name);
-			}
-		}
-		sym->ctype = *tp;
-		sym->qlf = qlf;
-	} while (accept(','));
-
-	expect(';');
-}
-
 static void
 structdcl(register struct ctype *tp)
 {
@@ -157,7 +115,7 @@ structdcl(register struct ctype *tp)
 
 	++nested_tags;
 	while (!accept('}'))
-		fielddcl(tp->ns);
+		decl(tp->ns);
 	--nested_tags;
 
 	if (sym)
@@ -325,6 +283,7 @@ listdcl(struct ctype *base,
         struct storage *store, struct qualifier *qlf, unsigned char ns)
 {
 	struct compound c;
+	char *err;
 
 	c.tree = NULL;
 
@@ -338,29 +297,54 @@ listdcl(struct ctype *base,
 		sym->qlf = *qlf;
 		sym->ctype = *decl_type(base);
 		tp = &sym->ctype;
+		aux = NULL;
 
 		switch (tp->type) {
 		case FTN:
+			if (ns != NS_IDEN)
+				goto bad_type;
 			if (yytoken == '{') {
 				if (curctx != CTX_OUTER)
-					error("cannot use local functions");
+					goto local_fun;
 				aux = function(sym);
 				addstmt(&c, node(ODEF, nodesym(sym), aux));
 				return c.tree;
 			}
-			break;
-		case STRUCT:
-		case UNION:
+			goto add_stmt;
+		case INT: case BOOL:
+			if (ns != NS_IDEN && accept(':')) {
+				expect(CONSTANT);
+				tp = ctype(NULL, BITFLD);
+				tp->len = yyval->i;
+				goto add_stmt;
+			}
+			goto add_init;
+		case STRUCT: case UNION:
 			if (tp->forward)
-				error("declaration of variable with incomplete type");
+				goto incomplete;
 		default:
-			aux = (accept('=')) ? initializer(tp) : NULL;
+		add_init:
+			if (ns == NS_IDEN) {
+				if (accept('='))
+					aux = initializer(tp);
+			}
+		add_stmt:
 			addstmt(&c, node(ODEF, nodesym(sym), aux));
 		}
 	} while (accept(','));
 
 	expect(';');
 	return c.tree;
+
+bad_type:
+	err = "incorrect type for field";
+	goto error;
+local_fun:
+	err = "cannot use local functions";
+	goto error;
+incomplete:
+        err = "declaration of variable with incomplete type";
+error: error(err);
 }
 
 struct node *
@@ -376,6 +360,9 @@ repeat: initctype(&base);
 
 	if (!specifier(&base, &store, &qlf))
 		return NULL;
+
+	if (store.defined && ns != NS_IDEN)
+		error("storage specifier in a struct/union field declaration");
 
 	if (accept(';')) {
 		register unsigned char type = base.type;
@@ -395,7 +382,8 @@ repeat: initctype(&base);
 				warn(options.useless,
 				     "useless type qualifier in empty declaration");
 			}
-			break;
+			if (ns == NS_IDEN)
+				break;
 		default:
 			warn(options.useless,
 			     "useless type name in empty declaration");
