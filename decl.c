@@ -66,12 +66,13 @@ directdcl(register struct ctype *tp, unsigned char ns)
 }
 
 /* TODO: Add the type to the symbol */
+
 static struct symbol *
 aggregate(register struct ctype *tp)
 {
 	struct symbol *sym = NULL;
-	tp->forward = 1;
 
+	tp->forward = 1;
 	if (yytoken == IDEN) {
 		register struct ctype *aux;
 
@@ -83,7 +84,7 @@ aggregate(register struct ctype *tp)
 			}
 			*tp = *aux;
 		} else {
-			sym->ctype = xmalloc(sizeof(*tp));
+			sym->ctype = tp;
 			tp->sym = sym;
 			tp->ns = ++nr_tags; /* FIX: It is only necessary */
 		}                           /*      in struct and union  */
