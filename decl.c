@@ -64,6 +64,14 @@ directdcl(register struct ctype *tp, unsigned char ns)
 	}
 }
 
+static unsigned char
+newtag(void)
+{
+	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
+		error("too much structs/unions/enum defined");
+	return ++nr_tags;
+}
+
 static struct symbol *
 aggregate(register struct ctype *tp)
 {
@@ -83,16 +91,13 @@ aggregate(register struct ctype *tp)
 			*tp = *aux;
 		} else {
 			tp->tag = sym->name;
-			tp->ns = ++nr_tags;
+			tp->ns = newtag();
 			sym->ctype = *tp;
 		}
-		next();                     /* This way of handling nr_tag */
-	} else {                            /* is incorrect once is incorrect*/
-		tp->ns = ++nr_tags;         /* it will be incorrect forever*/
+		next();
+	} else {
+		tp->ns = newtag();
 	}
-
-	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
-		error("too much structs/unions/enum defined");
 
 	return sym;
 }
