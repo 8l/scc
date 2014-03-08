@@ -15,25 +15,24 @@ char parser_out_home;
  * +1 for the function declaration
  * +1 for the field declaration
  */
-static struct symbol *symstack[NR_STRUCT_LEVEL + 1 + 1], **symstackp = symstack;
-static struct symbol *cursym;
 static unsigned char nr_tags = NS_TAG;
 static unsigned char nested_tags;
 
-static void declarator(struct ctype *tp, unsigned char ns);
+static struct symbol *declarator(struct ctype *tp, unsigned char ns);
 
-static void
+static struct symbol *
 directdcl(register struct ctype *tp, unsigned char ns)
 {
+	register struct symbol *sym;
+
 	if (accept('(')) {
-		declarator(tp, ns);
+		sym = declarator(tp, ns);
 		expect(')');
 	} else if (yytoken == IDEN) {
-		/* we can't overflow due to the check in structdcl */
-		*symstackp++ = cursym = lookup(yytext, ns);
-		if (!cursym->ctype.defined)
-			cursym->ctx = curctx;
-		else if (cursym->ctx == curctx)
+		sym = lookup(yytext, ns);
+		if (!sym->ctype.defined)
+			sym->ctx = curctx;
+		else if (sym->ctx == curctx)
 			error("redeclaration of '%s'", yytext);
 		next();
 	} else {
@@ -60,7 +59,7 @@ directdcl(register struct ctype *tp, unsigned char ns)
 			pushtype(len);
 			pushtype(ARY);
 		} else {
-			return;
+			return sym;
 		}
 	}
 }
@@ -108,6 +107,7 @@ fielddcl(unsigned char ns)
 	struct storage store;
 	struct qualifier qlf;
 	register struct ctype *tp;
+	struct symbol *sym;
 
 	initctype(&base);
 	initstore(&store);
@@ -118,7 +118,7 @@ fielddcl(unsigned char ns)
 		error("storage specifier in a struct/union field declaration");
 
 	do {
-		declarator(&base, ns);
+		sym = declarator(&base, ns);
 		tp = decl_type(&base);
 		if (accept(':')) {
 			expect(CONSTANT);
@@ -129,11 +129,11 @@ fielddcl(unsigned char ns)
 				break;
 			default:
 				error("bit-field '%s' has invalid type",
-				      cursym->name);
+				      sym->name);
 			}
 		}
-		cursym->ctype = *tp;
-		cursym->qlf = qlf;
+		sym->ctype = *tp;
+		sym->qlf = qlf;
 	} while (accept(','));
 
 	expect(';');
@@ -269,11 +269,12 @@ check_type:
 	return true;
 }
 
-static void
+static struct symbol *
 declarator(struct ctype *tp, unsigned char ns)
 {
 	unsigned char qlf[NR_DECLARATORS];
 	register unsigned char *bp, *lim;
+	struct symbol *sym;
 
 	lim = &qlf[NR_DECLARATORS];
 	for (bp = qlf; yytoken == '*' && bp != lim; ) {
@@ -294,10 +295,11 @@ declarator(struct ctype *tp, unsigned char ns)
 	if (bp == lim)
 		error("Too much type declarators");
 
-	directdcl(tp, ns);
+	sym = directdcl(tp, ns);
 
 	for (lim = bp, bp = qlf; bp < lim; ++bp)
 		pushtype(*bp);
+	return sym;
 }
 
 static struct node *
@@ -334,20 +336,20 @@ listdcl(struct ctype *base, struct storage *store, struct qualifier *qlf)
 	do {
 		struct node *np, *aux;
 		register struct ctype *tp;
+		register struct symbol *sym;
 
-		declarator(base, NS_IDEN);
-		cursym->store = *store;
-		cursym->qlf = *qlf;
-		cursym->ctype = *decl_type(base);
-		tp = &cursym->ctype;
+		sym = declarator(base, NS_IDEN);
+		sym->store = *store;
+		sym->qlf = *qlf;
+		sym->ctype = *decl_type(base);
+		tp = &sym->ctype;
 		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
 			error("declaration of variable with incomplete type");
 
-		np = nodesym(cursym);
+		np = nodesym(sym);
 		fun = tp->type == FTN && yytoken == '{';
-		aux = fun ? function(cursym) : initializer(tp);
+		aux = fun ? function(sym) : initializer(tp);
 		addstmt(&c, node(ODEF, np, aux));
-		cursym = *--symstackp;
 	} while (!fun && accept(','));
 
 	if (!fun)
