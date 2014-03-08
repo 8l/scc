@@ -229,7 +229,7 @@ compound(void)
 	expect('{');
 	new_ctx();
 	while (!accept('}')) {
-		if (np = decl()) {
+		if (np = decl(0)) {
 			if (nodecl) {
 				warn(options.mixdcls,
 				     "mixed declarations and code");

@@ -28,7 +28,7 @@ struct compound {
 };
 
 extern struct node *expr(void);
-extern struct node *decl(void);
+extern struct node *decl(unsigned char ns);
 extern void type_name(void);
 extern struct node *function(struct symbol *sym);
 

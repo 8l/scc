@@ -11,7 +11,7 @@
 #define CTX_FUNC  1
 
 enum {
-	NS_IDEN,
+	NS_IDEN = 0,
 	NS_KEYWORD,
 	NS_LABEL,
 	NS_TAG

@@ -325,7 +325,8 @@ initializer(register struct ctype *tp)
 }
 
 static struct node *
-listdcl(struct ctype *base, struct storage *store, struct qualifier *qlf)
+listdcl(struct ctype *base,
+        struct storage *store, struct qualifier *qlf, unsigned char ns)
 {
 	struct compound c;
 	char fun;
@@ -337,7 +338,7 @@ listdcl(struct ctype *base, struct storage *store, struct qualifier *qlf)
 		register struct ctype *tp;
 		register struct symbol *sym;
 
-		sym = declarator(base, NS_IDEN);
+		sym = declarator(base, ns);
 		sym->store = *store;
 		sym->qlf = *qlf;
 		sym->ctype = *decl_type(base);
@@ -357,7 +358,7 @@ listdcl(struct ctype *base, struct storage *store, struct qualifier *qlf)
 }
 
 struct node *
-decl(void)
+decl(unsigned char ns)
 {
 	struct ctype base;
 	struct storage store;
@@ -397,7 +398,7 @@ repeat: initctype(&base);
 			return NULL;
 		goto repeat;
 	}
-	return listdcl(&base, &store, &qlf);
+	return listdcl(&base, &store, &qlf, ns);
 }
 
 void
