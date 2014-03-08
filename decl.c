@@ -307,7 +307,6 @@ initializer(register struct ctype *tp)
 {
 	if (!accept('='))
 		return NULL;
-	next();
 	if (accept('{')) {
 		struct compound c;
 
