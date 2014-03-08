@@ -273,32 +273,30 @@ static struct symbol *
 declarator(struct ctype *tp, unsigned char ns)
 {
 	unsigned char qlf[NR_DECLARATORS];
-	register unsigned char *bp, *lim;
+	register unsigned char *bp;
+	register unsigned char n = 0;
 	struct symbol *sym;
 
-	lim = &qlf[NR_DECLARATORS];
-	for (bp = qlf; yytoken == '*' && bp != lim; ) {
-		next();
-		*bp++ = PTR;
-		while (bp != lim) {
+	if (yytoken == '*') {
+		for (bp = qlf; n < NR_DECLARATORS ; ++n) {
 			switch (yytoken) {
+			case '*':
+				yytoken = PTR;
 			case CONST: case VOLATILE: case RESTRICT:
 				*bp++ = yytoken;
 				next();
-				break;
+				continue;
 			default:
-				goto continue_outer;
+				goto direct;
 			}
 		}
-	continue_outer: ;
-	}
-	if (bp == lim)
 		error("Too much type declarators");
+	}
 
-	sym = directdcl(tp, ns);
+direct:	sym = directdcl(tp, ns);
 
-	for (lim = bp, bp = qlf; bp < lim; ++bp)
-		pushtype(*bp);
+	for (bp = qlf; n--; pushtype(*bp++))
+		/* nothing */;
 	return sym;
 }
 
