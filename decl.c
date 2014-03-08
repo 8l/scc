@@ -65,10 +65,12 @@ directdcl(register struct ctype *tp, unsigned char ns)
 }
 
 static unsigned char
-newtag(void)
+newtag(unsigned char type)
 {
+	if (type == ENUM)
+		return 0;
 	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
-		error("too much structs/unions/enum defined");
+		error("too much structs/unions defined");
 	return ++nr_tags;
 }
 
@@ -84,22 +86,23 @@ aggregate(register struct ctype *tp)
 		sym = lookup(yytext, NS_TAG);
 		aux = &sym->ctype;
 		if (aux->defined) {
-			if (aux->type != tp->type) {
-				error("'%s' defined as wrong kind of tag",
-				      yytext);
-			}
+			if (aux->type != tp->type)
+				goto bad_type;
 			*tp = *aux;
 		} else {
 			tp->tag = sym->name;
-			tp->ns = newtag();
+			tp->ns = newtag(tp->type);
 			sym->ctype = *tp;
 		}
 		next();
 	} else {
-		tp->ns = newtag();
+		tp->ns = newtag(tp->type);
 	}
 
 	return sym;
+
+bad_type:
+	error("'%s' defined as wrong kind of tag", yytext);
 }
 
 static void
@@ -131,25 +134,30 @@ structdcl(register struct ctype *tp)
 static void
 enumdcl(struct ctype *base)
 {
-	short val = 0;
+	static int val;
 
 	aggregate(base);
 	if (!accept('{'))
 		return;
+	val = 0;
 
 	do {
 		register struct symbol *sym;
-		register struct ctype *tp = ctype(NULL, INT);
+		register struct ctype *tp;
 
 		if (yytoken != IDEN)
 			break;
 		sym = lookup(yytext, NS_IDEN);
-		sym->ctype = *tp;
+		tp = &sym->ctype;
+		if (tp->defined && sym->ctx == curctx)
+			error("'%s' redefined", yytext);
 		next();
 		if (accept('=')) {
 			expect(CONSTANT);
 			val = yyval->i;
 		}
+		ctype(tp, INT);
+		tp->base = base;
 		sym->i = val++;
 	} while (accept(','));
 
@@ -177,7 +185,7 @@ specifier(register struct ctype *tp,
 			tp = ctype(tp, yytoken);
 			break;
 		case ENUM:
-			tp = ctype(tp, yytoken);
+			tp = ctype(tp, ENUM);
 			next();
 			enumdcl(tp);
 			return true;
