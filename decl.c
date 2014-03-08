@@ -303,8 +303,6 @@ direct:	sym = directdcl(tp, ns);
 static struct node *
 initializer(register struct ctype *tp)
 {
-	if (!accept('='))
-		return NULL;
 	if (accept('{')) {
 		struct compound c;
 
@@ -327,7 +325,6 @@ listdcl(struct ctype *base,
         struct storage *store, struct qualifier *qlf, unsigned char ns)
 {
 	struct compound c;
-	char fun;
 
 	c.tree = NULL;
 
@@ -341,17 +338,28 @@ listdcl(struct ctype *base,
 		sym->qlf = *qlf;
 		sym->ctype = *decl_type(base);
 		tp = &sym->ctype;
-		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
-			error("declaration of variable with incomplete type");
 
-		np = nodesym(sym);
-		fun = tp->type == FTN && yytoken == '{';
-		aux = fun ? function(sym) : initializer(tp);
-		addstmt(&c, node(ODEF, np, aux));
-	} while (!fun && accept(','));
+		switch (tp->type) {
+		case FTN:
+			if (yytoken == '{') {
+				if (curctx != CTX_OUTER)
+					error("cannot use local functions");
+				aux = function(sym);
+				addstmt(&c, node(ODEF, nodesym(sym), aux));
+				return c.tree;
+			}
+			break;
+		case STRUCT:
+		case UNION:
+			if (tp->forward)
+				error("declaration of variable with incomplete type");
+		default:
+			aux = (accept('=')) ? initializer(tp) : NULL;
+			addstmt(&c, node(ODEF, nodesym(sym), aux));
+		}
+	} while (accept(','));
 
-	if (!fun)
-		expect(';');
+	expect(';');
 	return c.tree;
 }
 
