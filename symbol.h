@@ -42,17 +42,17 @@ struct ctype {
 	bool forward : 1;
 	bool defined: 1;
 	union {
-		unsigned len;
 		struct {
-			struct symbol *sym;
 			unsigned char ns;
+			char *tag;
 		};
+		unsigned len;
 	};
 	struct ctype *base;
 };
 
 struct symbol {
-	struct ctype *ctype;
+	struct ctype ctype;
 	struct storage store;
 	struct qualifier qlf;
 	unsigned char ctx;

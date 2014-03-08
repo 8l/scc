@@ -51,9 +51,9 @@ type:	switch (ch = toupper(getc(yyin))) {
 
 	v = strtoll(s, NULL, base);
 	sym = lookup(NULL, NS_IDEN);
-	sym->ctype = tp;
+	sym->ctype = *tp;
 
-	switch (sym->ctype->type) {
+	switch (tp->type) {
 	case INT:
 		sym->i = v;
 		break;

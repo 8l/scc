@@ -80,6 +80,7 @@ mktype(register struct ctype *tp, unsigned  char op)
 	default:
 		assert(0);
 	}
+	tp->defined = 1;
 	return tp;
 }
 

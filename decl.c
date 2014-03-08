@@ -31,7 +31,7 @@ directdcl(register struct ctype *tp, unsigned char ns)
 	} else if (yytoken == IDEN) {
 		/* we can't overflow due to the check in structdcl */
 		*symstackp++ = cursym = lookup(yytext, ns);
-		if (!cursym->ctype)
+		if (!cursym->ctype.defined)
 			cursym->ctx = curctx;
 		else if (cursym->ctx == curctx)
 			error("redeclaration of '%s'", yytext);
@@ -65,8 +65,6 @@ directdcl(register struct ctype *tp, unsigned char ns)
 	}
 }
 
-/* TODO: Add the type to the symbol */
-
 static struct symbol *
 aggregate(register struct ctype *tp)
 {
@@ -77,17 +75,18 @@ aggregate(register struct ctype *tp)
 		register struct ctype *aux;
 
 		sym = lookup(yytext, NS_TAG);
-		if (aux = sym->ctype) {
+		aux = &sym->ctype;
+		if (aux->defined) {
 			if (aux->type != tp->type) {
 				error("'%s' defined as wrong kind of tag",
 				      yytext);
 			}
 			*tp = *aux;
 		} else {
-			sym->ctype = tp;
-			tp->sym = sym;
-			tp->ns = ++nr_tags; /* FIX: It is only necessary */
-		}                           /*      in struct and union  */
+			tp->tag = sym->name;
+			tp->ns = ++nr_tags;
+			sym->ctype = *tp;
+		}
 		next();                     /* This way of handling nr_tag */
 	} else {                            /* is incorrect once is incorrect*/
 		tp->ns = ++nr_tags;         /* it will be incorrect forever*/
@@ -133,7 +132,7 @@ fielddcl(unsigned char ns)
 				      cursym->name);
 			}
 		}
-		cursym->ctype = tp;
+		cursym->ctype = *tp;
 		cursym->qlf = qlf;
 	} while (accept(','));
 
@@ -150,21 +149,20 @@ structdcl(register struct ctype *tp)
 	if (!accept('{'))
 		return;
 
-	if (sym && !sym->ctype->forward)
+	if (sym && !sym->ctype.forward)
 		error("struct/union already defined");
 
 	if (nested_tags == NR_STRUCT_LEVEL)
 		error("too much nested structs/unions");
 
 	++nested_tags;
-	do
+	while (!accept('}'))
 		fielddcl(tp->ns);
-	while (!accept('}'));
 	--nested_tags;
 
+	if (sym)
+		sym->ctype.forward = 0;
 	tp->forward = 0;
-	if (sym = tp->sym)
-		*sym->ctype = *tp;
 }
 
 static void
@@ -183,7 +181,7 @@ enumdcl(struct ctype *base)
 		if (yytoken != IDEN)
 			break;
 		sym = lookup(yytext, NS_IDEN);
-		sym->ctype = tp;
+		sym->ctype = *tp;
 		next();
 		if (accept('=')) {
 			expect(CONSTANT);
@@ -230,9 +228,10 @@ specifier(register struct ctype *tp,
 				register struct symbol *sym;
 
 				sym = lookup(yytext, NS_IDEN);
-				if (sym->ctype && sym->store.c_typedef) {
+				if (sym->ctype.defined &&
+				    sym->store.c_typedef) {
 					tp = ctype(tp, TYPEDEF);
-					tp->base = sym->ctype;
+					tp->base = &sym->ctype;
 					break;
 				}
 			}
@@ -339,7 +338,8 @@ listdcl(struct ctype *base, struct storage *store, struct qualifier *qlf)
 		declarator(base, NS_IDEN);
 		cursym->store = *store;
 		cursym->qlf = *qlf;
-		tp = cursym->ctype = decl_type(base);
+		cursym->ctype = *decl_type(base);
+		tp = &cursym->ctype;
 		if ((tp->type == STRUCT || tp->type == UNION) && tp->forward)
 			error("declaration of variable with incomplete type");
 
@@ -374,7 +374,7 @@ repeat: initctype(&base);
 
 		switch (type) {
 		case STRUCT: case UNION:
-			if (!base.sym) {
+			if (!base.tag) {
 				warn(options.useless,
 				     "unnamed struct/union that defines no instances");
 			}
