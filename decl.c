@@ -223,8 +223,6 @@ check_type:
 		warn(options.implicit,
 		     "type defaults to 'int' in declaration");
 	}
-	if (nested_tags > 0 && (qlf->defined || store->defined))
-		error("type qualifer or store specifier in field declaration");
 
 	if (!tp->c_signed && !tp->c_unsigned) {
 		switch (tp->type) {
