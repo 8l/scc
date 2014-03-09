@@ -20,6 +20,7 @@ const char *filename;
 struct keyword {
 	char *str;
 	unsigned char tok;
+	unsigned char value;
 	struct keyword *next;
 };
 
@@ -122,43 +123,43 @@ void
 init_keywords(void)
 {
 	static struct keyword buff[] = {
-		{"auto", AUTO, NULL},
-		{"break", BREAK, NULL},
-		{"_Bool", CHAR, NULL},
-		{"_Complex", COMPLEX, NULL},
-		{"case", CASE, NULL},
-		{"char", CHAR, NULL},
-		{"const", CONST, NULL},
-		{"continue", CONTINUE, NULL},
-		{"default", DEFAULT, NULL},
-		{"do", DO, NULL},
-		{"double", DOUBLE, NULL},
-		{"else", ELSE, NULL},
-		{"enum", ENUM, NULL},
-		{"extern", EXTERN, NULL},
-		{"float", FLOAT, NULL},
-		{"for", FOR, NULL},
-		{"goto", GOTO, NULL},
-		{"if", IF, NULL},
-		{"int", INT, NULL},
-		{"_Imaginary", IMAGINARY, NULL},
-		{"long", LONG, NULL},
-		{"register", REGISTER, NULL},
-		{"restricted", RESTRICT, NULL},
-		{"return", RETURN, NULL},
-		{"short", SHORT, NULL},
-		{"signed", SIGNED, NULL},
-		{"sizeof", SIZEOF, NULL},
-		{"static", STATIC, NULL},
-		{"struct", STRUCT, NULL},
-		{"switch", SWITCH, NULL},
-		{"typedef", TYPEDEF, NULL},
-		{"union", UNION, NULL},
-		{"unsigned", UNSIGNED, NULL},
-		{"void", VOID, NULL},
-		{"volatile", VOLATILE, NULL},
-		{"while", WHILE, NULL},
-		{NULL, 0, NULL},
+		{"auto", AUTO, AUTO},
+		{"break", BREAK, BREAK},
+		{"_Bool", TYPE, BOOL},
+		{"_Complex", TYPE, COMPLEX},
+		{"case", CASE, CASE},
+		{"char", TYPE, CHAR},
+		{"const", CONST, CONST},
+		{"continue", CONTINUE, CONTINUE},
+		{"default", DEFAULT, DEFAULT},
+		{"do", DO, DO},
+		{"double", TYPE, DOUBLE},
+		{"else", ELSE, ELSE},
+		{"enum", ENUM, ENUM},
+		{"extern", EXTERN, EXTERN},
+		{"float", TYPE, FLOAT},
+		{"for", FOR, FOR},
+		{"goto", GOTO, GOTO},
+		{"if", IF, IF},
+		{"int", TYPE, INT},
+		{"_Imaginary", TYPE, IMAGINARY},
+		{"long", TYPE, LONG},
+		{"register", REGISTER, REGISTER},
+		{"restricted", RESTRICT, RESTRICT},
+		{"return", RETURN, RETURN},
+		{"short", TYPE, SHORT},
+		{"signed", TYPE, SIGNED},
+		{"sizeof", SIZEOF, SIZEOF},
+		{"static", STATIC, STATIC},
+		{"struct", STRUCT, STRUCT},
+		{"switch", SWITCH, SWITCH},
+		{"typedef", TYPEDEF, TYPEDEF},
+		{"union", UNION, UNION},
+		{"unsigned", TYPE, UNSIGNED},
+		{"void", TYPE, VOID},
+		{"volatile", VOLATILE, VOLATILE},
+		{"while", WHILE, WHILE},
+		{NULL, 0, 0},
 	};
 	register struct keyword *bp;
 
@@ -173,10 +174,14 @@ static unsigned char
 keyword(register char *s)
 {
 	register struct keyword *bp;
+	static struct symbol sym;
 
 	for (bp = ktab[hash(s) & NR_KEYW_HASH-1]; bp; bp = bp->next) {
-		if (*s == *bp->str && !strcmp(bp->str, s))
+		if (*s == *bp->str && !strcmp(bp->str, s)) {
+			sym.c = bp->value;
+			yyval = &sym;
 			return bp->tok;
+		}
 	}
 	return 0;
 }

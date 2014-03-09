@@ -185,12 +185,8 @@ specifier(register struct ctype *tp,
 		case AUTO:     case REGISTER:
 			store = storage(store, yytoken);
 			break;
-		case UNSIGNED: case SIGNED:
-		case COMPLEX:  case IMAGINARY:
-		case FLOAT:    case DOUBLE: case BOOL:
-		case VOID:     case CHAR:   case SHORT:
-		case INT:      case LONG:
-			tp = ctype(tp, yytoken);
+		case TYPE:
+			tp = ctype(tp, yyval->c);
 			break;
 		case ENUM:
 			tp = ctype(tp, ENUM);
