@@ -178,8 +178,8 @@ specifier(register struct ctype *tp,
 {
 	for (;; next()) {
 		switch (yytoken) {
-		case CONST:  case VOLATILE:
-			qlf = qualifier(qlf, yytoken);
+		case TQUALIFIER:
+			qlf = qualifier(qlf, yyval->c);
 			break;
 		case STORAGE:
 			store = storage(store, yyval->c);

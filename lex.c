@@ -129,7 +129,7 @@ init_keywords(void)
 		{"_Complex", TYPE, COMPLEX},
 		{"case", CASE, CASE},
 		{"char", TYPE, CHAR},
-		{"const", CONST, CONST},
+		{"const", TQUALIFIER, CONST},
 		{"continue", CONTINUE, CONTINUE},
 		{"default", DEFAULT, DEFAULT},
 		{"do", DO, DO},
@@ -157,7 +157,7 @@ init_keywords(void)
 		{"union", UNION, UNION},
 		{"unsigned", TYPE, UNSIGNED},
 		{"void", TYPE, VOID},
-		{"volatile", VOLATILE, VOLATILE},
+		{"volatile", TQUALIFIER, VOLATILE},
 		{"while", WHILE, WHILE},
 		{NULL, 0, 0},
 	};
