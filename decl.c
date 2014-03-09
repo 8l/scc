@@ -47,15 +47,13 @@ directdcl(register struct ctype *tp, unsigned char ns)
 			else
 				/* TODO: prototyped function */;
 		} else if (accept('[')) {
-			unsigned len;
+			unsigned len = '0';
 
-			if (accept(']')) {
-				len = 0;
-			} else {
+			if (yytoken != ']') {
 				expect(CONSTANT);
 				len = yyval->i;
-				expect(']');
 			}
+			expect(']');
 			pushtype(len);
 			pushtype(ARY);
 		} else {
