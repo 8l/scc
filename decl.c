@@ -24,28 +24,30 @@ static struct symbol *
 directdcl(register struct ctype *tp, unsigned char ns)
 {
 	register struct symbol *sym;
+	register char *err;
 
 	if (accept('(')) {
 		sym = declarator(tp, ns);
 		expect(')');
-	} else if (yytoken == IDEN) {
-		sym = lookup(yytext, ns);
-		if (!sym->ctype.defined)
-			sym->ctx = curctx;
-		else if (sym->ctx == curctx)
-			error("redeclaration of '%s'", yytext);
-		next();
-	} else {
-		error("expected '(' or identifier before of '%s'", yytext);
+	} else if (ns != NS_TYPE) {
+		if (yytoken == IDEN) {
+			sym = lookup(yytext, ns);
+			if (!sym->ctype.defined)
+				sym->ctx = curctx;
+			else if (sym->ctx == curctx)
+				goto redeclared;
+			next();
+		} else {
+			goto expected;
+		}
 	}
 
 	for (;;) {
 		if (accept('(')) {
 			pushtype(FTN);
-			if (accept(')'))
-				; /* TODO: k&r function */
-			else
-				/* TODO: prototyped function */;
+			if (yytoken != ')')
+				;   /* TODO: prototyped function */;
+			expect(')');
 		} else if (accept('[')) {
 			unsigned len = '0';
 
@@ -57,9 +59,16 @@ directdcl(register struct ctype *tp, unsigned char ns)
 			pushtype(len);
 			pushtype(ARY);
 		} else {
-			return sym;
+			return sym;		
 		}
 	}
+
+redeclared:
+	err = "redeclaration of '%s'";
+	goto error;
+expected:
+	err = "expected '(' or identifier before of '%s'";
+error:	error(err, yytext);
 }
 
 static unsigned char
@@ -404,8 +413,19 @@ repeat: initctype(&base);
 	return listdcl(&base, &store, &qlf, ns);
 }
 
-void
-type_name()
+bool
+type_name(struct ctype *tp)
 {
+	struct storage store;
+	struct qualifier qlf;
 
+	initctype(tp);
+	initstore(&store);
+	initqlf(&qlf);
+
+	if (!specifier(tp, &store, &qlf))
+		return false;
+
+	declarator(tp, NS_TYPE);
+	return true;
 }

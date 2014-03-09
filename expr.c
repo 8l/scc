@@ -92,7 +92,9 @@ unary(void)
 	case SIZEOF:		/* TODO: Implement sizeof */
 		next();
 		if (accept('(')) {
-			type_name();
+			struct ctype type;
+			if (!type_name(&type))
+				expr();
 			expect(')');
 		} else {
 			unary();
@@ -121,8 +123,10 @@ call_unary:
 static struct node *
 cast(void)
 {
-	while (accept('(')) {	/* TODO: Implement casts */
-		type_name();	/* check if it really is a type name */
+	while (accept('(')) {
+		struct ctype type;
+		if (!type_name(&type))
+			error("expected a type name");
 		expect(')');
 	}
 	return unary();

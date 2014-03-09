@@ -12,6 +12,7 @@
 
 enum {
 	NS_IDEN = 0,
+	NS_TYPE,
 	NS_KEYWORD,
 	NS_LABEL,
 	NS_TAG

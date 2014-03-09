@@ -21,6 +21,7 @@ enum opcode {
 
 struct node;
 struct symbol;
+struct ctype;
 
 struct compound {
 	struct node *tree;
@@ -29,7 +30,7 @@ struct compound {
 
 extern struct node *expr(void);
 extern struct node *decl(unsigned char ns);
-extern void type_name(void);
+extern bool type_name(struct ctype *tp);
 extern struct node *function(struct symbol *sym);
 
 extern struct node *node(unsigned char op, struct node *l, struct node *r);
