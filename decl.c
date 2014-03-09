@@ -18,16 +18,17 @@ char parser_out_home;
 static unsigned char nr_tags = NS_TAG;
 static unsigned char nested_tags;
 
-static struct symbol *declarator(struct ctype *tp, unsigned char ns);
+static struct symbol *declarator(struct ctype *tp,
+                                 unsigned char ns, unsigned char isfun);
 
 static struct symbol *
-directdcl(register struct ctype *tp, unsigned char ns)
+directdcl(register struct ctype *tp, unsigned char ns, unsigned char isfun)
 {
 	register struct symbol *sym;
 	register char *err;
 
 	if (accept('(')) {
-		sym = declarator(tp, ns);
+		sym = declarator(tp, ns, isfun);
 		expect(')');
 	} else if (ns != NS_TYPE) {
 		if (yytoken == IDEN) {
@@ -37,7 +38,7 @@ directdcl(register struct ctype *tp, unsigned char ns)
 			else if (sym->ctx == curctx)
 				goto redeclared;
 			next();
-		} else {
+		} else if (!isfun) {
 			goto expected;
 		}
 	}
@@ -246,7 +247,7 @@ check_type:
 }
 
 static struct symbol *
-declarator(struct ctype *tp, unsigned char ns)
+declarator(struct ctype *tp, unsigned char ns, unsigned char isfun)
 {
 	unsigned char qlf[NR_DECLARATORS];
 	register unsigned char *bp;
@@ -269,7 +270,7 @@ declarator(struct ctype *tp, unsigned char ns)
 		error("Too much type declarators");
 	}
 
-direct:	sym = directdcl(tp, ns);
+direct:	sym = directdcl(tp, ns, isfun);
 
 	for (bp = qlf; n--; pushtype(*bp++))
 		/* nothing */;
@@ -298,7 +299,9 @@ initializer(register struct ctype *tp)
 
 static struct node *
 listdcl(struct ctype *base,
-        struct storage *store, struct qualifier *qlf, unsigned char ns)
+        struct storage *store,
+	struct qualifier *qlf,
+	unsigned char ns, unsigned char isfun)
 {
 	struct compound c;
 	char *err;
@@ -310,7 +313,7 @@ listdcl(struct ctype *base,
 		register struct ctype *tp;
 		register struct symbol *sym;
 
-		sym = declarator(base, ns);
+		sym = declarator(base, ns, isfun);
 		sym->store = *store;
 		sym->qlf = *qlf;
 		sym->ctype = *decl_type(base);
@@ -372,7 +375,7 @@ decl(unsigned char ns)
 	struct storage store;
 	struct qualifier qlf;
 
-repeat: initctype(&base);
+	initctype(&base);
 	initstore(&store);
 	initqlf(&qlf);
 
@@ -382,35 +385,13 @@ repeat: initctype(&base);
 	if (store.defined && ns != NS_IDEN)
 		error("storage specifier in a struct/union field declaration");
 
-	if (accept(';')) {
-		register unsigned char type = base.type;
-
-		switch (type) {
-		case STRUCT: case UNION:
-			if (!base.tag) {
-				warn(options.useless,
-				     "unnamed struct/union that defines no instances");
-			}
-		case ENUM:
-			if (store.defined) {
-				warn(options.useless,
-				     "useless storage class specifier in empty declaration");
-			}
-			if (qlf.defined) {
-				warn(options.useless,
-				     "useless type qualifier in empty declaration");
-			}
-			if (ns == NS_IDEN)
-				break;
-		default:
-			warn(options.useless,
-			     "useless type name in empty declaration");
-		}
-		if (yytoken == EOFTOK)
+	switch (base.type) {
+	case STRUCT: case UNION: case ENUM:
+		if (yytoken == ';')
 			return NULL;
-		goto repeat;
+	default:
+		return listdcl(&base, &store, &qlf, ns, 0);
 	}
-	return listdcl(&base, &store, &qlf, ns);
 }
 
 bool
@@ -426,6 +407,7 @@ type_name(struct ctype *tp)
 	if (!specifier(tp, &store, &qlf))
 		return false;
 
-	declarator(tp, NS_TYPE);
+	declarator(tp, NS_TYPE, 0);
 	return true;
 }
+
