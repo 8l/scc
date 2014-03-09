@@ -181,9 +181,8 @@ specifier(register struct ctype *tp,
 		case CONST:  case VOLATILE:
 			qlf = qualifier(qlf, yytoken);
 			break;
-		case TYPEDEF:  case EXTERN: case STATIC:
-		case AUTO:     case REGISTER:
-			store = storage(store, yytoken);
+		case STORAGE:
+			store = storage(store, yyval->c);
 			break;
 		case TYPE:
 			tp = ctype(tp, yyval->c);

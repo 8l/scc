@@ -13,7 +13,7 @@ enum tokens {
 	LDOUBLE, STRUCT, UNION, ENUM, BOOL, ARY, PTR, FTN,
 	COMPLEX, IMAGINARY, BITFLD, TYPE,
 	/* storage specifier */
-	TYPEDEF, EXTERN, STATIC, AUTO, REGISTER,
+	TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, STORAGE,
 	/* type qualifier */
 	VOLATILE, CONST, RESTRICT,
 	/* sign specifier */
