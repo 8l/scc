@@ -170,12 +170,12 @@ init_keywords(void)
 }
 
 static unsigned char
-keyword(char *s)
+keyword(register char *s)
 {
 	register struct keyword *bp;
 
 	for (bp = ktab[hash(s) & NR_KEYW_HASH-1]; bp; bp = bp->next) {
-		if (!strcmp(bp->str, s))
+		if (*s == *bp->str && !strcmp(bp->str, s))
 			return bp->tok;
 	}
 	return 0;
