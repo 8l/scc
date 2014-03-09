@@ -176,6 +176,8 @@ bool
 specifier(register struct ctype *tp,
           struct storage *store, struct qualifier *qlf)
 {
+	unsigned char tok;
+
 	for (;; next()) {
 		switch (yytoken) {
 		case TQUALIFIER:
@@ -185,18 +187,14 @@ specifier(register struct ctype *tp,
 			store = storage(store, yyval->c);
 			break;
 		case TYPE:
-			tp = ctype(tp, yyval->c);
+			tp = ctype(tp, tok = yyval->c);
+			switch (tok) {
+			case ENUM: case STRUCT: case UNION:
+				next();
+				(tok == ENUM) ? enumdcl(tp) : structdcl(tp);
+				return true;
+			}
 			break;
-		case ENUM:
-			tp = ctype(tp, ENUM);
-			next();
-			enumdcl(tp);
-			return true;
-		case STRUCT:   case UNION:
-			tp = ctype(tp, yytoken);
-			next();
-			structdcl(tp);
-			return true;
 		case IDEN:
 			if (!tp->defined) {
 				register struct symbol *sym;
