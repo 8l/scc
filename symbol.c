@@ -5,6 +5,7 @@
 
 #include "cc.h"
 #include "symbol.h"
+#include "tokens.h"
 
 #define NR_SYM_HASH 32
 
@@ -87,7 +88,7 @@ lookup(register const char *s, signed char ns)
 	sym->next = head;
 	sym->ctx = curctx;
 	sym->ns = ns;
-	sym->tok = 0;
+	sym->tok = IDEN;
 	head = sym;
 	sym->hash = htab[key];
 	htab[key] = sym;

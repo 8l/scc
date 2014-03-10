@@ -184,8 +184,6 @@ iden(void)
 	ungetc(ch, yyin);
 
 	yyval = lookup(yytext, NS_IDEN);
-	if (!yyval->tok)
-		yyval->tok = IDEN;
 	return yyval->tok;
 }
 
