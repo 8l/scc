@@ -90,7 +90,7 @@ number(void)
 		ungetc(ch, yyin);
 	}
 
-	for (bp = yytext; bp < yytext + IDENTSIZ; *bp++ = ch) {
+	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = ch) {
 		ch = getc(yyin);
 		switch (base) {
 		case 8:
@@ -108,7 +108,7 @@ number(void)
 		}
 	}
 
-end:	if (bp == yytext + IDENTSIZ)
+end:	if (bp == &yytext[IDENTSIZ])
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
@@ -174,11 +174,11 @@ iden(void)
 {
 	register char ch, *bp;
 
-	for (bp = yytext; bp < yytext + IDENTSIZ; *bp++ = ch) {
+	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = ch) {
 		if (!isalnum(ch = getc(yyin)) && ch != '_')
 			break;
 	}
-	if (bp == yytext + IDENTSIZ)
+	if (bp == &yytext[IDENTSIZ])
 		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
