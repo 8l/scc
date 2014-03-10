@@ -21,11 +21,9 @@ struct keyword {
 	char *str;
 	unsigned char tok;
 	unsigned char value;
-	struct keyword *next;
 };
 
 static FILE *yyin;
-static struct keyword *ktab[NR_KEYW_HASH];
 
 struct symbol *yyval;
 
@@ -162,36 +160,19 @@ init_keywords(void)
 		{NULL, 0, 0},
 	};
 	register struct keyword *bp;
+	register struct symbol *sym;
 
 	for (bp = buff;  bp->str; ++bp) {
-		register unsigned char h = hash(bp->str) & NR_KEYW_HASH-1;
-		bp->next = ktab[h];
-		ktab[h] = bp;
+		sym = lookup(bp->str, NS_IDEN);
+		sym->tok = bp->tok;
+		sym->c = bp->value;
 	}
-}
-
-static unsigned char
-keyword(register char *s)
-{
-	register struct keyword *bp;
-	static struct symbol sym;
-
-	for (bp = ktab[hash(s) & NR_KEYW_HASH-1]; bp; bp = bp->next) {
-		if (*s == *bp->str && !strcmp(bp->str, s)) {
-			sym.c = bp->value;
-			yyval = &sym;
-			return bp->tok;
-		}
-	}
-	return 0;
 }
 
 static unsigned char
 iden(void)
 {
 	register char ch, *bp;
-	register struct symbol *sym;
-	static unsigned char tok;
 
 	for (bp = yytext; bp < yytext + IDENTSIZ; *bp++ = ch) {
 		if (!isalnum(ch = getc(yyin)) && ch != '_')
@@ -202,7 +183,10 @@ iden(void)
 	*bp = '\0';
 	ungetc(ch, yyin);
 
-	return (tok = keyword(yytext)) ? tok : IDEN;
+	yyval = lookup(yytext, NS_IDEN);
+	if (!yyval->tok)
+		yyval->tok = IDEN;
+	return yyval->tok;
 }
 
 static unsigned char

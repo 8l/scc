@@ -32,7 +32,7 @@ directdcl(register struct ctype *tp, unsigned char ns, unsigned char isfun)
 		expect(')');
 	} else if (ns != NS_TYPE) {
 		if (yytoken == IDEN) {
-			sym = lookup(yytext, ns);
+			sym = (yyval->ns == ns) ? yyval : lookup(yytext, ns);
 			if (!sym->ctype.defined)
 				sym->ctx = curctx;
 			else if (sym->ctx == curctx)
@@ -193,21 +193,11 @@ specifier(register struct ctype *tp,
 				next();
 				(tok == ENUM) ? enumdcl(tp) : structdcl(tp);
 				return true;
+			case TYPEDEF:
+				tp->base = &yyval->ctype;
+				break;
 			}
 			break;
-		case IDEN:
-			if (!tp->defined) {
-				register struct symbol *sym;
-
-				sym = lookup(yytext, NS_IDEN);
-				if (sym->ctype.defined &&
-				    sym->store.c_typedef) {
-					tp = ctype(tp, TYPEDEF);
-					tp->base = &sym->ctype;
-					break;
-				}
-			}
-			/* it is not a type name */
 		default:
 			goto check_type;
 		}
@@ -310,6 +300,10 @@ listdcl(struct ctype *base,
 		sym->store = *store;
 		sym->qlf = *qlf;
 		sym->ctype = *decl_type(base);
+		if (sym->store.c_typedef) {
+			sym->tok = TYPE;
+			sym->c = TYPEDEF;
+		}
 		tp = &sym->ctype;
 		aux = NULL;
 

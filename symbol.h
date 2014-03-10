@@ -59,6 +59,7 @@ struct symbol {
 	unsigned char ctx;
 	unsigned char ns;
 	char *name;
+	unsigned char tok;
 	struct {
 		union {
 			char c;   /* numerical constants */
