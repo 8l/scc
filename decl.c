@@ -191,7 +191,10 @@ specifier(register struct ctype *tp,
 			switch (tok) {
 			case ENUM: case STRUCT: case UNION:
 				next();
-				(tok == ENUM) ? enumdcl(tp) : structdcl(tp);
+				if (tok == ENUM)
+					enumdcl(tp);
+				else
+					structdcl(tp);
 				return true;
 			case TYPEDEF:
 				tp->base = &yyval->ctype;
