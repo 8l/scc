@@ -11,13 +11,13 @@ enum tokens {
 	/* types */
 	INT = 1, CHAR, FLOAT, LONG, LLONG, SHORT, VOID, DOUBLE,
 	LDOUBLE, STRUCT, UNION, ENUM, BOOL, ARY, PTR, FTN,
-	COMPLEX, IMAGINARY, BITFLD, TYPE,
-	/* storage specifier */
-	TYPEDEF, EXTERN, STATIC, AUTO, REGISTER, STORAGE,
+	COMPLEX, IMAGINARY, BITFLD, TYPENAME, TYPE,
 	/* type qualifier */
 	VOLATILE, CONST, RESTRICT, TQUALIFIER,
 	/* sign specifier */
 	UNSIGNED, SIGNED,
+	/* storage specifier */
+	STORAGE,
 	/* other tokens */
 	IDEN = 128, CONSTANT, SIZEOF,
 	INDIR, INC, DEC, SHL, SHR,
@@ -29,6 +29,12 @@ enum tokens {
 	CONTINUE, BREAK, RETURN, EOFTOK, NOTOK
 };
 
+#define TYPEDEF  (1<<0)
+#define EXTERN   (1<<1)
+#define STATIC   (1<<2)
+#define AUTO     (1<<3)
+#define REGISTER (1<<4)
+#define STORAGE  (1<<5)
 
 struct symbol;
 extern struct symbol *yyval;

@@ -28,17 +28,6 @@ initctype(register struct ctype *tp)
 	return tp;
 }
 
-struct storage *
-initstore(register struct storage *store)
-{
-	extern unsigned char curctx;
-	memset(store, 0, sizeof(*store));
-
-	if (curctx != CTX_OUTER)
-		store->c_auto = 1;
-	return store;
-}
-
 void
 delctype(register struct ctype *tp)
 {
@@ -188,7 +177,7 @@ check_sign:	switch (type) {
 			goto invalid_sign;
 		}
 		break;
-	case TYPEDEF:
+	case TYPENAME:
 		assert(!type);
 		if (tp->c_signed || tp->c_unsigned)
 			goto invalid_sign;
@@ -236,46 +225,6 @@ qualifier(register struct qualifier *qlf, unsigned char mod)
 	return qlf;
 duplicated:
 	error("duplicated '%s'", yytext);
-}
-
-struct storage *
-storage(register struct storage *sp, unsigned char mod)
-{
-	extern unsigned char curctx;
-
-	if (!sp->defined)
-		sp->c_auto = 0;
-	else
-		error("Two or more storage specifier");
-
-	switch (mod) {
-	case TYPEDEF:
-		sp->c_typedef = 1;
-		break;
-	case EXTERN:
-		sp->c_extern = 1;
-		break;
-	case STATIC:
-		sp->c_static = 1;
-		break;
-	case AUTO:
-		if (curctx == CTX_OUTER)
-			goto bad_file_scope_storage;
-		sp->c_auto = 1;
-		break;
-	case REGISTER:
-		if (curctx == CTX_OUTER)
-			goto bad_file_scope_storage;
-		sp->c_register = 1;
-		break;
-	default:
-		assert(0);
-	}
-	sp->defined = 1;
-	return sp;
-
-bad_file_scope_storage:
-	error("file-scope declaration specifies '%s'", yytext);
 }
 
 #ifndef NDEBUG

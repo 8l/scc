@@ -172,9 +172,9 @@ enumdcl(struct ctype *base)
 	expect('}');
 }
 
-bool
+static bool
 specifier(register struct ctype *tp,
-          struct storage *store, struct qualifier *qlf)
+          char *store, struct qualifier *qlf)
 {
 	unsigned char tok;
 
@@ -184,7 +184,10 @@ specifier(register struct ctype *tp,
 			qlf = qualifier(qlf, yyval->c);
 			break;
 		case STORAGE:
-			store = storage(store, yyval->c);
+			if (*store)
+				error("two or more storage specifier");
+			/* TODO: check bad storage in file-scope */
+			*store |= yyval->c;
 			break;
 		case TYPE:
 			tp = ctype(tp, tok = yyval->c);
@@ -196,7 +199,7 @@ specifier(register struct ctype *tp,
 				else
 					structdcl(tp);
 				return true;
-			case TYPEDEF:
+			case TYPENAME:
 				tp->base = &yyval->ctype;
 				break;
 			}
@@ -208,7 +211,7 @@ specifier(register struct ctype *tp,
 
 check_type:
 	if (!tp->defined) {
-		if (!store->defined &&
+		if (*store &&
 		    !qlf->defined &&
 		    curctx != CTX_OUTER &&
 		    nested_tags == 0) {
@@ -285,7 +288,7 @@ initializer(register struct ctype *tp)
 
 static struct node *
 listdcl(struct ctype *base,
-        struct storage *store,
+        char store,
 	struct qualifier *qlf,
 	unsigned char ns, unsigned char isfun)
 {
@@ -300,12 +303,12 @@ listdcl(struct ctype *base,
 		register struct symbol *sym;
 
 		sym = declarator(base, ns, isfun);
-		sym->store = *store;
+		sym->store = store;
 		sym->qlf = *qlf;
 		sym->ctype = *decl_type(base);
-		if (sym->store.c_typedef) {
+		if (sym->store) {
 			sym->tok = TYPE;
-			sym->c = TYPEDEF;
+			sym->c = TYPENAME;
 		}
 		tp = &sym->ctype;
 		aux = NULL;
@@ -362,17 +365,16 @@ struct node *
 decl(unsigned char ns)
 {
 	struct ctype base;
-	struct storage store;
+	char store = 0;
 	struct qualifier qlf;
 
 	initctype(&base);
-	initstore(&store);
 	initqlf(&qlf);
 
 	if (!specifier(&base, &store, &qlf))
 		return NULL;
 
-	if (store.defined && ns != NS_IDEN)
+	if (store && ns != NS_IDEN)
 		error("storage specifier in a struct/union field declaration");
 
 	switch (base.type) {
@@ -380,18 +382,17 @@ decl(unsigned char ns)
 		if (yytoken == ';')
 			return NULL;
 	default:
-		return listdcl(&base, &store, &qlf, ns, 0);
+		return listdcl(&base, store, &qlf, ns, 0);
 	}
 }
 
 void
 type_name(struct ctype *tp)
 {
-	struct storage store;
 	struct qualifier qlf;
+	char store = 0;
 
 	initctype(tp);
-	initstore(&store);
 	initqlf(&qlf);
 
 	if (!specifier(tp, &store, &qlf))

@@ -129,19 +129,18 @@ call_unary:
 static struct node *
 cast(void)
 {
-	register struct node *np;
 	struct ctype type;
 
-	while (accept('(')) {
-		switch (yytoken) {
+repeat:	if (yytoken == '(') {
+		switch (ahead()) {
 		case STORAGE: case TQUALIFIER: case TYPE:
+			next();
 			type_name(&type); /* TODO: type_name should return a np*/
-			break;
+			expect(')');
+			goto repeat;
 		default:
-			np = expr();
 			break;
 		}
-		expect(')');
 	}
 	return unary();
 }

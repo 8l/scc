@@ -23,15 +23,6 @@ struct qualifier {
 	bool defined: 1;
 };
 
-struct storage {
-	bool c_typedef : 1;
-	bool c_extern : 1;
-	bool c_static : 1;
-	bool c_auto : 1;
-	bool c_register : 1;
-	bool defined: 1;
-};
-
 struct ctype {
 	unsigned type : 5;
 	bool c_const : 1;
@@ -53,7 +44,7 @@ struct ctype {
 
 struct symbol {
 	struct ctype ctype;
-	struct storage store;
+	char store;
 	struct qualifier qlf;
 	unsigned char ctx;
 	unsigned char ns;
@@ -82,12 +73,10 @@ extern void del_ctx(void);
 extern void freesyms(void);
 extern struct symbol *lookup(const char *s, signed char ns);
 extern void insert(struct symbol *sym, unsigned char ctx);
-extern struct storage *storage(struct storage *tp, unsigned char mod);
 extern struct qualifier *qualifier(register struct qualifier *, unsigned char);
 extern void delctype(struct ctype *tp);
 extern unsigned char hash(register const char *s);
 extern struct ctype *initctype(register struct ctype *tp);
-extern struct storage *initstore(register struct storage *store);
 extern struct qualifier * initqlf(struct qualifier *qlf);
 
 #ifndef NDEBUG
