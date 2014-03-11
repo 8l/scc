@@ -17,11 +17,6 @@ enum {
 	NS_TAG
 };
 
-struct qualifier {
-	bool c_const : 1;
-	bool c_volatile : 1;
-	bool defined: 1;
-};
 
 struct ctype {
 	unsigned type : 5;
@@ -45,7 +40,7 @@ struct ctype {
 struct symbol {
 	struct ctype ctype;
 	char store;
-	struct qualifier qlf;
+	char qlf;
 	unsigned char ctx;
 	unsigned char ns;
 	char *name;
@@ -73,11 +68,9 @@ extern void del_ctx(void);
 extern void freesyms(void);
 extern struct symbol *lookup(const char *s, signed char ns);
 extern void insert(struct symbol *sym, unsigned char ctx);
-extern struct qualifier *qualifier(register struct qualifier *, unsigned char);
 extern void delctype(struct ctype *tp);
 extern unsigned char hash(register const char *s);
 extern struct ctype *initctype(register struct ctype *tp);
-extern struct qualifier * initqlf(struct qualifier *qlf);
 
 #ifndef NDEBUG
 extern void ptype(register struct ctype *t);

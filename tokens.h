@@ -13,7 +13,7 @@ enum tokens {
 	LDOUBLE, STRUCT, UNION, ENUM, BOOL, ARY, PTR, FTN,
 	COMPLEX, IMAGINARY, BITFLD, TYPENAME, TYPE,
 	/* type qualifier */
-	VOLATILE, CONST, RESTRICT, TQUALIFIER,
+	TQUALIFIER,
 	/* sign specifier */
 	UNSIGNED, SIGNED,
 	/* storage specifier */
@@ -29,12 +29,17 @@ enum tokens {
 	CONTINUE, BREAK, RETURN, EOFTOK, NOTOK
 };
 
-#define TYPEDEF  (1<<0)
-#define EXTERN   (1<<1)
-#define STATIC   (1<<2)
-#define AUTO     (1<<3)
-#define REGISTER (1<<4)
-#define STORAGE  (1<<5)
+#define TYPEDEF    (1<<0)
+#define EXTERN     (1<<1)
+#define STATIC     (1<<2)
+#define AUTO       (1<<3)
+#define REGISTER   (1<<4)
+#define STORAGE    (1<<5)
+
+#define VOLATILE   (1<<0)
+#define CONST      (1<<1)
+#define RESTRICT   (1<<2)
+#define TQUALIFIER (1<<3)
 
 struct symbol;
 extern struct symbol *yyval;

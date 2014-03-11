@@ -173,15 +173,18 @@ enumdcl(struct ctype *base)
 }
 
 static bool
-specifier(register struct ctype *tp,
-          char *store, struct qualifier *qlf)
+specifier(register struct ctype *tp, char *store, char *qlf)
 {
 	unsigned char tok;
 
 	for (;; next()) {
 		switch (yytoken) {
 		case TQUALIFIER:
-			qlf = qualifier(qlf, yyval->c);
+			if (*qlf && !options.repeat)
+				error("duplicated '%s'", yytext);
+			if (yyval->c == RESTRICT)
+				error("invalid use of restrict");
+			*qlf |= yyval->c;
 			break;
 		case STORAGE:
 			if (*store)
@@ -211,8 +214,7 @@ specifier(register struct ctype *tp,
 
 check_type:
 	if (!tp->defined) {
-		if (*store &&
-		    !qlf->defined &&
+		if (*store && *qlf &&
 		    curctx != CTX_OUTER &&
 		    nested_tags == 0) {
 			return false;
@@ -245,16 +247,12 @@ declarator(struct ctype *tp, unsigned char ns, unsigned char isfun)
 
 	if (yytoken == '*') {
 		for (bp = qlf; n < NR_DECLARATORS ; ++n) {
-			switch (yytoken) {
-			case '*':
-				yytoken = PTR;
-			case CONST: case VOLATILE: case RESTRICT:
-				*bp++ = yytoken;
-				next();
-				continue;
-			default:
+			if (yytoken == '*')
+				*bp++ = PTR;
+			else if (yytoken == TQUALIFIER)
+				*bp++ = yyval->c;
+			else
 				goto direct;
-			}
 		}
 		error("Too much type declarators");
 	}
@@ -288,8 +286,7 @@ initializer(register struct ctype *tp)
 
 static struct node *
 listdcl(struct ctype *base,
-        char store,
-	struct qualifier *qlf,
+        char store, char qlf,
 	unsigned char ns, unsigned char isfun)
 {
 	struct compound c;
@@ -304,7 +301,7 @@ listdcl(struct ctype *base,
 
 		sym = declarator(base, ns, isfun);
 		sym->store = store;
-		sym->qlf = *qlf;
+		sym->qlf = qlf;
 		sym->ctype = *decl_type(base);
 		if (sym->store) {
 			sym->tok = TYPE;
@@ -365,11 +362,9 @@ struct node *
 decl(unsigned char ns)
 {
 	struct ctype base;
-	char store = 0;
-	struct qualifier qlf;
+	char store = 0, qlf = 0;
 
 	initctype(&base);
-	initqlf(&qlf);
 
 	if (!specifier(&base, &store, &qlf))
 		return NULL;
@@ -382,18 +377,16 @@ decl(unsigned char ns)
 		if (yytoken == ';')
 			return NULL;
 	default:
-		return listdcl(&base, store, &qlf, ns, 0);
+		return listdcl(&base, store, qlf, ns, 0);
 	}
 }
 
 void
 type_name(struct ctype *tp)
 {
-	struct qualifier qlf;
-	char store = 0;
+	char store = 0, qlf = 0;
 
 	initctype(tp);
-	initqlf(&qlf);
 
 	if (!specifier(tp, &store, &qlf))
 		return;

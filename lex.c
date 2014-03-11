@@ -141,7 +141,7 @@ init_keywords(void)
 		{"_Imaginary", TYPE, IMAGINARY},
 		{"long", TYPE, LONG},
 		{"register", STORAGE, REGISTER},
-		{"restricted", RESTRICT, RESTRICT},
+		{"restrict", TQUALIFIER, RESTRICT},
 		{"return", RETURN, RETURN},
 		{"short", TYPE, SHORT},
 		{"signed", TYPE, SIGNED},

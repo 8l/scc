@@ -12,13 +12,6 @@
 static unsigned char stack[NR_DECLARATORS];
 static unsigned char *stackp = stack;
 
-struct qualifier *
-initqlf(struct qualifier *qlf)
-{
-	memset(qlf, 0, sizeof(*qlf));
-	return qlf;
-}
-
 struct ctype *
 initctype(register struct ctype *tp)
 {
@@ -201,30 +194,6 @@ invalid_sign:
 two_or_more:
 	err = "two or more basic types";
 error:	error(err, yytext);
-}
-
-struct qualifier *
-qualifier(register struct qualifier *qlf, unsigned char mod)
-{
-	switch (mod) {
-	case CONST:
-		if (options.repeat && qlf->c_const)
-			goto duplicated;
-		qlf->c_const = 1;
-		break;
-	case VOLATILE:
-		if (options.repeat && qlf->c_volatile)
-			goto duplicated;
-		qlf->c_volatile = 1;
-		break;
-	default:
-		assert(0);
-	}
-
-	qlf->defined = 1;
-	return qlf;
-duplicated:
-	error("duplicated '%s'", yytext);
 }
 
 #ifndef NDEBUG
