@@ -107,6 +107,7 @@ struct ctype *
 ctype(struct ctype *tp, unsigned char tok)
 {
 	register unsigned char type;
+	static char *err;
 
 	if (!tp->defined) {
 		tp->type = 0;
@@ -200,13 +201,17 @@ check_sign:	switch (type) {
 	return tp;
 
 both_sign:
-	error("both 'signed' and 'unsigned' in declaration specifiers");
+	err = "both 'signed' and 'unsigned' in declaration specifiers";
+	goto error;
 duplicated:
-	error("duplicated '%s'", yytext);
+	err = "duplicated '%s'";
+	goto error;
 invalid_sign:
-	error("invalid sign modifier");
+	err = "invalid sign modifier";
+	goto error;
 two_or_more:
-	error("two or more basic types");
+	err = "two or more basic types";
+error:	error(err, yytext);
 }
 
 struct qualifier *
