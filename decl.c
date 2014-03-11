@@ -384,7 +384,7 @@ decl(unsigned char ns)
 	}
 }
 
-bool
+void
 type_name(struct ctype *tp)
 {
 	struct storage store;
@@ -395,9 +395,9 @@ type_name(struct ctype *tp)
 	initqlf(&qlf);
 
 	if (!specifier(tp, &store, &qlf))
-		return false;
+		return;
 
 	declarator(tp, NS_TYPE, 0);
-	return true;
+	return;
 }
 

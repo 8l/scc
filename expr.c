@@ -93,8 +93,14 @@ unary(void)
 		next();
 		if (accept('(')) {
 			struct ctype type;
-			if (!type_name(&type))
+			switch (yytoken) {
+			case STORAGE: case TQUALIFIER: case TYPE:
+				type_name(&type);
+				break;
+			default:
 				expr();
+				break;
+			}
 			expect(')');
 		} else {
 			unary();
@@ -123,10 +129,18 @@ call_unary:
 static struct node *
 cast(void)
 {
+	register struct node *np;
+	struct ctype type;
+
 	while (accept('(')) {
-		struct ctype type;
-		if (!type_name(&type))
-			error("expected a type name");
+		switch (yytoken) {
+		case STORAGE: case TQUALIFIER: case TYPE:
+			type_name(&type); /* TODO: type_name should return a np*/
+			break;
+		default:
+			np = expr();
+			break;
+		}
 		expect(')');
 	}
 	return unary();

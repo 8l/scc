@@ -30,7 +30,7 @@ struct compound {
 
 extern struct node *expr(void);
 extern struct node *decl(unsigned char ns);
-extern bool type_name(struct ctype *tp);
+extern void type_name(struct ctype *tp);
 extern struct node *function(struct symbol *sym);
 
 extern struct node *node(unsigned char op, struct node *l, struct node *r);
