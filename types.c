@@ -139,7 +139,7 @@ ctype(struct ctype *tp, unsigned char tok)
 			goto two_or_more;
 		type = FLOAT;
 		if (tp->c_signed || tp->c_unsigned)
-			goto check_sign;
+			goto invalid_sign;
 		break;
 	case DOUBLE:
 		if (type)
@@ -149,7 +149,7 @@ ctype(struct ctype *tp, unsigned char tok)
 		else if (type == LONG)
 			type = LDOUBLE;
 		if (tp->c_signed || tp->c_unsigned)
-			goto check_sign;
+			goto invalid_sign;
 		break;
 	case UNSIGNED:
 		if (tp->c_unsigned)
@@ -166,7 +166,7 @@ ctype(struct ctype *tp, unsigned char tok)
 		tp->c_signed = 1;
 
 check_sign:	switch (type) {
-		case VOID: case BOOL: case STRUCT: case UNION: case ENUM:
+		case VOID: case BOOL: case FLOAT: case DOUBLE: case LDOUBLE:
 			goto invalid_sign;
 		}
 		break;
