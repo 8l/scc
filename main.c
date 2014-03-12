@@ -19,7 +19,7 @@ main(int argc, char *argv[])
 	init_keywords();
 	open_file(NULL);
 	for (next(); yytoken != EOFTOK; run(np))
-		np = decl(0);
+		np = extdecl();
 
 	return 0;
 }

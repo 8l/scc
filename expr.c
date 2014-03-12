@@ -18,7 +18,7 @@ primary(void)
 	switch (yytoken) {
 	case IDEN:
 		sym = lookup(yytext, NS_IDEN);
-		if (!sym->ctype.defined)
+		if (!sym->ctype.type)
 			error("'%s' undeclared", yytext);
 		next();
 		np = nodesym(sym);

@@ -33,7 +33,7 @@ directdcl(register struct ctype *tp, unsigned char ns, unsigned char isfun)
 	} else if (ns != NS_TYPE) {
 		if (yytoken == IDEN) {
 			sym = lookup(yytext, ns);
-			if (!sym->ctype.defined)
+			if (!sym->ctype.type)
 				sym->ctx = curctx;
 			else if (sym->ctx == curctx)
 				goto redeclared;
@@ -72,107 +72,10 @@ expected:
 error:	error(err, yytext);
 }
 
-static unsigned char
-newtag(unsigned char type)
-{
-	if (type == ENUM)
-		return 0;
-	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
-		error("too much structs/unions defined");
-	return ++nr_tags;
-}
-
-static struct symbol *
-aggregate(register struct ctype *tp)
-{
-	struct symbol *sym = NULL;
-
-	tp->forward = 1;
-	if (yytoken == IDEN) {
-		register struct ctype *aux;
-
-		sym = lookup(yytext, NS_TAG);
-		aux = &sym->ctype;
-		if (aux->defined) {
-			if (aux->type != tp->type)
-				goto bad_type;
-			*tp = *aux;
-		} else {
-			tp->tag = sym->name;
-			tp->ns = newtag(tp->type);
-			sym->ctype = *tp;
-		}
-		next();
-	} else {
-		tp->ns = newtag(tp->type);
-	}
-
-	return sym;
-
-bad_type:
-	error("'%s' defined as wrong kind of tag", yytext);
-}
+static void structdcl(register struct ctype *tp);
+static void enumdcl(struct ctype *base);
 
 static void
-structdcl(register struct ctype *tp)
-{
-	struct symbol *sym;
-
-	sym = aggregate(tp);
-
-	if (!accept('{'))
-		return;
-
-	if (sym && !sym->ctype.forward)
-		error("struct/union already defined");
-
-	if (nested_tags == NR_STRUCT_LEVEL)
-		error("too much nested structs/unions");
-
-	++nested_tags;
-	while (!accept('}'))
-		decl(tp->ns);
-	--nested_tags;
-
-	if (sym)
-		sym->ctype.forward = 0;
-	tp->forward = 0;
-}
-
-static void
-enumdcl(struct ctype *base)
-{
-	static int val;
-
-	aggregate(base);
-	if (!accept('{'))
-		return;
-	val = 0;
-
-	do {
-		register struct symbol *sym;
-		register struct ctype *tp;
-
-		if (yytoken != IDEN)
-			break;
-		sym = lookup(yytext, NS_IDEN);
-		tp = &sym->ctype;
-		if (tp->defined && sym->ctx == curctx)
-			error("'%s' redefined", yytext);
-		next();
-		if (accept('=')) {
-			expect(CONSTANT);
-			val = yyval->i;
-		}
-		ctype(tp, INT);
-		tp->base = base;
-		sym->i = val++;
-	} while (accept(','));
-
-	expect('}');
-}
-
-static bool
 specifier(register struct ctype *tp, char *store, char *qlf)
 {
 	unsigned char tok;
@@ -201,7 +104,7 @@ specifier(register struct ctype *tp, char *store, char *qlf)
 					enumdcl(tp);
 				else
 					structdcl(tp);
-				return true;
+				return;
 			case TYPENAME:
 				tp->base = &yyval->ctype;
 				break;
@@ -213,16 +116,6 @@ specifier(register struct ctype *tp, char *store, char *qlf)
 	}
 
 check_type:
-	if (!tp->defined) {
-		if (*store && *qlf &&
-		    curctx != CTX_OUTER &&
-		    nested_tags == 0) {
-			return false;
-		}
-		warn(options.implicit,
-		     "type defaults to 'int' in declaration");
-	}
-
 	if (!tp->c_signed && !tp->c_unsigned) {
 		switch (tp->type) {
 		case CHAR:
@@ -233,8 +126,10 @@ check_type:
 		case INT: case SHORT: case LONG: case LLONG:
 			tp->c_signed = 1;
 		}
+	} else if (!tp->type) {
+		tp->type = INT;
 	}
-	return true;
+	return;
 }
 
 static struct symbol *
@@ -294,6 +189,9 @@ listdcl(struct ctype *base,
 
 	c.tree = NULL;
 
+	if (yytoken == ';')
+		return NULL;
+
 	do {
 		struct node *np, *aux;
 		register struct ctype *tp;
@@ -344,7 +242,6 @@ listdcl(struct ctype *base,
 		}
 	} while (accept(','));
 
-	expect(';');
 	return c.tree;
 
 bad_type:
@@ -358,27 +255,134 @@ incomplete:
 error: error(err);
 }
 
+static unsigned char
+newtag(unsigned char type)
+{
+	if (type == ENUM)
+		return 0;
+	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
+		error("too much structs/unions defined");
+	return ++nr_tags;
+}
+
+static struct symbol *
+aggregate(register struct ctype *tp)
+{
+	struct symbol *sym = NULL;
+
+	tp->forward = 1;
+	if (yytoken == IDEN) {
+		register struct ctype *aux;
+
+		sym = lookup(yytext, NS_TAG);
+		aux = &sym->ctype;
+		if (aux->type) {
+			if (aux->type != tp->type)
+				goto bad_type;
+			*tp = *aux;
+		} else {
+			tp->tag = sym->name;
+			tp->ns = newtag(tp->type);
+			sym->ctype = *tp;
+		}
+		next();
+	} else {
+		tp->ns = newtag(tp->type);
+	}
+
+	return sym;
+
+bad_type:
+	error("'%s' defined as wrong kind of tag", yytext);
+}
+
+static void
+structdcl(register struct ctype *tp)
+{
+	struct symbol *sym;
+
+	sym = aggregate(tp);
+
+	if (!accept('{'))
+		return;
+
+	if (sym && !sym->ctype.forward)
+		error("struct/union already defined");
+
+	if (nested_tags == NR_STRUCT_LEVEL)
+		error("too much nested structs/unions");
+
+	++nested_tags;
+	while (!accept('}')) {
+		struct ctype base;
+		struct node *np;
+		char store = 0, qlf = 0;
+
+		initctype(&base);
+		specifier(&base, &store, &qlf);
+
+		if (store)
+			error("storage specifier in a struct/union field declaration");
+
+		listdcl(&base, store, qlf, tp->ns, 0);
+		expect(';');
+	}
+	--nested_tags;
+
+	if (sym)
+		sym->ctype.forward = 0;
+	tp->forward = 0;
+}
+
+static void
+enumdcl(struct ctype *base)
+{
+	static int val;
+
+	aggregate(base);
+	if (!accept('{'))
+		return;
+	val = 0;
+
+	do {
+		register struct symbol *sym;
+		register struct ctype *tp;
+
+		if (yytoken != IDEN)
+			break;
+		sym = lookup(yytext, NS_IDEN);
+		tp = &sym->ctype;
+		if (tp->type && sym->ctx == curctx)
+			error("'%s' redefined", yytext);
+		next();
+		if (accept('=')) {
+			expect(CONSTANT);
+			val = yyval->i;
+		}
+		ctype(tp, INT);
+		tp->base = base;
+		sym->i = val++;
+	} while (accept(','));
+
+	expect('}');
+}
+
 struct node *
 decl(unsigned char ns)
 {
 	struct ctype base;
+	struct node *np;
 	char store = 0, qlf = 0;
 
 	initctype(&base);
-
-	if (!specifier(&base, &store, &qlf))
-		return NULL;
+	specifier(&base, &store, &qlf);
 
 	if (store && ns != NS_IDEN)
 		error("storage specifier in a struct/union field declaration");
 
-	switch (base.type) {
-	case STRUCT: case UNION: case ENUM:
-		if (yytoken == ';')
-			return NULL;
-	default:
-		return listdcl(&base, store, qlf, ns, 0);
-	}
+	np = listdcl(&base, store, qlf, ns, 0);
+	expect(';');
+	return np;
 }
 
 void
@@ -387,11 +391,33 @@ type_name(struct ctype *tp)
 	char store = 0, qlf = 0;
 
 	initctype(tp);
-
-	if (!specifier(tp, &store, &qlf))
-		return;
-
+	specifier(tp, &store, &qlf);
 	declarator(tp, NS_TYPE, 0);
 	return;
 }
 
+struct node *
+extdecl(void)
+{
+	struct ctype base;
+	struct node *np;
+	char store = 0, qlf = 0;
+
+	initctype(&base);
+
+	switch (yytoken) {
+	case IDEN:
+		warn(options.implicit,
+		     "type defaults to 'int' in declaration");
+		base.type = INT;
+		break;
+	case TYPE: case STORAGE: case TQUALIFIER:
+		specifier(&base, &store, &qlf);
+		break;
+	default:
+		error("declaration expected");
+	}
+
+	np = listdcl(&base, store, qlf, 0, 0);
+	expect(';');
+}

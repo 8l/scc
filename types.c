@@ -16,7 +16,6 @@ struct ctype *
 initctype(register struct ctype *tp)
 {
 	memset(tp, 0, sizeof(*tp));
-	tp->type = INT;
 	tp->forward = 1;
 	return tp;
 }
@@ -62,7 +61,6 @@ mktype(register struct ctype *tp, unsigned  char op)
 	default:
 		assert(0);
 	}
-	tp->defined = 1;
 	return tp;
 }
 
@@ -91,10 +89,6 @@ ctype(struct ctype *tp, unsigned char tok)
 	register unsigned char type;
 	static char *err;
 
-	if (!tp->defined) {
-		tp->type = 0;
-		tp->defined = 1;
-	}
 	type = tp->type;
 
 

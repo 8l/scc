@@ -26,7 +26,6 @@ struct ctype {
 	bool c_unsigned : 1;
 	bool c_signed : 1;
 	bool forward : 1;
-	bool defined: 1;
 	union {
 		struct {
 			unsigned char ns;
