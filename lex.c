@@ -24,7 +24,7 @@ struct keyword {
 
 static FILE *yyin;
 static struct symbol yysym = {.name = ""}, *yynval = &yysym;
-struct symbol *yyval;
+struct symbol *yyval = &yysym;
 
 struct symbol *
 integer(char *s, char base)

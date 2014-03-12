@@ -64,9 +64,10 @@ freesyms(void)
 }
 
 struct symbol *
-lookup(register const char *s, signed char ns)
+lookup(register const char *s, unsigned char ns)
 {
 	register struct symbol *sym;
+	extern struct symbol *yyval;
 	static unsigned char key;
 	register char *t;
 
@@ -75,6 +76,8 @@ lookup(register const char *s, signed char ns)
 		sym->next = head;
 		return sym;
 	}
+	if (yyval->ns == ns && !strcmp(yyval->name, s))
+		return yyval;
 
 	key = hash(s) & NR_SYM_HASH - 1;
 	for (sym = htab[key]; sym; sym = sym->hash) {

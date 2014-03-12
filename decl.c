@@ -32,7 +32,7 @@ directdcl(register struct ctype *tp, unsigned char ns, unsigned char isfun)
 		expect(')');
 	} else if (ns != NS_TYPE) {
 		if (yytoken == IDEN) {
-			sym = (yyval->ns == ns) ? yyval : lookup(yytext, ns);
+			sym = lookup(yytext, ns);
 			if (!sym->ctype.defined)
 				sym->ctx = curctx;
 			else if (sym->ctx == curctx)

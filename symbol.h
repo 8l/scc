@@ -66,7 +66,7 @@ extern struct ctype *ctype(struct ctype *tp, unsigned char tok);
 extern void new_ctx(void);
 extern void del_ctx(void);
 extern void freesyms(void);
-extern struct symbol *lookup(const char *s, signed char ns);
+extern struct symbol *lookup(const char *s, unsigned char ns);
 extern void insert(struct symbol *sym, unsigned char ctx);
 extern void delctype(struct ctype *tp);
 extern unsigned char hash(register const char *s);
