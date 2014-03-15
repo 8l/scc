@@ -1,4 +1,5 @@
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,70 +10,39 @@
 #include "symbol.h"
 #include "sizes.h"
 
-unsigned char yytoken;
-char yytext[IDENTSIZ + 1];
-static char yybuf[IDENTSIZ + 1];
+static FILE *yyin;
+const char *filename;
 unsigned linenum;
 unsigned columnum;
-const char *filename;
 
-struct keyword {
-	char *str;
-	unsigned char tok;
-	unsigned char value;
-};
+uint8_t yytoken, yyntoken;;
+union yystype yylval;
+char yytext[IDENTSIZ + 1];
 
-static FILE *yyin;
-static struct symbol yysym = {.name = ""}, *yynval = &yysym;
-struct symbol *yyval = &yysym;
+static union yystype yynlval;
+static char yybuf[IDENTSIZ + 1];
 
-struct symbol *
+static uint8_t
 integer(char *s, char base)
 {
 	static struct ctype *tp;
-	register struct symbol *sym;
-	static long long v;
 	static char ch;
 
-	tp = initctype(xmalloc(sizeof(*tp)));
+	/* TODO: implement again */
 
 type:	switch (ch = toupper(getc(yyin))) {
 	case 'L':
-		tp = ctype(tp, LONG);
 		goto type;
 	case 'U':
-		tp = ctype(tp, UNSIGNED);
 		goto type;
 	default:
 		ungetc(ch, yyin);
 	}
 
-	v = strtoll(s, NULL, base);
-	sym = lookup(NULL, NS_IDEN);
-	sym->tok = CONSTANT;
-	sym->ctype = *tp;
-
-	switch (tp->type) {
-	case INT:
-		sym->i = v;
-		break;
-	case SHORT:
-		sym->s = v;
-		break;
-	case LONG:
-		sym->l = xmalloc(sizeof(long));
-		*sym->l = v;
-		break;
-	case LLONG:
-		sym->ll = xmalloc(sizeof(long long));
-		*sym->ll = v;
-		break;
-	}
-
-	return sym;
+	return CONSTANT;
 }
 
-static struct symbol *
+static uint8_t
 number(void)
 {
 	register char *bp, ch;
@@ -118,8 +88,11 @@ end:	if (bp == &yybuf[IDENTSIZ])
 void
 init_keywords(void)
 {
-	static struct keyword buff[] = {
-		{"auto", STORAGE, AUTO},
+	static struct {
+		char *str;
+		uint8_t token, value;
+	} *bp, buff[] = {
+		{"auto", SCLASS, AUTO},
 		{"break", BREAK, BREAK},
 		{"_Bool", TYPE, BOOL},
 		{"_Complex", TYPE, COMPLEX},
@@ -132,7 +105,7 @@ init_keywords(void)
 		{"double", TYPE, DOUBLE},
 		{"else", ELSE, ELSE},
 		{"enum", TYPE, ENUM},
-		{"extern", STORAGE, EXTERN},
+		{"extern", SCLASS, EXTERN},
 		{"float", TYPE, FLOAT},
 		{"for", FOR, FOR},
 		{"goto", GOTO, GOTO},
@@ -140,16 +113,16 @@ init_keywords(void)
 		{"int", TYPE, INT},
 		{"_Imaginary", TYPE, IMAGINARY},
 		{"long", TYPE, LONG},
-		{"register", STORAGE, REGISTER},
+		{"register", SCLASS, REGISTER},
 		{"restrict", TQUALIFIER, RESTRICT},
 		{"return", RETURN, RETURN},
 		{"short", TYPE, SHORT},
 		{"signed", TYPE, SIGNED},
 		{"sizeof", SIZEOF, SIZEOF},
-		{"static", STORAGE, STATIC},
+		{"static", SCLASS, STATIC},
 		{"struct", TYPE, STRUCT},
 		{"switch", SWITCH, SWITCH},
-		{"typedef", STORAGE, TYPEDEF},
+		{"typedef", SCLASS, TYPEDEF},
 		{"union", TYPE, UNION},
 		{"unsigned", TYPE, UNSIGNED},
 		{"void", TYPE, VOID},
@@ -157,61 +130,38 @@ init_keywords(void)
 		{"while", WHILE, WHILE},
 		{NULL, 0, 0},
 	};
-	register struct keyword *bp;
 	register struct symbol *sym;
 
-	for (bp = buff;  bp->str; ++bp) {
-		sym = lookup(bp->str, NS_IDEN);
-		sym->tok = bp->tok;
-		sym->c = bp->value;
+	for (bp = buff; bp->str; ++bp) {
+		sym = install(bp->str, NS_KEYWORD);
+		sym->token = bp->token;
+		sym->u.c = bp->value;
 	}
 }
 
-static struct symbol *
+static uint8_t
 iden(void)
 {
-	register char ch, *bp;
+	register char *bp;
+	register int c;
 
-	for (bp = yybuf; bp < &yybuf[IDENTSIZ]; *bp++ = ch) {
-		if (!isalnum(ch = getc(yyin)) && ch != '_')
+	for (bp = yybuf; bp < &yybuf[IDENTSIZ]; *bp++ = c) {
+		if (!isalnum(c = getc(yyin)) && c != '_')
 			break;
 	}
 	if (bp == &yybuf[IDENTSIZ])
 		error("identifier too long %s", yybuf);
 	*bp = '\0';
-	ungetc(ch, yyin);
-
-	return lookup(yybuf, NS_IDEN);
-}
-
-static unsigned char
-skip(void)
-{
-	static int c;
-	extern char parser_out_home;
-
-	if (c != EOF) {
-		while (c != EOF && isspace(c = getc(yyin))) {
-			switch (c) {
-			case '\n': ++linenum, columnum = 1; break;
-			case '\t': columnum += 8;	    break;
-			default:   ++columnum;		    break;
-			}
-		}
-	}
-	if (c == EOF) {
-		if (parser_out_home)
-			error("Find EOF while parsing");
-		return 0;
-	}
 	ungetc(c, yyin);
-	return 1;
+
+	yynlval.sym = lookup(yybuf, NS_IDEN);
+	return (yynlval.sym) ? yynlval.sym->token : IDEN;
 }
 
-static unsigned char
-follow(unsigned char op, unsigned char eq, unsigned char rep)
+static uint8_t
+follow(uint8_t op, uint8_t eq, uint8_t rep)
 {
-	register char c = getc(yyin);
+	register int c = getc(yyin);
 
 	yybuf[1] = c;
 	yybuf[2] = '\0';
@@ -225,14 +175,14 @@ follow(unsigned char op, unsigned char eq, unsigned char rep)
 	return op;
 }
 
-static unsigned char
-rel_shift(unsigned char op)
+static uint8_t
+rel_shift(uint8_t op)
 {
-	static char tokens[2][3] = {
+	static uint8_t tokens[2][3] = {
 		{GE, SHL, SHL_EQ},
 		{LE, SHR, SHR_EQ}
 	};
-	register char c = getc(yyin);
+	register int c = getc(yyin);
 	register char *tp = tokens[op == '>'];
 
 	yybuf[1] = c;
@@ -253,7 +203,7 @@ rel_shift(unsigned char op)
 	return op;
 }
 
-static unsigned char
+static uint8_t
 minus(void)
 {
 	register int c = getc(yyin);
@@ -270,10 +220,10 @@ minus(void)
 	}
 }
 
-static unsigned char
+static uint8_t
 operator(void)
 {
-	register unsigned char c = getc(yyin);
+	register uint8_t c = getc(yyin);
 
 	yybuf[0] = c;
 	yybuf[1] = '\0';
@@ -292,47 +242,46 @@ operator(void)
 	}
 }
 
-void
+uint8_t
 next(void)
 {
-	register unsigned char c;
+	static int c;
+	extern int8_t forbid_eof;
 
 	strcpy(yytext, yybuf);
-	yyval = yynval;
-	yytoken = yynval->tok;
-	yynval = &yysym;
-
-	if (!skip()) {
-		yysym.tok = EOFTOK;
-	} else {
-		ungetc(c = getc(yyin), yyin);
-		if (isalpha(c) || c == '_')
-			yynval = iden();
-		else if (isdigit(c))
-			yynval = number();
-		else
-			yysym.tok = operator();
+	yylval = yynlval;
+	if ((yytoken = yyntoken) == EOFTOK) {
+		if (forbid_eof)
+			error("Find EOF while parsing");
+		goto ret;
 	}
-}
 
-unsigned char
-ahead(void)
-{
-	return yynval->tok;
-}
-
-char
-accept(register unsigned char tok)
-{
-	if (yytoken == tok) {
-		next();
-		return 1;
+	while (isspace(c = getc(yyin))) {
+		switch (c) {
+		case '\n': ++linenum, columnum = 1; break;
+		case '\t': columnum += 8;	    break;
+		default:   ++columnum;		    break;
+		}
 	}
-	return 0;
+
+	if (c == EOF) {
+		yyntoken = EOFTOK;
+		goto ret;
+	}
+
+	ungetc(c, yyin);
+	if (isalpha(c) || c == '_')
+		yyntoken = iden();
+	else if (isdigit(c))
+		yyntoken = number();
+	else
+		yyntoken = operator();
+
+ret:	return yytoken;
 }
 
 void
-expect(register unsigned char tok)
+expect(register uint8_t tok)
 {
 	if (yytoken != tok)
 		error("unexpected %s", yytext);

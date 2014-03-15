@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "cc.h"

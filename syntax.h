@@ -28,11 +28,8 @@ struct compound {
 	struct node_op2 *last;
 };
 
-extern struct node *expr(void);
-extern struct node *extdecl(void);
-extern struct node *decl(unsigned char ns);
-extern void type_name(struct ctype *tp);
-extern struct node *function(struct symbol *sym);
+extern struct node *expr(void), *extdecl(void), *decl(void),
+	*typename(void), *function(void);
 
 extern struct node *node(unsigned char op, struct node *l, struct node *r);
 extern struct node *nodesym(struct symbol *sym);

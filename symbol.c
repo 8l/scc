@@ -1,5 +1,6 @@
 
-#include <assert.h>
+#include <stdint.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,117 +10,100 @@
 
 #define NR_SYM_HASH 32
 
-unsigned char curctx;
+uint8_t curctx;
+uint8_t namespace = NS_KEYWORD + 1 ;
 
-static struct symbol *htab[NR_SYM_HASH];
-static struct symbol *head, *headfun;
+static struct symtab {
+	struct symbol *head;
+	struct symbol *htab[NR_SYM_HASH];
+} symtab [NR_NAMESPACES];
 
-
-unsigned char
+static inline uint8_t
 hash(register const char *s)
 {
-	register unsigned char h, ch;
+	register uint8_t h, ch;
 
 	for (h = 0; ch = *s++; h += ch)
 		/* nothing */;
-	return h;
+	return h & NR_SYM_HASH - 1;
 }
 
 void
-new_ctx(void)
+freesyms(uint8_t ns)
 {
-	++curctx;
-}
+	static struct symtab *tbl;
+	register struct symbol *sym;
 
-void
-del_ctx(void)
-{
-	register struct symbol *sym, *next;
-	static char *s;
-
-	for (sym = head; sym; sym = next) {
+	tbl = &symtab[ns];
+	for (sym = tbl->head; sym; sym = sym->next) {
 		if (sym->ctx <= curctx)
 			break;
-		if ((s = sym->name) != NULL)
-			htab[hash(s) & NR_SYM_HASH - 1] = sym->hash;
-		next = sym->next;
-		sym->next = headfun;
-		headfun = sym;
+		tbl->htab[hash(sym->name)] = sym->hash;
+		free(sym->name);
+		free(sym);
 	}
-	--curctx;
 }
 
-void
-freesyms(void)
+struct node *
+context(struct node * (*fun)(void))
 {
-	register struct symbol *sym, *next;
+	uint8_t ns;
+	struct node *np;
 
-	if (curctx == CTX_OUTER) {
-		for (sym = headfun; sym; sym = next) {
-			next = sym->next;
-			free(sym->name);
-			free(sym);
-		}
-	}
+	ns = namespace;
+	++curctx;
+	np = fun();
+	--curctx;
+	namespace = ns;
+
+	freesyms(NS_IDEN);
+	freesyms(NS_TAG);
+
+	return np;
 }
 
 struct symbol *
-lookup(register const char *s, unsigned char ns)
+lookup(register char *s, uint8_t ns)
 {
+	extern union yystype yylval;
+	static struct symtab *tbl;
 	register struct symbol *sym;
-	extern struct symbol *yyval;
-	static unsigned char key;
-	register char *t;
 
-	if (s == NULL) {
-		sym = xcalloc(1, sizeof(*sym));
-		sym->next = head;
+	if (ns == NS_IDEN && (sym = yylval.sym) && !strcmp(sym->name, s))
 		return sym;
-	}
-	if (yyval->ns == ns && !strcmp(yyval->name, s))
-		return yyval;
 
-	key = hash(s) & NR_SYM_HASH - 1;
-	for (sym = htab[key]; sym; sym = sym->hash) {
-		t = sym->name;
-		if (ns == sym->ns && *t == *s && !strcmp(t, s))
+	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
+	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
+		register char *t = sym->name;
+		if (sym->ns == ns && t && *t == *s && !strcmp(t, s))
 			return sym;
 	}
 
-	sym = xcalloc(1, sizeof(*sym));
-	sym->name = xstrdup(s);
-	sym->next = head;
-	sym->ctx = curctx;
-	sym->ns = ns;
-	sym->tok = IDEN;
-	head = sym;
-	sym->hash = htab[key];
-	htab[key] = sym;
-
-	return sym;
+	return NULL;
 }
 
-void
-insert(struct symbol *sym, unsigned char ctx)
+struct symbol *
+install(char *s, uint8_t ns)
 {
-	register struct symbol *p, *q;
+	register struct symbol *sym;
+	register struct symbol **t;
+	struct symtab *tbl;
 
-	for (q = p = head; p; q = p, p = p->next) {
-		if (p == sym)
-			break;
-	}
-	assert(p);			/* sym must be in the list */
-	q->next = p->next;		/* remove from the list */
+	if (ns == NS_KEYWORD)
+		ns = NS_IDEN;
+	else if (s != NULL)
+		s = xstrdup(s);
 
-	for (q = p = head; p; q = p, p = p->next) {
-		if (p->ctx <= ctx)
-			break;
-	}
-	if (q == NULL) {
-		head = sym;
-		sym->next = NULL;
-	} else {
-		q->next = sym;
-		sym->next = p;
-	}
+	sym = xcalloc(1, sizeof(*sym));
+	sym->name = s;
+	sym->ctx = curctx;
+	sym->token = IDEN;
+	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
+	sym->next = tbl->head;
+	tbl->head = sym;
+	t = &tbl->htab[hash(s)];
+	sym->hash = *t;
+	*t = sym;
+
+	return sym;
 }

@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "cc.h"
@@ -17,14 +18,12 @@ primary(void)
 
 	switch (yytoken) {
 	case IDEN:
-		sym = lookup(yytext, NS_IDEN);
-		if (!sym->ctype.type)
+		if ((sym = lookup(yytext, NS_IDEN)) == NULL)
 			error("'%s' undeclared", yytext);
 		next();
 		np = nodesym(sym);
 		break;
 	case CONSTANT:
-		sym = yyval;
 		next();
 		np = nodesym(sym);
 		break;
@@ -92,10 +91,9 @@ unary(void)
 	case SIZEOF:		/* TODO: Implement sizeof */
 		next();
 		if (accept('(')) {
-			struct ctype type;
 			switch (yytoken) {
-			case STORAGE: case TQUALIFIER: case TYPE:
-				type_name(&type);
+			case TQUALIFIER: case TYPE:
+				context(typename);
 				break;
 			default:
 				expr();
@@ -129,13 +127,12 @@ call_unary:
 static struct node *
 cast(void)
 {
-	struct ctype type;
-
 repeat:	if (yytoken == '(') {
 		switch (ahead()) {
-		case STORAGE: case TQUALIFIER: case TYPE:
+		case TQUALIFIER: case TYPE:
 			next();
-			type_name(&type); /* TODO: type_name should return a np*/
+			/* TODO: type_name should return a np*/
+			context(typename);
 			expect(')');
 			goto repeat;
 		default:

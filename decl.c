@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "sizes.h"
@@ -8,59 +9,76 @@
 #include "syntax.h"
 #include "symbol.h"
 
-char parser_out_home;
-/*
- * Number of nested declarations:
- * Number of nested struct declarations
- * +1 for the function declaration
- * +1 for the field declaration
- */
-static unsigned char nr_tags = NS_TAG;
-static unsigned char nested_tags;
+int8_t forbid_eof;
 
-static struct symbol *declarator(struct ctype *tp,
-                                 unsigned char ns, unsigned char isfun);
+static struct dcldata
+	*declarator0(struct dcldata *dp, uint8_t ns, int8_t flags);
 
-static struct symbol *
-directdcl(register struct ctype *tp, unsigned char ns, unsigned char isfun)
+struct dcldata {
+	uint8_t op;
+	union {
+		unsigned short nelem;
+		struct symbol *sym;
+		struct funpars *pars;
+		uint8_t qlf;
+	} u;
+};
+
+static struct dcldata *
+arydcl(struct dcldata *dp)
+{
+	expect('[');
+	expect(']');
+	if (dp->op == 255)
+		error("too much declarators");
+	dp->u.nelem = 0;
+	dp->op = ARY;
+	return dp + 1;
+}
+
+static struct dcldata *
+fundcl(struct dcldata *dp)
+{
+	expect('(');
+	expect(')');;
+	if (dp->op == 255)
+		error("too much declarators");
+	dp->op = FTN;
+	dp->u.pars = NULL;
+	return dp + 1;
+}
+
+static struct dcldata*
+directdcl(struct dcldata *dp, uint8_t ns, int8_t flags)
 {
 	register struct symbol *sym;
-	register char *err;
+	char *err;
 
 	if (accept('(')) {
-		sym = declarator(tp, ns, isfun);
+		dp = declarator0(dp, ns, flags);
 		expect(')');
-	} else if (ns != NS_TYPE) {
-		if (yytoken == IDEN) {
+	} else if (flags) {
+		if (yytoken != IDEN) {
+			if (flags > 0)
+				goto expected;
+			sym = install(NULL, ns);
+		} else {
 			sym = lookup(yytext, ns);
-			if (!sym->ctype.type)
-				sym->ctx = curctx;
-			else if (sym->ctx == curctx)
+			if (sym && sym->ctx == curctx)
 				goto redeclared;
+			sym = install(yytext, ns);
 			next();
-		} else if (!isfun) {
-			goto expected;
 		}
+		dp->op = IDEN;
+		dp->u.sym = sym;
+		++dp;
 	}
 
 	for (;;) {
-		if (accept('(')) {
-			pushtype(FTN);
-			if (yytoken != ')')
-				;   /* TODO: prototyped function */;
-			expect(')');
-		} else if (accept('[')) {
-			unsigned len = '0';
-
-			if (yytoken != ']') {
-				expect(CONSTANT);
-				len = yyval->i;
-			}
-			expect(']');
-			pushtype(len);
-			pushtype(ARY);
-		} else {
-			return sym;		
+		switch (yytoken) {
+		case '(':  dp = fundcl(dp); break;
+		case '[':  dp = arydcl(dp); break;
+		default:   return dp;
 		}
 	}
 
@@ -72,459 +90,272 @@ expected:
 error:	error(err, yytext);
 }
 
-struct ctype *
-ctype(struct ctype *tp, unsigned char tok)
+static struct dcldata*
+declarator0(struct dcldata *dp, uint8_t ns, int8_t flags)
 {
-	register unsigned char type;
-	static char *err;
-
-	type = tp->type;
-
-
-	switch (tok) {
-	case VOID: case BOOL: case STRUCT: case UNION: case ENUM: case BITFLD:
-		if (type)
-			goto two_or_more;;
-		type = tok;
-		if (tp->c_signed || tp->c_unsigned)
-			goto invalid_sign;
-		break;
-	case CHAR:
-		if (type)
-			goto two_or_more;
-		type = CHAR;
-		break;
-	case SHORT:
-		if (type && type != INT)
-			goto two_or_more;
-		type = SHORT;
-		break;
-	case INT:
-		switch (type) {
-		case 0:       type = INT;       break;
-		case SHORT:   type = SHORT;     break;
-		case LONG:    type = LONG;      break;
-		default:      goto two_or_more;
+	if (accept('*')) {
+		register uint8_t qlf = 0;
+		while (yytoken == TQUALIFIER) {
+			qlf |= yylval.sym->u.c;
+			next();
 		}
-		break;
-	case LONG:
-		switch (type) {
-		case 0:
-		case INT:     type = LONG;      break;
-		case LONG:    type = LLONG;     break;
-		case DOUBLE:  type = LDOUBLE;   break;
-		case LLONG:
-		case LDOUBLE:  error("too much long");
-		}
-		break;
-	case FLOAT:
-		if (type)
-			goto two_or_more;
-		type = FLOAT;
-		if (tp->c_signed || tp->c_unsigned)
-			goto invalid_sign;
-		break;
-	case DOUBLE:
-		if (type)
-			goto two_or_more;
-		if (!type)
-			type = DOUBLE;
-		else if (type == LONG)
-			type = LDOUBLE;
-		if (tp->c_signed || tp->c_unsigned)
-			goto invalid_sign;
-		break;
-	case UNSIGNED:
-		if (tp->c_unsigned)
-			goto duplicated;
-		if (tp->c_signed)
-			goto both_sign;
-		tp->c_unsigned = 1;
-		goto check_sign;
-	case SIGNED:
-		if (tp->c_signed)
-			goto duplicated;
-		if (tp->c_unsigned)
-			goto both_sign;
-		tp->c_signed = 1;
-
-check_sign:	switch (type) {
-		case VOID: case BOOL: case FLOAT: case DOUBLE: case LDOUBLE:
-			goto invalid_sign;
-		}
-		break;
-	case TYPENAME:
-		assert(!type);
-		if (tp->c_signed || tp->c_unsigned)
-			goto invalid_sign;
-		type = TYPEDEF;
-		break;
-	default:
-		assert(0);
+		dp = declarator0(dp, ns, flags);
+		if (dp->op == 255)
+			error("too much declarators");
+		dp->op = PTR;
+		dp->u.qlf = qlf;
+		return dp + 1;
+	} else {
+		return directdcl(dp, ns, TQUALIFIER);
 	}
-	tp->type = type;
-	return tp;
-
-both_sign:
-	err = "both 'signed' and 'unsigned' in declaration specifiers";
-	goto error;
-duplicated:
-	err = "duplicated '%s'";
-	goto error;
-invalid_sign:
-	err = "invalid sign modifier";
-	goto error;
-two_or_more:
-	err = "two or more basic types";
-error:	error(err, yytext);
-}
-
-static void structdcl(register struct ctype *tp);
-static void enumdcl(struct ctype *base);
-
-static void
-specifier(register struct ctype *tp, char *store, char *qlf)
-{
-	unsigned char tok;
-
-	for (;; next()) {
-		switch (yytoken) {
-		case TQUALIFIER:
-			if (*qlf && !options.repeat)
-				error("duplicated '%s'", yytext);
-			if (yyval->c == RESTRICT)
-				error("invalid use of restrict");
-			*qlf |= yyval->c;
-			break;
-		case STORAGE:
-			if (*store)
-				error("two or more storage specifier");
-			/* TODO: check bad storage in file-scope */
-			*store |= yyval->c;
-			break;
-		case TYPE:
-			tp = ctype(tp, tok = yyval->c);
-			switch (tok) {
-			case ENUM: case STRUCT: case UNION:
-				next();
-				if (tok == ENUM)
-					enumdcl(tp);
-				else
-					structdcl(tp);
-				return;
-			case TYPENAME:
-				tp->base = &yyval->ctype;
-				break;
-			}
-			break;
-		default:
-			goto check_type;
-		}
-	}
-
-check_type:
-	if (!tp->c_signed && !tp->c_unsigned) {
-		switch (tp->type) {
-		case CHAR:
-			if (!options.charsign) {
-		case BOOL:	tp->c_unsigned = 1;
-				break;
-			}
-		case INT: case SHORT: case LONG: case LLONG:
-			tp->c_signed = 1;
-		}
-	} else if (!tp->type) {
-		tp->type = INT;
-	}
-	return;
 }
 
 static struct symbol *
-declarator(struct ctype *tp, unsigned char ns, unsigned char isfun)
+declarator(struct ctype *tp, uint8_t ns, int8_t flags)
 {
-	unsigned char qlf[NR_DECLARATORS];
-	register unsigned char *bp;
-	register unsigned char n = 0;
+	struct dcldata data[NR_DECLARATORS+1];
+	register struct dcldata *bp;
 	struct symbol *sym;
 
-	if (yytoken == '*') {
-		for (bp = qlf; n < NR_DECLARATORS ; ++n) {
-			if (yytoken == '*')
-				*bp++ = PTR;
-			else if (yytoken == TQUALIFIER)
-				*bp++ = yyval->c;
-			else
-				goto direct;
+	data[NR_DECLARATORS].op = 255;
+	for (bp = declarator0(data, ns, flags); bp >= data; --bp) {
+		switch (bp->op) {
+		case PTR:
+			tp = qualifier(mktype(tp, PTR, NULL, 0), bp->u.qlf);
+			break;
+		case ARY:
+			tp = mktype(tp, ARY, NULL, bp->u.nelem);
+			break;
+		case FTN:
+			tp = mktype(tp, FTN, NULL, 0);
+			break;
+		case IDEN:
+			sym = bp->u.sym;
+			break;
 		}
-		error("Too much type declarators");
+	}
+	sym->type = tp;
+	return sym;
+}
+
+static struct ctype *structdcl(void), *enumdcl(void);
+
+static struct ctype *
+specifier(int8_t *sclass)
+{
+	struct ctype *tp = NULL;
+	int8_t qlf, sign, type, cls, cplex, size;
+
+	qlf = sign = type = cls = size = cplex = 0;
+
+	for (;;) {
+		register uint8_t *p;
+		struct symbol *sym = yylval.sym;
+
+		switch (yytoken) {
+		case SCLASS: p = &cls; break;
+		case TQUALIFIER:
+			if ((qlf |= sym->u.c) & RESTRICT)
+				goto invalid_type;
+			goto next_token;
+		case TYPE:
+			switch (sym->u.c) {
+			case ENUM:
+				tp = enumdcl();   goto set_type;
+			case STRUCT:   case UNION:
+				tp = structdcl(); goto set_type;
+			case TYPENAME:
+				tp = yylval.sym->type;
+			case VOID:   case BOOL:  case CHAR:
+			case INT:    case FLOAT: case DOUBLE:
+set_type:			p = &type; break;
+			case SIGNED: case UNSIGNED:
+				p = &sign; break;
+			case LONG:
+				if (size == LONG) {
+					size = LONG+LONG;
+					goto next_token;
+				}
+			case SHORT:
+				p = &size; break;
+			case COMPLEX: case IMAGINARY:
+				p = &cplex; break;
+			}
+			break;
+		default:
+			goto check_types;
+		}
+		if (*p)
+			goto invalid_type;
+		*p = sym->u.c;
+next_token:	next();
 	}
 
-direct:	sym = directdcl(tp, ns, isfun);
+check_types:
+	if (!type) {
+		if (!sign && !size) {
+			warn(options.implicit,
+			     "type defaults to 'int' in declaration");
+		}
+		type = INT;
+	}
+	if (sign && type != INT && type != CHAR ||
+	    cplex && type != FLOAT && type != DOUBLE ||
+	    size == SHORT && type != INT ||
+	    size == LONG  && type != INT && type != DOUBLE ||
+	    size == LONG+LONG && type != INT) {
+		goto invalid_type;
+	}
+	if (sclass)
+		*sclass = cls;
+	if (!tp)
+		tp = ctype(type, sign, size, cplex);
+	return (qlf) ? qualifier(tp, qlf) : tp;
 
-	for (bp = qlf; n--; pushtype(*bp++))
-		/* nothing */;
-	return sym;
+invalid_type:
+	error("invalid type specification");
 }
 
 static struct node *
 initializer(register struct ctype *tp)
 {
 	if (accept('{')) {
-		struct compound c;
-
-		c.tree = NULL;
-		addstmt(&c, initializer(tp));
-		while (accept(',')) {
-			if (accept('}'))
-				return c.tree;
-			addstmt(&c, initializer(tp));
-		}
+		initializer(tp);
 		expect('}');
-		return c.tree;
 	} else {
-		return expr();
+		do {
+			expr();
+		} while (accept(','));
 	}
 }
 
-static struct node *
-listdcl(struct ctype *base,
-        char store, char qlf,
-	unsigned char ns, unsigned char isfun)
+static struct ctype *
+structdcl(void)
 {
-	struct compound c;
-	char *err;
+	uint8_t type = yylval.sym->u.c;
 
-	c.tree = NULL;
-
-	if (yytoken == ';')
-		return NULL;
-
-	do {
-		struct node *np, *aux;
-		register struct ctype *tp;
-		register struct symbol *sym;
-
-		sym = declarator(base, ns, isfun);
-		sym->store = store;
-		sym->qlf = qlf;
-		sym->ctype = *decl_type(base);
-		if (sym->store) {
-			sym->tok = TYPE;
-			sym->c = TYPENAME;
-		}
-		tp = &sym->ctype;
-		aux = NULL;
-
-		switch (tp->type) {
-		case FTN:
-			if (ns != NS_IDEN)
-				goto bad_type;
-			if (yytoken == '{') {
-				if (curctx != CTX_OUTER)
-					goto local_fun;
-				aux = function(sym);
-				addstmt(&c, node(ODEF, nodesym(sym), aux));
-				return c.tree;
-			}
-			goto add_stmt;
-		case INT: case BOOL:
-			if (ns != NS_IDEN && accept(':')) {
-				expect(CONSTANT);
-				tp = ctype(NULL, BITFLD);
-				tp->len = yyval->i;
-				goto add_stmt;
-			}
-			goto add_init;
-		case STRUCT: case UNION:
-			if (tp->forward)
-				goto incomplete;
-		default:
-		add_init:
-			if (ns == NS_IDEN) {
-				if (accept('='))
-					aux = initializer(tp);
-			}
-		add_stmt:
-			addstmt(&c, node(ODEF, nodesym(sym), aux));
-		}
-	} while (accept(','));
-
-	return c.tree;
-
-bad_type:
-	err = "incorrect type for field";
-	goto error;
-local_fun:
-	err = "cannot use local functions";
-	goto error;
-incomplete:
-        err = "declaration of variable with incomplete type";
-error: error(err);
+	next();
+	if (yytoken == IDEN) {
+	}
+	return NULL;
 }
 
-static unsigned char
-newtag(unsigned char type)
+static struct ctype *
+enumdcl(void)
 {
-	if (type == ENUM)
-		return 0;
-	if (nr_tags == NS_TAG + NR_MAXSTRUCTS)
-		error("too much structs/unions defined");
-	return ++nr_tags;
+	return NULL;
+}
+
+struct node *
+decl(void)
+{
+	struct ctype *tp;
+	struct symbol *sym;
+	int8_t sclass;
+
+	tp = specifier(&sclass);
+	if (yytoken != ';') {
+		do {
+			 sym = declarator(tp, NS_IDEN, 1);
+			/* assign storage class */
+			if (accept('='))
+				initializer(sym->type);
+		} while (accept(','));
+	}
+
+	expect(';');
+	return NULL;
 }
 
 static struct symbol *
-aggregate(register struct ctype *tp)
+fielddcl(void)
 {
-	struct symbol *sym = NULL;
-
-	tp->forward = 1;
-	if (yytoken == IDEN) {
-		register struct ctype *aux;
-
-		sym = lookup(yytext, NS_TAG);
-		aux = &sym->ctype;
-		if (aux->type) {
-			if (aux->type != tp->type)
-				goto bad_type;
-			*tp = *aux;
-		} else {
-			tp->tag = sym->name;
-			tp->ns = newtag(tp->type);
-			sym->ctype = *tp;
-		}
-		next();
-	} else {
-		tp->ns = newtag(tp->type);
-	}
-
-	return sym;
-
-bad_type:
-	error("'%s' defined as wrong kind of tag", yytext);
-}
-
-static void
-structdcl(register struct ctype *tp)
-{
+	struct ctype *tp;
 	struct symbol *sym;
-
-	sym = aggregate(tp);
-
-	if (!accept('{'))
-		return;
-
-	if (sym && !sym->ctype.forward)
-		error("struct/union already defined");
-
-	if (nested_tags == NR_STRUCT_LEVEL)
-		error("too much nested structs/unions");
-
-	++nested_tags;
-	while (!accept('}')) {
-		struct ctype base;
-		struct node *np;
-		char store = 0, qlf = 0;
-
-		initctype(&base);
-		specifier(&base, &store, &qlf);
-
-		if (store)
-			error("storage specifier in a struct/union field declaration");
-
-		listdcl(&base, store, qlf, tp->ns, 0);
-		expect(';');
-	}
-	--nested_tags;
-
-	if (sym)
-		sym->ctype.forward = 0;
-	tp->forward = 0;
-}
-
-static void
-enumdcl(struct ctype *base)
-{
-	static int val;
-
-	aggregate(base);
-	if (!accept('{'))
-		return;
-	val = 0;
-
-	do {
-		register struct symbol *sym;
-		register struct ctype *tp;
-
-		if (yytoken != IDEN)
-			break;
-		sym = lookup(yytext, NS_IDEN);
-		tp = &sym->ctype;
-		if (tp->type && sym->ctx == curctx)
-			error("'%s' redefined", yytext);
-		next();
-		if (accept('=')) {
-			expect(CONSTANT);
-			val = yyval->i;
-		}
-		ctype(tp, INT);
-		tp->base = base;
-		sym->i = val++;
-	} while (accept(','));
-
-	expect('}');
-}
-
-struct node *
-decl(unsigned char ns)
-{
-	struct ctype base;
-	struct node *np;
-	char store = 0, qlf = 0;
-
-	initctype(&base);
-	specifier(&base, &store, &qlf);
-
-	if (store && ns != NS_IDEN)
-		error("storage specifier in a struct/union field declaration");
-
-	np = listdcl(&base, store, qlf, ns, 0);
-	expect(';');
-	return np;
-}
-
-void
-type_name(struct ctype *tp)
-{
-	char store = 0, qlf = 0;
-
-	initctype(tp);
-	specifier(tp, &store, &qlf);
-	declarator(tp, NS_TYPE, 0);
-	return;
-}
-
-struct node *
-extdecl(void)
-{
-	struct ctype base;
-	struct node *np;
-	char store = 0, qlf = 0;
-
-	initctype(&base);
 
 	switch (yytoken) {
 	case IDEN:
 		warn(options.implicit,
 		     "type defaults to 'int' in declaration");
-		base.type = INT;
+		tp = inttype;
 		break;
-	case TYPE: case STORAGE: case TQUALIFIER:
-		specifier(&base, &store, &qlf);
+	case SCLASS:
+		error("storage class '%s' in struct/union field", yytext);
+	case TYPE: case TQUALIFIER:
+		tp = specifier(NULL);
+		break;
+	case ';':
 		break;
 	default:
 		error("declaration expected");
 	}
 
-	np = listdcl(&base, store, qlf, 0, 0);
+	if (yytoken != ';') {
+		do {
+			sym = declarator(tp, 0, 1);
+			if (accept(':'))
+				; /* TODO: bitfields */
+			/* TODO: add to the aggregate */
+		} while (accept(','));
+	}
+
 	expect(';');
+	return NULL;
+}
+
+struct node *
+typename(void)
+{
+	declarator(specifier(NULL), NS_IDEN, -1)->type;
+	return  NULL;
+}
+
+struct node *
+extdecl(void)
+{
+	struct ctype *tp;
+	int8_t sclass;
+	struct symbol *sym;
+	extern struct symbol *curfun;
+
+	forbid_eof = 1;
+
+	switch (yytoken) {
+	case IDEN:
+		warn(options.implicit,
+		     "type defaults to 'int' in declaration");
+		tp = inttype;
+		break;
+	case TYPE: case SCLASS: case TQUALIFIER:
+		tp = specifier(&sclass);
+		if (sclass == REGISTER || sclass == AUTO)
+			error("incorrect storage class for file-scope declaration");
+		break;
+	case ';':
+		break;
+	default:
+		error("declaration expected");
+	}
+
+	if (yytoken != ';') {
+		do {
+			extern void printtype(struct ctype *tp);
+			sym = declarator(tp, NS_IDEN, 1);
+			printtype(sym->type);
+			/* assign storage class */
+			if (isfun(sym)) {
+				if (yytoken == '{') {
+					curfun = sym;
+					context(function);
+					freesyms(NS_LABEL);
+				}
+			} else if (accept('=')) {
+				initializer(sym->type);
+			}
+		} while (accept(','));
+	}
+
+	forbid_eof = 0;
+	expect(';');
+	return NULL;
 }

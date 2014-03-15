@@ -1,80 +1,77 @@
 
-#pragma once
 #ifndef SYMBOL_H
 #define SYMBOL_H
-
-#if ! __bool_true_false_are_defined
-# include <stdbool.h>
-#endif
 
 #define CTX_OUTER 0
 #define CTX_FUNC  1
 
+#define isfun(t) 0
+
 enum {
 	NS_IDEN = 0,
-	NS_TYPE,
 	NS_LABEL,
-	NS_TAG
+	NS_TAG,
+	NR_NAMESPACES,
+	NS_KEYWORD,
+	NS_FREE
 };
 
+struct funpars;
+struct symbol;
 
 struct ctype {
-	unsigned type : 5;
-	bool c_const : 1;
-	bool c_restrict : 1;
-	bool c_volatile : 1;
-	bool c_unsigned : 1;
-	bool c_signed : 1;
-	bool forward : 1;
-	union {
-		struct {
-			unsigned char ns;
-			char *tag;
-		};
-		unsigned len;
-	};
-	struct ctype *base;
+	uint8_t op;           /* type builder operator */
+	uint8_t size;         /* size of variables */
+	uint16_t nelem;       /* number of elements in arrays */
+	unsigned forward : 1;     /* forward type */
+	unsigned cplex : 1;   /* complex specifier */
+	unsigned imag : 1;
+	unsigned sign : 1;        /* sign type */
+	struct symbol *sym;   /* symbol of the tag identifier */
+	struct ctype *type;   /* base type */
+	struct ctype *next;   /* next element in the hash */
+	struct funpars *pars; /* function parameters */
+};
+
+struct funpars {
+	struct ctype *type;
+	struct funpars *next;
 };
 
 struct symbol {
-	struct ctype ctype;
-	char store;
-	char qlf;
-	unsigned char ctx;
-	unsigned char ns;
 	char *name;
-	unsigned char tok;
-	struct {
-		union {
-			char c;   /* numerical constants */
-			short s;
-			int i;
-			long *l;
-			long long *ll;
-			unsigned char label;
-		};
-	};
+	struct ctype *type;
+	uint8_t ctx;
+	uint8_t token;
+	uint8_t ns;
+	union {
+		char c;
+	} u;
 	struct symbol *next;
 	struct symbol *hash;
 };
 
+extern void freesyms(uint8_t ns);
 
-extern struct ctype *decl_type(struct ctype *t);
-extern void pushtype(unsigned mod);
-extern struct ctype *ctype(struct ctype *tp, unsigned char tok);
-extern void new_ctx(void);
-extern void del_ctx(void);
-extern void freesyms(void);
-extern struct symbol *lookup(const char *s, unsigned char ns);
-extern void insert(struct symbol *sym, unsigned char ctx);
-extern void delctype(struct ctype *tp);
-extern unsigned char hash(register const char *s);
-extern struct ctype *initctype(register struct ctype *tp);
+extern struct ctype *qualifier(struct ctype *tp, uint8_t qlf),
+	*ctype(int8_t type, int8_t sign, int8_t size, int8_t cplex),
+	*mktype(struct ctype *tp,
+	        uint8_t op, struct symbol *tag, uint16_t nelem);
 
-#ifndef NDEBUG
-extern void ptype(register struct ctype *t);
-#else
-#  define ptype(t)
-#endif
+extern struct symbol
+	*lookup(char *s, unsigned char ns),
+	*install(char *s, unsigned char ns);
+
+extern struct node *context(struct node * (*fun)(void));
+
+extern struct ctype *voidtype,
+	*uchartype,   *chartype,
+	*uinttype,    *inttype,
+	*ushortype,   *shortype,
+	*longtype,    *ulongtype,
+	*ullongtype,  *llongtype,
+	*floattype,   *cfloattype,  *ifloattype,
+	*doubletype,  *cdoubletype, *idoubletype,
+	*ldoubletype, *cldoubletype,*ildoubletype;
 
 #endif

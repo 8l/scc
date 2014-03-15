@@ -5,21 +5,47 @@
 # include <stdbool.h>
 #endif
 
+#define FLOAT         1
+#define INT           2
+#define BOOL          3
+#define PTR           4
+#define ARY           5
+#define FTN           6
 
-/* Don't change this codification because program used it!!! */
+#define VOID          7
+#define STRUCT        8
+#define UNION         9
+#define ENUM         10
+#define TYPENAME     11
+
+#define CHAR         12
+#define DOUBLE       13
+#define SHORT        14
+#define LONG         15
+
+#define COMPLEX      16
+#define IMAGINARY    17
+#define UNSIGNED     18
+#define SIGNED       19
+
+#define BITFLD       20
+
+#define CONST         (1<<0)
+#define VOLATILE      (1<<1)
+#define RESTRICT      (1<<2)
+
+#define TYPEDEF       1
+#define EXTERN        2
+#define STATIC        3
+#define AUTO          4
+#define REGISTER      5
+
+#define accept(t) ((bool) (yytoken == (t) ? next() : 0))
+#define ahead()   yyntoken
+
 enum tokens {
-	/* types */
-	INT = 1, CHAR, FLOAT, LONG, LLONG, SHORT, VOID, DOUBLE,
-	LDOUBLE, STRUCT, UNION, ENUM, BOOL, ARY, PTR, FTN,
-	COMPLEX, IMAGINARY, BITFLD, TYPENAME, TYPE,
-	/* type qualifier */
-	TQUALIFIER,
-	/* sign specifier */
-	UNSIGNED, SIGNED,
-	/* storage specifier */
-	STORAGE,
-	/* other tokens */
-	IDEN = 128, CONSTANT, SIZEOF,
+	TQUALIFIER = 128, TYPE, IDEN, SCLASS,
+	CONSTANT, SIZEOF,
 	INDIR, INC, DEC, SHL, SHR,
 	LE, GE, EQ, NE, AND, OR,
 	MUL_EQ, DIV_EQ, MOD_EQ, ADD_EQ, SUB_EQ, AND_EQ,
@@ -29,28 +55,17 @@ enum tokens {
 	CONTINUE, BREAK, RETURN, EOFTOK, NOTOK
 };
 
-#define TYPEDEF    (1<<0)
-#define EXTERN     (1<<1)
-#define STATIC     (1<<2)
-#define AUTO       (1<<3)
-#define REGISTER   (1<<4)
-
-#define VOLATILE   (1<<0)
-#define CONST      (1<<1)
-#define RESTRICT   (1<<2)
-
 struct symbol;
-extern struct symbol *yyval;
+union yystype {
+	struct symbol *sym;
+};
 
+extern union yystype yylval;
 extern char yytext[];
-extern size_t yylen;
-extern unsigned char yytoken;
+extern uint8_t yytoken, yyntoken;
 
 
-extern void init_lex(void);
-extern void next(void);
-extern char accept(unsigned char tok);
-extern void expect(unsigned char tok);
-extern void init_keywords(void);
-extern unsigned char ahead(void);
+extern void init_lex(void), init_keywords(void), expect(uint8_t tok);
+extern uint8_t next(void);
+
 #endif

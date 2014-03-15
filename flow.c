@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "cc.h"
@@ -13,7 +14,7 @@ static struct node *stmt(void);
 
 static unsigned char blocks[NR_BLOCK];
 static unsigned char *blockp = blocks;
-static struct symbol *curfun;
+struct symbol *curfun;
 
 static void
 push(register unsigned char b)
@@ -139,10 +140,8 @@ label(void)
 {
 	register struct symbol *sym = lookup(yytext, NS_LABEL);
 
-	if (sym->label)
-		error("label '%s' already defined", yytext);
-	insert(sym, CTX_FUNC);
-	sym->label = 1;
+	/* TODO: detect repeated labels */
+	/* TODO: install in symbol table */
 	next(), next();  	/* skip IDEN and ':' */
 	return node(OLABEL, nodesym(sym), stmt());
 }
@@ -221,28 +220,19 @@ Default(void)
 static struct node *
 compound(void)
 {
-	register struct node *np;
-	unsigned char nodecl = 0;
-	struct compound c;
-
-	c.tree = NULL;
 	expect('{');
-	new_ctx();
-	while (!accept('}')) {
-		if (np = decl(0)) {
-			if (nodecl) {
-				warn(options.mixdcls,
-				     "mixed declarations and code");
-			}
-		} else {
-			np = stmt();
-			nodecl = 1;
-		}
-		addstmt(&c, np);
-	}
-	del_ctx();
 
-	return c.tree;
+repeat:	switch (yytoken) {
+	case TYPE: case SCLASS: case TQUALIFIER:
+		decl();
+		goto repeat;
+	case '}':
+		next();
+		return NULL;
+	default:
+		stmt();
+		goto repeat;
+	}
 }
 
 static struct node *
@@ -251,7 +241,7 @@ stmt(void)
 	register struct node *np;
 
 	switch (yytoken) {
-	case '{':      return compound();
+	case '{':      return context(compound);
 	case SWITCH:   return Switch();
 	case IF:       return If();
 	case FOR:      return For();
@@ -271,16 +261,8 @@ stmt(void)
 }
 
 struct node *
-function(register struct symbol *sym)
+function(void)
 {
-	curfun = sym;
 	return node(OFTN, compound(), NULL);
 }
 
-void
-run(register struct node *np)
-{
-	prtree(np);
-	putchar('\n');
-	freesyms();
-}
