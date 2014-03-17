@@ -28,8 +28,6 @@
 #define UNSIGNED     18
 #define SIGNED       19
 
-#define BITFLD       20
-
 #define CONST         (1<<0)
 #define VOLATILE      (1<<1)
 #define RESTRICT      (1<<2)

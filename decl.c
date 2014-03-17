@@ -178,11 +178,10 @@ specifier(int8_t *sclass)
 				goto invalid_type;
 			goto next_token;
 		case TYPE:
-			switch (sym->u.c) {
+			switch (t = sym->u.c) {
 			case ENUM: case STRUCT: case UNION:
-				t = sym->u.c;
 				next();
-				tp = (t == UNION) ? enumdcl(t) : structdcl(t);
+				tp = (t == ENUM) ? enumdcl(t) : structdcl(t);
 				p = &type;
 				goto check_spec;
 			case TYPENAME:
@@ -328,10 +327,10 @@ structdcl(uint8_t tag)
 		expect('{');
 		if (tp->defined)
 			goto redefined;
-		while (!accept('}'))
-			size = fielddcl(namespace, tag);
-		tp->size = size;
 		tp->defined = 1;
+		while (!accept('}'))
+			size = fielddcl(namespace, tag);/* TODO: check duplicated */
+		tp->size = size;
 	}
 
 	return tp;
@@ -343,7 +342,38 @@ redefined:
 static struct ctype *
 enumdcl(uint8_t token)
 {
-	/* TODO: create function for creating identifiers */
+	register struct ctype *tp;
+	struct symbol *sym;
+	int val = 0;
+	char *err;
+
+	tp = newtag(ENUM);
+	if (yytoken != ';') {
+		expect('{');
+		if (tp->defined)
+			goto redefined;
+		tp->defined = 1;
+		while (yytoken != '}') {
+			if (yytoken != IDEN)
+				goto iden_expected;
+			sym = newiden(namespace); /* TODO: check duplicated */
+			if (accept('='))
+				initializer(inttype);
+			sym->u.i = val++;
+			if (!accept(','))
+				break;
+		}
+		expect('}');
+	}
+
+	return tp;
+
+redefined:
+	err = "redefinition of enumeration '%s'";
+	goto error;
+iden_expected:
+	err = "identifier expected";
+error:	error(err, yytext);
 }
 
 struct node *

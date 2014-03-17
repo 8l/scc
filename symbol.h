@@ -46,6 +46,7 @@ struct symbol {
 	uint8_t ns;
 	union {
 		char c;
+		int i;
 		short offset;
 	} u;
 	struct symbol *next;
