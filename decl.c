@@ -252,7 +252,7 @@ fielddcl(uint8_t ns, uint8_t type)
 {
 	struct ctype *tp;
 	struct symbol *sym;
-	short offset = 0;
+	short offset = 0, size;
 
 	switch (yytoken) {
 	case IDEN:
@@ -275,8 +275,11 @@ fielddcl(uint8_t ns, uint8_t type)
 		do {
 			sym = declarator(tp, ns, 1);
 			sym->u.offset = offset;
+			size = sym->type->size;
 			if (type == STRUCT)
-				offset += sym->type->size;
+				offset += size;
+			else if (offset < size)
+				offset = size;
 		} while (accept(','));
 	}
 
@@ -305,7 +308,7 @@ structdcl(uint8_t tag)
 	} else {
 		sym = install(NULL, NS_TAG);
 	}
-	sym->type = tp = mktype(NULL, tag, NULL, 0);
+	sym->type = tp = mktype(NULL, STRUCT, NULL, 0);
 	++namespace;
 
 	if (yytoken != ';') {
