@@ -11,9 +11,6 @@
 
 int8_t forbid_eof;
 
-static struct dcldata
-	*declarator0(struct dcldata *dp, uint8_t ns, int8_t flags);
-
 struct dcldata {
 	uint8_t op;
 	union {
@@ -23,6 +20,9 @@ struct dcldata {
 		uint8_t qlf;
 	} u;
 };
+
+static struct dcldata
+	*declarator0(struct dcldata *dp, uint8_t ns, int8_t flags);
 
 static struct dcldata *
 arydcl(struct dcldata *dp)
@@ -90,8 +90,6 @@ expected:
 error:	error(err, yytext);
 }
 
-/* TODO: Add a token2 field in yylval to avoid yylval.sym->u.c */
-
 static struct dcldata*
 declarator0(struct dcldata *dp, uint8_t ns, int8_t flags)
 {
@@ -155,13 +153,13 @@ declarator(struct ctype *tp, uint8_t ns, int8_t flags)
 	return sym;
 }
 
-static struct ctype *structdcl(void), *enumdcl(void);
+static struct ctype *structdcl(uint8_t tag), *enumdcl(uint8_t tag);
 
 static struct ctype *
 specifier(int8_t *sclass)
 {
 	struct ctype *tp = NULL;
-	int8_t qlf, sign, type, cls, cplex, size;
+	int8_t qlf, sign, type, cls, cplex, size, t;
 
 	qlf = sign = type = cls = size = cplex = 0;
 
@@ -177,15 +175,16 @@ specifier(int8_t *sclass)
 			goto next_token;
 		case TYPE:
 			switch (sym->u.c) {
-			case ENUM:
-				tp = enumdcl();   goto set_type;
-			case STRUCT:   case UNION:
-				tp = structdcl(); goto set_type;
+			case ENUM: case STRUCT: case UNION:
+				t = sym->u.c;
+				tp = (t == UNION) ? enumdcl(t) : structdcl(t);
+				p = &type;
+				goto check_spec;
 			case TYPENAME:
 				tp = yylval.sym->type;
 			case VOID:   case BOOL:  case CHAR:
 			case INT:    case FLOAT: case DOUBLE:
-set_type:			p = &type; break;
+				p = &type; goto next_token;
 			case SIGNED: case UNSIGNED:
 				p = &sign; break;
 			case LONG:
@@ -194,18 +193,18 @@ set_type:			p = &type; break;
 					goto next_token;
 				}
 			case SHORT:
-				p = &size; break;
+				p = &size; goto next_token;
 			case COMPLEX: case IMAGINARY:
-				p = &cplex; break;
+				p = &cplex; goto next_token;
 			}
 			break;
 		default:
 			goto check_types;
 		}
-		if (*p)
+next_token:	next();
+check_spec:	if (*p)
 			goto invalid_type;
 		*p = sym->u.c;
-next_token:	next();
 	}
 
 check_types:
@@ -246,49 +245,14 @@ initializer(register struct ctype *tp)
 	}
 }
 
-static struct ctype *
-structdcl(void)
-{
-	uint8_t type = yylval.sym->u.c;
-
-	next();
-	if (yytoken == IDEN) {
-	}
-	return NULL;
-}
-
-static struct ctype *
-enumdcl(void)
-{
-	return NULL;
-}
-
-struct node *
-decl(void)
+/* TODO: add define for the 3 parameter of declarator */
+/* TODO: bitfields */
+static short
+fielddcl(uint8_t ns, uint8_t type)
 {
 	struct ctype *tp;
 	struct symbol *sym;
-	int8_t sclass;
-
-	tp = specifier(&sclass);
-	if (yytoken != ';') {
-		do {
-			 sym = declarator(tp, NS_IDEN, 1);
-			/* assign storage class */
-			if (accept('='))
-				initializer(sym->type);
-		} while (accept(','));
-	}
-
-	expect(';');
-	return NULL;
-}
-
-static struct symbol *
-fielddcl(void)
-{
-	struct ctype *tp;
-	struct symbol *sym;
+	short offset = 0;
 
 	switch (yytoken) {
 	case IDEN:
@@ -309,10 +273,76 @@ fielddcl(void)
 
 	if (yytoken != ';') {
 		do {
-			sym = declarator(tp, 0, 1);
-			if (accept(':'))
-				; /* TODO: bitfields */
-			/* TODO: add to the aggregate */
+			sym = declarator(tp, ns, 1);
+			sym->u.offset = offset;
+			if (type == STRUCT)
+				offset += sym->type->size;
+		} while (accept(','));
+	}
+
+	expect(';');
+	return offset;
+}
+
+static struct ctype *
+structdcl(uint8_t tag)
+{
+	register struct symbol *sym;
+	struct ctype *tp;
+	short size;
+	extern uint8_t namespace;
+
+	next();
+	if (yytoken == IDEN) {
+		sym = lookup(yytext, NS_TAG);
+		if (sym) {
+			if (sym->type->op != tag)
+				goto bad_tag;
+		} else {
+			sym = install(yytext, NS_TAG);
+		}
+		next();
+	} else {
+		sym = install(NULL, NS_TAG);
+	}
+	sym->type = tp = mktype(NULL, tag, NULL, 0);
+	++namespace;
+
+	if (yytoken != ';') {
+		expect('{');
+		while (!accept('}'))
+			size = fielddcl(namespace, tag);
+	} else {
+		size = 0;
+	}
+	tp->size = size;
+
+	return tp;
+
+bad_tag:
+	error("error '%s' defined as wrong kind of tag", yytext);
+}
+
+static struct ctype *
+enumdcl(uint8_t token)
+{
+	return NULL;
+}
+
+struct node *
+decl(void)
+{
+	struct ctype *tp;
+	struct symbol *sym;
+	int8_t sclass;
+
+	tp = specifier(&sclass);
+	if (yytoken != ';') {
+		do {
+			 sym = declarator(tp, NS_IDEN, 1);
+			/* assign storage class */
+			if (accept('='))
+				initializer(sym->type);
 		} while (accept(','));
 	}
 

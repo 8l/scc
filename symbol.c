@@ -101,9 +101,12 @@ install(char *s, uint8_t ns)
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	sym->next = tbl->head;
 	tbl->head = sym;
-	t = &tbl->htab[hash(s)];
-	sym->hash = *t;
-	*t = sym;
+
+	if (s != NULL) {
+		t = &tbl->htab[hash(s)];
+		sym->hash = *t;
+		*t = sym;
+	}
 
 	return sym;
 }

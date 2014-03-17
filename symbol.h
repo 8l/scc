@@ -23,10 +23,10 @@ struct ctype {
 	uint8_t op;           /* type builder operator */
 	uint8_t size;         /* size of variables */
 	uint16_t nelem;       /* number of elements in arrays */
-	unsigned forward : 1;     /* forward type */
+	unsigned forward : 1; /* forward type */
 	unsigned cplex : 1;   /* complex specifier */
 	unsigned imag : 1;
-	unsigned sign : 1;        /* sign type */
+	unsigned sign : 1;    /* sign type */
 	struct symbol *sym;   /* symbol of the tag identifier */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
@@ -46,6 +46,7 @@ struct symbol {
 	uint8_t ns;
 	union {
 		char c;
+		short offset;
 	} u;
 	struct symbol *next;
 	struct symbol *hash;

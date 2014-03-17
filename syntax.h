@@ -6,6 +6,7 @@
 #endif
 
 extern unsigned char curctx;
+extern uint8_t namespace;
 
 enum opcode {
 	OARY, OCALL, OFIELD, OPTR, OPOSTINC, OPOSTDEC,

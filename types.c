@@ -162,7 +162,7 @@ mktype(struct ctype *tp, uint8_t op,
 	t = (op  ^  (uint8_t) ((unsigned short) tp >> 3))
 	         & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
-	if (op != FTN) {
+	if (op != FTN || op != STRUCT || op != UNION || op != ENUM) {
 		for (bp = *tbl; bp; bp = bp->next) {
 			if (bp->type == tp && bp->op == op &&
 			    bp->sym == sym && bp->nelem == nelem) {
@@ -175,6 +175,8 @@ mktype(struct ctype *tp, uint8_t op,
 	case PTR: size = PTRSIZE; break;
 	case FTN: size = 0; break;
 	case ARY: size = tp->size * nelem; break;
+	case ENUM: size = INTSIZE;
+	case STRUCT: case UNION: size = 0; break;
 	default:  size = tp->size; break;
 	}
 	bp = xmalloc(sizeof(*bp));
