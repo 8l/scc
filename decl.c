@@ -48,7 +48,19 @@ fundcl(struct dcldata *dp)
 	return dp + 1;
 }
 
-static struct dcldata*
+static struct symbol *
+newiden(uint8_t ns)
+{
+	struct symbol *sym;
+
+	if ((sym = lookup(yytext, ns)) && sym->ctx == curctx)
+		error("redeclaration of '%s'", yytext);
+	sym = install(yytext, ns);
+	next();
+	return sym;
+}
+
+static struct dcldata *
 directdcl(struct dcldata *dp, uint8_t ns, int8_t flags)
 {
 	register struct symbol *sym;
@@ -63,11 +75,7 @@ directdcl(struct dcldata *dp, uint8_t ns, int8_t flags)
 				goto expected;
 			sym = install(NULL, ns);
 		} else {
-			sym = lookup(yytext, ns);
-			if (sym && sym->ctx == curctx)
-				goto redeclared;
-			sym = install(yytext, ns);
-			next();
+			sym = newiden(ns);
 		}
 		dp->op = IDEN;
 		dp->u.sym = sym;
@@ -82,12 +90,8 @@ directdcl(struct dcldata *dp, uint8_t ns, int8_t flags)
 		}
 	}
 
-redeclared:
-	err = "redeclaration of '%s'";
-	goto error;
 expected:
-	err = "expected '(' or identifier before of '%s'";
-error:	error(err, yytext);
+	error("expected '(' or identifier before of '%s'" , yytext);
 }
 
 static struct dcldata*
