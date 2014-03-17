@@ -10,6 +10,9 @@
 #include "symbol.h"
 #include "machine.h"
 
+#define ID_EXPECTED     1
+#define ID_ACCEPTED     2
+
 int8_t forbid_eof;
 
 struct dcldata {
@@ -72,7 +75,7 @@ directdcl(struct dcldata *dp, uint8_t ns, int8_t flags)
 		expect(')');
 	} else if (flags) {
 		if (yytoken != IDEN) {
-			if (flags > 0)
+			if (flags & ID_EXPECTED)
 				goto expected;
 			sym = install(NULL, ns);
 		} else {
@@ -250,7 +253,6 @@ initializer(register struct ctype *tp)
 	}
 }
 
-/* TODO: add define for the 3 parameter of declarator */
 /* TODO: bitfields */
 
 static void
@@ -330,7 +332,7 @@ fielddcl(struct ctype *base, uint8_t ns)
 
 	if (yytoken != ';') {
 		do {
-			sym = declarator(tp, ns, 1);
+			sym = declarator(tp, ns, ID_EXPECTED);
 			newfield(tp, sym);
 		} while (accept(','));
 	}
@@ -407,7 +409,7 @@ enumdcl(uint8_t token)
 		while (yytoken != '}') {
 			if (yytoken != IDEN)
 				goto iden_expected;
-			sym = newiden(namespace);
+			sym = newiden(NS_IDEN);
 			sym->type = inttype;
 			if (accept('='))
 				initializer(inttype);
@@ -439,7 +441,7 @@ decl(void)
 	tp = specifier(&sclass);
 	if (yytoken != ';') {
 		do {
-			 sym = declarator(tp, NS_IDEN, 1);
+			 sym = declarator(tp, NS_IDEN, ID_EXPECTED);
 			/* assign storage class */
 			if (accept('='))
 				initializer(sym->type);
@@ -453,7 +455,7 @@ decl(void)
 struct node *
 typename(void)
 {
-	declarator(specifier(NULL), NS_IDEN, -1)->type;
+	declarator(specifier(NULL), NS_IDEN, 0);
 	return  NULL;
 }
 
@@ -487,7 +489,7 @@ extdecl(void)
 	if (yytoken != ';') {
 		do {
 			extern void printtype(struct ctype *tp);
-			sym = declarator(tp, NS_IDEN, 1);
+			sym = declarator(tp, NS_IDEN, ID_EXPECTED);
 			printtype(sym->type);
 			/* assign storage class */
 			if (isfun(sym)) {

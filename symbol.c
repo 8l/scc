@@ -98,6 +98,7 @@ install(char *s, uint8_t ns)
 	sym->name = s;
 	sym->ctx = curctx;
 	sym->token = IDEN;
+	sym->ns = ns;
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	sym->next = tbl->head;
 	tbl->head = sym;
