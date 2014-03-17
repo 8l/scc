@@ -162,7 +162,7 @@ mktype(struct ctype *tp, uint8_t op,
 	t = (op  ^  (uint8_t) ((unsigned short) tp >> 3))
 	         & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
-	if (op != FTN || op != STRUCT || op != ENUM) {
+	if (op != FTN || op != STRUCT || op != UNION || op != ENUM) {
 		for (bp = *tbl; bp; bp = bp->next) {
 			if (bp->type == tp && bp->op == op &&
 			    bp->sym == sym && bp->nelem == nelem) {

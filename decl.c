@@ -177,6 +177,7 @@ specifier(int8_t *sclass)
 			switch (sym->u.c) {
 			case ENUM: case STRUCT: case UNION:
 				t = sym->u.c;
+				next();
 				tp = (t == UNION) ? enumdcl(t) : structdcl(t);
 				p = &type;
 				goto check_spec;
@@ -288,14 +289,11 @@ fielddcl(uint8_t ns, uint8_t type)
 }
 
 static struct ctype *
-structdcl(uint8_t tag)
+newtag(uint8_t tag)
 {
 	register struct symbol *sym;
-	struct ctype *tp;
-	short size;
 	extern uint8_t namespace;
 
-	next();
 	if (yytoken == IDEN) {
 		sym = lookup(yytext, NS_TAG);
 		if (sym) {
@@ -308,28 +306,40 @@ structdcl(uint8_t tag)
 	} else {
 		sym = install(NULL, NS_TAG);
 	}
-	sym->type = tp = mktype(NULL, STRUCT, NULL, 0);
 	++namespace;
+	return sym->type = mktype(NULL, tag, NULL, 0);
 
+bad_tag:
+	error("'%s' defined as wrong kind of tag", yytext);
+}
+
+static struct ctype *
+structdcl(uint8_t tag)
+{
+	struct ctype *tp;
+	short size = 0;
+
+	tp = newtag(tag);
 	if (yytoken != ';') {
 		expect('{');
+		if (tp->defined)
+			goto redefined;
 		while (!accept('}'))
 			size = fielddcl(namespace, tag);
-	} else {
-		size = 0;
+		tp->size = size;
+		tp->defined = 1;
 	}
-	tp->size = size;
 
 	return tp;
 
-bad_tag:
-	error("error '%s' defined as wrong kind of tag", yytext);
+redefined:
+	error("redefinition of struct/union '%s'", yytext);
 }
 
 static struct ctype *
 enumdcl(uint8_t token)
 {
-	return NULL;
+	/* TODO: create function for creating identifiers */
 }
 
 struct node *

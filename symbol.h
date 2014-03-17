@@ -21,9 +21,9 @@ struct symbol;
 
 struct ctype {
 	uint8_t op;           /* type builder operator */
-	uint8_t size;         /* size of variables */
-	uint16_t nelem;       /* number of elements in arrays */
-	unsigned forward : 1; /* forward type */
+	short size;           /* size of variables */
+	short nelem;          /* number of elements in arrays */
+	unsigned defined : 1; /* type defined (is not a forward reference) */
 	unsigned cplex : 1;   /* complex specifier */
 	unsigned imag : 1;
 	unsigned sign : 1;    /* sign type */
