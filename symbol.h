@@ -30,12 +30,20 @@ struct ctype {
 	struct symbol *sym;   /* symbol of the tag identifier */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
-	struct funpars *pars; /* function parameters */
+	union {
+		struct funpar *pars;  /* function parameters */
+		struct field *fields; /* aggregate fields */
+	} u;
 };
 
-struct funpars {
+struct field {
+	struct symbol *sym;
+	struct field *next;
+};
+
+struct funpar {
 	struct ctype *type;
-	struct funpars *next;
+	struct funpar *next;
 };
 
 struct symbol {
@@ -47,6 +55,7 @@ struct symbol {
 	union {
 		char c;
 		int i;
+		uint8_t ns;
 		short offset;
 	} u;
 	struct symbol *next;

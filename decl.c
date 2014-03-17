@@ -8,6 +8,7 @@
 #include "tokens.h"
 #include "syntax.h"
 #include "symbol.h"
+#include "machine.h"
 
 int8_t forbid_eof;
 
@@ -251,12 +252,48 @@ initializer(register struct ctype *tp)
 
 /* TODO: add define for the 3 parameter of declarator */
 /* TODO: bitfields */
-static short
-fielddcl(uint8_t ns, uint8_t type)
+
+static void
+newfield(struct ctype *tp, struct symbol *sym)
+{
+	struct field *p, *q;
+	short size, offset;
+	char *s, *t;
+
+	s = sym->name;
+	for (q = p = tp->u.fields; p; q = p, p = p->next) {
+		t = p->sym->name;
+		if (*s == *t && !strcmp(s, t))
+			error("duplicated field '%s'", s);
+	}
+
+	p = xmalloc(sizeof(*p));
+	p->next = NULL;
+	p->sym = sym;
+	size = sym->type->size;
+	if (!q) {
+		tp->u.fields = p;
+		tp->size = size;
+		sym->u.offset = 0;
+	} else {
+		q->next = p;
+		if (tp->op == STRUCT) {
+			offset = ALIGN(size, tp->size);
+			sym->u.offset = offset;
+			tp->size = offset + size;
+		} else {
+			sym->u.offset = 0;
+			if (tp->size < size)
+				tp->size = size;
+		}
+	}
+}
+
+static void
+fielddcl(struct ctype *base, uint8_t ns)
 {
 	struct ctype *tp;
 	struct symbol *sym;
-	short offset = 0, size;
 
 	switch (yytoken) {
 	case IDEN:
@@ -278,23 +315,18 @@ fielddcl(uint8_t ns, uint8_t type)
 	if (yytoken != ';') {
 		do {
 			sym = declarator(tp, ns, 1);
-			sym->u.offset = offset;
-			size = sym->type->size;
-			if (type == STRUCT)
-				offset += size;
-			else if (offset < size)
-				offset = size;
+			newfield(tp, sym);
 		} while (accept(','));
 	}
 
 	expect(';');
-	return offset;
 }
 
 static struct ctype *
 newtag(uint8_t tag)
 {
 	register struct symbol *sym;
+	struct ctype *tp;
 	extern uint8_t namespace;
 
 	if (yytoken == IDEN) {
@@ -309,8 +341,10 @@ newtag(uint8_t tag)
 	} else {
 		sym = install(NULL, NS_TAG);
 	}
-	++namespace;
-	return sym->type = mktype(NULL, tag, NULL, 0);
+	tp = sym->type = mktype(NULL, tag, NULL, 0);
+	sym->u.ns = ++namespace;
+	tp->sym = sym;
+	return tp;
 
 bad_tag:
 	error("'%s' defined as wrong kind of tag", yytext);
@@ -320,17 +354,18 @@ static struct ctype *
 structdcl(uint8_t tag)
 {
 	struct ctype *tp;
-	short size = 0;
+	uint8_t ns;
 
 	tp = newtag(tag);
+	tp->u.fields = NULL;
+	ns = tp->sym->u.ns;
 	if (yytoken != ';') {
 		expect('{');
 		if (tp->defined)
 			goto redefined;
 		tp->defined = 1;
 		while (!accept('}'))
-			size = fielddcl(namespace, tag);/* TODO: check duplicated */
-		tp->size = size;
+			 fielddcl(tp, ns);
 	}
 
 	return tp;

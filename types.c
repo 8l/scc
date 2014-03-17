@@ -7,17 +7,9 @@
 #include "cc.h"
 #include "tokens.h"
 #include "symbol.h"
+#include "machine.h"
 
 #define NR_TYPE_HASH 16
-#define PTRSIZE      2
-#define CHARSIZE     1
-#define SHORTSIZE    2
-#define INTSIZE      2
-#define LONGSIZE     4
-#define LLONGSIZE    8
-#define FLOATSIZE    4
-#define LFLOATSIZE   8
-#define LLFLOATSIZE 16
 
 struct ctype
 	*voidtype = &(struct ctype) {
@@ -185,7 +177,6 @@ mktype(struct ctype *tp, uint8_t op,
 	bp->op = op;
 	bp->nelem = nelem;
 	bp->sym = sym;
-	bp->pars = NULL;
 	bp->size = size;
 	return *tbl = bp;
 }
@@ -210,7 +201,7 @@ static void
 ptype(struct ctype *tp)
 {
 	uint8_t op;
-	struct funpars *fp;
+	struct funpar *fp;
 
 	if (!tp)
 		return;
@@ -241,7 +232,7 @@ ptype(struct ctype *tp)
 			break;
 		case FTN:
 			fputs("function(", stdout);
-			for (fp = tp->pars; fp; fp = fp->next) {
+			for (fp = tp->u.pars; fp; fp = fp->next) {
 				ptype(tp);
 				if (fp->next)
 					fputs(", ", stdout);
