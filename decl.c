@@ -256,15 +256,20 @@ initializer(register struct ctype *tp)
 static void
 newfield(struct ctype *tp, struct symbol *sym)
 {
-	struct field *p, *q;
-	short size, offset;
-	char *s, *t;
+	register struct field *p, *q;
+	register char *s, *t;
+	static short size, offset;
+	static uint8_t op;
+	static char *err;
 
 	s = sym->name;
+	op = tp->op;
 	for (q = p = tp->u.fields; p; q = p, p = p->next) {
 		t = p->sym->name;
 		if (*s == *t && !strcmp(s, t))
-			error("duplicated field '%s'", s);
+			goto duplicated_name;
+		if (op == ENUM && sym->u.i == p->sym->u.i)
+			goto duplicated_value;
 	}
 
 	p = xmalloc(sizeof(*p));
@@ -273,20 +278,31 @@ newfield(struct ctype *tp, struct symbol *sym)
 	size = sym->type->size;
 	if (!q) {
 		tp->u.fields = p;
-		tp->size = size;
-		sym->u.offset = 0;
+		if (op != ENUM) {
+			tp->size = size;
+			sym->u.offset = 0;
+		}
 	} else {
 		q->next = p;
 		if (tp->op == STRUCT) {
 			offset = ALIGN(size, tp->size);
 			sym->u.offset = offset;
 			tp->size = offset + size;
-		} else {
+		} else if (op == UNION) {
 			sym->u.offset = 0;
 			if (tp->size < size)
 				tp->size = size;
 		}
 	}
+
+	return;
+
+duplicated_name:
+	err = "duplicated fields '%s' and '%s'";
+	goto error;
+duplicated_value:
+	err = "duplicated enumeration fields '%s' and '%s'";
+error:	error(err, s, t);
 }
 
 static void
@@ -391,10 +407,12 @@ enumdcl(uint8_t token)
 		while (yytoken != '}') {
 			if (yytoken != IDEN)
 				goto iden_expected;
-			sym = newiden(namespace); /* TODO: check duplicated */
+			sym = newiden(namespace);
+			sym->type = inttype;
 			if (accept('='))
 				initializer(inttype);
 			sym->u.i = val++;
+			newfield(tp, sym);
 			if (!accept(','))
 				break;
 		}
