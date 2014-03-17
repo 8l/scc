@@ -90,24 +90,41 @@ expected:
 error:	error(err, yytext);
 }
 
+/* TODO: Add a token2 field in yylval to avoid yylval.sym->u.c */
+
 static struct dcldata*
 declarator0(struct dcldata *dp, uint8_t ns, int8_t flags)
 {
-	if (accept('*')) {
-		register uint8_t qlf = 0;
-		while (yytoken == TQUALIFIER) {
+	uint8_t buffer[NR_DECLARATORS];
+	register uint8_t *bp, n, qlf;
+
+	bp = buffer;
+	for (n = 0; accept('*'); ++n) {
+		if (n == NR_DECLARATORS)
+			goto too_much_declarators;
+		qlf = 0;
+		if (yytoken == TQUALIFIER) {
 			qlf |= yylval.sym->u.c;
 			next();
 		}
-		dp = declarator0(dp, ns, flags);
-		if (dp->op == 255)
-			error("too much declarators");
-		dp->op = PTR;
-		dp->u.qlf = qlf;
-		return dp + 1;
-	} else {
-		return directdcl(dp, ns, TQUALIFIER);
+		*bp++ = qlf;
 	}
+
+	dp = directdcl(dp, ns, flags);
+
+	bp = buffer;
+	while (n--) {
+		if (dp->op == 255)
+			goto too_much_declarators;
+		dp->op = PTR;
+		dp->u.qlf = *bp++;
+		++dp;
+	}
+
+	return dp;
+
+too_much_declarators:
+	error("too much declarators");
 }
 
 static struct symbol *
