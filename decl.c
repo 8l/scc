@@ -461,6 +461,7 @@ extdecl(void)
 	int8_t sclass;
 	struct symbol *sym;
 	extern struct symbol *curfun;
+	char *err;
 
 	forbid_eof = 1;
 
@@ -468,12 +469,11 @@ extdecl(void)
 	case IDEN: TYPE: case SCLASS: case TQUALIFIER:
 		tp = specifier(&sclass);
 		if (sclass == REGISTER || sclass == AUTO)
-			error("incorrect storage class for file-scope declaration");
-		break;
+			goto bad_storage;
 	case ';':
 		break;
 	default:
-		error("declaration expected");
+		goto dcl_expected;
 	}
 
 	if (yytoken != ';') {
@@ -497,4 +497,11 @@ extdecl(void)
 	forbid_eof = 0;
 	expect(';');
 	return NULL;
+
+bad_storage:
+	err = "incorrect storage class for file-scope declaration";
+	goto error;
+dcl_expected:
+	err = "declaration expected";
+error:	error(err);
 }
