@@ -46,18 +46,21 @@ struct funpar {
 	struct funpar *next;
 };
 
+union value {
+	char c;
+	int i;
+	struct symbol *sym;
+	uint8_t ns;
+	short offset;
+};
+
 struct symbol {
 	char *name;
 	struct ctype *type;
 	uint8_t ctx;
 	uint8_t token;
 	uint8_t ns;
-	union {
-		char c;
-		int i;
-		uint8_t ns;
-		short offset;
-	} u;
+	union value u;
 	struct symbol *next;
 	struct symbol *hash;
 };

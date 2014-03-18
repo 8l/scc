@@ -18,14 +18,14 @@ primary(void)
 
 	switch (yytoken) {
 	case IDEN:
-		if ((sym = lookup(yytext, NS_IDEN)) == NULL)
+		if (yylval.sym == NULL)
 			error("'%s' undeclared", yytext);
+		/* TODO: Do something */
 		next();
-		np = nodesym(sym);
 		break;
 	case CONSTANT:
 		next();
-		np = nodesym(sym);
+		/* TODO: do something */
 		break;
 	case '(':
 		next();
@@ -69,7 +69,7 @@ postfix(void)
 	expect_iden:
 		next();
 		expect(IDEN);
-		np2 = nodesym(lookup(yytext, NS_IDEN));
+		/* TODO: Do something interesting */
 	node_2_childs:
 		np1 = node(op, np1, np2);
 		continue;
@@ -103,7 +103,7 @@ unary(void)
 		} else {
 			unary();
 		}
-		return nodesym(NULL);
+		return NULL; /* TODO: return something interesting here */
 	case INC: op = OPREINC; goto call_unary;
 	case DEC: op = OPREDEC; goto call_unary;
 	case '&': op = OADDR;  goto call_cast;
@@ -256,7 +256,7 @@ bit_xor(void)
 	np = bit_and();
 	while (yytoken == '^') {
 		next();
-		np = node(OBXOR, np, bit_and());
+		np = node(OBXOR,  np, bit_and());
 	}
 	return np;
 }

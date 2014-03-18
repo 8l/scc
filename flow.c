@@ -41,7 +41,7 @@ Goto(void)
 	expect(GOTO);
 	expect(IDEN);
 	sym = lookup(yytext, NS_LABEL);
-	np = node(OGOTO, nodesym(sym), NULL);
+	/* TODO: create the jump */
 	expect(';');
 
 	return np;
@@ -137,12 +137,11 @@ Switch(void)
 static struct node *
 label(void)
 {
-	register struct symbol *sym = lookup(yytext, NS_LABEL);
 
 	/* TODO: detect repeated labels */
 	/* TODO: install in symbol table */
 	next(), next();  	/* skip IDEN and ':' */
-	return node(OLABEL, nodesym(sym), stmt());
+	/* TODO: Do something */
 }
 
 static struct node *
