@@ -307,7 +307,8 @@ duplicated_name:
 	goto error;
 duplicated_value:
 	err = "duplicated enumeration fields '%s' and '%s'";
-error:	error(err, s, t);
+error:
+	error(err, s, t);
 }
 
 static void
@@ -343,7 +344,8 @@ bad_storage:
 	goto error;
 dcl_expected:
 	err = "declaration expected";
-error:	error(err, yytext);
+error:
+	error(err, yytext);
 }
 
 static struct ctype *
@@ -437,7 +439,8 @@ redefined:
 	goto error;
 iden_expected:
 	err = "identifier expected";
-error:	error(err, yytext);
+error:
+	error(err, yytext);
 }
 
 struct node *
@@ -517,5 +520,6 @@ bad_storage:
 	goto error;
 dcl_expected:
 	err = "declaration expected";
-error:	error(err);
+error:
+	error(err);
 }
