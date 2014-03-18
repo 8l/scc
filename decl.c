@@ -314,14 +314,9 @@ fielddcl(struct ctype *base, uint8_t ns)
 	struct symbol *sym;
 
 	switch (yytoken) {
-	case IDEN:
-		warn(options.implicit,
-		     "type defaults to 'int' in declaration");
-		tp = inttype;
-		break;
 	case SCLASS:
 		error("storage class '%s' in struct/union field", yytext);
-	case TYPE: case TQUALIFIER:
+	case IDEN: case TYPE: case TQUALIFIER:
 		tp = specifier(NULL);
 		break;
 	case ';':
@@ -470,12 +465,7 @@ extdecl(void)
 	forbid_eof = 1;
 
 	switch (yytoken) {
-	case IDEN:
-		warn(options.implicit,
-		     "type defaults to 'int' in declaration");
-		tp = inttype;
-		break;
-	case TYPE: case SCLASS: case TQUALIFIER:
+	case IDEN: TYPE: case SCLASS: case TQUALIFIER:
 		tp = specifier(&sclass);
 		if (sclass == REGISTER || sclass == AUTO)
 			error("incorrect storage class for file-scope declaration");
