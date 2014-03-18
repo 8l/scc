@@ -56,6 +56,7 @@ enum tokens {
 struct symbol;
 union yystype {
 	struct symbol *sym;
+	uint8_t token;
 };
 
 extern union yystype yylval;

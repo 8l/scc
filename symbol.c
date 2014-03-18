@@ -69,9 +69,6 @@ lookup(register char *s, uint8_t ns)
 	static struct symtab *tbl;
 	register struct symbol *sym;
 
-	if (ns == NS_IDEN && (sym = yylval.sym) && !strcmp(sym->name, s))
-		return sym;
-
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
 		register char *t = sym->name;

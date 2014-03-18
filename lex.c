@@ -135,7 +135,7 @@ init_keywords(void)
 	for (bp = buff; bp->str; ++bp) {
 		sym = install(bp->str, NS_KEYWORD);
 		sym->token = bp->token;
-		sym->u.c = bp->value;
+		sym->u.token = bp->value;
 	}
 }
 
@@ -144,6 +144,7 @@ iden(void)
 {
 	register char *bp;
 	register int c;
+	struct symbol *sym;
 
 	for (bp = yybuf; bp < &yybuf[IDENTSIZ]; *bp++ = c) {
 		if (!isalnum(c = getc(yyin)) && c != '_')
@@ -154,8 +155,13 @@ iden(void)
 	*bp = '\0';
 	ungetc(c, yyin);
 
-	yynlval.sym = lookup(yybuf, NS_IDEN);
-	return (yynlval.sym) ? yynlval.sym->token : IDEN;
+	sym = lookup(yybuf, NS_IDEN);
+	if (!sym || sym->token == IDEN) {
+		yynlval.sym = sym;
+		return IDEN;
+	}
+	yynlval.token = sym->u.token;
+	return sym->token;
 }
 
 static uint8_t

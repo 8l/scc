@@ -57,7 +57,7 @@ newiden(uint8_t ns)
 {
 	struct symbol *sym;
 
-	if ((sym = lookup(yytext, ns)) && sym->ctx == curctx)
+	if (yylval.sym && yylval.sym->ctx == curctx)
 		error("redeclaration of '%s'", yytext);
 	sym = install(yytext, ns);
 	next();
@@ -110,7 +110,7 @@ declarator0(struct dcldata *dp, uint8_t ns, int8_t flags)
 			goto too_much_declarators;
 		qlf = 0;
 		if (yytoken == TQUALIFIER) {
-			qlf |= yylval.sym->u.c;
+			qlf |= yylval.token;
 			next();
 		}
 		*bp++ = qlf;
@@ -161,7 +161,7 @@ declarator(struct ctype *tp, uint8_t ns, int8_t flags)
 	return sym;
 }
 
-static struct ctype *structdcl(uint8_t tag), *enumdcl(uint8_t tag);
+static struct ctype *structdcl(void), *enumdcl(void);
 
 static struct ctype *
 specifier(int8_t *sclass)
@@ -173,46 +173,49 @@ specifier(int8_t *sclass)
 
 	for (;;) {
 		register uint8_t *p;
-		struct symbol *sym = yylval.sym;
+		struct ctype *(*dcl)(void) = NULL;
 
 		switch (yytoken) {
 		case SCLASS: p = &cls; break;
 		case TQUALIFIER:
-			if ((qlf |= sym->u.c) & RESTRICT)
+			if ((qlf |= yylval.token) & RESTRICT)
 				goto invalid_type;
-			goto next_token;
+			next();
+			continue;
 		case TYPE:
-			switch (t = sym->u.c) {
-			case ENUM: case STRUCT: case UNION:
-				next();
-				tp = (t == ENUM) ? enumdcl(t) : structdcl(t);
-				p = &type;
-				goto check_spec;
+			switch (yylval.token) {
+			case ENUM:
+				dcl = enumdcl; p = &type; break;
+			case STRUCT: case UNION:
+				dcl = structdcl; p = &type; break;
 			case TYPENAME:
 				tp = yylval.sym->type;
 			case VOID:   case BOOL:  case CHAR:
 			case INT:    case FLOAT: case DOUBLE:
-				p = &type; goto next_token;
+				p = &type; break;
 			case SIGNED: case UNSIGNED:
 				p = &sign; break;
 			case LONG:
 				if (size == LONG) {
 					size = LONG+LONG;
-					goto next_token;
+					break;
 				}
 			case SHORT:
-				p = &size; goto next_token;
+				p = &size; break;
 			case COMPLEX: case IMAGINARY:
-				p = &cplex; goto next_token;
+				p = &cplex; break;
 			}
 			break;
 		default:
 			goto check_types;
 		}
-next_token:	next();
-check_spec:	if (*p)
+		if (*p)
 			goto invalid_type;
-		*p = sym->u.c;
+		*p = yylval.token;
+		if (dcl)
+			tp = dcl();
+		else
+			next();
 	}
 
 check_types:
@@ -372,11 +375,13 @@ bad_tag:
 }
 
 static struct ctype *
-structdcl(uint8_t tag)
+structdcl(void)
 {
 	struct ctype *tp;
-	uint8_t ns;
+	uint8_t ns, tag;
 
+	tag = yylval.token;
+	next();
 	tp = newtag(tag);
 	tp->u.fields = NULL;
 	ns = tp->sym->u.ns;
@@ -396,13 +401,14 @@ redefined:
 }
 
 static struct ctype *
-enumdcl(uint8_t token)
+enumdcl(void)
 {
 	register struct ctype *tp;
 	struct symbol *sym;
 	int val = 0;
 	char *err;
 
+	next();
 	tp = newtag(ENUM);
 	if (yytoken != ';') {
 		expect('{');
@@ -474,7 +480,7 @@ extdecl(void)
 	forbid_eof = 1;
 
 	switch (yytoken) {
-	case IDEN: TYPE: case SCLASS: case TQUALIFIER:
+	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:
 		tp = specifier(&sclass);
 		if (sclass == REGISTER || sclass == AUTO)
 			goto bad_storage;
