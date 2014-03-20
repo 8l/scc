@@ -1,5 +1,5 @@
 
-OBJS = types.o decl.o lex.o error.o symbol.o flow.o main.o expr.o \
+OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
 	wrapper.o tree.o
 
 all: kcc
