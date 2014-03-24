@@ -85,6 +85,7 @@ install(char *s, uint8_t ns)
 	register struct symbol *sym;
 	register struct symbol **t;
 	struct symtab *tbl;
+	static short id;
 
 	if (ns == NS_KEYWORD)
 		ns = NS_IDEN;
@@ -96,6 +97,7 @@ install(char *s, uint8_t ns)
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->ns = ns;
+	sym->id = id++;
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	sym->next = tbl->head;
 	tbl->head = sym;

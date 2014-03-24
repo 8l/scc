@@ -57,6 +57,7 @@ union value {
 struct symbol {
 	char *name;
 	struct ctype *type;
+	short id;
 	uint8_t ctx;
 	uint8_t token;
 	uint8_t ns;
