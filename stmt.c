@@ -8,7 +8,7 @@
 void
 compound(void)
 {
-	extern struct ctype *expr(void);
+	extern struct node *expr(void);
 	extern void decl(void);
 
 	expect('{');
@@ -18,7 +18,7 @@ compound(void)
 			decl();
 			break;
 		default:
-			expr();
+			eval(expr());
 		}
 		expect(';');
 	}

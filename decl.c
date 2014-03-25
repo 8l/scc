@@ -140,6 +140,7 @@ declarator(struct ctype *tp, uint8_t ns, int8_t flags)
 	register struct dcldata *bp;
 	struct symbol *sym;
 
+	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
 	for (bp = declarator0(data, ns, flags); bp >= data; --bp) {
 		switch (bp->op) {
@@ -471,7 +472,7 @@ typename(void)
 void
 extdecl(void)
 {
-	struct ctype *tp;
+	struct ctype *base;
 	int8_t sclass;
 	struct symbol *sym;
 	char *err;
@@ -481,7 +482,7 @@ extdecl(void)
 
 	switch (yytoken) {
 	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:
-		tp = specifier(&sclass);
+		base = specifier(&sclass);
 		if (sclass == REGISTER || sclass == AUTO)
 			goto bad_storage;
 	case ';':
@@ -492,10 +493,14 @@ extdecl(void)
 
 	if (yytoken != ';') {
 		do {
-			sym = declarator(tp, NS_IDEN, ID_EXPECTED);
+			struct ctype *tp;
+
+			sym = declarator(base, NS_IDEN, ID_EXPECTED);
+			tp = sym->type;
+
 			if (!(sclass & STATIC))
 				sym->s.isglobal = 1;
-			if (ISFUN(sym->type)) {
+			if (isfun(BTYPE(tp))) {
 				emitfun(sym);
 				if (yytoken == '{') {
 					emitframe(sym);
@@ -509,7 +514,7 @@ extdecl(void)
 				if (sclass & EXTERN)
 					; /* TODO: handle extern */
 				else if (accept('='))
-					initializer(sym->type);
+					initializer(tp);
 			}
 		} while (accept(','));
 	}

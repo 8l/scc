@@ -97,14 +97,16 @@ extern struct ctype *voidtype,
 	*doubletype,  *cdoubletype, *idoubletype,
 	*ldoubletype, *cldoubletype,*ildoubletype;
 
-#define UNQUAL(t)   (ISQUAL(t) ? (t)->type : (t))
-#define BTYPE(t)    (UNQUAL(t)->op)
-#define ISFUN(t)    ((t)->op == FTN)
-#define ISPTR(t)    ((t)->op == PTR)
-#define ISARITH(t)  ((t)->op & ARITH)
-#define ISADDR(t)   ((t)->op & POINTER)
-#define ISRECORD(t) ((t)->op & RECORD)
-#define ISQUAL(t)   ((t)->op & TQUALIFIER)
+#define ISQUAL(t)    (isqual((t)->op))
+#define UNQUAL(t)    (ISQUAL(t) ? (t)->type : (t))
+#define BTYPE(t)     (UNQUAL(t)->op)
+#define isfun(op)    ((op) == FTN)
+#define isptr(op)    ((op) == PTR)
+#define isary(op)    ((op) == ARY)
+#define isarith(op)  ((op) & ARITH)
+#define isaddr(op)   ((op) & POINTER)
+#define isrecord(op) ((op) & RECORD)
+#define isqual(op)   ((op) & TQUALIFIER)
 
 
 #endif
