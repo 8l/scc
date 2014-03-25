@@ -5,7 +5,6 @@
 #include "code.h"
 #include "tokens.h"
 #include "symbol.h"
-#include "syntax.h"
 
 
 struct ctype *expr(void);

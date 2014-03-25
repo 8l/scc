@@ -64,7 +64,7 @@ extern char yytext[];
 extern uint8_t yytoken, yyntoken;
 
 
-extern void init_lex(void), init_keywords(void), expect(uint8_t tok);
 extern uint8_t next(void);
+extern void expect(uint8_t tok);
 
 #endif
