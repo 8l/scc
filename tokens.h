@@ -5,28 +5,37 @@
 # include <stdbool.h>
 #endif
 
-#define FLOAT         1
-#define INT           2
-#define BOOL          3
-#define PTR           4
-#define ARY           5
-#define FTN           6
+#define ARITH         8
+#define RECORD        16
+#define POINTER       32
+#define ATYPE(x)      (ARITH  | (x))
+#define RTYPE(x)      (RECORD | (x))
+#define PTYPE(x)      (POINTER| (x))
 
-#define VOID          7
-#define STRUCT        8
-#define UNION         9
-#define ENUM         10
-#define TYPENAME     11
+#define FTN           1
+#define ENUM          2
+#define TYPENAME      3
+#define VOID          4
 
-#define CHAR         12
-#define DOUBLE       13
-#define SHORT        14
-#define LONG         15
+#define FLOAT         ATYPE(1)
+#define INT           ATYPE(2)
+#define BOOL          ATYPE(3)
 
-#define COMPLEX      16
-#define IMAGINARY    17
-#define UNSIGNED     18
-#define SIGNED       19
+#define STRUCT        RTYPE(1)
+#define UNION         RTYPE(2)
+
+#define PTR           PTYPE(1)
+#define ARY           PTYPE(2)
+
+#define CHAR          (ARY+1)
+#define DOUBLE        (ARY+2)
+#define SHORT         (ARY+3)
+#define LONG          (ARY+4)
+
+#define COMPLEX       (ARY+5)
+#define IMAGINARY     (ARY+6)
+#define UNSIGNED      (ARY+7)
+#define SIGNED        (ARY+8)
 
 #define CONST         (1<<0)
 #define VOLATILE      (1<<1)
