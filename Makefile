@@ -1,6 +1,6 @@
 
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
-	wrapper.o
+	wrapper.o code.o stmt.o
 
 all: kcc
 

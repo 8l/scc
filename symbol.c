@@ -44,22 +44,19 @@ freesyms(uint8_t ns)
 	}
 }
 
-struct node *
-context(struct node * (*fun)(void))
+void
+context(void (*fun)(void))
 {
 	uint8_t ns;
-	struct node *np;
 
 	ns = namespace;
 	++curctx;
-	np = fun();
+	fun();
 	--curctx;
 	namespace = ns;
 
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
-
-	return np;
 }
 
 struct symbol *
@@ -87,17 +84,20 @@ install(char *s, uint8_t ns)
 	struct symtab *tbl;
 	static short id;
 
-	if (ns == NS_KEYWORD)
+	if (ns == NS_KEYWORD) {
 		ns = NS_IDEN;
-	else if (s != NULL)
-		s = xstrdup(s);
+	} else  {
+		++id;
+		if (s != NULL)
+			s = xstrdup(s);
+	}
 
 	sym = xcalloc(1, sizeof(*sym));
 	sym->name = s;
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->ns = ns;
-	sym->id = id++;
+	sym->id = id;
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	sym->next = tbl->head;
 	tbl->head = sym;

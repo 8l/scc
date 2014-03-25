@@ -12,6 +12,8 @@ struct user_opt options;
 int
 main(int argc, char *argv[])
 {
+	extern void extdecl(void);
+
 	init_keywords();
 	open_file(NULL);
 	for (next(); yytoken != EOFTOK; extdecl());

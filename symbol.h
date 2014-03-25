@@ -2,10 +2,12 @@
 #ifndef SYMBOL_H
 #define SYMBOL_H
 
+#if ! __bool_true_and_false_are_defined
+#include <stdbool.h>
+#endif
+
 #define CTX_OUTER 0
 #define CTX_FUNC  1
-
-#define isfun(t) 0
 
 enum {
 	NS_IDEN = 0,
@@ -61,6 +63,12 @@ struct symbol {
 	uint8_t ctx;
 	uint8_t token;
 	uint8_t ns;
+	struct {
+		bool isglobal : 1;
+		bool isstatic : 1;
+		bool isauto : 1;
+		bool isregister : 1;
+	} s;
 	union value u;
 	struct symbol *next;
 	struct symbol *hash;
@@ -77,7 +85,7 @@ extern struct symbol
 	*lookup(char *s, unsigned char ns),
 	*install(char *s, unsigned char ns);
 
-extern struct node *context(struct node * (*fun)(void));
+extern void context(void (*fun)(void));
 
 extern struct ctype *voidtype,
 	*uchartype,   *chartype,
@@ -88,5 +96,10 @@ extern struct ctype *voidtype,
 	*floattype,   *cfloattype,  *ifloattype,
 	*doubletype,  *cdoubletype, *idoubletype,
 	*ldoubletype, *cldoubletype,*ildoubletype;
+
+#define ISQUAL(t) ((t)->op & TQUALIFIER)
+#define UNQUAL(t) (ISQUAL(t) ? (t)->type : (t))
+#define ISFUN(t)  (UNQUAL(t)->op == FTN)
+
 
 #endif

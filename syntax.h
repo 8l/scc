@@ -20,14 +20,5 @@ enum opcode {
 	ORETURN, OCASE, ODEFAULT, OFTN, ODEF, O2EXP
 };
 
-struct node;
-struct symbol;
-struct ctype;
-
-extern struct node *expr(void), *extdecl(void), *decl(void),
-	*typename(void), *function(void);
-
-extern struct node *node(unsigned char op, struct node *l, struct node *r);
-extern bool walk(register struct node *np, bool (*fun)(struct node *));
 
 #endif

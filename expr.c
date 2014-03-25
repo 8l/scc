@@ -1,26 +1,26 @@
-#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include "cc.h"
+#include "code.h"
 #include "tokens.h"
 #include "symbol.h"
 #include "syntax.h"
 
 
-struct node *expr(void);
+struct ctype *expr(void);
 
-static struct node *
+static struct ctype *
 primary(void)
 {
-	register struct node *np;
-	register struct symbol *sym;
+	register struct ctype *tp;
 
 	switch (yytoken) {
 	case IDEN:
 		if (yylval.sym == NULL)
 			error("'%s' undeclared", yytext);
-		/* TODO: Do something */
+		emitsym(yylval.sym);
+		tp = yylval.sym->type;
 		next();
 		break;
 	case CONSTANT:
@@ -29,24 +29,23 @@ primary(void)
 		break;
 	case '(':
 		next();
-		np = expr();
+		tp = expr();
 		expect(')');
 		break;
 	default:
-		np = NULL;
-		break;
+		tp = NULL;
 	}
-	return np;
+	return tp;
 }
 
-struct node *
+struct ctype *
 expr(void)
 {
-	register struct node *np;
+	register struct ctype *tp;
 
 	do
-		np = primary();
+		tp = primary();
 	while (yytoken == ',');
 
-	return np;
+	return tp;
 }

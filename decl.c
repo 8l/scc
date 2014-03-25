@@ -443,7 +443,7 @@ error:
 	error(err, yytext);
 }
 
-struct node *
+void
 decl(void)
 {
 	struct ctype *tp;
@@ -459,9 +459,6 @@ decl(void)
 				initializer(sym->type);
 		} while (accept(','));
 	}
-
-	expect(';');
-	return NULL;
 }
 
 struct node *
@@ -471,16 +468,16 @@ typename(void)
 	return  NULL;
 }
 
-struct node *
+void
 extdecl(void)
 {
 	struct ctype *tp;
 	int8_t sclass;
 	struct symbol *sym;
-	extern struct symbol *curfun;
 	char *err;
+	extern void compound(void);
 
-	forbid_eof = 1;
+	forbid_eof = 0; /* TODO: Fix when find EOF */
 
 	switch (yytoken) {
 	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:
@@ -498,22 +495,26 @@ extdecl(void)
 			extern void printtype(struct ctype *tp);
 			sym = declarator(tp, NS_IDEN, ID_EXPECTED);
 			printtype(sym->type);
-			/* assign storage class */
-			if (isfun(sym)) {
+			if (!(sclass & STATIC))
+				sym->s.isglobal = 1;
+			if (ISFUN(sym->type)) {
 				if (yytoken == '{') {
-					curfun = sym;
-					context(function);
+					context(compound);
 					freesyms(NS_LABEL);
+					return;
 				}
-			} else if (accept('=')) {
-				initializer(sym->type);
+			} else {
+				sym->s.isstatic = 1;
+				if (sclass & EXTERN)
+					; /* TODO: handle extern */
+				else if (accept('='))
+					initializer(sym->type);
 			}
 		} while (accept(','));
 	}
 
-	forbid_eof = 0;
 	expect(';');
-	return NULL;
+	return;
 
 bad_storage:
 	err = "incorrect storage class for file-scope declaration";
