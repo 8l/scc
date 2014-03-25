@@ -32,9 +32,17 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		tp = NULL;
+		error("unexpected '%s'", yytoken);
 	}
 	return tp;
+}
+
+static struct ctype *
+postfix(void)
+{
+	struct ctype * tp;
+
+	tp = primary();
 }
 
 struct ctype *
@@ -43,7 +51,7 @@ expr(void)
 	register struct ctype *tp;
 
 	do
-		tp = primary();
+		tp = postfix();
 	while (yytoken == ',');
 
 	return tp;

@@ -6,7 +6,6 @@
 #include "sizes.h"
 #include "cc.h"
 #include "tokens.h"
-#include "syntax.h"
 #include "symbol.h"
 #include "machine.h"
 
@@ -56,6 +55,7 @@ static struct symbol *
 newiden(uint8_t ns)
 {
 	struct symbol *sym;
+	extern uint8_t curctx;
 
 	if (yylval.sym && yylval.sym->ctx == curctx)
 		error("redeclaration of '%s'", yytext);
@@ -492,14 +492,15 @@ extdecl(void)
 
 	if (yytoken != ';') {
 		do {
-			extern void printtype(struct ctype *tp);
 			sym = declarator(tp, NS_IDEN, ID_EXPECTED);
-			printtype(sym->type);
 			if (!(sclass & STATIC))
 				sym->s.isglobal = 1;
 			if (ISFUN(sym->type)) {
+				emitfun(sym);
 				if (yytoken == '{') {
+					emitframe(sym);
 					context(compound);
+					emitret(sym);
 					freesyms(NS_LABEL);
 					return;
 				}

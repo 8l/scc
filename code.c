@@ -19,3 +19,21 @@ emitsym(struct symbol *sym)
 		c = 'A';
 	printf("\t%c%d", c, sym->id);
 }
+
+void
+emitfun(struct symbol *sym)
+{
+	printf("X%s\n", sym->name);
+}
+
+void
+emitframe(struct symbol *sym)
+{
+	puts("{");
+}
+
+void
+emitret(struct symbol *sym)
+{
+	puts("}");
+}
