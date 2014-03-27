@@ -1,0 +1,133 @@
+Ax -> automatic variable number x
+Tx -> static variable number x
+Gx -> global variable with name x
+Xx -> global function with name x
+Yx -> static function with name x
+Lx -> label number x
+Px -> parameter number x
+Mx -> member number x
+
+@  -> content of variable
+#x -> size of type x (R, I, C, W, N, Z, Q, H, Sx, Ux)
+#x -> integer constant of value x
+##x -> float constant of value x
+#%x -> long constant of value x
+" -> begin of string, each element is coded in decimal and comma (better in hexa!!)
+a  -> take address
+:x -> assign of type x
++x -> sum of type x
+-x -> substraction of type x
+*x -> multiplication of type x
+/x -> division of type x
+;  -> used in post operators (A2++ -> A2 #1 ;+I)
+:  -> used in pre operators  (++A2 -> A2 #1 :+I)
+.  -> struct field
+_x -> sign negation of type x
+~x -> logic negation of type x
+%x -> modulo of type x
+lx -> left shift of type x
+rx -> right shift of type x
+>x -> greater than of type x
+<x -> less than of type x
+[x -> less or equal of type x
+]x -> greater or equal of type x
+=x -> equal of type x
+!x -> not equal of type x
+&x -> logical and of type x
+|x -> logical or of type x
+^x -> logical exor of type x
+m  -> and (last two stack values)
+s  -> or (last two stack values)
+`  -> index array (*(val1 + val2))
+:yx -> operation y and assign of type x
+:x -> assign of type x
+?x -> ternary of type x (cond val1 val2)
+cx -> call to function of type x
+px -> pass parameter to function of type x
+Fx -> x number of parameters passed in a function call
+,  -> comma operator (last two stack values)
+d  -> begin of loop
+b  -> end of loop
+j  -> jump (next stack value is the label)
+yx -> return of type x
+ex -> switch of type x
+w  -> case (next stack value is label and next is value)
+n  -> no operation (it is used in ! and in for conditions)
+E  -> no operation (it is used to mark end of function declaration)
+
+Conversions:
+----------
+Sx -> struct number x
+Ux -> union number x
+Vx -> vector number x
+R -> pointer
+I -> integer
+C -> char
+W -> long
+N -> unsigned
+Z -> unsigned long
+Q -> float
+H -> double
+F -> function
+
+
+xy -> conversion from y to x
+
+
+Examples:
+---------
+
+int
+main()
+{
+	int i;
+	float v = 3.0;
+
+	i = i != v;
+}
+
+->
+
+Xmain	I	F	E
+{
+A1	I
+A2	I
+A3	Q
+	A3	##4130000	QH	:Q
+	A1	A1	QI	A3	!Q	#1	#0	?I	:I
+}
+
+-------------------------------------------
+
+struct pepe {
+	int i, j;
+	struct p2 {
+		int k;
+	} k;
+};
+
+int
+main()
+{
+	int i;
+	struct pepe p;
+
+	i += p.i + p.k.k;
+}
+
+->
+
+S4	(
+M5	I
+)
+S1	(
+M2	I
+M3	I
+M6	S4
+)
+Xmain	I	F	E
+{
+A7	I
+A8	S1
+	A7	A8	M2	.	A8	M6	.	M5	.	+I	:+I
+}
