@@ -226,6 +226,7 @@ operator(void)
 	case '=': return follow('=', EQ, '=');
 	case '^': return follow('=', XOR_EQ, '^');
 	case '*': return follow('=', MUL_EQ, '*');
+	case '/': return follow('=', DIV_EQ, '/');
 	case '!': return follow('=', NE, '!');
 	case '&': return follow('=', AND_EQ, AND);
 	case '|': return follow('=', OR_EQ, OR);
