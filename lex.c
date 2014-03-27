@@ -165,48 +165,17 @@ iden(void)
 }
 
 static uint8_t
-follow(uint8_t op, uint8_t eq, uint8_t rep)
+follow(int expect, int ifyes, int ifno)
 {
 	register int c = getc(yyin);
 
-	yybuf[1] = c;
-	yybuf[2] = '\0';
-	if (c == '=')
-		return eq;
-	else if (c == op && rep)
-		return rep;
-
-	yybuf[1] = '\0';
-	ungetc(c, yyin);
-	return op;
-}
-
-static uint8_t
-rel_shift(uint8_t op)
-{
-	static uint8_t tokens[2][3] = {
-		{GE, SHL, SHL_EQ},
-		{LE, SHR, SHR_EQ}
-	};
-	register int c = getc(yyin);
-	register char *tp = tokens[op == '>'];
-
-	yybuf[1] = c;
-	yybuf[2] = '\0';
-	if (c == '=') {
-		return tp[0];
-	} else if (c == op) {
-		if ((c = getc(yyin)) == '=')  {
-			yybuf[2] = c;
-			yybuf[3] = '\0';
-			return tp[2];
-		}
-		op = tp[1];
-	} else {
-		yybuf[1] = '\0';
+	if (c == expect) {
+		yybuf[1] = c;
+		yybuf[2] = 0;
+		return ifyes;
 	}
 	ungetc(c, yyin);
-	return op;
+	return ifno;
 }
 
 static uint8_t
@@ -227,6 +196,23 @@ minus(void)
 }
 
 static uint8_t
+relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
+{
+	register int c = getc(yyin);
+
+	yybuf[1] = c;
+	yybuf[2] = '\0';
+
+	if (c == '=')
+		return equal;
+	if (c == op)
+		return follow('=', assig, shift);
+	ungetc(c, yyin);
+	yybuf[1] = '\0';
+	return op;
+}
+
+static uint8_t
 operator(void)
 {
 	register uint8_t c = getc(yyin);
@@ -234,15 +220,15 @@ operator(void)
 	yybuf[0] = c;
 	yybuf[1] = '\0';
 	switch (c) {
-	case '=': return follow('=', EQ, 0);
-	case '^': return follow('^', XOR_EQ, 0);
-	case '*': return follow('*', MUL_EQ, 0);
-	case '!': return follow('!', NE, 0);
-	case '+': return follow('+', ADD_EQ, INC);
-	case '&': return follow('&', AND_EQ, AND);
-	case '|': return follow('|', OR_EQ, OR);
-	case '<': return rel_shift('<');
-	case '>': return rel_shift('>');
+	case '<': return relational('<', LE, SHL, SHL_EQ);
+	case '>': return relational('>', GE, SHR, SHR_EQ);
+	case '+': return follow('+', INC, follow('=', ADD_EQ, '+'));
+	case '=': return follow('=', EQ, '=');
+	case '^': return follow('=', XOR_EQ, '^');
+	case '*': return follow('=', MUL_EQ, '*');
+	case '!': return follow('=', NE, '!');
+	case '&': return follow('=', AND_EQ, AND);
+	case '|': return follow('=', OR_EQ, OR);
 	case '-': return minus();
 	default: return c;
 	}
