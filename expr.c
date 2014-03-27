@@ -9,7 +9,7 @@
 struct node *expr(void);
 
 enum {
-	OSYM = 1, OARY, OADDR, OADD
+	OSYM = 1, OARY, OPTR, OADD,
 };
 
 struct node {
@@ -58,28 +58,26 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		error("unexpected '%s'", yytext);
+		np = NULL;
 	}
 	return np;
 }
 
 static struct node *
-ary2ptr(struct node *np)
+int2ptr(struct node *np)
 {
-	struct ctype *tp = np->type;
-
-	struct node *aux;
-
-	tp = mktype(UNQUAL(tp)->type, PTR, NULL, 0);
-	aux= newnode(OADDR, tp);
-	aux->left = np;
-	return aux;
 }
 
 static struct node *
-int2ptr(struct node *np)
+ptr2vec(struct node *np)
 {
-	return np;
+	struct ctype *tp = np->type;
+	struct node *p;
+
+	tp = mktype(UNQUAL(tp)->type, ARY, NULL, 0);
+	p = newnode(OPTR, tp);
+	p->left = np;
+	return p;
 }
 
 static struct node *
@@ -89,6 +87,8 @@ ary(struct node *np1)
 	struct ctype *tp;
 	uint8_t t1, t2, taux;
 
+	/* should be for arrays:   A2 A1 RI #1 *R ` */
+	/* should be for pointers: A2 @ A1 RI #1 *R ` */
 	np2 = expr();
 	expect(']');
 	t1 = BTYPE(np1->type);
@@ -100,8 +100,8 @@ ary(struct node *np1)
 	}
 	if (!isaddr(t1))
 		error("expected array or pointer");
-	if (isary(t1))
-		np1 = ary2ptr(np1);
+	if (isptr(t1))
+		np1 = ptr2vec(np1);
 	if (!isarith(t2))
 		error("array subscript is not an integer");
 
@@ -154,9 +154,8 @@ evalnode(struct node *np)
 		evalnode(np->right);
 		fputs("\t'", stdout);
 		break;
-	case OADDR:
+	case OPTR:
 		evalnode(np->left);
-		evalnode(np->right);
 		fputs("\t@", stdout);
 		break;
 	case OADD:
