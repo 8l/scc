@@ -8,7 +8,6 @@
 void
 compound(void)
 {
-	extern struct node *expr(void);
 	extern void decl(void);
 
 	expect('{');
@@ -18,7 +17,8 @@ compound(void)
 			decl();
 			break;
 		default:
-			eval(expr());
+			expr();
+			/* TODO: Evaluate the expression here */
 		}
 		expect(';');
 	}
