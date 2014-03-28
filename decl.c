@@ -16,7 +16,7 @@ struct dcldata {
 	uint8_t op;
 	union {
 		unsigned short nelem;
-		struct symbol *sym;
+		Symbol *sym;
 		struct funpars *pars;
 		uint8_t qlf;
 	} u;
@@ -49,10 +49,10 @@ fundcl(struct dcldata *dp)
 	return dp + 1;
 }
 
-static struct symbol *
+static Symbol *
 newiden(uint8_t ns)
 {
-	struct symbol *sym;
+	Symbol *sym;
 	extern uint8_t curctx;
 
 	if (yylval.sym && yylval.sym->ctx == curctx)
@@ -65,7 +65,7 @@ newiden(uint8_t ns)
 static struct dcldata *
 directdcl(struct dcldata *dp, uint8_t ns, int8_t flags)
 {
-	register struct symbol *sym;
+	register Symbol *sym;
 	char *err;
 
 	if (accept('(')) {
@@ -131,12 +131,12 @@ too_much_declarators:
 	error("too much declarators");
 }
 
-static struct symbol *
-declarator(struct ctype *tp, uint8_t ns, int8_t flags)
+static Symbol *
+declarator(Type *tp, uint8_t ns, int8_t flags)
 {
 	struct dcldata data[NR_DECLARATORS+1];
 	register struct dcldata *bp;
-	struct symbol *sym;
+	Symbol *sym;
 
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
@@ -160,19 +160,19 @@ declarator(struct ctype *tp, uint8_t ns, int8_t flags)
 	return sym;
 }
 
-static struct ctype *structdcl(void), *enumdcl(void);
+static Type *structdcl(void), *enumdcl(void);
 
-static struct ctype *
+static Type *
 specifier(int8_t *sclass)
 {
-	struct ctype *tp = NULL;
+	Type *tp = NULL;
 	int8_t qlf, sign, type, cls, cplex, size, t;
 
 	qlf = sign = type = cls = size = cplex = 0;
 
 	for (;;) {
 		register uint8_t *p;
-		struct ctype *(*dcl)(void) = NULL;
+		Type *(*dcl)(void) = NULL;
 
 		switch (yytoken) {
 		case SCLASS: p = &cls; break;
@@ -243,7 +243,7 @@ invalid_type:
 }
 
 static struct node *
-initializer(register struct ctype *tp)
+initializer(register Type *tp)
 {
 	if (accept('{')) {
 		initializer(tp);
@@ -258,7 +258,7 @@ initializer(register struct ctype *tp)
 /* TODO: bitfields */
 
 static void
-newfield(struct ctype *tp, struct symbol *sym)
+newfield(Type *tp, Symbol *sym)
 {
 	register struct field *p, *q;
 	register char *s, *t;
@@ -311,10 +311,10 @@ error:
 }
 
 static void
-fielddcl(struct ctype *base, uint8_t ns)
+fielddcl(Type *base, uint8_t ns)
 {
-	struct ctype *tp;
-	struct symbol *sym;
+	Type *tp;
+	Symbol *sym;
 	char *err;
 
 	switch (yytoken) {
@@ -347,11 +347,11 @@ error:
 	error(err, yytext);
 }
 
-static struct ctype *
+static Type *
 newtag(uint8_t tag)
 {
-	register struct symbol *sym;
-	struct ctype *tp;
+	register Symbol *sym;
+	Type *tp;
 	extern uint8_t namespace;
 
 	if (yytoken == IDEN) {
@@ -375,10 +375,10 @@ bad_tag:
 	error("'%s' defined as wrong kind of tag", yytext);
 }
 
-static struct ctype *
+static Type *
 structdcl(void)
 {
-	struct ctype *tp;
+	Type *tp;
 	uint8_t ns, tag;
 
 	tag = yylval.token;
@@ -401,11 +401,11 @@ redefined:
 	error("redefinition of struct/union '%s'", yytext);
 }
 
-static struct ctype *
+static Type *
 enumdcl(void)
 {
-	register struct ctype *tp;
-	struct symbol *sym;
+	register Type *tp;
+	Symbol *sym;
 	int val = 0;
 	char *err;
 
@@ -445,8 +445,8 @@ error:
 void
 decl(void)
 {
-	struct ctype *tp;
-	struct symbol *sym;
+	Type *tp;
+	Symbol *sym;
 	int8_t sclass;
 
 	tp = specifier(&sclass);
@@ -470,9 +470,9 @@ typename(void)
 void
 extdecl(void)
 {
-	struct ctype *base;
+	Type *base;
 	int8_t sclass;
-	struct symbol *sym;
+	Symbol *sym;
 	char *err;
 	extern void compound(void);
 
@@ -491,7 +491,7 @@ extdecl(void)
 
 	if (yytoken != ';') {
 		do {
-			struct ctype *tp;
+			Type *tp;
 
 			sym = declarator(base, NS_IDEN, ID_EXPECTED);
 			tp = sym->type;

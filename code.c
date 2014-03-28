@@ -5,7 +5,7 @@
 #include "cc.h"
 
 void
-emitsym(struct symbol *sym)
+emitsym(Symbol *sym)
 {
 	char c;
 
@@ -21,19 +21,19 @@ emitsym(struct symbol *sym)
 }
 
 void
-emitfun(struct symbol *sym)
+emitfun(Symbol *sym)
 {
 	printf("X%s\n", sym->name);
 }
 
 void
-emitframe(struct symbol *sym)
+emitframe(Symbol *sym)
 {
 	puts("{");
 }
 
 void
-emitret(struct symbol *sym)
+emitret(Symbol *sym)
 {
 	puts("}");
 }

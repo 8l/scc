@@ -9,99 +9,99 @@
 
 #define NR_TYPE_HASH 16
 
-struct ctype
-	*voidtype = &(struct ctype) {
+Type
+	*voidtype = &(Type) {
 		.op = VOID
 	},
-	*uchartype = &(struct ctype) {
+	*uchartype = &(Type) {
 		.op = INT,
 		.size = CHARSIZE,
 		.sign = 1
 	},
-	*chartype = &(struct ctype) {
+	*chartype = &(Type) {
 		.op = INT,
 		.size = CHARSIZE,
 	},
-	*uinttype = &(struct ctype) {
+	*uinttype = &(Type) {
 		.op = INT,
 		.size = INTSIZE,
 		.sign = 1
 	},
-	*inttype = &(struct ctype) {
+	*inttype = &(Type) {
 		.op = INT,
 		.size = INTSIZE,
 		.sign = 1
 	},
-	*ushortype = &(struct ctype) {
+	*ushortype = &(Type) {
 		.op = INT,
 		.size = SHORTSIZE,
 	},
-	*shortype = &(struct ctype) {
+	*shortype = &(Type) {
 		.op = INT,
 		.size = INTSIZE,
 	},
-	*longtype = &(struct ctype) {
+	*longtype = &(Type) {
 		.op = INT,
 		.size = LONGSIZE,
 	},
-	*ulongtype = &(struct ctype) {
+	*ulongtype = &(Type) {
 		.op = INT,
 		.size = LONGSIZE,
 		.sign = 1
 	},
-	*ullongtype = &(struct ctype) {
+	*ullongtype = &(Type) {
 		.op = INT,
 		.size = LLONGSIZE,
 		.sign = 1
 	},
-	*llongtype = &(struct ctype) {
+	*llongtype = &(Type) {
 		.op = INT,
 		.size = LLONGSIZE,
 	},
-	*floattype = &(struct ctype) {
+	*floattype = &(Type) {
 		.op = FLOAT,
 		.size = FLOATSIZE
 	},
-	*cfloattype = &(struct ctype) {
+	*cfloattype = &(Type) {
 		.op = FLOAT,
 		.size = FLOATSIZE,
 		.cplex = 1
 	},
-	*ifloattype = &(struct ctype) {
+	*ifloattype = &(Type) {
 		.op = FLOAT,
 		.size = FLOATSIZE,
 		.imag = 1
 	},
-	*doubletype = &(struct ctype) {
+	*doubletype = &(Type) {
 		.op = FLOAT,
 		.size = FLOATSIZE
 	},
-	*cdoubletype = &(struct ctype) {
+	*cdoubletype = &(Type) {
 		.op = FLOAT,
 		.size = 0,
 		.cplex = 1
 	},
-	*idoubletype = &(struct ctype) {
+	*idoubletype = &(Type) {
 		.op = FLOAT,
 		.size = 0,
 		.imag = 1
 	},
-	*ldoubletype = &(struct ctype) {
+	*ldoubletype = &(Type) {
 		.op = FLOAT,
 		.size = LLFLOATSIZE
 	},
-	*cldoubletype = &(struct ctype) {
+	*cldoubletype = &(Type) {
 		.op = FLOAT,
 		.size = 0,
 		.cplex = 1
 	},
-	*ildoubletype = &(struct ctype) {
+	*ildoubletype = &(Type) {
 		.op = FLOAT,
 		.size = 0,
 		.imag = 1
 	};
 
-struct ctype *
+Type *
 ctype(int8_t type, int8_t sign, int8_t size, int8_t cplex)
 {
 	if (type == CHAR && !sign)
@@ -140,14 +140,14 @@ ctype(int8_t type, int8_t sign, int8_t size, int8_t cplex)
 	}
 }
 
-struct ctype *
-mktype(struct ctype *tp, uint8_t op,
-       struct symbol *sym, uint16_t nelem)
+Type *
+mktype(Type *tp, uint8_t op,
+       Symbol *sym, uint16_t nelem)
 {
-	static struct ctype *typetab[NR_TYPE_HASH], **tbl;
+	static Type *typetab[NR_TYPE_HASH], **tbl;
 	static uint8_t t;
 	static unsigned short size;
-	register struct ctype *bp;
+	register Type *bp;
 
 	t = (op  ^  (uint8_t) ((unsigned short) tp >> 3))
 	         & NR_TYPE_HASH-1;
@@ -179,8 +179,8 @@ mktype(struct ctype *tp, uint8_t op,
 	return *tbl = bp;
 }
 
-struct ctype *
-qualifier(struct ctype *tp, uint8_t qlf)
+Type *
+qualifier(Type *tp, uint8_t qlf)
 {
 	uint8_t q = tp->op;
 
@@ -196,7 +196,7 @@ qualifier(struct ctype *tp, uint8_t qlf)
 #include <stdio.h>
 
 static void
-ptype(struct ctype *tp)
+ptype(Type *tp)
 {
 	uint8_t op;
 	struct funpar *fp;
@@ -243,7 +243,7 @@ ptype(struct ctype *tp)
 }
 
 void
-printtype(struct ctype *tp)
+printtype(Type *tp)
 {
 	printf("type = %p ", tp);
 	ptype(tp);

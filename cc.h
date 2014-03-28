@@ -63,13 +63,15 @@ struct ctype {
 	} u;
 };
 
+typedef struct ctype Type;
+
 struct field {
 	struct symbol *sym;
 	struct field *next;
 };
 
 struct funpar {
-	struct ctype *type;
+	Type *type;
 	struct funpar *next;
 };
 
@@ -83,7 +85,7 @@ union value {
 
 struct symbol {
 	char *name;
-	struct ctype *type;
+	Type *type;
 	short id;
 	uint8_t ctx;
 	uint8_t token;
@@ -99,20 +101,22 @@ struct symbol {
 	struct symbol *hash;
 };
 
+typedef struct symbol Symbol;
+
 extern void freesyms(uint8_t ns);
 
-extern struct ctype *qualifier(struct ctype *tp, uint8_t qlf),
+extern Type *qualifier(Type *tp, uint8_t qlf),
 	*ctype(int8_t type, int8_t sign, int8_t size, int8_t cplex),
-	*mktype(struct ctype *tp,
-	        uint8_t op, struct symbol *tag, uint16_t nelem);
+	*mktype(Type *tp,
+	        uint8_t op, Symbol *tag, uint16_t nelem);
 
-extern struct symbol
+extern Symbol
 	*lookup(char *s, unsigned char ns),
 	*install(char *s, unsigned char ns);
 
 extern void context(void (*fun)(void));
 
-extern struct ctype *voidtype,
+extern Type *voidtype,
 	*uchartype,   *chartype,
 	*uinttype,    *inttype,
 	*ushortype,   *shortype,
@@ -192,7 +196,7 @@ enum tokens {
 };
 
 union yystype {
-	struct symbol *sym;
+	Symbol *sym;
 	uint8_t token;
 };
 

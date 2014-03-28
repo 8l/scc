@@ -23,7 +23,7 @@ static char yybuf[IDENTSIZ + 1];
 static uint8_t
 integer(char *s, char base)
 {
-	static struct ctype *tp;
+	static Type *tp;
 	static char ch;
 
 	/* TODO: implement again */
@@ -128,7 +128,7 @@ init_keywords(void)
 		{"while", WHILE, WHILE},
 		{NULL, 0, 0},
 	};
-	register struct symbol *sym;
+	register Symbol *sym;
 
 	for (bp = buff; bp->str; ++bp) {
 		sym = install(bp->str, NS_KEYWORD);
@@ -142,7 +142,7 @@ iden(void)
 {
 	register char *bp;
 	register int c;
-	struct symbol *sym;
+	Symbol *sym;
 
 	for (bp = yybuf; bp < &yybuf[IDENTSIZ]; *bp++ = c) {
 		if (!isalnum(c = getc(yyin)) && c != '_')
