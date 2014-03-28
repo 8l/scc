@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 #include "cc.h"
-#include "tokens.h"
 
 extern void extdecl(void), init_keywords(void), open_file(const char *file);
 

@@ -1,9 +1,8 @@
 
+#include <stddef.h>
 #include <stdint.h>
 
-#include "symbol.h"
-#include "tokens.h"
-
+#include "cc.h"
 
 void
 compound(void)

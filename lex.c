@@ -6,8 +6,6 @@
 #include <ctype.h>
 
 #include "cc.h"
-#include "tokens.h"
-#include "symbol.h"
 #include "sizes.h"
 
 static FILE *yyin;

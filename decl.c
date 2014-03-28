@@ -5,8 +5,6 @@
 
 #include "sizes.h"
 #include "cc.h"
-#include "tokens.h"
-#include "symbol.h"
 #include "machine.h"
 
 #define ID_EXPECTED     1

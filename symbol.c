@@ -5,8 +5,6 @@
 #include <string.h>
 
 #include "cc.h"
-#include "symbol.h"
-#include "tokens.h"
 
 #define NR_SYM_HASH 32
 

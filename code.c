@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "symbol.h"
+#include "cc.h"
 
 void
 emitsym(struct symbol *sym)

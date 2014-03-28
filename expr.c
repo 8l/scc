@@ -2,9 +2,6 @@
 #include <stdio.h>
 
 #include "cc.h"
-#include "code.h"
-#include "tokens.h"
-#include "symbol.h"
 
 void expr(void);
 
