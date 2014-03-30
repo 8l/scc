@@ -13,6 +13,9 @@ Type
 	*voidtype = &(Type) {
 		.op = VOID
 	},
+	*booltype = &(Type) {
+		.op = INT,
+	},
 	*uchartype = &(Type) {
 		.op = INT,
 		.size = CHARSIZE,
@@ -38,7 +41,7 @@ Type
 	},
 	*shortype = &(Type) {
 		.op = INT,
-		.size = INTSIZE,
+		.size = SHORTSIZE,
 	},
 	*longtype = &(Type) {
 		.op = INT,
@@ -113,6 +116,7 @@ ctype(int8_t type, int8_t sign, int8_t size, int8_t cplex)
 
 	switch (type) {
 	case VOID:                      return voidtype;
+	case BOOL:                      return booltype;
 	case CHAR:                      return (sign) ? uchartype  : chartype;
 	case INT: switch (size) {
 		case 0:                 return (sign) ? uinttype   : inttype;

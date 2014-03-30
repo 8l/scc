@@ -56,9 +56,9 @@ add(Node *np1, Node *np2)
 	t1 = tp1->op, t2 = tp2->op;
 
 	switch (t1) {
-	case BOOL: case INT:
+	case INT:
 		switch (t2) {
-		case BOOL: case INT:
+		case INT:
 			if (tp1 != tp2)
 				intconv(&np1, &np2);
 			break;
@@ -79,7 +79,7 @@ add(Node *np1, Node *np2)
 			if (tp1 != tp2)
 				floatconv(&np1, &np2);
 			break;
-		case BOOL: case INT:
+		case INT:
 int_float:		np2 = unarycode(OCAST, np1->type, np2);
 			break;
 		default:
