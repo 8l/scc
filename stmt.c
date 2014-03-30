@@ -8,6 +8,7 @@ void
 compound(void)
 {
 	extern void decl(void);
+	extern Node *expr(void);
 
 	expect('{');
 	while (!accept('}')) {
@@ -16,8 +17,7 @@ compound(void)
 			decl();
 			break;
 		default:
-			expr();
-			/* TODO: Evaluate the expression here */
+			emitexp(expr());
 		}
 		expect(';');
 	}

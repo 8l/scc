@@ -215,11 +215,14 @@ enum {
 	OCAST, OPTR, OADD, OARY
 };
 
-extern void emitsym(Node *), emitunary(Node *), emitbin(Node *);
+extern void
+	emitsym(Node *), emitunary(Node *),
+	emitbin(Node *), emitexp(Node *);
+
 extern Node
 	*node(Inst code, Type *tp, union unode u, uint8_t nchilds),
 	*unarycode(char op, Type *tp, Node *child),
-	*bincode(char op, Node *np1, Node *np2);
+	*bincode(char op, Type *tp, Node *np1, Node *np2);
 
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})

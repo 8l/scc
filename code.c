@@ -4,6 +4,12 @@
 
 #include "cc.h"
 
+char *opcodes[] = {
+	[OADD] = "+",
+	[OARY] = "'",
+	[OPTR] = "@"
+};
+
 Node *
 node(Inst code, Type *tp, union unode u, uint8_t nchilds)
 {
@@ -25,9 +31,9 @@ unarycode(char op, Type *tp, Node *child)
 }
 
 Node *
-bincode(char op, Node *np1, Node *np2)
+bincode(char op, Type *tp, Node *np1, Node *np2)
 {
-	Node *np = node(emitbin, np1->type, OP(op), 2);
+	Node *np = node(emitbin, tp, OP(op), 2);
 	np->childs[0] = np1;
 	np->childs[1] = np2;
 	return np;
@@ -44,7 +50,7 @@ emitsym(Node *np)
 	else if (sym->s.isstatic)
 		c = 'T';
 	else if (sym->s.isregister)
-		c = 'R';
+		c = 'Q';
 	else
 		c = 'A';
 	printf("\t%c%d", c, sym->id);
@@ -53,11 +59,42 @@ emitsym(Node *np)
 void
 emitunary(Node *np)
 {
+	Node *child;
+	char op, letter;
+
+	letter = np->type->letter;
+	child = np->childs[0];
+	(*child->code)(child);
+	switch (op = np->u.op) {
+	case OCAST:
+		printf("\t%c%c", child->type->letter, letter);
+		break;
+	case OARY:
+		fputs("\t'", stdout);
+		break;
+	default:
+		printf("\t%s%c", opcodes[op], letter);
+		break;
+	}
 }
 
 void
 emitbin(Node *np)
 {
+	Node *child1, *child2;
+
+	child1 = np->childs[0];
+	child2 = np->childs[1];
+	(*child1->code)(child1);
+	(*child2->code)(child2);
+	printf("\t%s%c", opcodes[np->u.op], np->type->letter);
+}
+
+void
+emitexp(Node *np)
+{
+	(*np->code)(np);
+	putchar('\n');
 }
 
 void

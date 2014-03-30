@@ -52,7 +52,7 @@ add(Node *np1, Node *np2)
 	Type *tp1, *tp2;
 	uint8_t t1, t2, taux;
 
-	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np1->type);
+	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
 	t1 = tp1->op, t2 = tp2->op;
 
 	switch (t1) {
@@ -87,17 +87,17 @@ int_float:		np2 = unarycode(OCAST, np1->type, np2);
 		}
 		break;
 	case PTR: case FTN: case ARY:
-pointer:	if (t1 == PTR)
-			np1 = unarycode(OPTR, np1->type, np1);
+pointer:	if (t1 == ARY)
+			tp1 = mktype(tp1->type, PTR, NULL, 0);
 		if (t2 != INT)
 			goto incorrect;
-		np2 = unarycode(OCAST, np1->type, np2);
+		np2 = unarycode(OCAST, tp1, np2);
 		break;
 	default:
 		goto incorrect;
 	}
 
-	return bincode(OADD, np1, np2);
+	return bincode(OADD, tp1, np1, np2);
 
 incorrect:
 	error("incorrect arithmetic operands"); /*TODO: print type names */
@@ -117,7 +117,7 @@ array(Node *np1, Node *np2)
 	if (t1 != INT && t2 != INT)
 		goto bad_subs;
 	np1 = add(np1, np2);
-	return unarycode(OARY, UNQUAL(np1->type)->type , np1);
+	return unarycode(OARY, np1->type->type , np1);
 
 bad_vector:
 	err = "subscripted value is neither array nor pointer nor vector";
