@@ -31,6 +31,8 @@ extern void *xcalloc(size_t nmemb, size_t size);
 extern char *xstrdup(const char *s);
 extern void *xrealloc(void *buff, register size_t size);
 
+/* definitions of types */
+
 #define CTX_OUTER 0
 #define CTX_FUNC  1
 
@@ -74,6 +76,8 @@ struct funpar {
 	Type *type;
 	struct funpar *next;
 };
+
+/* definition of symbols */
 
 union value {
 	char c;
@@ -206,4 +210,31 @@ extern uint8_t yytoken, yyntoken;
 
 extern uint8_t next(void);
 extern void expect(uint8_t tok);
+
+
+typedef struct node {
+	void (*code)(struct node *);
+	Type *type;
+	union unode {
+		Symbol *sym;
+		char op;
+	} u;
+	struct node *childs[];
+} Node;
+
+typedef void (*Inst)(Node *);
+
+enum {
+	OCAST, OPTR, OADD, OARY
+};
+
+extern void emitsym(Node *), emitunary(Node *), emitbin(Node *);
+extern Node
+	*node(void (*code)(Node *), Type *tp, union unode u, uint8_t nchilds),
+	*unarycode(char op, Type *tp, Node *child),
+	*bincode(char op, Node *np1, Node *np2);
+
+#define SYM(s) ((union unode) {.sym = s})
+#define OP(s) ((union unode) {.op = s})
+
 #endif
