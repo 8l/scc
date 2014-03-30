@@ -176,7 +176,7 @@ extern Type *voidtype,
 #define AUTO          4
 #define REGISTER      5
 
-#define accept(t) ((bool) (yytoken == (t) ? next() : 0))
+#define accept(t) ((yytoken == (t)) ? next() : 0)
 #define ahead()   yyntoken
 
 enum tokens {
