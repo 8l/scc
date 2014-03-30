@@ -6,8 +6,9 @@
 
 #include "cc.h"
 
-
-
+extern unsigned linenum;
+extern unsigned columnum;
+extern const char *filename;
 
 static void
 warn_helper(char flag, const char *fmt, va_list va)

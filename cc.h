@@ -7,11 +7,6 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-extern unsigned linenum;
-extern unsigned columnum;
-extern const char *filename;
-
-
 struct user_opt {
 	unsigned char implicit;
 	unsigned char c99;
