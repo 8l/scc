@@ -45,11 +45,9 @@ struct symbol;
 
 struct ctype {
 	uint8_t op;           /* type builder operator */
-	short size;           /* size of variables */
+	char letter;          /* letter of the type */
 	short nelem;          /* number of elements in arrays */
 	unsigned defined : 1; /* type defined (is not a forward reference) */
-	unsigned cplex : 1;   /* complex specifier */
-	unsigned imag : 1;
 	unsigned sign : 1;    /* sign type */
 	struct symbol *sym;   /* symbol of the tag identifier */
 	struct ctype *type;   /* base type */
@@ -79,7 +77,6 @@ union value {
 	int i;
 	struct symbol *sym;
 	uint8_t ns, token;
-	short offset;
 };
 
 struct symbol {
@@ -105,7 +102,7 @@ typedef struct symbol Symbol;
 extern void freesyms(uint8_t ns);
 
 extern Type *qualifier(Type *tp, uint8_t qlf),
-	*ctype(int8_t type, int8_t sign, int8_t size, int8_t cplex),
+	*ctype(int8_t type, int8_t sign, int8_t size),
 	*mktype(Type *tp,
 	        uint8_t op, Symbol *tag, uint16_t nelem);
 
@@ -121,9 +118,7 @@ extern Type *voidtype,
 	*ushortype,   *shortype,
 	*longtype,    *ulongtype,
 	*ullongtype,  *llongtype,
-	*floattype,   *cfloattype,  *ifloattype,
-	*doubletype,  *cdoubletype, *idoubletype,
-	*ldoubletype, *cldoubletype,*ildoubletype;
+	*floattype,   *doubletype,  *ldoubletype;
 
 #define ISQUAL(t)    (isqual((t)->op))
 #define UNQUAL(t)    (ISQUAL(t) ? (t)->type : (t))
@@ -222,7 +217,7 @@ enum {
 
 extern void emitsym(Node *), emitunary(Node *), emitbin(Node *);
 extern Node
-	*node(void (*code)(Node *), Type *tp, union unode u, uint8_t nchilds),
+	*node(Inst code, Type *tp, union unode u, uint8_t nchilds),
 	*unarycode(char op, Type *tp, Node *child),
 	*bincode(char op, Node *np1, Node *np2);
 

@@ -166,9 +166,9 @@ static Type *
 specifier(int8_t *sclass)
 {
 	Type *tp = NULL;
-	int8_t qlf, sign, type, cls, cplex, size, t;
+	int8_t qlf, sign, type, cls, size, t;
 
-	qlf = sign = type = cls = size = cplex = 0;
+	qlf = sign = type = cls = size = 0;
 
 	for (;;) {
 		register uint8_t *p;
@@ -201,8 +201,6 @@ specifier(int8_t *sclass)
 				}
 			case SHORT:
 				p = &size; break;
-			case COMPLEX: case IMAGINARY:
-				p = &cplex; break;
 			}
 			break;
 		default:
@@ -226,7 +224,6 @@ check_types:
 		type = INT;
 	}
 	if (sign && type != INT && type != CHAR ||
-	    cplex && type != FLOAT && type != DOUBLE ||
 	    size == SHORT && type != INT ||
 	    size == LONG  && type != INT && type != DOUBLE ||
 	    size == LONG+LONG && type != INT) {
@@ -235,7 +232,7 @@ check_types:
 	if (sclass)
 		*sclass = cls;
 	if (!tp)
-		tp = ctype(type, sign, size, cplex);
+		tp = ctype(type, sign, size);
 	return (qlf) ? qualifier(tp, qlf) : tp;
 
 invalid_type:
@@ -262,7 +259,6 @@ newfield(Type *tp, Symbol *sym)
 {
 	register struct field *p, *q;
 	register char *s, *t;
-	static short size, offset;
 	static uint8_t op;
 	static char *err;
 
@@ -279,25 +275,10 @@ newfield(Type *tp, Symbol *sym)
 	p = xmalloc(sizeof(*p));
 	p->next = NULL;
 	p->sym = sym;
-	size = sym->type->size;
-	if (!q) {
+	if (!q)
 		tp->u.fields = p;
-		if (op != ENUM) {
-			tp->size = size;
-			sym->u.offset = 0;
-		}
-	} else {
+	else
 		q->next = p;
-		if (tp->op == STRUCT) {
-			offset = ALIGN(size, tp->size);
-			sym->u.offset = offset;
-			tp->size = offset + size;
-		} else if (op == UNION) {
-			sym->u.offset = 0;
-			if (tp->size < size)
-				tp->size = size;
-		}
-	}
 
 	return;
 
