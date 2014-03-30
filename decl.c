@@ -498,7 +498,7 @@ extdecl(void)
 
 			if (!(sclass & STATIC))
 				sym->s.isglobal = 1;
-			if (isfun(BTYPE(tp))) {
+			if (BTYPE(tp) == FTN) {
 				emitfun(sym);
 				if (yytoken == '{') {
 					emitframe(sym);
