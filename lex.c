@@ -182,6 +182,7 @@ minus(void)
 	register int c = getc(yyin);
 
 	yybuf[1] = c;
+	yybuf[2] = '\0';
 	switch (c) {
 	case '-': return DEC;
 	case '>': return INDIR;
@@ -190,6 +191,23 @@ minus(void)
 		yybuf[1] = '\0';
 		ungetc(c, yyin);
 		return '-';
+	}
+}
+
+static uint8_t
+plus(void)
+{
+	register int c = getc(yyin);
+
+	yybuf[1] = c;
+	yybuf[2] = '\0';
+	switch (c) {
+	case '+': return INC;
+	case '=': return ADD_EQ;
+	default:
+		yybuf[1] = '\0';
+		ungetc(c, yyin);
+		return '+';
 	}
 }
 
@@ -220,7 +238,6 @@ operator(void)
 	switch (c) {
 	case '<': return relational('<', LE, SHL, SHL_EQ);
 	case '>': return relational('>', GE, SHR, SHR_EQ);
-	case '+': return follow('+', INC, follow('=', ADD_EQ, '+'));
 	case '=': return follow('=', EQ, '=');
 	case '^': return follow('=', XOR_EQ, '^');
 	case '*': return follow('=', MUL_EQ, '*');
@@ -229,6 +246,7 @@ operator(void)
 	case '&': return follow('=', AND_EQ, AND);
 	case '|': return follow('=', OR_EQ, OR);
 	case '-': return minus();
+	case '+': return plus();
 	default: return c;
 	}
 }
