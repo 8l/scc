@@ -204,6 +204,7 @@ typedef struct node {
 	Type *type;
 	union unode {
 		Symbol *sym;
+		Type *type;
 		char op;
 	} u;
 	struct node *childs[];
@@ -222,9 +223,11 @@ extern void
 extern Node
 	*node(Inst code, Type *tp, union unode u, uint8_t nchilds),
 	*unarycode(char op, Type *tp, Node *child),
-	*bincode(char op, Type *tp, Node *np1, Node *np2);
+	*bincode(char op, Type *tp, Node *np1, Node *np2),
+	*castcode(Node *child, Type *tp);
 
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})
+#define TYP(s) ((union unode) {.type = s})
 
 #endif

@@ -80,7 +80,7 @@ add(Node *np1, Node *np2)
 				floatconv(&np1, &np2);
 			break;
 		case INT:
-int_float:		np2 = unarycode(OCAST, np1->type, np2);
+int_float:		np2 = castcode(np2, np1->type);
 			break;
 		default:
 			goto incorrect;
@@ -91,7 +91,7 @@ pointer:	if (t1 == ARY)
 			tp1 = mktype(tp1->type, PTR, NULL, 0);
 		if (t2 != INT)
 			goto incorrect;
-		np2 = unarycode(OCAST, tp1, np2);
+		np2 = castcode(np2, tp1);
 		break;
 	default:
 		goto incorrect;

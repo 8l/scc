@@ -22,23 +22,6 @@ node(Inst code, Type *tp, union unode u, uint8_t nchilds)
 	return np;
 }
 
-Node *
-unarycode(char op, Type *tp, Node *child)
-{
-	Node *np = node(emitunary, tp, OP(op), 1);
-	np->childs[0] = child;
-	return np;
-}
-
-Node *
-bincode(char op, Type *tp, Node *np1, Node *np2)
-{
-	Node *np = node(emitbin, tp, OP(op), 2);
-	np->childs[0] = np1;
-	np->childs[1] = np2;
-	return np;
-}
-
 void
 emitsym(Node *np)
 {
@@ -57,6 +40,15 @@ emitsym(Node *np)
 }
 
 void
+emitcast(Node *np)
+{
+	Node *child = np->childs[0];
+
+	(*child->code)(child);
+	printf("\t%c%c", np->u.type->letter, np->type->letter);
+}
+
+void
 emitunary(Node *np)
 {
 	Node *child;
@@ -65,17 +57,7 @@ emitunary(Node *np)
 	letter = np->type->letter;
 	child = np->childs[0];
 	(*child->code)(child);
-	switch (op = np->u.op) {
-	case OCAST:
-		printf("\t%c%c", child->type->letter, letter);
-		break;
-	case OARY:
-		fputs("\t'", stdout);
-		break;
-	default:
-		printf("\t%s%c", opcodes[op], letter);
-		break;
-	}
+	printf("\t%s%c", opcodes[np->u.op], letter);
 }
 
 void
@@ -113,4 +95,30 @@ void
 emitret(Symbol *sym)
 {
 	puts("}");
+}
+
+Node *
+castcode(Node *child, Type *tp)
+{
+	Node *np = node(emitcast, tp, TYP(child->type), 1);
+
+	np->childs[0] = child;
+	return np;
+}
+	
+Node *
+unarycode(char op, Type *tp, Node *child)
+{
+	Node *np = node(emitunary, tp, OP(op), 1);
+	np->childs[0] = child;
+	return np;
+}
+
+Node *
+bincode(char op, Type *tp, Node *np1, Node *np2)
+{
+	Node *np = node(emitbin, tp, OP(op), 2);
+	np->childs[0] = np1;
+	np->childs[1] = np2;
+	return np;
 }
