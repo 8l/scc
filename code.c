@@ -6,7 +6,9 @@
 
 char *opcodes[] = {
 	[OADD] = "+",
+	[OMUL] = "*",
 	[OARY] = "'",
+	[OSIZE] = "#",
 	[OPTR] = "@"
 };
 
@@ -73,6 +75,12 @@ emitbin(Node *np)
 }
 
 void
+emitsizeof(Node *np)
+{
+	printf("\t#%c", np->u.type->letter);
+}
+
+void
 emitexp(Node *np)
 {
 	(*np->code)(np);
@@ -121,4 +129,10 @@ bincode(char op, Type *tp, Node *np1, Node *np2)
 	np->childs[0] = np1;
 	np->childs[1] = np2;
 	return np;
+}
+
+Node *
+sizeofcode(Type *tp)
+{
+	return node(emitsizeof, inttype, TYP(tp), 0);
 }

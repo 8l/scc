@@ -87,11 +87,14 @@ int_float:		np2 = castcode(np2, np1->type);
 		}
 		break;
 	case PTR: case FTN: case ARY:
-pointer:	if (t1 == ARY)
+pointer:	tp3 = tp1->type;
+		if (t1 == ARY)
 			tp1 = mktype(tp1->type, PTR, NULL, 0);
 		if (t2 != INT)
 			goto incorrect;
-		np2 = castcode(np2, tp1);
+		np2 = bincode(OMUL, tp1,
+		              castcode(np2, tp1),
+		              sizeofcode(tp3));
 		break;
 	default:
 		goto incorrect;

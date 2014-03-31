@@ -213,7 +213,7 @@ typedef struct node {
 typedef void (*Inst)(Node *);
 
 enum {
-	OCAST, OPTR, OADD, OARY
+	OCAST, OPTR, OADD, OARY, OSIZE, OMUL
 };
 
 extern void
@@ -224,7 +224,8 @@ extern Node
 	*node(Inst code, Type *tp, union unode u, uint8_t nchilds),
 	*unarycode(char op, Type *tp, Node *child),
 	*bincode(char op, Type *tp, Node *np1, Node *np2),
-	*castcode(Node *child, Type *tp);
+	*castcode(Node *child, Type *tp),
+	*sizeofcode(Type *tp);
 
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})
