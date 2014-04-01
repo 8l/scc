@@ -2,50 +2,22 @@
 #include <stdio.h>
 
 #include "cc.h"
-#include "code.h"
-#include "tokens.h"
-#include "symbol.h"
 
-struct node *expr(void);
+#define SWAP(x1, x2, t) (t = x1, x1 = x2, x2 = t)
 
-enum {
-	OSYM = 1, OARY, OPTR, OADD,
-};
+Node *expr(void);
 
-struct node {
-	uint8_t op;
-	struct ctype *type;
-
-	struct {
-		bool constant : 1;
-	} f;
-	union  {
-		struct symbol *sym;
-	} u;
-	struct node *left, *right;
-};
-
-struct node *
-newnode(uint8_t op, struct ctype *tp)
-{
-	struct node *np = xcalloc(1, sizeof(*np));
-
-	np->op = op;
-	np->type = tp;
-	return np;	
-}
-
-static struct node *
+static Node *
 primary(void)
 {
-	register struct node *np;
+	Node *np;
+	Symbol *sym;
 
 	switch (yytoken) {
 	case IDEN:
-		if (yylval.sym == NULL)
+		if ((sym = yylval.sym) == NULL)
 			error("'%s' undeclared", yytext);
-		np = newnode(OSYM, yylval.sym->type);
-		np->u.sym = yylval.sym;
+		np = node(emitsym, sym->type, SYM(sym), 0);
 		next();
 		break;
 	case CONSTANT:
@@ -58,117 +30,133 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		np = NULL;
+		;
 	}
 	return np;
 }
 
-static struct node *
-int2ptr(struct node *np)
+void
+intconv(Node **np1, Node **np2)
 {
 }
 
-static struct node *
-ptr2vec(struct node *np)
+void
+floatconv(Node **np1, Node **np2)
 {
-	struct ctype *tp = np->type;
-	struct node *p;
-
-	tp = mktype(UNQUAL(tp)->type, ARY, NULL, 0);
-	p = newnode(OPTR, tp);
-	p->left = np;
-	return p;
 }
 
-static struct node *
-ary(struct node *np1)
+static Node *
+add(Node *np1, Node *np2)
 {
-	struct node *np2,  *naux;
-	struct ctype *tp;
+	Node *naux;
+	Type *tp1, *tp2;
 	uint8_t t1, t2, taux;
 
-	/* should be for arrays:   A2 A1 RI #1 *R ` */
-	/* should be for pointers: A2 @ A1 RI #1 *R ` */
-	np2 = expr();
-	expect(']');
+	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
+	t1 = tp1->op, t2 = tp2->op;
+
+	switch (t1) {
+	case INT:
+		switch (t2) {
+		case INT:
+			if (tp1 != tp2)
+				intconv(&np1, &np2);
+			break;
+		case FLOAT:
+			SWAP(np1, np2, naux);
+			goto int_float;
+		case PTR: case FTN: case ARY:
+			SWAP(np1, np2, naux);
+			SWAP(t1, t2, taux);
+			goto pointer;
+		default:
+			goto incorrect;
+		}
+		break;
+	case FLOAT:
+		switch (t2) {
+		case FLOAT:
+			if (tp1 != tp2)
+				floatconv(&np1, &np2);
+			break;
+		case INT:
+int_float:		np2 = castcode(np2, np1->type);
+			break;
+		default:
+			goto incorrect;
+		}
+		break;
+	case PTR: case FTN: case ARY:
+pointer:	tp3 = tp1->type;
+		if (t1 == ARY)
+			tp1 = mktype(tp1->type, PTR, NULL, 0);
+		if (t2 != INT)
+			goto incorrect;
+		np2 = bincode(OMUL, tp1,
+		              castcode(np2, tp1),
+		              sizeofcode(tp3));
+		break;
+	default:
+		goto incorrect;
+	}
+
+	return bincode(OADD, tp1, np1, np2);
+
+incorrect:
+	error("incorrect arithmetic operands"); /*TODO: print type names */
+}
+
+static Node *
+array(Node *np1, Node *np2)
+{
+	Type *tp;
+	uint8_t t1, t2;
+	char *err;
+
 	t1 = BTYPE(np1->type);
 	t2 = BTYPE(np2->type);
+	if (!isaddr(t1) && !isaddr(t2))
+		goto bad_vector;
+	if (t1 != INT && t2 != INT)
+		goto bad_subs;
+	np1 = add(np1, np2);
+	return unarycode(OARY, np1->type->type , np1);
 
-	if (!isaddr(t1)) {
-		taux = t1,   t1 = t2,   t2 = taux;
-		naux = np1, np1 = np2, np2 = naux;
-	}
-	if (!isaddr(t1))
-		error("expected array or pointer");
-	if (isptr(t1))
-		np1 = ptr2vec(np1);
-	if (!isarith(t2))
-		error("array subscript is not an integer");
-
-	tp = np1->type;
-	tp = UNQUAL(tp);
-	naux = newnode(OADD, tp);
-	naux->left = np1;
-	naux->right = int2ptr(np2);
-	return naux;
+bad_vector:
+	err = "subscripted value is neither array nor pointer nor vector";
+	goto error;
+bad_subs:
+	err = "array subscript is not an integer";
+error:	error(err);
 }
 
-static struct node *
+static Node *
 postfix(void)
 {
-	struct node *np;
+	Node *np1, *np2;
 
-	np = primary();
+	np1 = primary();
 	for (;;) {
 		switch (yytoken) {
-		case '[': next(); np = ary(np); break;
-		default: return np;
+		case '[':
+			next();
+			np2 = expr();
+			np1 = array(np1, np2);
+			expect(']');
+			break;
+		default:
+			return np1;
 		}
-	}			
+	}
 }
 
-struct node *
+Node *
 expr(void)
 {
-	register struct node *np;
+	Node *np;
 
 	do
 		np = postfix();
 	while (yytoken == ',');
-
 	return np;
-}
-
-static void
-evalnode(struct node *np)
-{
-	if (!np)
-		return;
-
-	switch (np->op) {
-	case OSYM:
-		emitsym(np->u.sym);
-		break;
-	case OARY:
-		evalnode(np->left);
-		evalnode(np->right);
-		fputs("\t'", stdout);
-		break;
-	case OPTR:
-		evalnode(np->left);
-		fputs("\t@", stdout);
-		break;
-	case OADD:
-		evalnode(np->left);
-		evalnode(np->right);
-		fputs("\t+", stdout);
-		break;
-	}
-}
-
-void
-eval(struct node *np)
-{
-	evalnode(np);
-	putchar('\n');
 }

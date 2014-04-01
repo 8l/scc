@@ -5,8 +5,6 @@
 #include <string.h>
 
 #include "cc.h"
-#include "symbol.h"
-#include "tokens.h"
 
 #define NR_SYM_HASH 32
 
@@ -14,8 +12,8 @@ uint8_t curctx;
 uint8_t namespace = NS_KEYWORD + 1 ;
 
 static struct symtab {
-	struct symbol *head;
-	struct symbol *htab[NR_SYM_HASH];
+	Symbol *head;
+	Symbol *htab[NR_SYM_HASH];
 } symtab [NR_NAMESPACES];
 
 static inline uint8_t
@@ -32,7 +30,7 @@ void
 freesyms(uint8_t ns)
 {
 	static struct symtab *tbl;
-	register struct symbol *sym;
+	register Symbol *sym;
 
 	tbl = &symtab[ns];
 	for (sym = tbl->head; sym; sym = sym->next) {
@@ -59,12 +57,12 @@ context(void (*fun)(void))
 	freesyms(NS_TAG);
 }
 
-struct symbol *
+Symbol *
 lookup(register char *s, uint8_t ns)
 {
 	extern union yystype yylval;
 	static struct symtab *tbl;
-	register struct symbol *sym;
+	register Symbol *sym;
 
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
@@ -76,11 +74,11 @@ lookup(register char *s, uint8_t ns)
 	return NULL;
 }
 
-struct symbol *
+Symbol *
 install(char *s, uint8_t ns)
 {
-	register struct symbol *sym;
-	register struct symbol **t;
+	register Symbol *sym;
+	register Symbol **t;
 	struct symtab *tbl;
 	static short id;
 

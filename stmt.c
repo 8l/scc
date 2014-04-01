@@ -1,15 +1,14 @@
 
+#include <stddef.h>
 #include <stdint.h>
 
-#include "symbol.h"
-#include "tokens.h"
-
+#include "cc.h"
 
 void
 compound(void)
 {
-	extern struct node *expr(void);
 	extern void decl(void);
+	extern Node *expr(void);
 
 	expect('{');
 	while (!accept('}')) {
@@ -18,7 +17,7 @@ compound(void)
 			decl();
 			break;
 		default:
-			eval(expr());
+			emitexp(expr());
 		}
 		expect(';');
 	}
