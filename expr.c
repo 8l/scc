@@ -46,10 +46,10 @@ floatconv(Node **np1, Node **np2)
 }
 
 static Node *
-add(Node *np1, Node *np2)
+arithmetic(char op, Node *np1, Node *np2)
 {
 	Node *naux;
-	Type *tp1, *tp2;
+	Type *tp1, *tp2, *tp3;
 	uint8_t t1, t2, taux;
 
 	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
@@ -86,8 +86,12 @@ int_float:		np2 = castcode(np2, np1->type);
 			goto incorrect;
 		}
 		break;
-	case PTR: case FTN: case ARY:
-pointer:	tp3 = tp1->type;
+	case PTR: case ARY:
+pointer:
+		if (op != OADD && op != OSUB)
+			goto incorrect;
+		/* TODO: check that the the base type is a complete type */
+		tp3 = tp1->type;
 		if (t1 == ARY)
 			tp1 = mktype(tp1->type, PTR, NULL, 0);
 		if (t2 != INT)
@@ -100,7 +104,7 @@ pointer:	tp3 = tp1->type;
 		goto incorrect;
 	}
 
-	return bincode(OADD, tp1, np1, np2);
+	return bincode(op, tp1, np1, np2);
 
 incorrect:
 	error("incorrect arithmetic operands"); /*TODO: print type names */
@@ -119,7 +123,7 @@ array(Node *np1, Node *np2)
 		goto bad_vector;
 	if (t1 != INT && t2 != INT)
 		goto bad_subs;
-	np1 = add(np1, np2);
+	np1 = arithmetic(OADD, np1, np2);
 	return unarycode(OARY, np1->type->type , np1);
 
 bad_vector:
@@ -127,7 +131,8 @@ bad_vector:
 	goto error;
 bad_subs:
 	err = "array subscript is not an integer";
-error:	error(err);
+error:
+	error(err);
 }
 
 static Node *
