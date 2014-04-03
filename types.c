@@ -147,6 +147,8 @@ qualifier(Type *tp, uint8_t qlf)
 {
 	uint8_t q = tp->op;
 
+	if (!qlf)
+		return tp;
 	if (q & TQUALIFIER) {
 		if (q == qlf)
 			return tp;
