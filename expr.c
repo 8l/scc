@@ -163,13 +163,32 @@ postfix(void)
 	}
 }
 
+static Node *
+unary(void)
+{
+	Node *np;
+	char op;
+
+	switch (yytoken) {
+	case INC: case DEC:
+		op = (yytoken == INC) ? OINC : ODEC;
+		/* TODO: check that the the base type is a complete type */
+		next();
+		np = unary();
+		return unarycode(op, np->type, np);
+		break;
+	default:
+		return postfix();
+	}
+}
+
 Node *
 expr(void)
 {
 	Node *np;
 
 	do
-		np = postfix();
+		np = unary();
 	while (yytoken == ',');
 	return np;
 }
