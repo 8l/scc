@@ -8,6 +8,10 @@ char *opcodes[] = {
 	[OADD] = "+",
 	[OMUL] = "*",
 	[OARY] = "'",
+	[OINC] = ":+",
+	[ODEC] = ":-",
+	[OPINC] = ";+",
+	[OPDEC] =  ";=",
 	[OSIZE] = "#",
 	[OPTR] = "@"
 };

@@ -139,6 +139,7 @@ static Node *
 postfix(void)
 {
 	Node *np1, *np2;
+	char op;
 
 	np1 = primary();
 	for (;;) {
@@ -148,6 +149,12 @@ postfix(void)
 			np2 = expr();
 			np1 = array(np1, np2);
 			expect(']');
+			break;
+		case DEC:	 case INC:
+			op = (yytoken == INC) ? OPINC : OPDEC;
+			/* TODO: check that the the base type is a complete type */
+			np1 = unarycode(op, np1->type, np1);
+			next();
 			break;
 		default:
 			return np1;

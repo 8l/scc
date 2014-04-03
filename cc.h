@@ -213,7 +213,8 @@ typedef struct node {
 typedef void (*Inst)(Node *);
 
 enum {
-	OCAST, OPTR, OADD, OARY, OSIZE, OMUL, OSUB
+	OCAST, OPTR, OADD, OARY, OSIZE, OMUL, OSUB,
+	OINC, ODEC, OPINC, OPDEC
 };
 
 extern void
