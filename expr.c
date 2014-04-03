@@ -65,7 +65,7 @@ arithmetic(char op, Node *np1, Node *np2)
 		case FLOAT:
 			SWAP(np1, np2, naux);
 			goto int_float;
-		case PTR: case FTN: case ARY:
+		case PTR: case ARY:
 			SWAP(np1, np2, naux);
 			SWAP(t1, t2, taux);
 			goto pointer;
@@ -80,7 +80,8 @@ arithmetic(char op, Node *np1, Node *np2)
 				floatconv(&np1, &np2);
 			break;
 		case INT:
-int_float:		np2 = castcode(np2, np1->type);
+int_float:
+			np2 = castcode(np2, np1->type);
 			break;
 		default:
 			goto incorrect;
@@ -107,7 +108,7 @@ pointer:
 	return bincode(op, tp1, np1, np2);
 
 incorrect:
-	error("incorrect arithmetic operands"); /*TODO: print type names */
+	error("incorrect arithmetic operands");
 }
 
 static Node *
