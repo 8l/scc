@@ -89,9 +89,10 @@ int_float:
 		break;
 	case PTR: case ARY:
 pointer:
+		if (!tp1->defined)
+			goto nocomplete;
 		if (op != OADD && op != OSUB)
 			goto incorrect;
-		/* TODO: check that the the base type is a complete type */
 		tp3 = tp1->type;
 		if (t1 == ARY)
 			tp1 = mktype(tp1->type, PTR, NULL, 0);
@@ -107,6 +108,8 @@ pointer:
 
 	return bincode(op, tp1, np1, np2);
 
+nocomplete:
+	error("invalid use of indefined type");
 incorrect:
 	error("incorrect arithmetic operands");
 }

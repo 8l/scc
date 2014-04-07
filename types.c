@@ -16,63 +16,77 @@ Type
 	},
 	*booltype = &(Type) {
 		.op = INT,
-		.letter = 'B'
+		.letter = 'B',
+		.defined = 1
 	},
 	*uchartype = &(Type) {
 		.op = INT,
 		.letter = 'M',
-		.sign = 1
+		.sign = 1,
+		.defined = 1
 	},
 	*chartype = &(Type) {
 		.op = INT,
 		.letter = 'C',
+		.defined = 1
 	},
 	*uinttype = &(Type) {
 		.op = INT,
 		.letter = 'U',
-		.sign = 1
+		.sign = 1,
+		.defined = 1
 	},
 	*inttype = &(Type) {
 		.op = INT,
 		.letter = 'I',
+		.defined = 1
 	},
 	*ushortype = &(Type) {
 		.op = INT,
-		.letter = 'E'
+		.letter = 'E',
+		.defined = 1
 	},
 	*shortype = &(Type) {
 		.op = INT,
 		.letter = 'K',
+		.defined = 1
 	},
 	*longtype = &(Type) {
 		.op = INT,
-		.letter = 'L'
+		.letter = 'L',
+		.defined = 1
 	},
 	*ulongtype = &(Type) {
 		.op = INT,
 		.letter = 'Z',
-		.sign = 1
+		.sign = 1,
+		.defined = 1
 	},
 	*ullongtype = &(Type) {
 		.op = INT,
 		.letter = 'O',
-		.sign = 1
+		.sign = 1,
+		.defined = 1
 	},
 	*llongtype = &(Type) {
 		.op = INT,
 		.letter = 'G',
+		.defined = 1
 	},
 	*floattype = &(Type) {
 		.op = FLOAT,
-		.letter = 'F'
+		.letter = 'F',
+		.defined = 1
 	},
 	*doubletype = &(Type) {
 		.op = FLOAT,
-		.letter = 'D'
+		.letter = 'D',
+		.defined = 1
 	},
 	*ldoubletype = &(Type) {
 		.op = FLOAT,
-		.letter = 'H'
+		.letter = 'H',
+		.defined = 1
 	};
 
 Type *
