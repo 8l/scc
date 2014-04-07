@@ -30,7 +30,7 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		;
+		error("unexpected '%s'", yytext);
 	}
 	return np;
 }
@@ -140,10 +140,42 @@ error:
 }
 
 static Node *
+incdec(Node *np, char op)
+{
+	Type *tp;
+	char *err;
+
+	/* TODO: Check against l-value */
+	tp = UNQUAL(np->type);
+	if (isconst(np->type->op))
+		goto const_mod;
+
+	switch (tp->op) {
+	case PTR:
+		if (!tp->type->defined)
+			goto nocomplete;
+	case INT: case FLOAT:
+		return unarycode(op, np->type, np);
+	default:
+		goto bad_type;
+	}
+
+nocomplete:
+	err = "invalid use of indefined type";
+	goto error;
+bad_type:
+	err = "incorrect type in arithmetic operation";
+	goto error;
+const_mod:
+	err = "const value modified";
+error:
+	error(err);
+}
+
+static Node *
 postfix(void)
 {
 	Node *np1, *np2;
-	char op;
 
 	np1 = primary();
 	for (;;) {
@@ -154,10 +186,8 @@ postfix(void)
 			np1 = array(np1, np2);
 			expect(']');
 			break;
-		case DEC:	 case INC:
-			op = (yytoken == INC) ? OPINC : OPDEC;
-			/* TODO: check that the the base type is a complete type */
-			np1 = unarycode(op, np1->type, np1);
+		case DEC: case INC:
+			np1 = incdec(np1,  (yytoken == INC) ? OPINC : OPDEC);
 			next();
 			break;
 		default:
