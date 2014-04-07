@@ -367,8 +367,7 @@ structdcl(void)
 	tp = newtag(tag);
 	tp->u.fields = NULL;
 	ns = tp->sym->u.ns;
-	if (yytoken != ';') {
-		expect('{');
+	if (accept('{')) {
 		if (tp->defined)
 			goto redefined;
 		tp->defined = 1;
