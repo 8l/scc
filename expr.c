@@ -18,6 +18,7 @@ primary(void)
 		if ((sym = yylval.sym) == NULL)
 			error("'%s' undeclared", yytext);
 		np = node(emitsym, sym->type, SYM(sym), 0);
+		np->b.lvalue = 1;
 		next();
 		break;
 	case CONSTANT:
@@ -50,7 +51,7 @@ arithmetic(char op, Node *np1, Node *np2)
 {
 	Node *naux;
 	Type *tp1, *tp2, *tp3;
-	uint8_t t1, t2, taux;
+	uint8_t t1, t2, taux, lvalue = 0;
 
 	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
 	t1 = tp1->op, t2 = tp2->op;
@@ -101,12 +102,15 @@ pointer:
 		np2 = bincode(OMUL, tp1,
 		              castcode(np2, tp1),
 		              sizeofcode(tp3));
+		lvalue = 1;
 		break;
 	default:
 		goto incorrect;
 	}
 
-	return bincode(op, tp1, np1, np2);
+	np1 = bincode(op, tp1, np1, np2);
+	np1->b.lvalue = lvalue;
+	return np1;
 
 nocomplete:
 	error("invalid use of indefined type");
@@ -145,7 +149,8 @@ incdec(Node *np, char op)
 	Type *tp;
 	char *err;
 
-	/* TODO: Check against l-value */
+	if (!np->b.lvalue)
+		goto nolvalue;
 	tp = UNQUAL(np->type);
 	if (isconst(np->type->op))
 		goto const_mod;
@@ -155,11 +160,16 @@ incdec(Node *np, char op)
 		if (!tp->type->defined)
 			goto nocomplete;
 	case INT: case FLOAT:
-		return unarycode(op, np->type, np);
+		np = unarycode(op, np->type, np);
+		np->b.lvalue = 0;
+		return np;
 	default:
 		goto bad_type;
 	}
 
+nolvalue:
+	err = "lvalue required in operation";
+	goto error;
 nocomplete:
 	err = "invalid use of indefined type";
 	goto error;
