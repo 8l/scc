@@ -20,7 +20,7 @@ extern  struct user_opt options;
 
 extern void error(const char *fmt, ...);
 extern void die(const char *fmt, ...);
-extern void warn(char flag, const char *fmt, ...);
+extern void warn(signed char flag, const char *fmt, ...);
 extern void *xmalloc(size_t size);
 extern void *xcalloc(size_t nmemb, size_t size);
 extern char *xstrdup(const char *s);
