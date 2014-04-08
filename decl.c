@@ -136,7 +136,8 @@ declarator(Type *tp, uint8_t ns, int8_t flags)
 {
 	struct dcldata data[NR_DECLARATORS+1];
 	register struct dcldata *bp;
-	Symbol *sym;
+	Symbol *sym = NULL;
+	static Symbol dummy;
 
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
@@ -156,6 +157,8 @@ declarator(Type *tp, uint8_t ns, int8_t flags)
 			break;
 		}
 	}
+	if (!sym)
+		sym = &dummy;
 	sym->type = tp;
 	return sym;
 }
@@ -440,11 +443,18 @@ decl(void)
 	}
 }
 
-struct node *
+Type *
 typename(void)
 {
-	declarator(specifier(NULL), NS_IDEN, 0);
-	return  NULL;
+	uint8_t sclass;
+	Type *tp;
+	Symbol *sym;
+
+	tp = specifier(&sclass);
+	if (sclass)
+		error("class storage in type name");
+	sym = declarator(tp, NS_IDEN, 0);
+	return  sym->type;
 }
 
 void

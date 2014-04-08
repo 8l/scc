@@ -210,19 +210,36 @@ static Node *
 unary(void)
 {
 	Node *np;
-	char op;
 
 	switch (yytoken) {
 	case INC: case DEC:
-		op = (yytoken == INC) ? OINC : ODEC;
-		/* TODO: check that the the base type is a complete type */
+		np = incdec(unary(), (yytoken == INC) ? OINC : ODEC);
 		next();
-		np = unary();
-		return unarycode(op, np->type, np);
 		break;
 	default:
 		return postfix();
 	}
+}
+
+static struct node *
+cast(void)
+{
+	Type *tp;
+	extern Type *typename(void);
+
+	if (yytoken == '(') {
+		switch(ahead()) {
+		case TQUALIFIER: case TYPE:
+			next();
+			tp = typename();
+			expect(')');
+			return castcode(cast(), tp);
+		default:
+			break;
+		}
+	}
+
+	return unary();
 }
 
 Node *
@@ -231,7 +248,7 @@ expr(void)
 	Node *np;
 
 	do
-		np = unary();
+		np = cast();
 	while (yytoken == ',');
 	return np;
 }
