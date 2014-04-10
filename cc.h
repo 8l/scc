@@ -219,7 +219,7 @@ typedef void (*Inst)(Node *);
 
 enum {
 	OCAST, OPTR, OADD, OARY, OSIZE, OMUL, OSUB,
-	OINC, ODEC, OPINC, OPDEC
+	OINC, ODEC, OPINC, OPDEC, ODIV, OMOD
 };
 
 extern void

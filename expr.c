@@ -246,13 +246,32 @@ cast(void)
 	return unary();
 }
 
+static struct node *
+mul(void)
+{
+	register Node *np;
+	register char op;
+
+	np = cast();
+	for (;;) {
+		switch (yytoken) {
+		case '*': op = OMUL; break;
+		case '/': op = ODIV; break;
+		case '%': op = OMOD; break;
+		default: return np;
+		}
+		next();
+		np = arithmetic(op, np, cast());
+	}
+}
+
 Node *
 expr(void)
 {
-	Node *np;
+	register Node *np;
 
 	do
-		np = cast();
+		np = mul();
 	while (yytoken == ',');
 	return np;
 }

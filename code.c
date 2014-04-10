@@ -13,7 +13,9 @@ char *opcodes[] = {
 	[OPINC] = ";+",
 	[OPDEC] =  ";=",
 	[OSIZE] = "#",
-	[OPTR] = "@"
+	[OPTR] = "@",
+	[OMOD] = "*",
+	[ODIV] = "/'"
 };
 
 Node *
