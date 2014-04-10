@@ -37,7 +37,7 @@ error(const char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	warn_helper(1, fmt, va);
+	warn_helper(-1, fmt, va);
 	va_end(va);
 }
 
