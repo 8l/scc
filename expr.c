@@ -95,7 +95,8 @@ int_float:
 	case PTR: case ARY:
 pointer:
 		switch (op) {
-		case OEQ: case ONE:
+		case OLT: case OGT: case OGE:
+		case OLE:	case OEQ: case ONE:
 			if (t1 == ARY)
 				tp1 = mktype(tp1->type, PTR, NULL, 0);
 			else if (t1 != PTR)
@@ -339,7 +340,7 @@ relational(void)
 		default:  return np;
 		}
 		next();
-		np = bincode(op, inttype, np, shift());
+		np = arithmetic(op, np, shift());
 	}
 }
 
