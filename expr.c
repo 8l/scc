@@ -225,6 +225,7 @@ static struct node *
 cast(void)
 {
 	Type *tp;
+	Node *np1, *np2;
 	extern Type *typename(void);
 
 	if (yytoken == '(') {
@@ -233,7 +234,10 @@ cast(void)
 			next();
 			tp = typename();
 			expect(')');
-			return castcode(cast(), tp);
+			np1 = cast();
+			np2 = castcode(np1, tp);
+			np2->b.lvalue = np1->b.lvalue;
+			return np1;
 		default:
 			break;
 		}
