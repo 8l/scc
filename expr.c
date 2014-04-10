@@ -52,7 +52,7 @@ arithmetic(char op, Node *np1, Node *np2)
 	char *err;
 	Node *naux;
 	Type *tp1, *tp2, *tp3;
-	uint8_t t1, t2, taux, lvalue = 0;
+	uint8_t t1, t2, taux;
 
 	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
 	t1 = tp1->op, t2 = tp2->op;
@@ -116,7 +116,6 @@ pointer:
 			np2 = bincode(OMUL, tp1,
 			              castcode(np2, tp1),
 			              sizeofcode(tp3));
-			lvalue = 1;
 			break;
 		default:
 			goto incorrect;
@@ -126,9 +125,7 @@ pointer:
 		goto incorrect;
 	}
 
-	np1 = bincode(op, tp1, np1, np2);
-	np1->b.lvalue = lvalue;
-	return np1;
+	return bincode(op, tp1, np1, np2);
 
 bad_shift:
 	err = "invalid operands to shift operator";
@@ -156,7 +153,9 @@ array(Node *np1, Node *np2)
 	if (t1 != INT && t2 != INT)
 		goto bad_subs;
 	np1 = arithmetic(OADD, np1, np2);
-	return unarycode(OARY, np1->type->type , np1);
+	np1 =  unarycode(OARY, np1->type->type , np1);
+	np1->b.lvalue = 1;
+	return np1;
 
 bad_vector:
 	err = "subscripted value is neither array nor pointer nor vector";
@@ -185,7 +184,6 @@ incdec(Node *np, char op)
 			goto nocomplete;
 	case INT: case FLOAT:
 		np = unarycode(op, np->type, np);
-		np->b.lvalue = 0;
 		return np;
 	default:
 		goto bad_type;
