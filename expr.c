@@ -195,7 +195,7 @@ error:
 static Node *
 postfix(void)
 {
-	Node *np1, *np2;
+	register Node *np1, *np2;
 
 	np1 = primary();
 	for (;;) {
@@ -219,7 +219,7 @@ postfix(void)
 static Node *
 unary(void)
 {
-	Node *np;
+	register Node *np;
 
 	switch (yytoken) {
 	case INC: case DEC:
@@ -231,11 +231,11 @@ unary(void)
 	}
 }
 
-static struct node *
+static Node *
 cast(void)
 {
 	Type *tp;
-	Node *np1, *np2;
+	register Node *np1, *np2;
 	extern Type *typename(void);
 
 	if (yytoken == '(') {
@@ -256,7 +256,7 @@ cast(void)
 	return unary();
 }
 
-static struct node *
+static Node *
 mul(void)
 {
 	register Node *np;
@@ -275,7 +275,7 @@ mul(void)
 	}
 }
 
-static struct node *
+static Node *
 add(void)
 {
 	register char op;
