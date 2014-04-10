@@ -17,7 +17,13 @@ char *opcodes[] = {
 	[OMOD] = "*",
 	[ODIV] = "/'",
 	[OSHL] = "l",
-	[OSHR]  = "r"
+	[OSHR]  = "r",
+	[OLT] = "<",
+	[OGT] = ">",
+	[OGE] = "]",
+	[OLE] =  "[",
+	[OEQ] = "=",
+	[ONE] = "!"
 };
 
 Node *

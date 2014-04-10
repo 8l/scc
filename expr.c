@@ -94,19 +94,33 @@ int_float:
 		break;
 	case PTR: case ARY:
 pointer:
-		if (!tp1->defined)
-			goto nocomplete;
-		if (op != OADD && op != OSUB)
+		switch (op) {
+		case OEQ: case ONE:
+			if (t1 == ARY)
+				tp1 = mktype(tp1->type, PTR, NULL, 0);
+			else if (t1 != PTR)
+				goto incorrect;
+			if (t2 == ARY)
+				tp2 = mktype(tp2->type, PTR, NULL, 0);
+			else if (t2 != PTR)
+				goto incorrect;
+			break;
+		case OADD: OSUB:
+			tp3 = tp1->type;
+			if (!tp3->defined)
+				goto nocomplete;
+			if (t1 == ARY)
+				tp1 = mktype(tp1->type, PTR, NULL, 0);
+			if (t2 != INT)
+				goto incorrect;
+			np2 = bincode(OMUL, tp1,
+			              castcode(np2, tp1),
+			              sizeofcode(tp3));
+			lvalue = 1;
+			break;
+		default:
 			goto incorrect;
-		tp3 = tp1->type;
-		if (t1 == ARY)
-			tp1 = mktype(tp1->type, PTR, NULL, 0);
-		if (t2 != INT)
-			goto incorrect;
-		np2 = bincode(OMUL, tp1,
-		              castcode(np2, tp1),
-		              sizeofcode(tp3));
-		lvalue = 1;
+		}
 		break;
 	default:
 		goto incorrect;
@@ -293,7 +307,7 @@ add(void)
 	}
 }
 
-static struct node *
+static Node *
 shift(void)
 {
 	register char op;
@@ -311,13 +325,51 @@ shift(void)
 	}
 }
 
+static Node *
+relational(void)
+{
+	register char op;
+	register Node *np;
+
+	np = shift();
+	for (;;) {
+		switch (yytoken) {
+		case '<': op = OLT; break;
+		case '>': op = OGT; break;
+		case GE:  op = OGE; break;
+		case LE:  op = OLE; break;
+		default:  return np;
+		}
+		next();
+		np = bincode(op, inttype, np, shift());
+	}
+}
+
+static Node *
+eq(void)
+{
+	register char op;
+	register Node *np;
+
+	np = relational();
+	for (;;) {
+		switch (yytoken) {
+		case EQ: op = OEQ; break;
+		case NE: op = ONE; break;
+		default: return np;
+		}
+		next();
+		np = arithmetic(op, np, relational());
+	}
+}
+
 Node *
 expr(void)
 {
 	register Node *np;
 
 	do
-		np = shift();
+		np = eq();
 	while (yytoken == ',');
 	return np;
 }
