@@ -265,13 +265,31 @@ mul(void)
 	}
 }
 
+static struct node *
+add(void)
+{
+	register char op;
+	register Node *np;
+
+	np = mul();
+	for (;;) {
+		switch (yytoken) {
+		case '+': op = OADD; break;
+		case '-': op = OSUB; break;
+		default:  return np;
+		}
+		next();
+		np = arithmetic(op, np, mul());
+	}
+}
+
 Node *
 expr(void)
 {
 	register Node *np;
 
 	do
-		np = mul();
+		np = add();
 	while (yytoken == ',');
 	return np;
 }
