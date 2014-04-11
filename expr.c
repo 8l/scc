@@ -37,6 +37,36 @@ bitlogic(char op, Node *np1, Node *np2)
 	return bincode(op, np1->type, np1, np2);
 }
 
+/*
+ * Convert the second Node to the type of the first
+ */
+static Node *
+convert(Node *np1, Node *np2)
+{
+	Type *tp1, *tp2;
+	register uint8_t t1, t2;
+
+	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
+	if (tp1 == tp2)
+		return np2;
+	t1 = tp1->op, t2 = tp2->op;
+
+	switch (t1) {
+	case ENUM: case INT: case FLOAT:
+		switch (t2) {
+		case INT: case FLOAT: case ENUM:
+			return castcode(np2, tp1);
+		}
+		break;
+	case PTR:
+		switch (t2) {
+		case ARY: case FTN:
+			/* TODO: take address of np2 */;
+		}
+	}
+	return NULL;
+}
+
 static Node *
 arithmetic(char op, Node *np1, Node *np2)
 {
@@ -423,7 +453,8 @@ bit_or(void)
 static Node *
 assign(void)
 {
-	register Node *np = bit_or();
+	register Node *np1 = bit_or(), *np2;
+	char *err;
 
 	for (;;) {
 		register char op;
@@ -443,11 +474,23 @@ assign(void)
 		default:  goto return_np;
 		}
 		next();
-		/* TODO: cast types */
-		np = bincode(op, np->type, np, assign());
+		np2 = assign();
+		if (!np1->b.lvalue)
+			goto nolvalue;
+		if ((np2 = convert(np1, np2)) == NULL)
+			goto incompatibles;
+		np1 = bincode(op, np1->type, np1, np2);
 	}
 return_np:
-	return np;
+	return np1;
+
+nolvalue:
+	err = "lvalue required as left operand of assignment";
+	goto error;
+incompatibles:
+	err = "incompatible types when assigning";
+error:
+	error(err);
 }
 
 Node *
