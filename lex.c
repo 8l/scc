@@ -227,6 +227,23 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 }
 
 static uint8_t
+logic(uint8_t op, uint8_t equal, uint8_t logic)
+{
+	register int c = getc(yyin);
+
+	yybuf[1] = c;
+	yybuf[2] = '\0';
+
+	if (c == '=')
+		return equal;
+	if (c == op)
+		return logic;
+	ungetc(c, yyin);
+	yybuf[1] = '\0';
+	return op;
+}
+
+static uint8_t
 operator(void)
 {
 	register uint8_t c = getc(yyin);
@@ -236,13 +253,13 @@ operator(void)
 	switch (c) {
 	case '<': return relational('<', LE, SHL, SHL_EQ);
 	case '>': return relational('>', GE, SHR, SHR_EQ);
+	case '&': return logic('&', AND_EQ, AND);
+	case '|': return logic('|', OR_EQ, OR);
 	case '=': return follow('=', EQ, '=');
 	case '^': return follow('=', XOR_EQ, '^');
 	case '*': return follow('=', MUL_EQ, '*');
 	case '/': return follow('=', DIV_EQ, '/');
 	case '!': return follow('=', NE, '!');
-	case '&': return follow('=', AND_EQ, AND);
-	case '|': return follow('=', OR_EQ, OR);
 	case '-': return minus();
 	case '+': return plus();
 	default: return c;
