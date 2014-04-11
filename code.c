@@ -26,7 +26,18 @@ char *opcodes[] = {
 	[ONE] = "!",
 	[OBAND] = "&",
 	[OBXOR]  = "^",
-	[OBOR] = "|"
+	[OBOR] = "|",
+	[OASSIGN] = ":",
+	[OA_MUL] = ":*",
+	[OA_DIV] = ":/",
+	[OA_MOD] = ":%",
+	[OA_ADD] = ":+",
+	[OA_SUB] = ":-",
+	[OA_SHL] = ":l",
+	[OA_SHR] = ":r",
+	[OA_AND] = ":&",
+	[OA_XOR] = ":^",
+	[OA_OR] = ":|"
 };
 
 Node *

@@ -355,6 +355,10 @@ relational(void)
 		default:  return np;
 		}
 		next();
+		/*
+		 * FIX: This is incorrect because in relation
+		 * we cannot change the order of the operands
+		 */
 		np = arithmetic(op, np, shift());
 	}
 }
@@ -416,13 +420,43 @@ bit_or(void)
 	return np;
 }
 
+static Node *
+assign(void)
+{
+	register Node *np = bit_or();
+
+	for (;;) {
+		register char op;
+
+		switch (yytoken) {
+		case '=':    op = OASSIGN; break;
+		case MUL_EQ: op = OA_MUL;  break;
+		case DIV_EQ: op = OA_DIV;  break;
+		case MOD_EQ: op = OA_MOD;  break;
+		case ADD_EQ: op = OA_ADD;  break;
+		case SUB_EQ: op = OA_SUB;  break;
+		case SHL_EQ: op = OA_SHL;  break;
+		case SHR_EQ: op = OA_SHR;  break;
+		case AND_EQ: op = OA_AND;  break;
+		case XOR_EQ: op = OA_XOR;  break;
+		case OR_EQ:  op = OA_OR;   break;
+		default:  goto return_np;
+		}
+		next();
+		/* TODO: cast types */
+		np = bincode(op, np->type, np, assign());
+	}
+return_np:
+	return np;
+}
+
 Node *
 expr(void)
 {
 	register Node *np;
 
 	do
-		np = bit_or();
+		np = assign();
 	while (yytoken == ',');
 	return np;
 }
