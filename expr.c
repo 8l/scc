@@ -390,13 +390,26 @@ bit_and(void)
 	return np;
 }
 
+static Node *
+bit_xor(void)
+{
+	register Node *np;
+
+	np = bit_and();
+	while (yytoken == '^') {
+		next();
+		np = bitlogic(OBXOR,  np, bit_and());
+	}
+	return np;
+}
+
 Node *
 expr(void)
 {
 	register Node *np;
 
 	do
-		np = bit_and();
+		np = bit_xor();
 	while (yytoken == ',');
 	return np;
 }
