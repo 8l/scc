@@ -417,10 +417,8 @@ bit_and(void)
 	register Node *np;
 
 	np = eq();
-	while (yytoken == '&') {
-		next();
+	while (accept('&'))
 		np = bitlogic(OBAND, np, eq());
-	}
 	return np;
 }
 
@@ -430,10 +428,8 @@ bit_xor(void)
 	register Node *np;
 
 	np = bit_and();
-	while (yytoken == '^') {
-		next();
+	while (accept('^'))
 		np = bitlogic(OBXOR,  np, bit_and());
-	}
 	return np;
 }
 
@@ -443,10 +439,8 @@ bit_or(void)
 	register Node *np;
 
 	np = bit_xor();
-	while (yytoken == '|') {
-		next();
+	while (accept('|'))
 		np = bitlogic(OBOR, np, bit_xor());
-	}
 	return np;
 }
 
