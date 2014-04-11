@@ -36,12 +36,17 @@ primary(void)
 	return np;
 }
 
-void
+static Node *
+promote(Node *np)
+{
+}
+
+static void
 intconv(Node **np1, Node **np2)
 {
 }
 
-void
+static void
 floatconv(Node **np1, Node **np2)
 {
 }
@@ -56,9 +61,6 @@ arithmetic(char op, Node *np1, Node *np2)
 
 	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
 	t1 = tp1->op, t2 = tp2->op;
-
-	if ((op == OSHL || op == OSHR) && (t1 != INT || t2 != INT))
-		goto bad_shift;
 
 	switch (t1) {
 	case INT:
@@ -105,10 +107,11 @@ pointer:
 				tp2 = mktype(tp2->type, PTR, NULL, 0);
 			else if (t2 != PTR)
 				goto incorrect;
+			/* FIX: result of comparisions is integer type */
 			break;
 		case OADD: OSUB:
-			tp3 = tp1->type;
-			if (!tp3->defined)
+			tp3 = tp1->type; /* TODO: I think tp3 is not needed */
+			if (!tp1->defined)
 				goto nocomplete;
 			if (t1 == ARY)
 				tp1 = mktype(tp1->type, PTR, NULL, 0);
@@ -128,9 +131,6 @@ pointer:
 
 	return bincode(op, tp1, np1, np2);
 
-bad_shift:
-	err = "invalid operands to shift operator";
-	goto error;
 nocomplete:
 	err = "invalid use of indefined type";
 	goto error;
@@ -307,6 +307,21 @@ add(void)
 }
 
 static Node *
+bitlogic(char op, Node *np1, Node *np2)
+{
+	Type *tp1, *tp2;
+	uint8_t t1, t2;
+
+	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
+	t1 = tp1->op, t2 = tp2->op;
+
+	if (t1 != INT || t2 != INT)
+		error("No integer operand in bit logical operation");
+	intconv(&np1, &np2);
+	return bincode(op, np1->type, np1, np2);
+}
+
+static Node *
 shift(void)
 {
 	register char op;
@@ -320,7 +335,7 @@ shift(void)
 		default:  return np;
 		}
 		next();
-		np = arithmetic(op, np, add());
+		np = bitlogic(op, np, add());
 	}
 }
 
@@ -362,13 +377,26 @@ eq(void)
 	}
 }
 
+static Node *
+bit_and(void)
+{
+	register Node *np;
+
+	np = eq();
+	while (yytoken == '&') {
+		next();
+		np = bitlogic(OBAND, np, eq());
+	}
+	return np;
+}
+
 Node *
 expr(void)
 {
 	register Node *np;
 
 	do
-		np = eq();
+		np = bit_and();
 	while (yytoken == ',');
 	return np;
 }

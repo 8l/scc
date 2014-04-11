@@ -23,7 +23,8 @@ char *opcodes[] = {
 	[OGE] = "]",
 	[OLE] =  "[",
 	[OEQ] = "=",
-	[ONE] = "!"
+	[ONE] = "!",
+	[OBAND] = "&"
 };
 
 Node *
