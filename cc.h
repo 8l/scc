@@ -235,7 +235,8 @@ extern Node
 	*unarycode(char op, Type *tp, Node *child),
 	*bincode(char op, Type *tp, Node *np1, Node *np2),
 	*castcode(Node *child, Type *tp),
-	*sizeofcode(Type *tp);
+	*sizeofcode(Type *tp), 
+	*ternarycode(Node *cond, Node *ifyes, Node *ifno);
 
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})

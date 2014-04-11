@@ -104,6 +104,20 @@ emitbin(Node *np)
 }
 
 void
+emitternary(Node *np)
+{
+	Node *cond, *ifyes, *ifno;
+
+	cond = np->childs[0];
+	ifyes = np->childs[1];
+	ifno = np->childs[2];
+	(*cond->code)(cond);
+	(*ifyes->code)(ifyes);
+	(*ifno->code)(ifno);
+	printf("\t?%c", np->type->letter);
+}
+
+void
 emitsizeof(Node *np)
 {
 	printf("\t#%c", np->u.type->letter);
@@ -164,4 +178,14 @@ Node *
 sizeofcode(Type *tp)
 {
 	return node(emitsizeof, inttype, TYP(tp), 0);
+}
+
+Node *
+ternarycode(Node *cond, Node *ifyes, Node *ifno)
+{
+	Node *np= node(emitternary, ifyes->type, OP(0), 3);
+	np->childs[0] = cond;
+	np->childs[1] = ifyes;
+	np->childs[2] = ifno;
+	return np;
 }

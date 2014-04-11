@@ -445,9 +445,25 @@ bit_or(void)
 }
 
 static Node *
+ternary(void)
+{
+	register Node *cond, *ifyes, *ifno;
+
+	cond = bit_or();
+	while (accept('?')) {
+		ifyes = expr();
+		expect(':');
+		ifno = expr();
+		/* TODO: check the types of ifno and ifyes */
+		cond = ternarycode(cond, ifyes, ifno);
+	}
+	return cond;
+}
+
+static Node *
 assign(void)
 {
-	register Node *np1 = bit_or(), *np2;
+	register Node *np1 = ternary(), *np2;
 	char *err;
 
 	for (;;) {
@@ -471,6 +487,7 @@ assign(void)
 		np2 = assign();
 		if (!np1->b.lvalue)
 			goto nolvalue;
+		/* TODO: if it necessary a 0 comparision? */
 		if ((np2 = convert(np1, np2)) == NULL)
 			goto incompatibles;
 		np1 = bincode(op, np1->type, np1, np2);
