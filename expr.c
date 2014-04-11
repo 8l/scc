@@ -8,35 +8,6 @@
 Node *expr(void);
 
 static Node *
-primary(void)
-{
-	Node *np;
-	Symbol *sym;
-
-	switch (yytoken) {
-	case IDEN:
-		if ((sym = yylval.sym) == NULL)
-			error("'%s' undeclared", yytext);
-		np = node(emitsym, sym->type, SYM(sym), 0);
-		np->b.lvalue = 1;
-		next();
-		break;
-	case CONSTANT:
-		next();
-		/* TODO: do something */
-		break;
-	case '(':
-		next();
-		np = expr();
-		expect(')');
-		break;
-	default:
-		error("unexpected '%s'", yytext);
-	}
-	return np;
-}
-
-static Node *
 promote(Node *np)
 {
 }
@@ -49,6 +20,21 @@ intconv(Node **np1, Node **np2)
 static void
 floatconv(Node **np1, Node **np2)
 {
+}
+
+static Node *
+bitlogic(char op, Node *np1, Node *np2)
+{
+	Type *tp1, *tp2;
+	uint8_t t1, t2;
+
+	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
+	t1 = tp1->op, t2 = tp2->op;
+
+	if (t1 != INT || t2 != INT)
+		error("No integer operand in bit logical operation");
+	intconv(&np1, &np2);
+	return bincode(op, np1->type, np1, np2);
 }
 
 static Node *
@@ -206,6 +192,35 @@ error:
 }
 
 static Node *
+primary(void)
+{
+	Node *np;
+	Symbol *sym;
+
+	switch (yytoken) {
+	case IDEN:
+		if ((sym = yylval.sym) == NULL)
+			error("'%s' undeclared", yytext);
+		np = node(emitsym, sym->type, SYM(sym), 0);
+		np->b.lvalue = 1;
+		next();
+		break;
+	case CONSTANT:
+		next();
+		/* TODO: do something */
+		break;
+	case '(':
+		next();
+		np = expr();
+		expect(')');
+		break;
+	default:
+		error("unexpected '%s'", yytext);
+	}
+	return np;
+}
+
+static Node *
 postfix(void)
 {
 	register Node *np1, *np2;
@@ -304,21 +319,6 @@ add(void)
 		next();
 		np = arithmetic(op, np, mul());
 	}
-}
-
-static Node *
-bitlogic(char op, Node *np1, Node *np2)
-{
-	Type *tp1, *tp2;
-	uint8_t t1, t2;
-
-	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
-	t1 = tp1->op, t2 = tp2->op;
-
-	if (t1 != INT || t2 != INT)
-		error("No integer operand in bit logical operation");
-	intconv(&np1, &np2);
-	return bincode(op, np1->type, np1, np2);
 }
 
 static Node *
