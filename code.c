@@ -25,7 +25,8 @@ char *opcodes[] = {
 	[OEQ] = "=",
 	[ONE] = "!",
 	[OBAND] = "&",
-	[OBXOR]  = "^"
+	[OBXOR]  = "^",
+	[OBOR] = "|"
 };
 
 Node *

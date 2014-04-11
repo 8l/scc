@@ -403,13 +403,26 @@ bit_xor(void)
 	return np;
 }
 
+static Node *
+bit_or(void)
+{
+	register Node *np;
+
+	np = bit_xor();
+	while (yytoken == '|') {
+		next();
+		np = bitlogic(OBOR, np, bit_xor());
+	}
+	return np;
+}
+
 Node *
 expr(void)
 {
 	register Node *np;
 
 	do
-		np = bit_xor();
+		np = bit_or();
 	while (yytoken == ',');
 	return np;
 }
