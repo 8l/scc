@@ -38,30 +38,30 @@ bitlogic(char op, Node *np1, Node *np2)
 }
 
 /*
- * Convert the second Node to the type of the first
+ * Convert a Node to a type
  */
 static Node *
-convert(Node *np1, Node *np2)
+convert(Node *np, Type *tp1)
 {
-	Type *tp1, *tp2;
+	Type *tp2;
 	register uint8_t t1, t2;
 
-	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
+	tp1 = UNQUAL(tp1), tp2 = UNQUAL(np->type);
 	if (tp1 == tp2)
-		return np2;
+		return np;
 	t1 = tp1->op, t2 = tp2->op;
 
 	switch (t1) {
 	case ENUM: case INT: case FLOAT:
 		switch (t2) {
 		case INT: case FLOAT: case ENUM:
-			return castcode(np2, tp1);
+			return castcode(np, tp1);
 		}
 		break;
 	case PTR:
 		switch (t2) {
 		case ARY: case FTN:
-			/* TODO: take address of np2 */;
+			/* TODO: take address of np */;
 		}
 	}
 	return NULL;
@@ -302,7 +302,8 @@ cast(void)
 			tp = typename();
 			expect(')');
 			np1 = cast();
-			np2 = castcode(np1, tp);
+			if ((np2 = convert(np2,  tp)) == NULL)
+				error("bad type convertion requested");
 			np2->b.lvalue = np1->b.lvalue;
 			return np1;
 		default:
@@ -487,7 +488,7 @@ assign(void)
 		if (!np1->b.lvalue)
 			goto nolvalue;
 		/* TODO: if it necessary a 0 comparision? */
-		if ((np2 = convert(np1, np2)) == NULL)
+		if ((np2 = convert(np2, np1->type)) == NULL)
 			goto incompatibles;
 		np1 = bincode(op, np1->type, np1, np2);
 	}
