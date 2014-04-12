@@ -86,8 +86,8 @@ arithmetic(char op, Node *np1, Node *np2)
 				intconv(&np1, &np2);
 			break;
 		case FLOAT:
-			SWAP(np1, np2, naux);
-			goto int_float;
+			np2 = castcode(np1, np2->type);
+			break;
 		case PTR: case ARY:
 			SWAP(np1, np2, naux);
 			SWAP(t1, t2, taux);
@@ -103,7 +103,6 @@ arithmetic(char op, Node *np1, Node *np2)
 				floatconv(&np1, &np2);
 			break;
 		case INT:
-int_float:
 			np2 = castcode(np2, np1->type);
 			break;
 		default:
