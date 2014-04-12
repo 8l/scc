@@ -124,7 +124,7 @@ pointer:
 				goto incorrect;
 			/* FIX: result of comparisions is integer type */
 			break;
-		case OADD: OSUB:
+		case OADD: case OSUB:
 			tp3 = tp1->type; /* TODO: I think tp3 is not needed */
 			if (!tp1->defined)
 				goto nocomplete;
