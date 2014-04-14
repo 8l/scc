@@ -112,18 +112,6 @@ arithmetic(char op, Node *np1, Node *np2)
 	case PTR: case ARY:
 pointer:
 		switch (op) {
-		case OLT: case OGT: case OGE:
-		case OLE:	case OEQ: case ONE:
-			if (t1 == ARY)
-				tp1 = mktype(tp1->type, PTR, NULL, 0);
-			else if (t1 != PTR)
-				goto incorrect;
-			if (t2 == ARY)
-				tp2 = mktype(tp2->type, PTR, NULL, 0);
-			else if (t2 != PTR)
-				goto incorrect;
-			/* FIX: result of comparisions is integer type */
-			break;
 		case OADD: case OSUB:
 			tp3 = tp1->type; /* TODO: I think tp3 is not needed */
 			if (!tp1->defined)
@@ -153,6 +141,56 @@ incorrect:
 	err = "incorrect arithmetic operands";
 error:
 	error(err);
+}
+
+static Node *
+compare(char op, Node *np1, Node *np2)
+{
+	Type *tp1, *tp2;
+	uint8_t t1, t2;
+
+	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
+	t1 = tp1->op, t2 = tp2->op;
+
+	switch (t1) {
+	case INT:
+		switch (t2) {
+		case INT:
+			if (tp1 != tp2)
+				intconv(&np1, &np2);
+			break;
+		case FLOAT:
+			np1 = castcode(np1, tp2);
+			break;
+		default:
+			goto incompatibles;
+		}
+	case FLOAT:
+		switch (t2) {
+		case INT:
+			np2 = castcode(np2, tp1);
+			break;
+		case FLOAT:
+			if (tp1 != tp2)
+				floatconv(&np1, &np2);
+			break;
+		defualt:
+			goto incompatibles;
+		}
+	case ARY:
+	case FTN:
+		/* TODO: cover this cases */
+	case PTR:
+		if (tp1 != tp2)
+			goto incompatibles;
+	default:
+		goto incompatibles;
+	}
+
+	return bincode(op, inttype, np1, np2);
+
+incompatibles:
+	error("incompatibles type in comparision");
 }
 
 static Node *
@@ -385,11 +423,7 @@ relational(void)
 		default:  return np;
 		}
 		next();
-		/*
-		 * FIX: This is incorrect because in relation
-		 * we cannot change the order of the operands
-		 */
-		np = arithmetic(op, np, shift());
+		np = compare(op, np, shift());
 	}
 }
 
@@ -407,7 +441,7 @@ eq(void)
 		default: return np;
 		}
 		next();
-		np = arithmetic(op, np, relational());
+		np = compare(op, np, relational());
 	}
 }
 
