@@ -300,6 +300,7 @@ primary(void)
 		next();
 		np = expr();
 		expect(')');
+	case ';':
 		break;
 	default:
 		error("unexpected '%s'", yytext);
@@ -335,8 +336,27 @@ static Node *
 unary(void)
 {
 	register Node *np;
+	Type *tp;
+	char paren;
 
 	switch (yytoken) {
+	case SIZEOF:
+		next();
+		if (accept('('))
+			paren = 1;
+		switch (yytoken) {
+		case TQUALIFIER: case TYPE:
+			tp = typename();
+			break;
+		default:
+			tp = expr()->type;
+			/* TODO: Free memory */
+			break;
+		}
+		if (paren)
+			expect(')');
+		np = sizeofcode(tp);
+		break;
 	case INC: case DEC:
 		np = incdec(unary(), (yytoken == INC) ? OINC : ODEC);
 		next();
@@ -351,7 +371,6 @@ cast(void)
 {
 	Type *tp;
 	register Node *np1, *np2;
-	extern Type *typename(void);
 
 	if (yytoken == '(') {
 		switch(ahead()) {

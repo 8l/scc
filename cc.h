@@ -112,6 +112,8 @@ extern Symbol
 
 extern void context(void (*fun)(void));
 
+extern Type *typename(void);
+
 extern Type *voidtype,
 	*uchartype,   *chartype,
 	*uinttype,    *inttype,
