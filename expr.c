@@ -23,6 +23,12 @@ floatconv(Node **np1, Node **np2)
 }
 
 static Node *
+logic(char op, Node *np1, Node *np2)
+{
+	return np1;
+}
+
+static Node *
 bitlogic(char op, Node *np1, Node *np2)
 {
 	Type *tp1, *tp2;
@@ -489,6 +495,28 @@ bit_or(void)
 	np = bit_xor();
 	while (accept('|'))
 		np = bitlogic(OBOR, np, bit_xor());
+	return np;
+}
+
+static Node *
+and(void)
+{
+	register Node *np;
+
+	np = bit_or();
+	while (accept(AND))
+		np = logic(OAND, np, bit_or());
+	return np;
+}
+
+static Node *
+or(void)
+{
+	register Node *np;
+
+	np = and();
+	while (accept(OR))
+		np = logic(OOR, np, and());
 	return np;
 }
 
