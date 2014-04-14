@@ -511,9 +511,10 @@ ternary(void)
 static Node *
 assign(void)
 {
-	register Node *np1 = ternary(), *np2;
+	register Node *np1, *np2;
 	char *err;
 
+	np1 = ternary();
 	for (;;) {
 		register char op;
 
@@ -535,6 +536,8 @@ assign(void)
 		np2 = assign();
 		if (!np1->b.lvalue)
 			goto nolvalue;
+		if (isconst(np1->type->op))
+			goto const_mod;
 		/* TODO: if it necessary a 0 comparision? */
 		if ((np2 = convert(np2, np1->type)) == NULL)
 			goto incompatibles;
@@ -543,6 +546,9 @@ assign(void)
 return_np:
 	return np1;
 
+const_mod:
+	err = "const value modified";
+	goto error;
 nolvalue:
 	err = "lvalue required as left operand of assignment";
 	goto error;

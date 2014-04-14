@@ -144,7 +144,7 @@ mktype(Type *tp, uint8_t op,
 	case ARY:    letter = 'V'; break;
 	case ENUM:   letter = 'E'; break;
 	case STRUCT: letter = 'S'; break;
-	default:     abort();
+	default: letter = tp->letter;
 	}
 	bp = xmalloc(sizeof(*bp));
 	bp->next = *tbl;
