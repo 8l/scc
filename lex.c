@@ -127,12 +127,14 @@ init_keywords(void)
 		{NULL, 0, 0},
 	};
 	register Symbol *sym;
+	extern short symid;
 
 	for (bp = buff; bp->str; ++bp) {
-		sym = install(bp->str, NS_KEYWORD);
+		sym = install(bp->str, NS_IDEN);
 		sym->token = bp->token;
 		sym->u.token = bp->value;
 	}
+	symid = 0;
 }
 
 static uint8_t

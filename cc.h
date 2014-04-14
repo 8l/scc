@@ -36,7 +36,6 @@ enum {
 	NS_LABEL,
 	NS_TAG,
 	NR_NAMESPACES,
-	NS_KEYWORD,
 	NS_FREE
 };
 
