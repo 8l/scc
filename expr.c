@@ -37,6 +37,16 @@ bitlogic(char op, Node *np1, Node *np2)
 	return bincode(op, np1->type, np1, np2);
 }
 
+static Node *
+ary2ptr(Node *np)
+{
+	Type *tp;
+
+	tp = UNQUAL(np->type);
+	tp = mktype(tp->type, PTR, NULL, 0);
+	return unarycode(OADDR, tp, np);
+}
+
 /*
  * Convert a Node to a type
  */
@@ -109,15 +119,16 @@ arithmetic(char op, Node *np1, Node *np2)
 			goto incorrect;
 		}
 		break;
-	case PTR: case ARY:
+	case ARY:
+		np1 = ary2ptr(np1);
+		tp1 = np1->type;
+	case PTR:
 pointer:
 		switch (op) {
 		case OADD: case OSUB:
-			tp3 = tp1->type; /* TODO: I think tp3 is not needed */
-			if (!tp1->defined)
+			tp3 = tp1->type;
+			if (!tp3->defined)
 				goto nocomplete;
-			if (t1 == ARY)
-				tp1 = mktype(tp1->type, PTR, NULL, 0);
 			if (t2 != INT)
 				goto incorrect;
 			np2 = bincode(OMUL, tp1,
@@ -178,6 +189,8 @@ compare(char op, Node *np1, Node *np2)
 			goto incompatibles;
 		}
 	case ARY:
+		np1 = ary2ptr(np1);
+		break;
 	case FTN:
 		/* TODO: cover this cases */
 	case PTR:

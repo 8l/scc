@@ -37,7 +37,8 @@ char *opcodes[] = {
 	[OA_SHR] = ":r",
 	[OA_AND] = ":&",
 	[OA_XOR] = ":^",
-	[OA_OR] = ":|"
+	[OA_OR] = ":|",
+	[OADDR] = "a"
 };
 
 Node *
