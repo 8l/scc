@@ -38,7 +38,7 @@ bitlogic(char op, Node *np1, Node *np2)
 }
 
 static Node *
-ary2ptr(Node *np)
+addr2ptr(Node *np)
 {
 	Type *tp;
 
@@ -71,7 +71,9 @@ convert(Node *np, Type *tp1)
 	case PTR:
 		switch (t2) {
 		case ARY: case FTN:
-			/* TODO: take address of np */;
+			np = addr2ptr(np);
+			np->type = tp1;
+			return np;
 		}
 	}
 	return NULL;
@@ -120,7 +122,7 @@ arithmetic(char op, Node *np1, Node *np2)
 		}
 		break;
 	case ARY:
-		np1 = ary2ptr(np1);
+		np1 = addr2ptr(np1);
 		tp1 = np1->type;
 	case PTR:
 pointer:
@@ -188,11 +190,10 @@ compare(char op, Node *np1, Node *np2)
 		defualt:
 			goto incompatibles;
 		}
-	case ARY:
-		np1 = ary2ptr(np1);
+	case ARY: case FTN:
+		np1 = addr2ptr(np1);
+		tp1 = UNQUAL(np1->type);
 		break;
-	case FTN:
-		/* TODO: cover this cases */
 	case PTR:
 		if (tp1 != tp2)
 			goto incompatibles;
@@ -353,7 +354,7 @@ cast(void)
 			tp = typename();
 			expect(')');
 			np1 = cast();
-			if ((np2 = convert(np2,  tp)) == NULL)
+			if ((np2 = convert(np1,  tp)) == NULL)
 				error("bad type convertion requested");
 			np2->b.lvalue = np1->b.lvalue;
 			return np1;
