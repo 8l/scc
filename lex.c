@@ -24,11 +24,13 @@ static uint8_t
 integer(char *s, char base)
 {
 	static Type *tp;
+	static Symbol *sym;
 	static char ch;
 
 	/* TODO: implement again */
 
-type:	switch (ch = toupper(getc(yyin))) {
+type:
+	switch (ch = toupper(getc(yyin))) {
 	case 'L':
 		goto type;
 	case 'U':
@@ -37,6 +39,10 @@ type:	switch (ch = toupper(getc(yyin))) {
 		ungetc(ch, yyin);
 	}
 
+	sym = install("", NS_IDEN);
+	sym->type = inttype;
+	sym->u.i = atoi(yytext);
+	yynlval.sym = sym;
 	return CONSTANT;
 }
 
