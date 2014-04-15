@@ -41,6 +41,8 @@ char *opcodes[] = {
 	[OADDR] = "a",
 	[ONEG] = "_",
 	[OCPL] = "~",
+	[OAND] = "m",
+	[OOR] = "s"
 };
 
 Node *

@@ -37,12 +37,6 @@ floatconv(Node **np1, Node **np2)
 }
 
 static Node *
-logic(char op, Node *np1, Node *np2)
-{
-	return np1;
-}
-
-static Node *
 bitlogic(char op, Node *np1, Node *np2)
 {
 	Type *tp1, *tp2;
@@ -227,6 +221,26 @@ compare(char op, Node *np1, Node *np2)
 
 incompatibles:
 	error("incompatibles type in comparision");
+}
+
+static Node *
+exp2cond(Node *np)
+{
+	if (ISNODEBIN(np)) {
+		switch (np->u.op) {
+		case OLT: case OGT: case OGE: case OLE: case OEQ: case ONE:
+			return np;
+		}
+	}
+	return compare(ONE, np, constcode(zero));
+}
+
+static Node *
+logic(char op, Node *np1, Node *np2)
+{
+	np1 = exp2cond(np1);
+	np2 = exp2cond(np2);
+	return bincode(op, inttype, np1, np2);
 }
 
 static Node *
@@ -633,7 +647,7 @@ ternary(void)
 {
 	register Node *cond, *ifyes, *ifno;
 
-	cond = bit_or();
+	cond = or();
 	while (accept('?')) {
 		ifyes = expr();
 		expect(':');
