@@ -436,7 +436,14 @@ decl(void)
 	if (yytoken != ';') {
 		do {
 			 sym = declarator(tp, NS_IDEN, ID_EXPECTED);
-			/* assign storage class */
+			switch (sclass) {
+			case REGISTER: sym->s.isregister = 1; break;
+			case STATIC: sym->s.isstatic = 1; break;
+			case EXTERN: /* TODO: */; break;
+			case TYPEDEF: /* TODO: */;break;
+			case AUTO: /* TODO: */; break;
+			default: sym->s.isauto = 1;
+			}
 			if (accept('='))
 				initializer(sym->type);
 		} while (accept(','));
