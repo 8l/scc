@@ -637,9 +637,10 @@ ternary(void)
 	while (accept('?')) {
 		ifyes = expr();
 		expect(':');
-		ifno = expr();
+		ifno = ternary();
 		/* TODO: check the types of ifno and ifyes */
-		cond = ternarycode(cond, ifyes, ifno);
+		cond = ternarycode(compare(ONE, cond, constcode(zero)),
+	                           ifyes, ifno);
 	}
 	return cond;
 }
