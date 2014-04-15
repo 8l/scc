@@ -422,7 +422,7 @@ unary(void)
 	case OADDR:
 		if (!np->b.lvalue)
 			goto no_lvalue;
-		if (np->code == emitsym && np->u.sym->s.isregister)
+		if (ISNODESYM(np) && np->u.sym->s.isregister)
 			goto reg_address;
 		tp = mktype(tp, PTR, NULL, 0);
 		break;

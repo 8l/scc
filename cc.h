@@ -244,5 +244,6 @@ extern Node
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})
 #define TYP(s) ((union unode) {.type = s})
+#define ISNODESYM(n) ((n)->code == emitsym)
 
 #endif
