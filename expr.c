@@ -369,7 +369,7 @@ unary(void)
 {
 	register Node *np;
 	Type *tp;
-	char paren, op;
+	char paren, op, *err;
 	uint8_t t;
 
 	switch (yytoken) {
@@ -410,8 +410,9 @@ unary(void)
 	switch (op) {
 	case OADDR:
 		if (!np->b.lvalue)
-			goto bad_operand;
-		/* TODO: check if variable is register */
+			goto no_lvalue;
+		if (np->code == emitsym && np->u.sym->s.isregister)
+			goto reg_address;
 		tp = mktype(tp, PTR, NULL, 0);
 		break;
 	case OEXC:
@@ -438,8 +439,16 @@ unary(void)
 
 	return unarycode(op, tp, np);
 
+no_lvalue:
+	err = "lvalue required in unary expression";
+	goto error;
+reg_address:
+	err = "address of register variable '%s' requested";
+	goto error;
 bad_operand:
-	error("bad operand in unary expression");
+	err = "bad operand in unary expression";
+error:
+	error(err, yytext);
 }
 
 static Node *
