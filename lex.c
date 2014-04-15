@@ -41,7 +41,7 @@ type:
 
 	sym = install("", NS_IDEN);
 	sym->type = inttype;
-	sym->u.i = atoi(yytext);
+	sym->u.i = atoi(yybuf);
 	yynlval.sym = sym;
 	return CONSTANT;
 }
