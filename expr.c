@@ -388,62 +388,60 @@ unary(void)
 		op = (yytoken == INC) ? OINC : ODEC;
 		next();
 		return incdec(unary(), op);
-	case '!': op = OEXC; break;
-	case '&': op = OADDR; break;
-	case '*': op = OPTR; break;
-	case '+': op = OADD; break;
-	case '~': op = OCPL; break;
-	case '-':  op = ONEG; break;
+	case '!': case '&': case '*': case '+': case '~': case '-':
+		op = yytoken;
+		next();
+		np = cast();
+		tp = UNQUAL(np->type);
+		t = tp->op;
+		switch (op) {
+		case '*':
+			op = OPTR;
+			switch (t) {
+			case ARY: case FTN:
+				np = addr2ptr(np);
+			case PTR:
+				tp = tp->type;
+				break;
+			default:
+				goto bad_operand;
+			}
+			break;
+		case '&':
+			op = OADDR;
+			if (!np->b.lvalue)
+				goto no_lvalue;
+			if (ISNODESYM(np) && np->u.sym->s.isregister)
+				goto reg_address;
+			tp = mktype(tp, PTR, NULL, 0);
+			break;
+		case '!':
+			switch (t) {
+			case FTN: case ARY:
+				np = addr2ptr(np);
+			case INT: case FLOAT: case PTR:
+				return eval(np, 1);
+				break;
+			default:
+				goto bad_operand;
+			}
+		case '+':
+			if (t != INT)
+				goto bad_operand;
+			return np;
+		case '~':
+			op = OCPL;
+			if (t != INT)
+				goto bad_operand;
+			break;
+		case '-':
+			op = ONEG;
+			if (!isarith(t))
+				goto bad_operand;
+		}
+		return unarycode(op, tp, np);
 	default: return postfix();
 	}
-
-	next();
-	np = cast();
-	tp = UNQUAL(np->type);
-	t = tp->op;
-
-	switch (op) {
-	case OPTR:
-		switch (t) {
-		case ARY: case FTN:
-			np = addr2ptr(np);
-		case PTR:
-			tp = tp->type;
-			break;
-		default:
-			goto bad_operand;
-		}
-		break;
-	case OADDR:
-		if (!np->b.lvalue)
-			goto no_lvalue;
-		if (ISNODESYM(np) && np->u.sym->s.isregister)
-			goto reg_address;
-		tp = mktype(tp, PTR, NULL, 0);
-		break;
-	case OEXC:
-		switch (t) {
-		case FTN: case ARY:
-			np = addr2ptr(np);
-		case INT: case FLOAT: case PTR:
-			return eval(np, 1);
-			break;
-		default:
-			goto bad_operand;
-		}
-	case OADD:
-		if (t != INT)
-			goto bad_operand;
-		return np;
-	case OCPL:
-		if (t != INT)
-			goto bad_operand;
-	case ONEG:
-		if (!isarith(t))
-			goto bad_operand;
-	}
-
-	return unarycode(op, tp, np);
 
 no_lvalue:
 	err = "lvalue required in unary expression";
