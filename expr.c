@@ -369,30 +369,25 @@ unary(void)
 {
 	register Node *np;
 	Type *tp;
-	char paren, op, *err;
+	char op, *err;
 	uint8_t t;
 
 	switch (yytoken) {
 	case SIZEOF:
 		next();
-		if (accept('('))
-			paren = 1;
-		switch (yytoken) {
-		case TQUALIFIER: case TYPE:
+		if (yytoken == '(' && ahead() == TYPE) {
+			next();
 			tp = typename();
-			break;
-		default:
-			tp = expr()->type;
-			/* TODO: Free memory */
-			break;
-		}
-		if (paren)
 			expect(')');
+		} else {
+			tp = unary()->type;
+			/* TODO: Free memory */
+		}
 		return sizeofcode(tp);
 	case INC: case DEC:
 		op = (yytoken == INC) ? OINC : ODEC;
 		next();
-		return incdec(unary(), op); /* TODO: unary or cast? */
+		return incdec(unary(), op);
 	case '!': op = OEXC; break;
 	case '&': op = OADDR; break;
 	case '*': op = OPTR; break;
