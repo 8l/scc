@@ -395,7 +395,7 @@ unary(void)
 		return incdec(unary(), op); /* TODO: unary or cast? */
 	case '!': op = OEXC; break;
 	case '&': op = OADDR; break;
-	/* TODO: case '*': */
+	case '*': op = OPTR; break;
 	case '+': op = OADD; break;
 	case '~': op = OCPL; break;
 	case '-':  op = ONEG; break;
@@ -408,6 +408,17 @@ unary(void)
 	t = tp->op;
 
 	switch (op) {
+	case OPTR:
+		switch (t) {
+		case ARY: case FTN:
+			np = addr2ptr(np);
+		case PTR:
+			tp = tp->type;
+			break;
+		default:
+			goto bad_operand;
+		}
+		break;
 	case OADDR:
 		if (!np->b.lvalue)
 			goto no_lvalue;
