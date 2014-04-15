@@ -9,7 +9,8 @@
 #define NR_SYM_HASH 32
 
 uint8_t curctx;
-uint8_t namespace = NS_KEYWORD + 1 ;
+uint8_t namespace = NS_FREE + 1;
+short symid;
 
 static struct symtab {
 	Symbol *head;
@@ -77,34 +78,23 @@ lookup(register char *s, uint8_t ns)
 Symbol *
 install(char *s, uint8_t ns)
 {
-	register Symbol *sym;
-	register Symbol **t;
+	register Symbol *sym, **t;
 	struct symtab *tbl;
-	static short id;
-
-	if (ns == NS_KEYWORD) {
-		ns = NS_IDEN;
-	} else  {
-		++id;
-		if (s != NULL)
-			s = xstrdup(s);
-	}
 
 	sym = xcalloc(1, sizeof(*sym));
-	sym->name = s;
+	sym->name = xstrdup(s);
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->ns = ns;
-	sym->id = id;
+	sym->id = symid++;
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	sym->next = tbl->head;
 	tbl->head = sym;
 
-	if (s != NULL) {
-		t = &tbl->htab[hash(s)];
-		sym->hash = *t;
-		*t = sym;
-	}
+
+	t = &tbl->htab[hash(s)];
+	sym->hash = *t;
+	*t = sym;
 
 	return sym;
 }

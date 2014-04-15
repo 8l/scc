@@ -36,7 +36,6 @@ enum {
 	NS_LABEL,
 	NS_TAG,
 	NR_NAMESPACES,
-	NS_KEYWORD,
 	NS_FREE
 };
 
@@ -230,7 +229,7 @@ enum {
 
 extern void
 	emitsym(Node *), emitunary(Node *),
-	emitbin(Node *), emitexp(Node *);
+	emitbin(Node *), emitexp(Node *), emitconst(Node *np);
 
 extern Node
 	*node(Inst code, Type *tp, union unode u, uint8_t nchilds),

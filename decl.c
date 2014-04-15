@@ -75,7 +75,7 @@ directdcl(struct dcldata *dp, uint8_t ns, int8_t flags)
 		if (yytoken != IDEN) {
 			if (flags & ID_EXPECTED)
 				goto expected;
-			sym = install(NULL, ns);
+			sym = install("", ns);
 		} else {
 			sym = newiden(ns);
 		}
@@ -348,7 +348,7 @@ newtag(uint8_t tag)
 		}
 		next();
 	} else {
-		sym = install(NULL, NS_TAG);
+		sym = install("", NS_TAG);
 	}
 	tp = sym->type = mktype(NULL, tag, NULL, 0);
 	sym->u.ns = ++namespace;

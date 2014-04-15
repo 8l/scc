@@ -72,6 +72,12 @@ emitsym(Node *np)
 }
 
 void
+emitconst(Node *np)
+{
+	printf("\t#%X", np->u.sym->u.i);
+}
+
+void
 emitcast(Node *np)
 {
 	Node *child = np->childs[0];

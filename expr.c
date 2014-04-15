@@ -293,8 +293,9 @@ primary(void)
 		next();
 		break;
 	case CONSTANT:
+		sym = yylval.sym;
+		np = node(emitconst, sym->type, SYM(sym), 0);
 		next();
-		/* TODO: do something */
 		break;
 	case '(':
 		next();
