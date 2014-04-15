@@ -224,22 +224,21 @@ incompatibles:
 }
 
 static Node *
-exp2cond(Node *np)
+exp2cond(Node *np, char neg)
 {
-	if (ISNODEBIN(np)) {
-		switch (np->u.op) {
-		case OLT: case OGT: case OGE: case OLE: case OEQ: case ONE:
+	if (ISNODELOG(np)) {
+			np->u.op ^= neg;
 			return np;
-		}
 	}
-	return compare(ONE, np, constcode(zero));
+
+	return compare(ONE ^ neg, np, constcode(zero));
 }
 
 static Node *
 logic(char op, Node *np1, Node *np2)
 {
-	np1 = exp2cond(np1);
-	np2 = exp2cond(np2);
+	np1 = exp2cond(np1, 0);
+	np2 = exp2cond(np2, 0);
 	return bincode(op, inttype, np1, np2);
 }
 
@@ -271,17 +270,14 @@ error:
 }
 
 static Node *
-eval(Node *np, char neg)
+eval(Node *np)
 {
-	Node *ifyes, *ifno, *cmp;
-	char op;
+	Node *ifyes, *ifno;
 
-	ifyes = constcode(one);
-	ifno = constcode(zero);
-	cmp = constcode(zero);
-	op = (neg) ?  OEQ : ONE;
+	if (!ISNODELOG(np))
+		return np;
 
-	return ternarycode(compare(op, np, cmp), ifyes, ifno);
+	return ternarycode(np, constcode(one), constcode(zero));
 }
 
 static Node *
@@ -434,7 +430,7 @@ unary(void)
 			case FTN: case ARY:
 				np = addr2ptr(np);
 			case INT: case FLOAT: case PTR:
-				return eval(np, 1);
+				return exp2cond(np, 1);
 				break;
 			default:
 				goto bad_operand;
@@ -681,7 +677,7 @@ assign(void)
 		case AND_EQ: op = OA_AND;  break;
 		case XOR_EQ: op = OA_XOR;  break;
 		case OR_EQ:  op = OA_OR;   break;
-		default:  goto return_np;
+		default: return np1;
 		}
 		next();
 		np2 = assign();
@@ -689,12 +685,11 @@ assign(void)
 			goto nolvalue;
 		if (isconst(np1->type->op))
 			goto const_mod;
-		/* TODO: if it necessary a 0 comparision? */
+		np2 = eval(np2);
 		if ((np2 = convert(np2, np1->type)) == NULL)
 			goto incompatibles;
 		np1 = bincode(op, np1->type, np1, np2);
 	}
-return_np:
 	return np1;
 
 const_mod:

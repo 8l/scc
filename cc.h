@@ -216,16 +216,19 @@ typedef struct node {
 	struct node *childs[];
 } Node;
 
-typedef void (*Inst)(Node *);
+typedef void (*Inst)(Node *); /* TODO: remove this typedef */
 
 enum {
-	OCAST, OPTR, OADD, OARY, OSIZE, OMUL, OSUB,
-	OINC, ODEC, OPINC, OPDEC, ODIV, OMOD, OSHL,
-	OSHR, OLT, OGT, OGE, OLE, OEQ, ONE, OBAND,
-	OBXOR, OBOR, OASSIGN, OA_MUL, OA_DIV,
+	OCAST = 1, OPTR, OADD, OARY, OSIZE, OMUL, OSUB,
+	OINC, ODEC, OPINC, OPDEC, ODIV, OMOD, OSHL, OSHR,
+	OBAND, OBXOR, OBOR, OASSIGN, OA_MUL, OA_DIV,
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR,
-	OA_AND, OA_XOR, OA_OR, OADDR, OAND, OOR,
-	ONEG, OCPL, OEXC
+	OA_AND, OA_XOR, OA_OR, OADDR,ONEG, OCPL, OEXC,
+	/*
+	  * Complementary relational operators only differ in less
+	 * significant bit
+	 */
+	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT, OAND, OOR
 };
 
 extern void
@@ -246,5 +249,6 @@ extern Node
 #define TYP(s) ((union unode) {.type = s})
 #define ISNODESYM(n) ((n)->code == emitsym)
 #define ISNODEBIN(n) ((n)->code == emitbin)
+#define ISNODELOG(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
 
 #endif
