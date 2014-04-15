@@ -184,6 +184,7 @@ compare(char op, Node *np1, Node *np2)
 		default:
 			goto incompatibles;
 		}
+		break;
 	case FLOAT:
 		switch (t2) {
 		case INT:
@@ -196,13 +197,14 @@ compare(char op, Node *np1, Node *np2)
 		defualt:
 			goto incompatibles;
 		}
+		break;
 	case ARY: case FTN:
 		np1 = addr2ptr(np1);
 		tp1 = UNQUAL(np1->type);
-		break;
 	case PTR:
 		if (tp1 != tp2)
 			goto incompatibles;
+		break;
 	default:
 		goto incompatibles;
 	}
