@@ -224,6 +224,7 @@ enum {
 	OBAND, OBXOR, OBOR, OASSIGN, OA_MUL, OA_DIV,
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR,
 	OA_AND, OA_XOR, OA_OR, OADDR,ONEG, OCPL, OEXC,
+	OCOMMA,
 	/*
 	  * Complementary relational operators only differ in less
 	 * significant bit

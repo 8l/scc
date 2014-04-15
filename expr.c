@@ -707,10 +707,13 @@ error:
 Node *
 expr(void)
 {
-	register Node *np;
+	register Node *np1, *np2;
 
-	do
-		np = assign();
-	while (yytoken == ',');
-	return np;
+	np1 = assign();
+	while (accept(',')) {
+		np2 = assign();
+		np1 = bincode(OCOMMA, np2->type, np1, np2);
+	}
+
+	return np1;
 }

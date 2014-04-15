@@ -43,7 +43,8 @@ char *opcodes[] = {
 	[ONEG] = "_",
 	[OCPL] = "~",
 	[OAND] = "m",
-	[OOR] = "s"
+	[OOR] = "s",
+	[OCOMMA] = ","
 };
 
 Node *
