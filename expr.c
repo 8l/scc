@@ -336,6 +336,7 @@ primary(void)
 		np = constcode(yylval.sym);
 		next();
 		break;
+	/* TODO: case STRING: */
 	case '(':
 		next();
 		np = expr();
@@ -366,6 +367,9 @@ postfix(void)
 			np1 = incdec(np1,  (yytoken == INC) ? OPINC : OPDEC);
 			next();
 			break;
+		/* TODO: case '.': */
+		/* TODO: case INDIR: */
+		/* TODO: case '(' */
 		default:
 			return np1;
 		}
