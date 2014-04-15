@@ -44,13 +44,14 @@ struct symbol;
 struct ctype {
 	uint8_t op;           /* type builder operator */
 	char letter;          /* letter of the type */
-	short nelem;          /* number of elements in arrays */
-	unsigned defined : 1; /* type defined (is not a forward reference) */
-	unsigned sign : 1;    /* sign type */
+	bool defined : 1; /* type defined (is not a forward reference) */
+	bool sign : 1;    /* sign type */
 	struct symbol *sym;   /* symbol of the tag identifier */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
 	union {
+		signed char size;
+		short nelem;          /* number of elements in arrays */
 		struct funpar *pars;  /* function parameters */
 		struct field *fields; /* aggregate fields */
 	} u;

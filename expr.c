@@ -38,8 +38,30 @@ promote(Node *np)
 }
 
 static void
-intconv(Node **np1, Node **np2)
+intconv(Node **p1, Node **p2)
 {
+	Type *tp1, *tp2, *new1, *new2;
+	Node *np1 = *p1, *np2 = *p2;
+	signed char n;
+
+	tp1 = UNQUAL(np1->type);
+	tp2 = UNQUAL(np2->type);
+	new1 = new2 = NULL;
+	n = tp1->u.size - tp2->u.size;
+
+	if (n > 0)
+		new2 = tp1;
+	else if (n < 0)
+		new1 = tp2;
+	else if (tp1->sign)
+		new2 = tp1;
+	else
+		new1 = tp2;
+
+	if (new1)
+		*p1 = castcode(np1, new1);
+	else
+		*p2 = castcode(np2, new2);
 }
 
 static void
@@ -60,7 +82,8 @@ bitlogic(char op, Node *np1, Node *np2)
 
 	if (t1 != INT || t2 != INT)
 		error("No integer operand in bit logical operation");
-	intconv(&np1, &np2);
+	if (tp1 != tp2)
+		intconv(&np1, &np2);
 	return bincode(op, np1->type, np1, np2);
 }
 
@@ -125,6 +148,7 @@ arithmetic(char op, Node *np1, Node *np2)
 		case INT:
 			if (tp1 != tp2)
 				intconv(&np1, &np2);
+			tp1 = np1->type;
 			break;
 		case FLOAT:
 			np2 = castcode(np1, np2->type);
@@ -142,6 +166,7 @@ arithmetic(char op, Node *np1, Node *np2)
 		case FLOAT:
 			if (tp1 != tp2)
 				floatconv(&np1, &np2);
+			tp1 = np1->type;
 			break;
 		case INT:
 			np2 = castcode(np2, np1->type);

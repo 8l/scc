@@ -16,61 +16,72 @@ Type
 	*booltype = &(Type) {
 		.op = INT,
 		.letter = 'B',
-		.defined = 1
+		.defined = 1,
+		.u.size = 0
 	},
 	*uchartype = &(Type) {
 		.op = INT,
 		.letter = 'M',
 		.sign = 1,
-		.defined = 1
+		.defined = 1,
+		.u.size = 1
 	},
 	*chartype = &(Type) {
 		.op = INT,
 		.letter = 'C',
-		.defined = 1
+		.defined = 1,
+		.u.size = 1
+	},
+	*ushortype = &(Type) {
+		.op = INT,
+		.letter = 'E',
+		.defined = 1,
+		.u.size = 2
+	},
+	*shortype = &(Type) {
+		.op = INT,
+		.letter = 'K',
+		.defined = 1,
+		.u.size = 2
 	},
 	*uinttype = &(Type) {
 		.op = INT,
 		.letter = 'U',
 		.sign = 1,
-		.defined = 1
+		.defined = 1,
+		.u.size = 3
 	},
 	*inttype = &(Type) {
 		.op = INT,
 		.letter = 'I',
-		.defined = 1
-	},
-	*ushortype = &(Type) {
-		.op = INT,
-		.letter = 'E',
-		.defined = 1
-	},
-	*shortype = &(Type) {
-		.op = INT,
-		.letter = 'K',
-		.defined = 1
+		.defined = 1,
+		.u.size = 3
 	},
 	*longtype = &(Type) {
 		.op = INT,
 		.letter = 'L',
-		.defined = 1
+		.defined = 1,
+		.u.size = 4
 	},
 	*ulongtype = &(Type) {
 		.op = INT,
 		.letter = 'Z',
 		.sign = 1,
-		.defined = 1
+		.defined = 1,
+		.u.size = 4
 	},
 	*ullongtype = &(Type) {
 		.op = INT,
 		.letter = 'O',
 		.sign = 1,
-		.defined = 1
+		.defined = 1,
+		.u.size = 5
 	},
 	*llongtype = &(Type) {
 		.op = INT,
 		.letter = 'G',
-		.defined = 1
+		.defined = 1,
+		.u.size = 5
 	},
 	*floattype = &(Type) {
 		.op = FLOAT,
@@ -131,7 +142,7 @@ mktype(Type *tp, uint8_t op,
 	if (op != FTN || op != STRUCT || op != UNION || op != ENUM) {
 		for (bp = *tbl; bp; bp = bp->next) {
 			if (bp->type == tp && bp->op == op &&
-			    bp->sym == sym && bp->nelem == nelem) {
+			    bp->sym == sym && bp->u.nelem == nelem) {
 				return bp;
 			}
 		}
@@ -149,7 +160,7 @@ mktype(Type *tp, uint8_t op,
 	bp->next = *tbl;
 	bp->type = tp;
 	bp->op = op;
-	bp->nelem = nelem;
+	bp->u.nelem = nelem;
 	bp->sym = sym;
 	bp->letter = letter;
 	return *tbl = bp;
