@@ -116,7 +116,7 @@ ctype(int8_t type, int8_t sign, int8_t size)
 	case INT: switch (size) {
 		case 0:                 return (sign) ? uinttype   : inttype;
 		case SHORT:             return (sign) ? ushortype  : shortype;
-		case LONG:              return (sign) ? longtype   : ulongtype;
+		case LONG:              return (sign) ? ulongtype   : longtype;
 		case LONG+LONG:         return (sign) ? ullongtype : llongtype;
 		}
 	case FLOAT: switch (size) {
