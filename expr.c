@@ -394,7 +394,7 @@ unary(void)
 		next();
 		return incdec(unary(), op); /* TODO: unary or cast? */
 	case '!': op = OEXC; break;
-	/* TODO: case '&': */
+	case '&': op = OADDR; break;
 	/* TODO: case '*': */
 	case '+': op = OADD; break;
 	case '~': op = OCPL; break;
@@ -404,32 +404,39 @@ unary(void)
 
 	next();
 	np = cast();
-	t = BTYPE(np->type);
+	tp = UNQUAL(np->type);
+	t = tp->op;
 
 	switch (op) {
+	case OADDR:
+		if (!np->b.lvalue)
+			goto bad_operand;
+		/* TODO: check if variable is register */
+		tp = mktype(tp, PTR, NULL, 0);
+		break;
 	case OEXC:
 		switch (t) {
 		case FTN: case ARY:
 			np = addr2ptr(np);
 		case INT: case FLOAT: case PTR:
-			np = eval(np, 1);
+			return eval(np, 1);
 			break;
 		default:
 			goto bad_operand;
 		}
-		break;
-	case OCPL: case OADD:
+	case OADD:
 		if (t != INT)
 			goto bad_operand;
-		if (op == OADD)
-			break;
+		return np;
+	case OCPL:
+		if (t != INT)
+			goto bad_operand;
 	case ONEG:
 		if (!isarith(t))
 			goto bad_operand;
-		np = unarycode(op, np->type, np);
 	}
 
-	return np;
+	return unarycode(op, tp, np);
 
 bad_operand:
 	error("bad operand in unary expression");
