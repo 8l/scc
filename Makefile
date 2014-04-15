@@ -4,17 +4,12 @@ OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
 
 all: kcc
 
+$(OBJS) : cc.h
+
 kcc: $(OBJS)
 	$(CC) $(LDFLAGS) $(CFLAGS) $(LIBS) $(OBJS) -o $@
 
-.PHONY: clean distclean dep
-
-dep:
-	(cat Makefile; \
-	for i in $(OBJS:.o=.c); \
-	do \
-		$(CC) -MM $(CPPFLAGS) $$i; \
-	done) > makefile
+.PHONY: clean distclean
 
 clean:
 	rm -f $(OBJS)
@@ -25,5 +20,3 @@ distclean: clean
 	rm -f tags
 	rm -f cscope.*
 	rm -f makefile
-
-###Dependencies
