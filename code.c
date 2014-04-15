@@ -6,6 +6,7 @@
 
 char *opcodes[] = {
 	[OADD] = "+",
+	[OSUB] = "-",
 	[OMUL] = "*",
 	[OARY] = "'",
 	[OINC] = ":+",
