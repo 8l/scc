@@ -333,12 +333,15 @@ postfix(void)
 	}
 }
 
+static Node *cast(void);
+
 static Node *
 unary(void)
 {
 	register Node *np;
 	Type *tp;
-	char paren;
+	char paren, op;
+	uint8_t t;
 
 	switch (yytoken) {
 	case SIZEOF:
@@ -356,15 +359,40 @@ unary(void)
 		}
 		if (paren)
 			expect(')');
-		np = sizeofcode(tp);
-		break;
+		return sizeofcode(tp);
 	case INC: case DEC:
-		np = incdec(unary(), (yytoken == INC) ? OINC : ODEC);
+		op = (yytoken == INC) ? OINC : ODEC;
 		next();
-		break;
-	default:
-		return postfix();
+		return incdec(unary(), op);
+	/* TODO: case '!': */
+	/* TODO: case '&': */
+	/* TODO: case '*': */
+	case '+': op = 0; break;
+	case '~': op = OCPL; break;
+	case '-':  op = ONEG; break;
+	default: return postfix();
 	}
+
+	next();
+	np = cast();
+	t = BTYPE(np->type);
+
+	switch (op) {
+	case OCPL:
+		if (t != INT)
+			goto bad_complement;
+	case ONEG:
+		if (!isarith(t))
+			goto bad_arithm;
+		np = unarycode(op, np->type, np);
+	case 0:
+		return np;
+	}
+
+bad_complement:
+	error("bad operand in bit-complement");
+bad_arithm:
+	error("bad arithmetic operand in unary expression");
 }
 
 static Node *
