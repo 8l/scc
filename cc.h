@@ -9,10 +9,9 @@
 
 struct user_opt {
 	unsigned char implicit;
-	unsigned char c99;
 	unsigned char mixdcls;
+	unsigned char npromote;
 	unsigned char useless;
-	unsigned char repeat;
 	unsigned char charsign;
 };
 
@@ -113,7 +112,7 @@ extern void context(void (*fun)(void));
 
 extern Type *typename(void);
 
-extern Type *voidtype,
+extern Type *voidtype, *booltype,
 	*uchartype,   *chartype,
 	*uinttype,    *inttype,
 	*ushortype,   *shortype,

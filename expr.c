@@ -4,6 +4,7 @@
 #include "cc.h"
 
 #define SWAP(x1, x2, t) (t = x1, x1 = x2, x2 = t)
+#define GETBTYPE(n, tp, t) ((t) = (tp = UNQUAL(n->type))->op)
 
 static Symbol *zero, *one;
 
@@ -24,6 +25,16 @@ init_expr(void)
 static Node *
 promote(Node *np)
 {
+	Type *tp;
+
+	if (options.npromote)
+		return np;
+	tp = UNQUAL(np->type);
+	if (tp == chartype || tp == shortype || tp == booltype)
+		return castcode(np, inttype);
+	else if (tp == uchartype || tp == ushortype)
+		return castcode(np, uinttype);
+	return np;
 }
 
 static void
@@ -42,8 +53,10 @@ bitlogic(char op, Node *np1, Node *np2)
 	Type *tp1, *tp2;
 	uint8_t t1, t2;
 
-	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
-	t1 = tp1->op, t2 = tp2->op;
+	np1 = promote(np1);
+	np2 = promote(np2);
+	GETBTYPE(np1, tp1, t1);
+	GETBTYPE(np2, tp2, t2);
 
 	if (t1 != INT || t2 != INT)
 		error("No integer operand in bit logical operation");
@@ -101,8 +114,10 @@ arithmetic(char op, Node *np1, Node *np2)
 	Type *tp1, *tp2, *tp3;
 	uint8_t t1, t2, taux;
 
-	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
-	t1 = tp1->op, t2 = tp2->op;
+	np1 = promote(np1);
+	np2 = promote(np2);
+	GETBTYPE(np1, tp1, t1);
+	GETBTYPE(np2, tp2, t2);
 
 	switch (t1) {
 	case INT:
@@ -176,8 +191,10 @@ compare(char op, Node *np1, Node *np2)
 	Type *tp1, *tp2;
 	uint8_t t1, t2;
 
-	tp1 = UNQUAL(np1->type), tp2 = UNQUAL(np2->type);
-	t1 = tp1->op, t2 = tp2->op;
+	np1 = promote(np1);
+	np2 = promote(np2);
+	GETBTYPE(np1, tp1, t1);
+	GETBTYPE(np2, tp2, t2);
 
 	switch (t1) {
 	case INT:
@@ -284,15 +301,16 @@ static Node *
 incdec(Node *np, char op)
 {
 	Type *tp;
+	uint8_t t;
 	char *err;
 
+	GETBTYPE(np, tp, t);
 	if (!np->b.lvalue)
 		goto nolvalue;
-	tp = UNQUAL(np->type);
 	if (isconst(np->type->op))
 		goto const_mod;
 
-	switch (tp->op) {
+	switch (t) {
 	case PTR:
 		if (!tp->type->defined)
 			goto nocomplete;
