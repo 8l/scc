@@ -5,7 +5,21 @@
 
 #define SWAP(x1, x2, t) (t = x1, x1 = x2, x2 = t)
 
+static Symbol *zero, *one;
+
 Node *expr(void);
+
+void
+init_expr(void)
+{
+	static Symbol zdummy, odummy;
+
+	zdummy.type = odummy.type = inttype;
+	zdummy.u.i = 0;
+	odummy.u.i = 1;
+	zero = &zdummy;
+	one = &odummy;
+}
 
 static Node *
 promote(Node *np)
@@ -243,6 +257,20 @@ error:
 }
 
 static Node *
+eval(Node *np, char neg)
+{
+	Node *ifyes, *ifno, *cmp;
+	char op;
+
+	ifyes = node(emitconst, inttype, SYM(one), 0);
+	ifno = node(emitconst, inttype, SYM(zero), 0);
+	cmp = node(emitconst, inttype, SYM(zero), 0);
+	op = (neg) ?  OEQ : ONE;
+
+	return ternarycode(compare(op, np, cmp), ifyes, ifno);
+}
+
+static Node *
 incdec(Node *np, char op)
 {
 	Type *tp;
@@ -365,11 +393,11 @@ unary(void)
 	case INC: case DEC:
 		op = (yytoken == INC) ? OINC : ODEC;
 		next();
-		return incdec(unary(), op);
-	/* TODO: case '!': */
+		return incdec(unary(), op); /* TODO: unary or cast? */
+	case '!': op = OEXC; break;
 	/* TODO: case '&': */
 	/* TODO: case '*': */
-	case '+': op = 0; break;
+	case '+': op = OADD; break;
 	case '~': op = OCPL; break;
 	case '-':  op = ONEG; break;
 	default: return postfix();
@@ -380,21 +408,32 @@ unary(void)
 	t = BTYPE(np->type);
 
 	switch (op) {
-	case OCPL:
+	case OEXC:
+		switch (t) {
+		case FTN: case ARY:
+			np = addr2ptr(np);
+		case INT: case FLOAT: case PTR:
+			np = eval(np, 1);
+			break;
+		default:
+			goto bad_operand;
+		}
+		break;
+	case OCPL: case OADD:
 		if (t != INT)
-			goto bad_complement;
+			goto bad_operand;
+		if (op == OADD)
+			break;
 	case ONEG:
 		if (!isarith(t))
-			goto bad_arithm;
+			goto bad_operand;
 		np = unarycode(op, np->type, np);
-	case 0:
-		return np;
 	}
 
-bad_complement:
-	error("bad operand in bit-complement");
-bad_arithm:
-	error("bad arithmetic operand in unary expression");
+	return np;
+
+bad_operand:
+	error("bad operand in unary expression");
 }
 
 static Node *

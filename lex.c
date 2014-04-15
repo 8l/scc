@@ -28,7 +28,6 @@ integer(char *s, char base)
 	static char ch;
 
 	/* TODO: implement again */
-
 type:
 	switch (ch = toupper(getc(yyin))) {
 	case 'L':
