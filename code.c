@@ -198,3 +198,9 @@ ternarycode(Node *cond, Node *ifyes, Node *ifno)
 	np->childs[2] = ifno;
 	return np;
 }
+
+Node *
+constcode(Symbol *sym)
+{
+	return node(emitconst, inttype, SYM(sym), 0);
+}

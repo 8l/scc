@@ -262,9 +262,9 @@ eval(Node *np, char neg)
 	Node *ifyes, *ifno, *cmp;
 	char op;
 
-	ifyes = node(emitconst, inttype, SYM(one), 0);
-	ifno = node(emitconst, inttype, SYM(zero), 0);
-	cmp = node(emitconst, inttype, SYM(zero), 0);
+	ifyes = constcode(one);
+	ifno = constcode(zero);
+	cmp = constcode(zero);
 	op = (neg) ?  OEQ : ONE;
 
 	return ternarycode(compare(op, np, cmp), ifyes, ifno);
@@ -323,8 +323,7 @@ primary(void)
 		next();
 		break;
 	case CONSTANT:
-		sym = yylval.sym;
-		np = node(emitconst, sym->type, SYM(sym), 0);
+		np = constcode(yylval.sym);
 		next();
 		break;
 	case '(':
