@@ -5,7 +5,6 @@
 
 #include "sizes.h"
 #include "cc.h"
-#include "machine.h"
 
 #define NR_TYPE_HASH 16
 

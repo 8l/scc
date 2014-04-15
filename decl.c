@@ -5,7 +5,6 @@
 
 #include "sizes.h"
 #include "cc.h"
-#include "machine.h"
 
 #define ID_EXPECTED     1
 #define ID_ACCEPTED     2
