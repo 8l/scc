@@ -96,7 +96,7 @@ addr2ptr(Node *np)
  * Convert a Node to a type
  */
 static Node *
-convert(Node *np, Type *tp1)
+convert(Node *np, Type *tp1, char iscast)
 {
 	Type *tp2;
 	register uint8_t t1, t2;
@@ -118,15 +118,17 @@ convert(Node *np, Type *tp1)
 		case ARY: case FTN:
 			np = addr2ptr(np);
 		case PTR:
-			if (tp1 != pvoidtype && tp2 != pvoidtype)
-				return NULL;
-			/* TODO:
-			 * we assume conversion between pointers
-			 * do not need any operation, but due to
-			 * alignment problems that may be false
-			 */
-			np->type = tp1;
-			return np;
+			if (iscast || tp1 == pvoidtype ||  tp2 == pvoidtype) {
+				/* TODO:
+				 * we assume conversion between pointers
+				 * do not need any operation, but due to
+				 * alignment problems that may be false
+				 */
+				np->type = tp1;
+				return np;
+			}
+			return NULL;
+
 		}
 	}
 	return NULL;
@@ -495,7 +497,7 @@ cast(void)
 			tp = typename();
 			expect(')');
 			np1 = cast();
-			if ((np2 = convert(np1,  tp)) == NULL)
+			if ((np2 = convert(np1,  tp, 1)) == NULL)
 				error("bad type convertion requested");
 			np2->b.lvalue = np1->b.lvalue;
 			return np1;
@@ -703,7 +705,7 @@ assign(void)
 		if (isconst(np1->type->op))
 			goto const_mod;
 		np2 = eval(np2);
-		if ((np2 = convert(np2, np1->type)) == NULL)
+		if ((np2 = convert(np2, np1->type, 0)) == NULL)
 			goto incompatibles;
 		np1 = bincode(op, np1->type, np1, np2);
 	}
