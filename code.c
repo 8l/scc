@@ -167,7 +167,8 @@ emitexp(Node *np)
 void
 emitfun(Symbol *sym)
 {
-	printf("X%s\n", sym->name);
+	printf("%c%d\tn%s\n",
+	       sym->s.isglobal ? 'X' : 'Y', sym->id, sym->name);
 }
 
 void
