@@ -60,10 +60,9 @@ node(Inst code, Type *tp, union unode u, uint8_t nchilds)
 	return np;
 }
 
-void
-emitsym(Node *np)
+static void
+emitsym2(Symbol *sym)
 {
-	Symbol *sym = np->u.sym;
 	char c;
 
 	if (sym->s.isglobal)
@@ -74,7 +73,29 @@ emitsym(Node *np)
 		c = 'Q';
 	else
 		c = 'A';
-	printf("\t%c%d", c, sym->id);
+	printf("%c%d", c, sym->id);
+}
+
+void
+emitsym(Node *np)
+{
+	putchar('\t');
+	emitsym2(np->u.sym);
+}
+
+static void
+emittype(Type *tp)
+{
+	putchar(tp->letter);
+}
+
+void
+emitdcl(Symbol *sym)
+{
+	emitsym2(sym);
+	putchar('\t');
+	emittype(sym->type);
+	putchar('\n');
 }
 
 void

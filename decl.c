@@ -440,11 +440,11 @@ decl(void)
 			case STATIC: sym->s.isstatic = 1; break;
 			case EXTERN: /* TODO: */; break;
 			case TYPEDEF: /* TODO: */;break;
-			case AUTO: /* TODO: */; break;
-			default: sym->s.isauto = 1;
+			case AUTO: default: sym->s.isauto = 1;
 			}
 			if (accept('='))
-				initializer(sym->type);
+				initializer(sym->type); /* TODO: emit initializer */
+			emitdcl(sym);
 		} while (accept(','));
 	}
 }

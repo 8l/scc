@@ -233,6 +233,7 @@ enum {
 };
 
 extern void
+	emitdcl(Symbol *),
 	emitsym(Node *), emitunary(Node *),
 	emitbin(Node *), emitexp(Node *), emitconst(Node *np);
 
