@@ -127,9 +127,6 @@ extern Type *voidtype, *pvoidtype, *booltype,
                                      (TQUALIFIER|CONST))
 
 
-#define POINTER       32
-#define PTYPE(x)      (POINTER| (x))
-
 #define FTN           1
 #define ENUM          2
 #define TYPENAME      3
@@ -142,18 +139,18 @@ extern Type *voidtype, *pvoidtype, *booltype,
 #define STRUCT        8
 #define UNION         9
 
-#define PTR           PTYPE(1)
-#define ARY           PTYPE(2)
+#define PTR           10
+#define ARY           11
 
-#define CHAR          (ARY+1)
-#define DOUBLE        (ARY+2)
-#define SHORT         (ARY+3)
-#define LONG          (ARY+4)
+#define CHAR          12
+#define DOUBLE        13
+#define SHORT         14
+#define LONG          15
 
-#define COMPLEX       (ARY+5)
-#define IMAGINARY     (ARY+6)
-#define UNSIGNED      (ARY+7)
-#define SIGNED        (ARY+8)
+#define COMPLEX       16
+#define IMAGINARY     17
+#define UNSIGNED      18
+#define SIGNED        19
 
 #define CONST         (1<<0)
 #define VOLATILE      (1<<1)
