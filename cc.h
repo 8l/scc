@@ -71,11 +71,7 @@ struct funpar {
 
 /* definition of symbols */
 
-union value {
-	int i;
-	struct symbol *sym;
-	uint8_t ns, token;
-};
+
 
 struct symbol {
 	char *name;
@@ -90,7 +86,11 @@ struct symbol {
 		bool isauto : 1;
 		bool isregister : 1;
 	} s;
-	union value u;
+	union {
+		int i;
+		struct symbol *sym;
+		uint8_t ns, token;
+	} u;
 	struct symbol *next;
 	struct symbol *hash;
 };
