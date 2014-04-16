@@ -148,9 +148,8 @@ extern Type *voidtype, *pvoidtype, *booltype,
 #define LONG          15
 
 #define COMPLEX       16
-#define IMAGINARY     17
-#define UNSIGNED      18
-#define SIGNED        19
+#define UNSIGNED      17
+#define SIGNED        18
 
 #define CONST         (1<<0)
 #define VOLATILE      (1<<1)
