@@ -128,10 +128,8 @@ extern Type *voidtype, *pvoidtype, *booltype,
                                      (TQUALIFIER|CONST))
 
 
-#define ARITH         8
 #define RECORD        16
 #define POINTER       32
-#define ATYPE(x)      (ARITH  | (x))
 #define RTYPE(x)      (RECORD | (x))
 #define PTYPE(x)      (POINTER| (x))
 
@@ -140,9 +138,9 @@ extern Type *voidtype, *pvoidtype, *booltype,
 #define TYPENAME      3
 #define VOID          4
 
-#define FLOAT         ATYPE(1)
-#define INT           ATYPE(2)
-#define BOOL          ATYPE(3)
+#define FLOAT         5
+#define INT           6
+#define BOOL          7
 
 #define STRUCT        RTYPE(1)
 #define UNION         RTYPE(2)
