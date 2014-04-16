@@ -38,7 +38,7 @@ promote(Node *np)
 }
 
 static void
-intconv(Node **p1, Node **p2)
+typeconv(Node **p1, Node **p2)
 {
 	Type *tp1, *tp2, *new1, *new2;
 	Node *np1 = *p1, *np2 = *p2;
@@ -64,11 +64,6 @@ intconv(Node **p1, Node **p2)
 		*p2 = castcode(np2, new2);
 }
 
-static void
-floatconv(Node **np1, Node **np2)
-{
-}
-
 static Node *
 bitlogic(char op, Node *np1, Node *np2)
 {
@@ -83,7 +78,7 @@ bitlogic(char op, Node *np1, Node *np2)
 	if (t1 != INT || t2 != INT)
 		error("No integer operand in bit logical operation");
 	if (tp1 != tp2)
-		intconv(&np1, &np2);
+		typeconv(&np1, &np2);
 	return bincode(op, np1->type, np1, np2);
 }
 
@@ -122,6 +117,11 @@ convert(Node *np, Type *tp1)
 		switch (t2) {
 		case ARY: case FTN:
 			np = addr2ptr(np);
+			/* TODO:
+			 * we assume conversion between pointers
+			 * do not need any operation, but due to
+			 * alignment problems that may be false
+			 */
 			np->type = tp1;
 			return np;
 		}
@@ -143,34 +143,17 @@ arithmetic(char op, Node *np1, Node *np2)
 	GETBTYPE(np2, tp2, t2);
 
 	switch (t1) {
-	case INT:
+	case INT: case FLOAT:
 		switch (t2) {
-		case INT:
+		case INT: case FLOAT:
 			if (tp1 != tp2)
-				intconv(&np1, &np2);
+				typeconv(&np1, &np2);
 			tp1 = np1->type;
-			break;
-		case FLOAT:
-			np2 = castcode(np1, np2->type);
 			break;
 		case PTR: case ARY:
 			SWAP(np1, np2, naux);
 			SWAP(t1, t2, taux);
 			goto pointer;
-		default:
-			goto incorrect;
-		}
-		break;
-	case FLOAT:
-		switch (t2) {
-		case FLOAT:
-			if (tp1 != tp2)
-				floatconv(&np1, &np2);
-			tp1 = np1->type;
-			break;
-		case INT:
-			np2 = castcode(np2, np1->type);
-			break;
 		default:
 			goto incorrect;
 		}
@@ -222,29 +205,13 @@ compare(char op, Node *np1, Node *np2)
 	GETBTYPE(np2, tp2, t2);
 
 	switch (t1) {
-	case INT:
+	case INT: case FLOAT:
 		switch (t2) {
-		case INT:
+		case INT: case FLOAT:
 			if (tp1 != tp2)
-				intconv(&np1, &np2);
-			break;
-		case FLOAT:
-			np1 = castcode(np1, tp2);
+				typeconv(&np1, &np2);
 			break;
 		default:
-			goto incompatibles;
-		}
-		break;
-	case FLOAT:
-		switch (t2) {
-		case INT:
-			np2 = castcode(np2, tp1);
-			break;
-		case FLOAT:
-			if (tp1 != tp2)
-				floatconv(&np1, &np2);
-			break;
-		defualt:
 			goto incompatibles;
 		}
 		break;

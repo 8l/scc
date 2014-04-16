@@ -86,17 +86,20 @@ Type
 	*floattype = &(Type) {
 		.op = FLOAT,
 		.letter = 'F',
-		.defined = 1
+		.defined = 1,
+		.u.size = 10
 	},
 	*doubletype = &(Type) {
 		.op = FLOAT,
 		.letter = 'D',
-		.defined = 1
+		.defined = 1,
+		.u.size = 11
 	},
 	*ldoubletype = &(Type) {
 		.op = FLOAT,
 		.letter = 'H',
-		.defined = 1
+		.defined = 1,
+		.u.size = 12
 	};
 
 Type *
