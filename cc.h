@@ -127,29 +127,11 @@ extern Type *voidtype, *pvoidtype, *booltype,
                                      (TQUALIFIER|CONST))
 
 
-#define FTN           1
-#define ENUM          2
-#define TYPENAME      3
-#define VOID          4
-
-#define FLOAT         5
-#define INT           6
-#define BOOL          7
-
-#define STRUCT        8
-#define UNION         9
-
-#define PTR           10
-#define ARY           11
-
-#define CHAR          12
-#define DOUBLE        13
-#define SHORT         14
-#define LONG          15
-
-#define COMPLEX       16
-#define UNSIGNED      17
-#define SIGNED        18
+enum {
+	FTN = 1, ENUM, TYPENAME, VOID, FLOAT, INT, BOOL,
+	STRUCT, UNION, PTR, ARY, CHAR, DOUBLE, SHORT,
+	LONG, COMPLEX, UNSIGNED, SIGNED
+};
 
 #define CONST         (1<<0)
 #define VOLATILE      (1<<1)
