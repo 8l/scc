@@ -466,7 +466,7 @@ unary(void)
 			break;
 		case '-':
 			op = ONEG;
-			if (!isarith(t))
+			if (t != INT && t != FLOAT)
 				goto bad_operand;
 		}
 		return unarycode(op, tp, np);

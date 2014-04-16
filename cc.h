@@ -123,7 +123,6 @@ extern Type *voidtype, *pvoidtype, *booltype,
 #define ISQUAL(t)    (isqual((t)->op))
 #define UNQUAL(t)    (ISQUAL(t) ? (t)->type : (t))
 #define BTYPE(t)     (UNQUAL(t)->op)
-#define isarith(op)  ((op) & ARITH)
 #define isaddr(op)   ((op) & POINTER)
 #define isrecord(op) ((op) & RECORD)
 #define isqual(op)   ((op) & TQUALIFIER)
