@@ -13,6 +13,10 @@ Type
 		.op = VOID,
 		.letter = 'W'
 	},
+	*pvoidtype = &(Type) {
+		.op = PTR,
+		.letter = 'R'
+	},
 	*booltype = &(Type) {
 		.op = INT,
 		.letter = 'B',
@@ -139,6 +143,8 @@ mktype(Type *tp, uint8_t op,
 	register Type *bp;
 	char letter;
 
+	if (op == PTR && tp == voidtype)
+		return pvoidtype;
 	t = (op  ^  (uint8_t) ((unsigned short) tp >> 3))
 	         & NR_TYPE_HASH-1;
 	tbl = &typetab[t];

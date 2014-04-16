@@ -113,7 +113,7 @@ extern void context(void (*fun)(void));
 
 extern Type *typename(void);
 
-extern Type *voidtype, *booltype,
+extern Type *voidtype, *pvoidtype, *booltype,
 	*uchartype,   *chartype,
 	*uinttype,    *inttype,
 	*ushortype,   *shortype,

@@ -117,6 +117,9 @@ convert(Node *np, Type *tp1)
 		switch (t2) {
 		case ARY: case FTN:
 			np = addr2ptr(np);
+		case PTR:
+			if (tp1 != pvoidtype && tp2 != pvoidtype)
+				return NULL;
 			/* TODO:
 			 * we assume conversion between pointers
 			 * do not need any operation, but due to
