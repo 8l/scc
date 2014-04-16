@@ -266,12 +266,13 @@ array(Node *np1, Node *np2)
 
 	t1 = BTYPE(np1->type);
 	t2 = BTYPE(np2->type);
-	if (!isaddr(t1) && !isaddr(t2))
-		goto bad_vector;
 	if (t1 != INT && t2 != INT)
 		goto bad_subs;
 	np1 = arithmetic(OADD, np1, np2);
-	np1 =  unarycode(OARY, np1->type->type , np1);
+	tp = np1->type;
+	if (tp->op != PTR)
+		goto bad_vector;
+	np1 =  unarycode(OARY, tp->type , np1);
 	np1->b.lvalue = 1;
 	return np1;
 
