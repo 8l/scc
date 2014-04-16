@@ -497,9 +497,12 @@ extdecl(void)
 			if (BTYPE(tp) == FTN) {
 				emitfun(sym);
 				if (yytoken == '{') {
-					emitframe(sym);
+					extern Symbol *curfun;
+
+					curfun = sym;
+					emitsframe(sym);
 					context(compound);
-					emitret(sym);
+					emiteframe(sym); /* FIX: sym is not used */
 					freesyms(NS_LABEL);
 					return;
 				}

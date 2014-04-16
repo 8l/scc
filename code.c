@@ -171,15 +171,22 @@ emitfun(Symbol *sym)
 }
 
 void
-emitframe(Symbol *sym)
+emitsframe(Symbol *sym)
 {
 	puts("{");
 }
 
 void
-emitret(Symbol *sym)
+emiteframe(Symbol *sym)
 {
 	puts("}");
+}
+
+void
+emitret(Type *tp)
+{
+	fputs("\ty", stdout);
+	emittype(tp);
 }
 
 Node *

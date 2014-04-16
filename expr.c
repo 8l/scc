@@ -95,7 +95,7 @@ addr2ptr(Node *np)
 /*
  * Convert a Node to a type
  */
-static Node *
+Node *
 convert(Node *np, Type *tp1, char iscast)
 {
 	Type *tp2;
