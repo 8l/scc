@@ -72,7 +72,6 @@ struct funpar {
 /* definition of symbols */
 
 union value {
-	char c;
 	int i;
 	struct symbol *sym;
 	uint8_t ns, token;
