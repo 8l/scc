@@ -168,6 +168,7 @@ arithmetic(char op, Node *np1, Node *np2)
 		tp1 = np1->type;
 	case PTR:
 pointer:
+		/* TODO: substraction between pointers */
 		switch (op) {
 		case OADD: case OSUB:
 			tp3 = tp1->type;
