@@ -659,9 +659,9 @@ ternary(void)
 
 	cond = or();
 	while (accept('?')) {
-		ifyes = expr();
+		ifyes = promote(expr());
 		expect(':');
-		ifno = ternary();
+		ifno = promote(ternary());
 		/* TODO: check the types of ifno and ifyes */
 		cond = ternarycode(compare(ONE, cond, constcode(zero)),
 	                           ifyes, ifno);
