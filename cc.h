@@ -127,9 +127,7 @@ extern Type *voidtype, *pvoidtype, *booltype,
                                      (TQUALIFIER|CONST))
 
 
-#define RECORD        16
 #define POINTER       32
-#define RTYPE(x)      (RECORD | (x))
 #define PTYPE(x)      (POINTER| (x))
 
 #define FTN           1
@@ -141,8 +139,8 @@ extern Type *voidtype, *pvoidtype, *booltype,
 #define INT           6
 #define BOOL          7
 
-#define STRUCT        RTYPE(1)
-#define UNION         RTYPE(2)
+#define STRUCT        8
+#define UNION         9
 
 #define PTR           PTYPE(1)
 #define ARY           PTYPE(2)
