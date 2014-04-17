@@ -6,8 +6,6 @@
 
 Symbol *curfun;
 
-extern void decl(void);
-extern Node *expr(void);
 extern Node *convert(Node *np, Type *tp1, char iscast);
 
 static void

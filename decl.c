@@ -470,7 +470,6 @@ extdecl(void)
 	int8_t sclass;
 	Symbol *sym;
 	char *err;
-	extern void compound(void);
 
 	forbid_eof = 0; /* TODO: Fix when find EOF */
 
@@ -481,6 +480,10 @@ extdecl(void)
 			goto bad_storage;
 	case ';':
 		break;
+	case '@':
+		next();
+		emitexp(expr());
+		return;
 	default:
 		goto dcl_expected;
 	}

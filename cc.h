@@ -222,4 +222,7 @@ extern Node
 #define ISNODEBIN(n) ((n)->code == emitbin)
 #define ISNODELOG(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
 
+extern Node *expr(void);
+extern void extdecl(void), decl(void), compound(void);
+
 #endif

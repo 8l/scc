@@ -4,7 +4,7 @@
 
 #include "cc.h"
 
-extern void extdecl(void), init_keywords(void),
+extern void init_keywords(void),
 	open_file(const char *file),  init_expr(void);
 
 struct user_opt options;
