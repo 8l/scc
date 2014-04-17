@@ -522,7 +522,7 @@ mul(void)
 		switch (yytoken) {
 		case '*': op = OMUL; break;
 		case '/': op = ODIV; break;
-		case '%': op = OMOD; break;
+		case '%': op = OMOD; break; /* TODO: check int type */
 		default: return np;
 		}
 		next();
