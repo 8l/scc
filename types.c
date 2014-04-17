@@ -83,7 +83,7 @@ Type
 	},
 	*llongtype = &(Type) {
 		.op = INT,
-		.letter = 'G',
+		.letter = 'J',
 		.defined = 1,
 		.u.size = 5
 	},
