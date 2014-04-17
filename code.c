@@ -165,6 +165,13 @@ emitexp(Node *np)
 }
 
 void
+emitprint(Node *np)
+{
+	(*np->code)(np);
+	printf("\tk%c\n", np->type->letter);
+}
+
+void
 emitfun(Symbol *sym)
 {
 	printf("%c%d\tn%s\n",

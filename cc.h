@@ -204,7 +204,8 @@ enum {
 extern void
 	emitdcl(Symbol *), emitsframe(Symbol *), emiteframe(Symbol *),
 	emitsym(Node *), emitunary(Node *),
-	emitbin(Node *), emitexp(Node *), emitconst(Node *np);
+	emitbin(Node *), emitexp(Node *), emitconst(Node *np),
+	emitprint(Node *);
 
 extern Node
 	*node(Inst code, Type *tp, union unode u, uint8_t nchilds),

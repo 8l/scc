@@ -482,8 +482,8 @@ extdecl(void)
 		break;
 	case '@':
 		next();
-		emitexp(expr());
-		return;
+		emitprint(expr());
+		goto semicolon;
 	default:
 		goto dcl_expected;
 	}
@@ -515,10 +515,13 @@ extdecl(void)
 					; /* TODO: handle extern */
 				else if (accept('='))
 					initializer(tp);
+				emitdcl(sym);
+
 			}
 		} while (accept(','));
 	}
 
+semicolon:
 	expect(';');
 	return;
 
