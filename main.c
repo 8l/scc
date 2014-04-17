@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "cc.h"
+#include "cc1.h"
 
 extern void init_keywords(void),
 	open_file(const char *file),  init_expr(void);

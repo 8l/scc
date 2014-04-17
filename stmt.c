@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "cc.h"
+#include "cc1.h"
 
 Symbol *curfun;
 

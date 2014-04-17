@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "cc.h"
+#include "cc1.h"
 
 #define SWAP(x1, x2, t) (t = x1, x1 = x2, x2 = t)
 #define GETBTYPE(n, tp, t) ((t) = (tp = UNQUAL(n->type))->op)

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cc.h"
+#include "cc1.h"
 
 #define NR_SYM_HASH 32
 

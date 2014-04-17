@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#include "cc.h"
+#include "cc1.h"
 
 
 static void

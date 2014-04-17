@@ -5,7 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "cc.h"
+#include "cc1.h"
 #include "sizes.h"
 
 static FILE *yyin;

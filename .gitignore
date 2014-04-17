@@ -1,4 +1,4 @@
 *.o
 makefile
-kcc
+cc1
 TODO

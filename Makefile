@@ -2,16 +2,17 @@
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
 	wrapper.o code.o stmt.o
 
-all: kcc
 
-$(OBJS) : cc.h
+all: cc1
 
-kcc: $(OBJS)
+$(OBJS) : cc1.h
+
+cc1: $(OBJS)
 	$(CC) $(LDFLAGS) $(CFLAGS) $(LIBS) $(OBJS) -o $@
 
 clean:
 	rm -f $(OBJS)
-	rm -f kcc
+	rm -f cc1
 
 distclean: clean
 	rm -f *~
