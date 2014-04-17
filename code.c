@@ -101,7 +101,7 @@ emitdcl(Symbol *sym)
 void
 emitconst(Node *np)
 {
-	printf("\t#%X", np->u.sym->u.i);
+	printf("\t#%x", np->u.sym->u.i);
 }
 
 void
