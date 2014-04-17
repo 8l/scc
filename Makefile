@@ -9,8 +9,6 @@ $(OBJS) : cc.h
 kcc: $(OBJS)
 	$(CC) $(LDFLAGS) $(CFLAGS) $(LIBS) $(OBJS) -o $@
 
-.PHONY: clean distclean
-
 clean:
 	rm -f $(OBJS)
 	rm -f kcc
