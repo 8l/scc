@@ -498,11 +498,11 @@ extdecl(void)
 			if (!(sclass & STATIC))
 				sym->s.isglobal = 1;
 			if (BTYPE(tp) == FTN) {
-				emitfun(sym);
 				if (yytoken == '{') {
 					extern Symbol *curfun;
 
 					curfun = sym;
+					emitfun(sym);
 					emitsframe(sym);
 					context(compound);
 					emiteframe(sym); /* FIX: sym is not used */
