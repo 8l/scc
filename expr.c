@@ -502,7 +502,7 @@ cast(void)
 			if ((np2 = convert(np1,  tp, 1)) == NULL)
 				error("bad type convertion requested");
 			np2->b.lvalue = np1->b.lvalue;
-			return np1;
+			return np2;
 		default:
 			break;
 		}
