@@ -241,7 +241,7 @@ incompatibles:
 static Node *
 exp2cond(Node *np, char neg)
 {
-	if (ISNODELOG(np)) {
+	if (ISNODECMP(np)) {
 			np->u.op ^= neg;
 			return np;
 	}
@@ -288,7 +288,7 @@ error:
 static Node *
 iszero(Node *np)
 {
-	if (ISNODELOG(np))
+	if (ISNODECMP(np))
 		return np;
 	return compare(ONE, np, constcode(zero));
 }
@@ -296,7 +296,7 @@ iszero(Node *np)
 static Node *
 eval(Node *np)
 {
-	if (!ISNODELOG(np))
+	if (!ISNODECMP(np))
 		return np;
 	return ternarycode(np, constcode(one), constcode(zero));
 }

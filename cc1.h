@@ -221,7 +221,7 @@ extern Node
 #define TYP(s) ((union unode) {.type = s})
 #define ISNODESYM(n) ((n)->code == emitsym)
 #define ISNODEBIN(n) ((n)->code == emitbin)
-#define ISNODELOG(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
+#define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
 
 extern Node *expr(void);
 extern void extdecl(void), decl(void), compound(void);
