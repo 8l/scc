@@ -691,14 +691,14 @@ or(void)
 static Node *
 ternary(void)
 {
-	register Node *cond, *ifyes, *ifno;
+	Node *cond, *ifyes, *ifno;
 
 	cond = or();
 	while (accept('?')) {
 		ifyes = promote(expr());
 		expect(':');
 		ifno = promote(ternary());
-		/* TODO: check the types of ifno and ifyes */
+		typeconv(&ifyes, &ifno);
 		cond = ternarycode(compare(ONE, cond, constcode(zero)),
 	                           ifyes, ifno);
 	}
