@@ -286,13 +286,18 @@ error:
 }
 
 static Node *
+iszero(Node *np)
+{
+	if (ISNODELOG(np))
+		return np;
+	return compare(ONE, np, constcode(zero));
+}
+
+static Node *
 eval(Node *np)
 {
-	Node *ifyes, *ifno;
-
 	if (!ISNODELOG(np))
 		return np;
-
 	return ternarycode(np, constcode(one), constcode(zero));
 }
 
@@ -691,10 +696,10 @@ or(void)
 static Node *
 ternary(void)
 {
-	Node *cond, *ifyes, *ifno;
+	Node *np, *ifyes, *ifno;
 	Type *tp1, *tp2;
 
-	cond = or();
+	np = or();
 	while (accept('?')) {
 		ifyes = promote(expr());
 		expect(':');
@@ -703,10 +708,9 @@ ternary(void)
 		tp2 = UNQUAL(ifno->type);
 		if (tp1 != tp2)
 			typeconv(&ifyes, &ifno);
-		cond = ternarycode(compare(ONE, cond, constcode(zero)),
-	                           ifyes, ifno);
+		np = ternarycode(iszero(np), ifyes, ifno);
 	}
-	return cond;
+	return np;
 }
 
 static Node *
