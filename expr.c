@@ -692,13 +692,17 @@ static Node *
 ternary(void)
 {
 	Node *cond, *ifyes, *ifno;
+	Type *tp1, *tp2;
 
 	cond = or();
 	while (accept('?')) {
 		ifyes = promote(expr());
 		expect(':');
 		ifno = promote(ternary());
-		typeconv(&ifyes, &ifno);
+		tp1 = UNQUAL(ifyes->type);
+		tp2 = UNQUAL(ifno->type);
+		if (tp1 != tp2)
+			typeconv(&ifyes, &ifno);
 		cond = ternarycode(compare(ONE, cond, constcode(zero)),
 	                           ifyes, ifno);
 	}
