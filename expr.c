@@ -46,6 +46,8 @@ typeconv(Node **p1, Node **p2)
 
 	tp1 = UNQUAL(np1->type);
 	tp2 = UNQUAL(np2->type);
+	if (tp1 == tp2)
+		return;
 	new1 = new2 = NULL;
 	n = tp1->u.size - tp2->u.size;
 
@@ -697,17 +699,13 @@ static Node *
 ternary(void)
 {
 	Node *np, *ifyes, *ifno;
-	Type *tp1, *tp2;
 
 	np = or();
 	while (accept('?')) {
 		ifyes = promote(expr());
 		expect(':');
 		ifno = promote(ternary());
-		tp1 = UNQUAL(ifyes->type);
-		tp2 = UNQUAL(ifno->type);
-		if (tp1 != tp2)
-			typeconv(&ifyes, &ifno);
+		typeconv(&ifyes, &ifno);
 		np = ternarycode(iszero(np), ifyes, ifno);
 	}
 	return np;
