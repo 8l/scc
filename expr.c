@@ -297,6 +297,32 @@ eval(Node *np)
 }
 
 static Node *
+assignop(char op, Node *np1, Node *np2)
+{
+	char *err;
+
+	if (!np1->b.lvalue)
+		goto nolvalue;
+	if (isconst(np1->type->op))
+		goto const_mod;
+	np2 = eval(np2);
+	if ((np2 = convert(np2, np1->type, 0)) == NULL)
+		goto incompatibles;
+	return bincode(op, np1->type, np1, np2);
+
+const_mod:
+	err = "const value modified";
+	goto error;
+nolvalue:
+	err = "lvalue required as left operand of assignment";
+	goto error;
+incompatibles:
+	err = "incompatible types when assigning";
+error:
+	error(err);
+}
+
+static Node *
 incdec(Node *np, char op)
 {
 	Type *tp;
@@ -335,6 +361,9 @@ error:
 	error(err);
 }
 
+/*************************************************************
+ * grammar functions                                         *
+ *************************************************************/
 static Node *
 primary(void)
 {
@@ -679,10 +708,9 @@ ternary(void)
 static Node *
 assign(void)
 {
-	register Node *np1, *np2;
-	char *err;
+	register Node *np;
 
-	np1 = ternary();
+	np = ternary();
 	for (;;) {
 		register char op;
 
@@ -698,31 +726,11 @@ assign(void)
 		case AND_EQ: op = OA_AND;  break;
 		case XOR_EQ: op = OA_XOR;  break;
 		case OR_EQ:  op = OA_OR;   break;
-		default: return np1;
+		default: return np;
 		}
 		next();
-		np2 = assign();
-		if (!np1->b.lvalue)
-			goto nolvalue;
-		if (isconst(np1->type->op))
-			goto const_mod;
-		np2 = eval(np2);
-		if ((np2 = convert(np2, np1->type, 0)) == NULL)
-			goto incompatibles;
-		np1 = bincode(op, np1->type, np1, np2);
+		np = assignop(op, np, assign());
 	}
-	return np1;
-
-const_mod:
-	err = "const value modified";
-	goto error;
-nolvalue:
-	err = "lvalue required as left operand of assignment";
-	goto error;
-incompatibles:
-	err = "incompatible types when assigning";
-error:
-	error(err);
 }
 
 Node *
