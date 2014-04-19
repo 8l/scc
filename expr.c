@@ -244,8 +244,8 @@ static Node *
 exp2cond(Node *np, char neg)
 {
 	if (ISNODECMP(np)) {
-			np->u.op ^= neg;
-			return np;
+		np->u.op ^= neg;
+		return np;
 	}
 
 	return compare(ONE ^ neg, np, constcode(zero));
