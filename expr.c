@@ -3,7 +3,6 @@
 
 #include "cc1.h"
 
-#define SWAP(x1, x2, t) (t = x1, x1 = x2, x2 = t)
 #define GETBTYPE(n, tp, t) ((t) = (tp = UNQUAL(n->type))->op)
 
 static Symbol *zero, *one;
@@ -113,75 +112,66 @@ convert(Node *np, Type *tp, char iscast)
 				np->utype = UNQUAL(tp);
 				return np;
 			}
-			return NULL;
 		}
 	}
 	return NULL;
 }
 
 static Node *
+parithmetic(char op, Node *np1, Node *np2)
+{
+	Type *tp;
+	Node *size;
+	char *err;
+
+	tp = np1->utype;
+	size = sizeofcode(tp->type);
+	if (np2->typeop == ARY)
+		np2 = addr2ptr(np2);
+
+	if (op == OSUB && np2->typeop == PTR) {
+		if (tp != np2->utype)
+			goto incorrect;
+		np1 = bincode(OSUB, inttype, np1, np2);
+		return bincode(ODIV, inttype, np1, size);
+	}
+	if (np2->typeop != INT)
+		goto incorrect;
+	np2 = castcode(promote(np2), tp);
+	np2 = bincode(OMUL, tp, np2, size);
+	return bincode(op, tp, np1, np2);
+
+incorrect:
+	error("incorrect arithmetic operands");
+}
+
+static Node *
 arithmetic(char op, Node *np1, Node *np2)
 {
-	char *err;
-	Node *naux;
-	Type *tp1, *tp2, *tp3;
-	uint8_t t1, t2, taux;
-
-	np1 = promote(np1);
-	np2 = promote(np2);
-	GETBTYPE(np1, tp1, t1);
-	GETBTYPE(np2, tp2, t2);
-
-	switch (t1) {
+	switch (np1->typeop) {
 	case INT: case FLOAT:
-		switch (t2) {
+		switch (np2->typeop) {
 		case INT: case FLOAT:
-			if (tp1 != tp2)
-				typeconv(&np1, &np2);
-			tp1 = np1->type;
+			typeconv(&np1, &np2);
 			break;
-		case PTR: case ARY:
-			SWAP(np1, np2, naux);
-			SWAP(t1, t2, taux);
-			goto pointer;
+		case ARY:
+			np2 = addr2ptr(np2);
+		case PTR:
+			return parithmetic(op, np2, np1);
 		default:
 			goto incorrect;
 		}
 		break;
 	case ARY:
 		np1 = addr2ptr(np1);
-		tp1 = np1->type;
 	case PTR:
-pointer:
-		/* TODO: substraction between pointers */
-		switch (op) {
-		case OADD: case OSUB:
-			tp3 = tp1->type;
-			if (!tp3->defined)
-				goto nocomplete;
-			if (t2 != INT)
-				goto incorrect;
-			np2 = bincode(OMUL, tp1,
-			              castcode(np2, tp1),
-			              sizeofcode(tp3));
-			break;
-		default:
-			goto incorrect;
-		}
-		break;
+		return parithmetic(op, np1, np2);
 	default:
-		goto incorrect;
+	incorrect:
+		error("incorrect arithmetic operands");
 	}
 
-	return bincode(op, tp1, np1, np2);
-
-nocomplete:
-	err = "invalid use of indefined type";
-	goto error;
-incorrect:
-	err = "incorrect arithmetic operands";
-error:
-	error(err);
+	return bincode(op, np1->type, np1, np2);
 }
 
 static Node *

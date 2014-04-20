@@ -228,6 +228,8 @@ bincode(char op, Type *tp, Node *np1, Node *np2)
 Node *
 sizeofcode(Type *tp)
 {
+	if (!tp->defined)
+		error("invalid use of indefined type");
 	return node(emitsizeof, inttype, TYP(tp), 0);
 }
 
