@@ -42,17 +42,17 @@ typeconv(Node **p1, Node **p2)
 {
 	Type *tp1, *tp2;
 	Node *np1 = *p1, *np2 = *p2;
-	uint8_t r1, r2;
+	uint8_t n;
 
 	np1 = promote(np1);
 	np2 = promote(np2);
 
 	tp1 = np1->utype;
-	tp2 = np1->utype;
+	tp2 = np2->utype;
 	if (tp1 != tp2) {
-		if (r1 > r2)
+		if ((n = tp1->u.rank - tp2->u.rank) > 0)
 			np2 = castcode(np2, tp1);
-		else if (r1 < r2)
+		else if (n < 0)
 			np1 = castcode(np1, tp2);
 	}
 	*p1 = np1;
