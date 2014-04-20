@@ -29,7 +29,7 @@ promote(Node *np)
 
 	if (options.npromote)
 		return np;
-	tp = UNQUAL(np->type);
+	tp = np->utype;
 	if (tp == chartype || tp == shortype || tp == booltype)
 		return castcode(np, inttype);
 	else if (tp == uchartype || tp == ushortype)
@@ -44,8 +44,8 @@ typeconv(Node **p1, Node **p2)
 	Node *np1 = *p1, *np2 = *p2;
 	signed char n;
 
-	tp1 = UNQUAL(np1->type);
-	tp2 = UNQUAL(np2->type);
+	tp1 = np1->utype;
+	tp2 = np1->utype;
 	if (tp1 == tp2)
 		return;
 	new1 = new2 = NULL;
@@ -69,17 +69,12 @@ typeconv(Node **p1, Node **p2)
 static Node *
 bitlogic(char op, Node *np1, Node *np2)
 {
-	Type *tp1, *tp2;
-	uint8_t t1, t2;
-
 	np1 = promote(np1);
 	np2 = promote(np2);
-	GETBTYPE(np1, tp1, t1);
-	GETBTYPE(np2, tp2, t2);
 
-	if (t1 != INT || t2 != INT)
+	if (np1->typeop != INT || np2->typeop != INT)
 		error("No integer operand in bit logical operation");
-	if (tp1 != tp2)
+	if (np1->utype != np2->utype)
 		typeconv(&np1, &np2);
 	return bincode(op, np1->type, np1, np2);
 }
@@ -89,8 +84,7 @@ addr2ptr(Node *np)
 {
 	Type *tp;
 
-	tp = UNQUAL(np->type);
-	tp = mktype(tp->type, PTR, NULL, 0);
+	tp = mktype(np->utype->type, PTR, NULL, 0);
 	return unarycode(OADDR, tp, np);
 }
 
@@ -98,21 +92,19 @@ addr2ptr(Node *np)
  * Convert a Node to a type
  */
 Node *
-convert(Node *np, Type *tp1, char iscast)
+convert(Node *np, Type *tp, char iscast)
 {
-	Type *tp2;
-	register uint8_t t1, t2;
+	uint8_t t1, t2;
 
-	tp1 = UNQUAL(tp1), tp2 = UNQUAL(np->type);
-	if (tp1 == tp2)
+	if (np->type == tp)
 		return np;
-	t1 = tp1->op, t2 = tp2->op;
+	t1 = np->typeop, t2 = BTYPE(tp);
 
 	switch (t1) {
 	case ENUM: case INT: case FLOAT:
 		switch (t2) {
 		case INT: case FLOAT: case ENUM:
-			return castcode(np, tp1);
+			return castcode(np, tp);
 		}
 		break;
 	case PTR:
@@ -120,17 +112,19 @@ convert(Node *np, Type *tp1, char iscast)
 		case ARY: case FTN:
 			np = addr2ptr(np);
 		case PTR:
-			if (iscast || tp1 == pvoidtype ||  tp2 == pvoidtype) {
+			if (iscast && t2 != FLOAT ||
+			    tp == pvoidtype ||
+			    np->utype == pvoidtype) {
 				/* TODO:
 				 * we assume conversion between pointers
 				 * do not need any operation, but due to
 				 * alignment problems that may be false
 				 */
-				np->type = tp1;
+				np->type = tp;
+				np->utype = UNQUAL(tp);
 				return np;
 			}
 			return NULL;
-
 		}
 	}
 	return NULL;
