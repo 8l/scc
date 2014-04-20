@@ -41,11 +41,11 @@ static void
 typeconv(Node **p1, Node **p2)
 {
 	Type *tp1, *tp2;
-	Node *np1 = *p1, *np2 = *p2;
+	Node *np1, *np2;
 	uint8_t n;
 
-	np1 = promote(np1);
-	np2 = promote(np2);
+	np1 = promote(*p1);
+	np2 = promote(*p2);
 
 	tp1 = np1->utype;
 	tp2 = np2->utype;
