@@ -21,89 +21,89 @@ Type
 		.op = INT,
 		.letter = 'B',
 		.defined = 1,
-		.u.size = 0
+		.u.rank = RANK_BOOL
 	},
 	*uchartype = &(Type) {
 		.op = INT,
 		.letter = 'M',
 		.sign = 1,
 		.defined = 1,
-		.u.size = 1
+		.u.rank = RANK_UCHAR
 	},
 	*chartype = &(Type) {
 		.op = INT,
 		.letter = 'C',
 		.defined = 1,
-		.u.size = 1
+		.u.rank = RANK_SCHAR
 	},
 	*ushortype = &(Type) {
 		.op = INT,
 		.letter = 'E',
 		.defined = 1,
-		.u.size = 2
+		.u.rank = RANK_USHORT
 	},
 	*shortype = &(Type) {
 		.op = INT,
 		.letter = 'K',
 		.defined = 1,
-		.u.size = 2
+		.u.rank = RANK_SHORT
 	},
 	*uinttype = &(Type) {
 		.op = INT,
 		.letter = 'U',
 		.sign = 1,
 		.defined = 1,
-		.u.size = 3
+		.u.rank = RANK_UINT
 	},
 	*inttype = &(Type) {
 		.op = INT,
 		.letter = 'I',
 		.defined = 1,
-		.u.size = 3
+		.u.rank = RANK_INT
 	},
 	*longtype = &(Type) {
 		.op = INT,
 		.letter = 'L',
 		.defined = 1,
-		.u.size = 4
+		.u.rank = RANK_LONG
 	},
 	*ulongtype = &(Type) {
 		.op = INT,
 		.letter = 'Z',
 		.sign = 1,
 		.defined = 1,
-		.u.size = 4
+		.u.rank = RANK_ULONG
 	},
 	*ullongtype = &(Type) {
 		.op = INT,
 		.letter = 'O',
 		.sign = 1,
 		.defined = 1,
-		.u.size = 5
+		.u.rank = RANK_ULLONG
 	},
 	*llongtype = &(Type) {
 		.op = INT,
 		.letter = 'J',
 		.defined = 1,
-		.u.size = 5
+		.u.rank = RANK_LLONG
 	},
 	*floattype = &(Type) {
 		.op = FLOAT,
 		.letter = 'F',
 		.defined = 1,
-		.u.size = 10
+		.u.rank = RANK_FLOAT
 	},
 	*doubletype = &(Type) {
 		.op = FLOAT,
 		.letter = 'D',
 		.defined = 1,
-		.u.size = 11
+		.u.rank = RANK_DOUBLE
 	},
 	*ldoubletype = &(Type) {
 		.op = FLOAT,
 		.letter = 'H',
 		.defined = 1,
-		.u.size = 12
+		.u.rank = RANK_LDOUBLE
 	};
 
 Type *

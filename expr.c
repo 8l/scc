@@ -26,49 +26,37 @@ static Node *
 promote(Node *np)
 {
 	Type *tp;
+	uint8_t r;
 
 	if (options.npromote)
 		return np;
 	tp = np->utype;
-	if (tp == chartype || tp == shortype || tp == booltype)
-		return castcode(np, inttype);
-	else if (tp == uchartype || tp == ushortype)
-		return castcode(np, uinttype);
-	return np;
+	r = tp->u.rank;
+	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
+		return np;
+	return castcode(np, (r == RANK_UINT) ? uinttype : inttype);
 }
 
 static void
 typeconv(Node **p1, Node **p2)
 {
-	Type *tp1, *tp2, *new1, *new2;
+	Type *tp1, *tp2;
 	Node *np1 = *p1, *np2 = *p2;
-	signed char n;
+	uint8_t r1, r2;
+
+	np1 = promote(np1);
+	np2 = promote(np2);
 
 	tp1 = np1->utype;
 	tp2 = np1->utype;
-	if (tp1 == tp2)
-		return;
-	if (tp1->op == INT && tp2->op == INT) {
-		np1 = promote(np1);
-		np2 = promote(np2);
+	if (tp1 != tp2) {
+		if (r1 > r2)
+			np2 = castcode(np2, tp1);
+		else if (r1 < r2)
+			np1 = castcode(np1, tp2);
 	}
-
-	n = tp1->u.size - tp2->u.size;
-	new1 = new2 = NULL;
-
-	if (n > 0)
-		new2 = tp1;
-	else if (n < 0)
-		new1 = tp2;
-	else if (tp1->sign)
-		new2 = tp1;
-	else
-		new1 = tp2;
-
-	if (new1)
-		*p1 = castcode(np1, new1);
-	else
-		*p2 = castcode(np2, new2);
+	*p1 = np1;
+	*p2 = np2;
 }
 
 static Node *

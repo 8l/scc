@@ -40,6 +40,21 @@ enum {
 struct funpars;
 struct symbol;
 
+#define RANK_BOOL    0
+#define RANK_SCHAR   1
+#define RANK_UCHAR   2
+#define RANK_SHORT   3
+#define RANK_USHORT  4
+#define RANK_INT     5
+#define RANK_UINT    6
+#define RANK_LONG    7
+#define RANK_ULONG   8
+#define RANK_LLONG   9
+#define RANK_ULLONG  10
+#define RANK_FLOAT   11
+#define RANK_DOUBLE  12
+#define RANK_LDOUBLE 13
+
 struct ctype {
 	uint8_t op;           /* type builder operator */
 	char letter;          /* letter of the type */
@@ -49,7 +64,7 @@ struct ctype {
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
 	union {
-		signed char size;
+		unsigned char rank;   /* convertion rank */
 		short nelem;          /* number of elements in arrays */
 		struct funpar *pars;  /* function parameters */
 		struct field *fields; /* aggregate fields */
