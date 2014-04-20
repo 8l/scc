@@ -174,6 +174,8 @@ extern void expect(uint8_t tok);
 typedef struct node {
 	void (*code)(struct node *);
 	Type *type;
+	Type *utype;
+	uint8_t typeop;
 	struct {
 		bool lvalue : 1;
 	} b;
