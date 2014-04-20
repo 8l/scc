@@ -62,13 +62,9 @@ typeconv(Node **p1, Node **p2)
 static Node *
 bitlogic(char op, Node *np1, Node *np2)
 {
-	np1 = promote(np1);
-	np2 = promote(np2);
-
 	if (np1->typeop != INT || np2->typeop != INT)
 		error("No integer operand in bit logical operation");
-	if (np1->utype != np2->utype)
-		typeconv(&np1, &np2);
+	typeconv(&np1, &np2);
 	return bincode(op, np1->type, np1, np2);
 }
 
