@@ -13,13 +13,13 @@ Node *expr(void);
 void
 init_expr(void)
 {
-	static Symbol zdummy, odummy;
+	static Symbol dummy0, dummy1;
 
-	zdummy.type = odummy.type = inttype;
-	zdummy.u.i = 0;
-	odummy.u.i = 1;
-	zero = &zdummy;
-	one = &odummy;
+	dummy0.type = dummy1.type = inttype;
+	dummy0.u.i = 0;
+	dummy1.u.i = 1;
+	zero = &dummy0;
+	one = &dummy1;
 }
 
 static Node *
