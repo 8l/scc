@@ -48,8 +48,13 @@ typeconv(Node **p1, Node **p2)
 	tp2 = np1->utype;
 	if (tp1 == tp2)
 		return;
-	new1 = new2 = NULL;
+	if (tp1->op == INT && tp2->op == INT) {
+		np1 = promote(np1);
+		np2 = promote(np2);
+	}
+
 	n = tp1->u.size - tp2->u.size;
+	new1 = new2 = NULL;
 
 	if (n > 0)
 		new2 = tp1;
