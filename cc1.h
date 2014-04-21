@@ -195,6 +195,7 @@ typedef struct node {
 	struct {
 		bool lvalue : 1;
 		bool symbol: 1;
+		bool constant : 1;
 	} b;
 	union unode {
 		Symbol *sym;
@@ -223,7 +224,7 @@ enum {
 extern void
 	emitdcl(Symbol *), emitsframe(Symbol *), emiteframe(Symbol *),
 	emitsym(Node *), emitunary(Node *),
-	emitbin(Node *), emitexp(Node *), emitconst(Node *np),
+	emitbin(Node *), emitexp(Node *),
 	emitprint(Node *);
 
 extern Node
@@ -233,7 +234,7 @@ extern Node
 	*castcode(Node *child, Type *tp),
 	*sizeofcode(Type *tp), 
 	*ternarycode(Node *cond, Node *ifyes, Node *ifno),
-	*constcode(Symbol *sym);
+	*symcode(Symbol *sym);
 
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})

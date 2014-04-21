@@ -226,7 +226,7 @@ exp2cond(Node *np, char neg)
 		return np;
 	}
 
-	return compare(ONE ^ neg, np, constcode(zero));
+	return compare(ONE ^ neg, np, symcode(zero));
 }
 
 static Node *
@@ -270,7 +270,7 @@ iszero(Node *np)
 {
 	if (ISNODECMP(np))
 		return np;
-	return compare(ONE, np, constcode(zero));
+	return compare(ONE, np, symcode(zero));
 }
 
 static Node *
@@ -278,7 +278,7 @@ eval(Node *np)
 {
 	if (!ISNODECMP(np))
 		return np;
-	return ternarycode(np, constcode(one), constcode(zero));
+	return ternarycode(np, symcode(one), symcode(zero));
 }
 
 static Node *
@@ -356,15 +356,14 @@ primary(void)
 	Symbol *sym;
 
 	switch (yytoken) {
-	case IDEN:
+	case CONSTANT: case IDEN:
 		if ((sym = yylval.sym) == NULL)
 			error("'%s' undeclared", yytext);
-		np = node(emitsym, sym->type, SYM(sym), 0);
-		np->b.symbol = np->b.lvalue = 1;
-		next();
-		break;
-	case CONSTANT:
-		np = constcode(yylval.sym);
+		np = symcode(yylval.sym);
+		if (yytoken == IDEN) {
+			np->b.lvalue = 1;
+			np->b.constant = 0;
+		}
 		next();
 		break;
 	/* TODO: case STRING: */

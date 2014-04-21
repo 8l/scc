@@ -78,11 +78,17 @@ emitsym2(Symbol *sym)
 	printf("%c%d", c, sym->id);
 }
 
+static void
+emitconst(Node *np)
+{
+	printf("#%x", np->u.sym->u.i);
+}
+
 void
 emitsym(Node *np)
 {
 	putchar('\t');
-	emitsym2(np->u.sym);
+	(np->b.constant) ? emitconst(np) : emitsym2(np->u.sym);
 }
 
 static void
@@ -98,12 +104,6 @@ emitdcl(Symbol *sym)
 	putchar('\t');
 	emittype(sym->type);
 	putchar('\n');
-}
-
-void
-emitconst(Node *np)
-{
-	printf("\t#%x", np->u.sym->u.i);
 }
 
 void
@@ -244,11 +244,12 @@ ternarycode(Node *cond, Node *ifyes, Node *ifno)
 }
 
 Node *
-constcode(Symbol *sym)
+symcode(Symbol *sym)
 {
 	Node *np;
 
-	np = node(emitconst, inttype, SYM(sym), 0);
+	np = node(emitsym, inttype, SYM(sym), 0);
 	np->b.symbol = 1;
+	np->b.constant = 1;
 	return np;
 }
