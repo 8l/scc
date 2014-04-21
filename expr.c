@@ -157,7 +157,8 @@ arithmetic(char op, Node *np1, Node *np2)
 		case ARY:
 			np2 = addr2ptr(np2);
 		case PTR:
-			return parithmetic(op, np2, np1);
+			if (op == OADD || op == OSUB)
+				return parithmetic(op, np2, np1);
 		default:
 			goto incorrect;
 		}
