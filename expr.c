@@ -284,27 +284,9 @@ eval(Node *np)
 static Node *
 assignop(char op, Node *np1, Node *np2)
 {
-	char *err;
-
-	if (!np1->b.lvalue)
-		goto nolvalue;
-	if (isconst(np1->type->op))
-		goto const_mod;
-	np2 = eval(np2);
 	if ((np2 = convert(np2, np1->type, 0)) == NULL)
-		goto incompatibles;
+		error("incompatible types when assigning");
 	return bincode(op, np1->type, np1, np2);
-
-const_mod:
-	err = "const value modified";
-	goto error;
-nolvalue:
-	err = "lvalue required as left operand of assignment";
-	goto error;
-incompatibles:
-	err = "incompatible types when assigning";
-error:
-	error(err);
 }
 
 static Node *
@@ -691,29 +673,41 @@ ternary(void)
 static Node *
 assign(void)
 {
-	register Node *np;
+	register Node *np, *(*fun)(char , Node *, Node *);
+	register char op;
+	char *err;
 
 	np = ternary();
 	for (;;) {
-		register char op;
-
 		switch (yytoken) {
-		case '=':    op = OASSIGN; break;
-		case MUL_EQ: op = OA_MUL;  break;
-		case DIV_EQ: op = OA_DIV;  break;
-		case MOD_EQ: op = OA_MOD;  break;
-		case ADD_EQ: op = OA_ADD;  break;
-		case SUB_EQ: op = OA_SUB;  break;
-		case SHL_EQ: op = OA_SHL;  break;
-		case SHR_EQ: op = OA_SHR;  break;
-		case AND_EQ: op = OA_AND;  break;
-		case XOR_EQ: op = OA_XOR;  break;
-		case OR_EQ:  op = OA_OR;   break;
+		case '=':    op = OASSIGN; fun = assignop;   break;
+		case MUL_EQ: op = OA_MUL;  fun = arithmetic; break;
+		case DIV_EQ: op = OA_DIV;  fun = arithmetic; break;
+		case MOD_EQ: op = OA_MOD;  fun = bitlogic;   break;
+		case ADD_EQ: op = OA_ADD;  fun = arithmetic; break;
+		case SUB_EQ: op = OA_SUB;  fun = arithmetic; break;
+		case SHL_EQ: op = OA_SHL;  fun = bitlogic;   break;
+		case SHR_EQ: op = OA_SHR;  fun = bitlogic;   break;
+		case AND_EQ: op = OA_AND;  fun = bitlogic;   break;
+		case XOR_EQ: op = OA_XOR;  fun = bitlogic;   break;
+		case OR_EQ:  op = OA_OR;   fun = bitlogic;   break;
 		default: return np;
 		}
+		if (!np->b.lvalue)
+			goto nolvalue;
+		if (isconst(np->type->op))
+			goto const_mod;
 		next();
-		np = assignop(op, np, assign());
+		np = (fun)(op, np, eval(assign()));
 	}
+const_mod:
+	err = "const value modified";
+	goto error;
+nolvalue:
+	err = "lvalue required as left operand of assignment";
+	goto error;
+error:
+	error(err);
 }
 
 Node *

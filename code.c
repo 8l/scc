@@ -248,7 +248,7 @@ symcode(Symbol *sym)
 {
 	Node *np;
 
-	np = node(emitsym, inttype, SYM(sym), 0);
+	np = node(emitsym, sym->type, SYM(sym), 0);
 	np->b.symbol = 1;
 	np->b.constant = 1;
 	return np;
