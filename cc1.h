@@ -193,6 +193,7 @@ typedef struct node {
 	uint8_t typeop;
 	struct {
 		bool lvalue : 1;
+		bool symbol: 1;
 	} b;
 	union unode {
 		Symbol *sym;

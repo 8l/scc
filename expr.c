@@ -355,7 +355,7 @@ primary(void)
 		if ((sym = yylval.sym) == NULL)
 			error("'%s' undeclared", yytext);
 		np = node(emitsym, sym->type, SYM(sym), 0);
-		np->b.lvalue = 1;
+		np->b.symbol = np->b.lvalue = 1;
 		next();
 		break;
 	case CONSTANT:

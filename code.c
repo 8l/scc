@@ -57,7 +57,7 @@ node(Inst code, Type *tp, union unode u, uint8_t nchilds)
 	np->utype = UNQUAL(tp);
 	np->typeop = np->utype->op;
 	np->u = u;
-	np->b.lvalue = 0;
+	np->b.symbol = np->b.lvalue = 0;
 
 	return np;
 }
@@ -246,5 +246,9 @@ ternarycode(Node *cond, Node *ifyes, Node *ifno)
 Node *
 constcode(Symbol *sym)
 {
-	return node(emitconst, inttype, SYM(sym), 0);
+	Node *np;
+
+	np = node(emitconst, inttype, SYM(sym), 0);
+	np->b.symbol = 1;
+	return np;
 }
