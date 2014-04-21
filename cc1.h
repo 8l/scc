@@ -12,6 +12,7 @@ struct user_opt {
 	unsigned char npromote;
 	unsigned char useless;
 	unsigned char charsign;
+	unsigned char pcompare;
 };
 
 extern  struct user_opt options;
@@ -237,7 +238,6 @@ extern Node
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})
 #define TYP(s) ((union unode) {.type = s})
-#define ISNODESYM(n) ((n)->code == emitsym)
 #define ISNODEBIN(n) ((n)->code == emitbin)
 #define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
 

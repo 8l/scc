@@ -175,42 +175,47 @@ arithmetic(char op, Node *np1, Node *np2)
 }
 
 static Node *
+pcompare(char op, Node *np1, Node *np2)
+{
+	if (np2->typeop == INT && np2->b.symbol && np2->u.sym->u.i == 0) {
+		np2 = castcode(np2, pvoidtype);
+	} else if (np2->typeop != PTR) {
+		error("incompatibles type in comparision");
+	} else {
+		warn(options.pcompare,
+		     "comparision between different pointer types");
+	}
+
+	return bincode(op, inttype, np1, np2);
+}
+
+static Node *
 compare(char op, Node *np1, Node *np2)
 {
-	Type *tp1, *tp2;
-	uint8_t t1, t2;
-
-	np1 = promote(np1);
-	np2 = promote(np2);
-	GETBTYPE(np1, tp1, t1);
-	GETBTYPE(np2, tp2, t2);
-
-	switch (t1) {
+	switch (np1->typeop) {
 	case INT: case FLOAT:
-		switch (t2) {
+		switch (np1->typeop) {
 		case INT: case FLOAT:
-			if (tp1 != tp2)
-				typeconv(&np1, &np2);
+			typeconv(&np1, &np2);
 			break;
+		case ARY: case FTN:
+			np2 = addr2ptr(np2);
+		case PTR:
+			return pcompare(op, np2, np1);
 		default:
-			goto incompatibles;
+			goto nocompat;
 		}
 		break;
 	case ARY: case FTN:
 		np1 = addr2ptr(np1);
-		tp1 = UNQUAL(np1->type);
 	case PTR:
-		if (tp1 != tp2)
-			goto incompatibles;
-		break;
+		return pcompare(op, np1, np2);
 	default:
-		goto incompatibles;
+	nocompat:
+		error("incompatibles type in comparision");
 	}
 
 	return bincode(op, inttype, np1, np2);
-
-incompatibles:
-	error("incompatibles type in comparision");
 }
 
 static Node *
@@ -451,7 +456,7 @@ unary(void)
 			op = OADDR;
 			if (!np->b.lvalue)
 				goto no_lvalue;
-			if (ISNODESYM(np) && np->u.sym->s.isregister)
+			if (np->b.symbol && np->u.sym->s.isregister)
 				goto reg_address;
 			tp = mktype(tp, PTR, NULL, 0);
 			break;
