@@ -59,10 +59,10 @@ typeconv(Node **p1, Node **p2)
 }
 
 static Node *
-bitlogic(char op, Node *np1, Node *np2)
+integerop(char op, Node *np1, Node *np2)
 {
 	if (np1->typeop != INT || np2->typeop != INT)
-		error("No integer operand in bit logical operation");
+		error("operator requires integer operands");
 	typeconv(&np1, &np2);
 	return bincode(op, np1->type, np1, np2);
 }
@@ -510,19 +510,19 @@ cast(void)
 static Node *
 mul(void)
 {
-	register Node *np;
+	register Node *np, *(*fun)(char, Node *, Node *);
 	register char op;
 
 	np = cast();
 	for (;;) {
 		switch (yytoken) {
-		case '*': op = OMUL; break;
-		case '/': op = ODIV; break;
-		case '%': op = OMOD; break; /* TODO: check int type */
+		case '*': op = OMUL; fun = arithmetic; break;
+		case '/': op = ODIV; fun = arithmetic; break;
+		case '%': op = OMOD; fun = integerop;   break;
 		default: return np;
 		}
 		next();
-		np = arithmetic(op, np, cast());
+		np = (*fun)(op, np, cast());
 	}
 }
 
@@ -558,7 +558,7 @@ shift(void)
 		default:  return np;
 		}
 		next();
-		np = bitlogic(op, np, add());
+		np = integerop(op, np, add());
 	}
 }
 
@@ -607,7 +607,7 @@ bit_and(void)
 
 	np = eq();
 	while (accept('&'))
-		np = bitlogic(OBAND, np, eq());
+		np = integerop(OBAND, np, eq());
 	return np;
 }
 
@@ -618,7 +618,7 @@ bit_xor(void)
 
 	np = bit_and();
 	while (accept('^'))
-		np = bitlogic(OBXOR,  np, bit_and());
+		np = integerop(OBXOR,  np, bit_and());
 	return np;
 }
 
@@ -629,7 +629,7 @@ bit_or(void)
 
 	np = bit_xor();
 	while (accept('|'))
-		np = bitlogic(OBOR, np, bit_xor());
+		np = integerop(OBOR, np, bit_xor());
 	return np;
 }
 
@@ -684,14 +684,14 @@ assign(void)
 		case '=':    op = OASSIGN; fun = assignop;   break;
 		case MUL_EQ: op = OA_MUL;  fun = arithmetic; break;
 		case DIV_EQ: op = OA_DIV;  fun = arithmetic; break;
-		case MOD_EQ: op = OA_MOD;  fun = bitlogic;   break;
+		case MOD_EQ: op = OA_MOD;  fun = integerop;  break;
 		case ADD_EQ: op = OA_ADD;  fun = arithmetic; break;
 		case SUB_EQ: op = OA_SUB;  fun = arithmetic; break;
-		case SHL_EQ: op = OA_SHL;  fun = bitlogic;   break;
-		case SHR_EQ: op = OA_SHR;  fun = bitlogic;   break;
-		case AND_EQ: op = OA_AND;  fun = bitlogic;   break;
-		case XOR_EQ: op = OA_XOR;  fun = bitlogic;   break;
-		case OR_EQ:  op = OA_OR;   fun = bitlogic;   break;
+		case SHL_EQ: op = OA_SHL;  fun = integerop;  break;
+		case SHR_EQ: op = OA_SHR;  fun = integerop;  break;
+		case AND_EQ: op = OA_AND;  fun = integerop;  break;
+		case XOR_EQ: op = OA_XOR;  fun = integerop;  break;
+		case OR_EQ:  op = OA_OR;   fun = integerop;  break;
 		default: return np;
 		}
 		if (!np->b.lvalue)
