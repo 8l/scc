@@ -59,6 +59,14 @@ typeconv(Node **p1, Node **p2)
 }
 
 static Node *
+eval(Node *np)
+{
+	if (!ISNODECMP(np))
+		return np;
+	return ternarycode(np, symcode(one), symcode(zero));
+}
+
+static Node *
 integerop(char op, Node *np1, Node *np2)
 {
 	if (np1->typeop != INT || np2->typeop != INT)
@@ -172,6 +180,8 @@ incorrect:
 static Node *
 arithmetic(char op, Node *np1, Node *np2)
 {
+	np1 = eval(np1);
+	np2 = eval(np2);
 	switch (np1->typeop) {
 	case INT: case FLOAT:
 		switch (np2->typeop) {
@@ -293,14 +303,6 @@ iszero(Node *np)
 	if (ISNODECMP(np))
 		return np;
 	return compare(ONE, np, symcode(zero));
-}
-
-static Node *
-eval(Node *np)
-{
-	if (!ISNODECMP(np))
-		return np;
-	return ternarycode(np, symcode(one), symcode(zero));
 }
 
 static Node *
