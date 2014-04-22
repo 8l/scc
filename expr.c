@@ -230,6 +230,8 @@ pcompare(char op, Node *np1, Node *np2)
 static Node *
 compare(char op, Node *np1, Node *np2)
 {
+	np1 = eval(np1);
+	np2 = eval(np2);
 	switch (np1->typeop) {
 	case INT: case FLOAT:
 		switch (np1->typeop) {
