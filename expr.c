@@ -82,26 +82,38 @@ addr2ptr(Node *np)
 Node *
 convert(Node *np, Type *tp, char iscast)
 {
-	uint8_t t1, t2;
+	Type *utp;
+	uint8_t t;
 
 	if (np->type == tp)
 		return np;
-	t1 = np->typeop, t2 = BTYPE(tp);
 
-	switch (t1) {
+	utp = UNQUAL(tp);
+	t = utp->op;
+
+	switch (np->typeop) {
 	case ENUM: case INT: case FLOAT:
-		switch (t2) {
+		switch (t) {
+		case PTR:
+			if (!iscast || np->typeop == FLOAT)
+				return NULL;
 		case INT: case FLOAT: case ENUM:
-			return castcode(np, tp);
+			break;
+		default:
+			return NULL;
 		}
 		break;
 	case PTR:
-		switch (t2) {
+		switch (t) {
+		case ENUM: case INT: /* TODO: allow p = 0 */
+			if (!iscast)
+				return NULL;;
+			break;
 		case ARY: case FTN:
 			np = addr2ptr(np);
 		case PTR:
-			if (iscast && t2 != FLOAT ||
-			    tp == pvoidtype ||
+			if (iscast ||
+			    utp == pvoidtype ||
 			    np->utype == pvoidtype) {
 				/* TODO:
 				 * we assume conversion between pointers
@@ -109,12 +121,16 @@ convert(Node *np, Type *tp, char iscast)
 				 * alignment problems that may be false
 				 */
 				np->type = tp;
-				np->utype = UNQUAL(tp);
+				np->utype = utp;
 				return np;
 			}
+		default:
+			return NULL;
 		}
+	default:
+			return NULL;
 	}
-	return NULL;
+	return castcode(np, tp);
 }
 
 static Node *
