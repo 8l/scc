@@ -23,6 +23,12 @@ Type
 		.defined = 1,
 		.u.rank = RANK_BOOL
 	},
+	*schartype = &(Type) {
+		.op = INT,
+		.letter = 'C',
+		.defined = 1,
+		.u.rank = RANK_SCHAR
+	},
 	*uchartype = &(Type) {
 		.op = INT,
 		.letter = 'M',
@@ -32,9 +38,10 @@ Type
 	},
 	*chartype = &(Type) {
 		.op = INT,
-		.letter = 'C',
+		.letter = 'M',
+		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_SCHAR
+		.u.rank = RANK_UCHAR
 	},
 	*ushortype = &(Type) {
 		.op = INT,
@@ -109,27 +116,25 @@ Type
 Type *
 ctype(int8_t type, int8_t sign, int8_t size)
 {
-	if (type == CHAR && !sign)
-		sign = options.charsign;
-	if (sign == SIGNED)
-		sign = 0;
 	if (type == DOUBLE)
 		type = FLOAT, size += LONG;
 
 	switch (type) {
-	case VOID:                      return voidtype;
-	case BOOL:                      return booltype;
-	case CHAR:                      return (sign) ? uchartype  : chartype;
+	case CHAR: if (sign == 0)
+					return chartype;
+				return (sign == UNSIGNED) ?  uchartype : schartype;
+	case VOID:            return voidtype;
+	case BOOL:            return booltype;
 	case INT: switch (size) {
-		case 0:                 return (sign) ? uinttype   : inttype;
-		case SHORT:             return (sign) ? ushortype  : shortype;
-		case LONG:              return (sign) ? ulongtype   : longtype;
-		case LONG+LONG:         return (sign) ? ullongtype : llongtype;
+		case 0:          return (sign == UNSIGNED) ? uinttype   : inttype;
+		case SHORT:      return (sign == UNSIGNED) ? ushortype  : shortype;
+		case LONG:       return (sign == UNSIGNED) ? ulongtype  : longtype;
+		case LONG+LONG:  return (sign == UNSIGNED) ? ullongtype : llongtype;
 		}
 	case FLOAT: switch (size) {
-		case 0:                 return floattype;
-		case LONG:              return doubletype;
-		case LONG+LONG:         return ldoubletype;
+		case 0:          return floattype;
+		case LONG:       return doubletype;
+		case LONG+LONG:  return ldoubletype;
 		}
 	}
 }
