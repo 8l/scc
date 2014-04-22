@@ -509,7 +509,7 @@ cast(void)
 			next();
 			tp = typename();
 			expect(')');
-			np1 = cast();
+			np1 = eval(cast());
 			if ((np2 = convert(np1,  tp, 1)) == NULL)
 				error("bad type convertion requested");
 			np2->b.lvalue = np1->b.lvalue;
