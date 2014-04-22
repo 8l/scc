@@ -114,7 +114,7 @@ convert(Node *np, Type *tp, char iscast)
 		case PTR:
 			if (!iscast || np->typeop == FLOAT)
 				return NULL;
-		case INT: case FLOAT: case ENUM:
+		case INT: case FLOAT: case ENUM: case VOID:
 			break;
 		default:
 			return NULL;
@@ -122,7 +122,7 @@ convert(Node *np, Type *tp, char iscast)
 		break;
 	case PTR:
 		switch (t) {
-		case ENUM: case INT: /* TODO: allow p = 0 */
+		case ENUM: case INT: case VOID: /* TODO: allow p = 0 */
 			if (!iscast)
 				return NULL;;
 			break;
