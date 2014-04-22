@@ -69,6 +69,8 @@ eval(Node *np)
 static Node *
 integerop(char op, Node *np1, Node *np2)
 {
+	np1 = eval(np1);
+	np2 = eval(np2);
 	if (np1->typeop != INT || np2->typeop != INT)
 		error("operator requires integer operands");
 	typeconv(&np1, &np2);
