@@ -210,6 +210,13 @@ arithmetic(char op, Node *np1, Node *np2)
 	return bincode(op, np1->type, np1, np2);
 }
 
+/*
+ * FIXME:
+ * Pointers to the same basic type after removing type qualifiers
+ * can be compared. It means that utype pointer must be a field
+ * of the type, not of the Node, because in other case is
+ * hard doing this check
+ */
 static Node *
 pcompare(char op, Node *np1, Node *np2)
 {
@@ -222,7 +229,7 @@ pcompare(char op, Node *np1, Node *np2)
 		     "comparision between different pointer types");
 	}
 
-	return bincode(op, inttype, np1, np2);
+	return bincode(op, np1->type, np1, np2);
 }
 
 static Node *
