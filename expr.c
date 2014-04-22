@@ -68,6 +68,14 @@ integerop(char op, Node *np1, Node *np2)
 }
 
 static Node *
+integeruop(char op, Node *np)
+{
+	if (np->typeop != INT)
+		error("unary operator requires integer operand");
+	return unarycode(op, np->type, np);
+}
+
+static Node *
 addr2ptr(Node *np)
 {
 	Type *tp;
@@ -345,6 +353,52 @@ error:
 	error(err);
 }
 
+static Node *
+address(char op, Node *np)
+{
+	char *err;
+
+	if (!np->b.lvalue)
+		goto no_lvalue;
+	if (np->b.symbol && np->u.sym->s.isregister)
+		goto reg_address;
+	return unarycode(op, mktype(np->type, PTR, NULL, 0), np);
+
+no_lvalue:
+	err = "lvalue required in unary expression";
+	goto error;
+reg_address:
+	err = "address of register variable '%s' requested";
+error:
+	error(err);
+}
+
+static Node *
+content(char op, Node *np)
+{
+	switch (np->typeop) {
+	case ARY: case FTN:
+		np = addr2ptr(np);
+	case PTR:
+		return unarycode(op, np->utype->type, np);
+	default:
+		error("invalid argument of unary '*'");
+	}
+}
+
+static Node *
+negation(char op, Node *np)
+{
+	switch (np->typeop) {
+	case FTN: case ARY:
+		np = addr2ptr(np);
+	case INT: case FLOAT: case PTR:
+		return exp2cond(np, 1);
+	default:
+		error("invalid argument of unary '!'");
+	}
+}
+
 /*************************************************************
  * grammar functions                                         *
  *************************************************************/
@@ -410,10 +464,10 @@ static Node *cast(void);
 static Node *
 unary(void)
 {
-	register Node *np;
+	register Node *(*fun)(char, Node *);
+	register char op;
 	Type *tp;
-	char op, *err;
-	uint8_t t;
+	char *err;
 
 	switch (yytoken) {
 	case SIZEOF:
@@ -431,71 +485,17 @@ unary(void)
 		op = (yytoken == INC) ? OINC : ODEC;
 		next();
 		return incdec(unary(), op);
-	case '!': case '&': case '*': case '+': case '~': case '-':
-		op = yytoken;
-		next();
-		np = cast();
-		tp = UNQUAL(np->type);
-		t = tp->op;
-		switch (op) {
-		case '*':
-			op = OPTR;
-			switch (t) {
-			case ARY: case FTN:
-				np = addr2ptr(np);
-			case PTR:
-				tp = tp->type;
-				break;
-			default:
-				goto bad_operand;
-			}
-			break;
-		case '&':
-			op = OADDR;
-			if (!np->b.lvalue)
-				goto no_lvalue;
-			if (np->b.symbol && np->u.sym->s.isregister)
-				goto reg_address;
-			tp = mktype(tp, PTR, NULL, 0);
-			break;
-		case '!':
-			switch (t) {
-			case FTN: case ARY:
-				np = addr2ptr(np);
-			case INT: case FLOAT: case PTR:
-				return exp2cond(np, 1);
-				break;
-			default:
-				goto bad_operand;
-			}
-		case '+':
-			if (t != INT)
-				goto bad_operand;
-			return np;
-		case '~':
-			op = OCPL;
-			if (t != INT)
-				goto bad_operand;
-			break;
-		case '-':
-			op = ONEG;
-			if (t != INT && t != FLOAT)
-				goto bad_operand;
-		}
-		return unarycode(op, tp, np);
+	case '!': op = 0; fun = negation; break;
+	case '+': op = OADD; fun = integeruop; break;
+	case '-': op = OSUB; fun = integeruop; break;
+	case '~': op = ONEG; fun = integeruop; break;
+	case '&': op = OADDR; fun = address; break;
+	case '*': op = OPTR; fun = content; break;
 	default: return postfix();
 	}
 
-no_lvalue:
-	err = "lvalue required in unary expression";
-	goto error;
-reg_address:
-	err = "address of register variable '%s' requested";
-	goto error;
-bad_operand:
-	err = "bad operand in unary expression";
-error:
-	error(err, yytext);
+	next();
+	return (*fun)(op, cast());
 }
 
 static Node *
