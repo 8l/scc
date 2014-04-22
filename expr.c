@@ -266,12 +266,9 @@ static Node *
 array(Node *np1, Node *np2)
 {
 	Type *tp;
-	uint8_t t1, t2;
 	char *err;
 
-	t1 = BTYPE(np1->type);
-	t2 = BTYPE(np2->type);
-	if (t1 != INT && t2 != INT)
+	if (np1->typeop != INT && np2->typeop != INT)
 		goto bad_subs;
 	np1 = arithmetic(OADD, np1, np2);
 	tp = np1->type;
