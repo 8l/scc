@@ -331,6 +331,8 @@ incdec(Node *np, char op)
 
 	if (!np->b.lvalue)
 		goto nolvalue;
+	if (np->utype == voidtype)
+		goto voidassign;
 	if (isconst(tp->op))
 		goto const_mod;
 
@@ -344,6 +346,9 @@ incdec(Node *np, char op)
 		goto bad_type;
 	}
 
+voidassign:
+	err = "invalid use of void expression";
+	goto error;
 nolvalue:
 	err = "lvalue required in operation";
 	goto error;
@@ -720,11 +725,16 @@ assign(void)
 		}
 		if (!np->b.lvalue)
 			goto nolvalue;
+		if (np->utype == voidtype)
+			goto voidassign;
 		if (isconst(np->type->op))
 			goto const_mod;
 		next();
 		np = (fun)(op, np, eval(assign()));
 	}
+voidassign:
+	err = "invalid use of void expression";
+	goto error;
 const_mod:
 	err = "const value modified";
 	goto error;
