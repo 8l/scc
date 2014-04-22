@@ -39,7 +39,7 @@ typeconv(Node **p1, Node **p2)
 {
 	Type *tp1, *tp2;
 	Node *np1, *np2;
-	uint8_t n;
+	int8_t n;
 
 	np1 = promote(*p1);
 	np2 = promote(*p2);
