@@ -80,6 +80,7 @@ integerop(char op, Node *np1, Node *np2)
 static Node *
 integeruop(char op, Node *np)
 {
+	np = eval(np);
 	if (np->typeop != INT)
 		error("unary operator requires integer operand");
 	return unarycode(op, np->type, np);
