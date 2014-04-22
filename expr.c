@@ -379,7 +379,9 @@ content(char op, Node *np)
 	case ARY: case FTN:
 		np = addr2ptr(np);
 	case PTR:
-		return unarycode(op, np->utype->type, np);
+		np = unarycode(op, np->utype->type, np);
+		np->b.lvalue = 1;
+		return np;
 	default:
 		error("invalid argument of unary '*'");
 	}
