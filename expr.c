@@ -314,23 +314,20 @@ assignop(char op, Node *np1, Node *np2)
 static Node *
 incdec(Node *np, char op)
 {
-	Type *tp;
-	uint8_t t;
 	char *err;
+	Type *tp = np->utype;
 
-	GETBTYPE(np, tp, t);
 	if (!np->b.lvalue)
 		goto nolvalue;
-	if (isconst(np->type->op))
+	if (isconst(tp->op))
 		goto const_mod;
 
-	switch (t) {
+	switch (np->typeop) {
 	case PTR:
-		if (!tp->type->defined)
+		if (!tp->defined)
 			goto nocomplete;
 	case INT: case FLOAT:
-		np = unarycode(op, np->type, np);
-		return np;
+		return arithmetic(op, np, symcode(one));
 	default:
 		goto bad_type;
 	}
@@ -444,7 +441,7 @@ postfix(void)
 			expect(']');
 			break;
 		case DEC: case INC:
-			np1 = incdec(np1,  (yytoken == INC) ? OPINC : OPDEC);
+			np1 = incdec(np1,  (yytoken == INC) ? OINC : ODEC);
 			next();
 			break;
 		/* TODO: case '.': */
@@ -479,7 +476,7 @@ unary(void)
 		}
 		return sizeofcode(tp);
 	case INC: case DEC:
-		op = (yytoken == INC) ? OINC : ODEC;
+		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
 		return incdec(unary(), op);
 	case '!': op = 0; fun = negation; break;
