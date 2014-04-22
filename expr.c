@@ -3,8 +3,6 @@
 
 #include "cc1.h"
 
-#define GETBTYPE(n, tp, t) ((t) = (tp = UNQUAL(n->type))->op)
-
 static Symbol *zero, *one;
 
 Node *expr(void);
