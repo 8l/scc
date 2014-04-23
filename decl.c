@@ -504,7 +504,7 @@ extdecl(void)
 					curfun = sym;
 					emitfun(sym);
 					emitsframe(sym);
-					context(compound);
+					context(compound, NULL, NULL, NULL);
 					emiteframe(sym); /* FIX: sym is not used */
 					freesyms(NS_LABEL);
 					return;

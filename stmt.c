@@ -27,7 +27,7 @@ Return(void)
 }
 
 void
-compound(void)
+compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
 	expect('{');
 	while (!accept('}')) {

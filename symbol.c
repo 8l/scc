@@ -44,13 +44,13 @@ freesyms(uint8_t ns)
 }
 
 void
-context(void (*fun)(void))
+context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
 	uint8_t ns;
 
 	ns = namespace;
 	++curctx;
-	fun();
+	(*fun)(lbreak, lcont, lswitch);
 	--curctx;
 	namespace = ns;
 

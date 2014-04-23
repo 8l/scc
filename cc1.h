@@ -124,7 +124,11 @@ extern Symbol
 	*lookup(char *s, unsigned char ns),
 	*install(char *s, unsigned char ns);
 
-extern void context(void (*fun)(void));
+typedef void Ctxfun(Symbol *, Symbol *, Symbol *);
+
+extern Ctxfun compound;
+extern void context(Ctxfun *fun,
+                    Symbol *lbreak, Symbol *lcont, Symbol *lswitch);
 
 extern Type *typename(void);
 
@@ -243,6 +247,6 @@ extern Node
 #define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
 
 extern Node *expr(void);
-extern void extdecl(void), decl(void), compound(void);
+extern void extdecl(void), decl(void);
 
 #endif
