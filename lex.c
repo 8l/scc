@@ -59,13 +59,8 @@ type:
 static uint8_t
 number(void)
 {
-	register char ch, *bp = yybuf;
+	register char ch, *bp;
 	static char base;
-
-	if ((ch = getc(yyin)) == '+' || ch == '-')
-		*bp++ = ch;
-	else
-		ungetc(ch, yyin);
 
 	if ((ch = getc(yyin)) == '0') {
 		if (toupper(ch = getc(yyin)) == 'X') {
@@ -79,7 +74,7 @@ number(void)
 		ungetc(ch, yyin);
 	}
 
-	for ( ; bp < &yybuf[IDENTSIZ]; *bp++ = ch) {
+	for (bp = yybuf ; bp < &yybuf[IDENTSIZ]; *bp++ = ch) {
 		ch = getc(yyin);
 		switch (base) {
 		case 8:
@@ -405,7 +400,7 @@ next(void)
 	ungetc(c, yyin);
 	if (isalpha(c) || c == '_')
 		yyntoken = iden();
-	else if (isdigit(c) || c == '-' || c == '+')
+	else if (isdigit(c))
 		yyntoken = number();
 	else if (c == '"')
 		yyntoken = string();
