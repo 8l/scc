@@ -447,6 +447,7 @@ decl(void)
 			emitdcl(sym);
 		} while (accept(','));
 	}
+	expect(';');
 }
 
 Type *

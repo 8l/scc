@@ -8,6 +8,14 @@ Symbol *curfun;
 
 extern Node *convert(Node *np, Type *tp1, char iscast);
 
+static Node *
+stmtexp(void)
+{
+	Node *np = expr();
+	expect(';');
+	return np;
+}
+
 static void
 Return(void)
 {
@@ -15,7 +23,7 @@ Return(void)
 	Type *tp = curfun->type->type;
 
 	expect(RETURN);
-	np = expr();
+	np = stmtexp();
 	if (np->type != tp) {
 		if (tp == voidtype)
 			warn(1, "function returning void returns a value");
@@ -39,8 +47,7 @@ compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 			Return();
 			break;
 		default:
-			emitexp(expr());
+			emitexp(stmtexp());
 		}
-		expect(';');
 	}
 }
