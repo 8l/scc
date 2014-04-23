@@ -25,22 +25,34 @@ integer(char *s, char base)
 {
 	static Type *tp;
 	static Symbol *sym;
-	static char ch;
+	static char ch, size, sign;
+	static long v;
 
-	/* TODO: implement again */
+	size = sign = 0;
 type:
 	switch (ch = toupper(getc(yyin))) {
 	case 'L':
+		if (size == LONG + LONG)
+			goto wrong_type;
+		size += LONG;
 		goto type;
 	case 'U':
+		if (sign == UNSIGNED)
+			goto wrong_type;
 		goto type;
 	default:
 		ungetc(ch, yyin);
+		tp = ctype(INT, sign, size);
+		break;
+	wrong_type:
+		error("invalid suffix in integer constant");
 	}
 
 	sym = install("", NS_IDEN);
-	sym->type = inttype;
-	sym->u.i = atoi(yybuf);
+	sym->type = tp;
+	v = strtol(yybuf, NULL, base);
+	if (tp == inttype)
+		sym->u.i = v;
 	yynlval.sym = sym;
 	return CONSTANT;
 }
@@ -48,8 +60,13 @@ type:
 static uint8_t
 number(void)
 {
-	register char *bp, ch;
-	static char base, type, sign;
+	register char ch, *bp = yybuf;
+	static char base;
+
+	if ((ch = getc(yyin)) == '+' || ch == '-')
+		*bp++ = ch;
+	else
+		ungetc(ch, yyin);
 
 	if ((ch = getc(yyin)) == '0') {
 		if (toupper(ch = getc(yyin)) == 'X') {
@@ -63,7 +80,7 @@ number(void)
 		ungetc(ch, yyin);
 	}
 
-	for (bp = yybuf; bp < &yybuf[IDENTSIZ]; *bp++ = ch) {
+	for ( ; bp < &yybuf[IDENTSIZ]; *bp++ = ch) {
 		ch = getc(yyin);
 		switch (base) {
 		case 8:
@@ -303,7 +320,7 @@ next(void)
 	ungetc(c, yyin);
 	if (isalpha(c) || c == '_')
 		yyntoken = iden();
-	else if (isdigit(c))
+	else if (isdigit(c) || c == '-' || c == '+')
 		yyntoken = number();
 	else
 		yyntoken = operator();
