@@ -110,6 +110,7 @@ escape(char *s)
 {
 	char c;
 
+repeat:
 	switch (getc(yyin)) {
 	case '\\': c = '\''; break;
 	case 'a': c = '\a'; break;
@@ -125,7 +126,9 @@ escape(char *s)
 	case 'u': /* TODO: */
 	case '\n':
 		 ++linenum;
-		return s;
+		if ((c = getc(yyin)) == '\\')
+			goto repeat;
+		break;
 	default:
 		warn(1, "unknown escape sequence");
 		return s;
@@ -133,6 +136,25 @@ escape(char *s)
 
 	*s = c;
 	return ++s;
+}
+
+static uint8_t
+character(void)
+{
+	static char c;
+	register Symbol *sym;
+
+	getc(yyin);   /* discard the initial ' */
+	c = getc(yyin);
+	if (c == '\\')
+		escape(&c);
+	if (getc(yyin) != '\'')
+		error("invalid character constant");
+	sym = install("", NS_IDEN);
+	sym->u.i = c;
+	sym->type = inttype;
+	yynlval.sym = sym;
+	return CONSTANT;
 }
 
 static uint8_t
@@ -386,6 +408,8 @@ next(void)
 		yyntoken = number();
 	else if (c == '"')
 		yyntoken = string();
+	else if (c == '\'')
+		yyntoken = character();
 	else
 		yyntoken = operator();
 
