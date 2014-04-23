@@ -11,7 +11,6 @@
 static FILE *yyin;
 const char *filename;
 unsigned linenum;
-unsigned columnum;
 
 uint8_t yytoken, yyntoken;;
 union yystype yylval;
@@ -125,7 +124,7 @@ escape(char *s)
 	case '0': /* TODO: */
 	case 'u': /* TODO: */
 	case '\n':
-		 ++linenum, columnum = 1;
+		 ++linenum;
 		return s;
 	default:
 		warn(1, "unknown escape sequence");
@@ -371,11 +370,8 @@ next(void)
 	}
 
 	while (isspace(c = getc(yyin))) {
-		switch (c) {
-		case '\n': ++linenum, columnum = 1; break;
-		case '\t': columnum += 8;	    break;
-		default:   ++columnum;		    break;
-		}
+		if (c == '\n')
+			++linenum;
 	}
 
 	if (c == EOF) {
@@ -417,6 +413,6 @@ open_file(register const char *file)
 			die("file '%s' not found", file);
 		filename = file;
 	}
-	columnum = linenum = 1;
+	linenum = 1;
 	next();      /* prefetch first token */
 }

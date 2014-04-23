@@ -15,8 +15,8 @@ warn_helper(signed char flag, const char *fmt, va_list va)
 {
 	if (!flag)
 		return;
-	fprintf(stderr, "%s:%s:%u:%u: ",
-		(!flag) ? "warning" : "error", filename, linenum, columnum);
+	fprintf(stderr, "%s:%s:%u: ",
+		(!flag) ? "warning" : "error", filename, linenum);
 	vfprintf(stderr, fmt, va);
 	putc('\n', stderr);
 	if (flag < 0)
