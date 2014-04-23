@@ -422,7 +422,7 @@ primary(void)
 	Symbol *sym;
 
 	switch (yytoken) {
-	case CONSTANT: case IDEN:
+	case STRING: case CONSTANT: case IDEN:
 		if ((sym = yylval.sym) == NULL)
 			error("'%s' undeclared", yytext);
 		np = symcode(yylval.sym);
@@ -432,7 +432,6 @@ primary(void)
 		}
 		next();
 		break;
-	/* TODO: case STRING: */
 	case '(':
 		next();
 		np = expr();

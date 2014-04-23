@@ -98,11 +98,77 @@ number(void)
 		}
 	}
 
-end:	if (bp == &yybuf[IDENTSIZ])
+end:
+	if (bp == &yybuf[IDENTSIZ])
 		error("identifier too long %s", yybuf);
 	*bp = '\0';
 	ungetc(ch, yyin);
 	return integer(yybuf, base);
+}
+
+static char *
+escape(char *s)
+{
+	char c;
+
+	switch (getc(yyin)) {
+	case '\\': c = '\''; break;
+	case 'a': c = '\a'; break;
+	case 'f': c = '\f'; break;
+	case 'n': c = '\n'; break;
+	case 'r': c = '\r'; break;
+	case 't': c = '\t'; break;
+	case 'v': c = '\v'; break;
+	case '\'': c = '\\'; break;
+	case '"': c ='"'; break;
+	case 'x': /* TODO: */
+	case '0': /* TODO: */
+	case 'u': /* TODO: */
+	case '\n':
+		 ++linenum, columnum = 1;
+		return s;
+	default:
+		warn(1, "unknown escape sequence");
+		return s;
+	}
+
+	*s = c;
+	return ++s;
+}
+
+static uint8_t
+string(void)
+{
+	static char buf[STRINGSIZ+1];
+	register char *bp;
+	register int c;
+	static Symbol *sym;
+
+	getc(yyin); /* discard the initial " */
+
+	for (bp = buf; bp < &buf[STRINGSIZ]; ) {
+		switch (c = getc(yyin)) {
+		case EOF:
+			error("found EOF while parsing");
+		case '"':
+			goto end_string;
+		case '\\':
+			bp = escape(bp);
+			break;
+		default:
+			*bp++ = c;
+		}
+	}
+
+end_string:
+	if (bp == &buf[IDENTSIZ])
+		error("string too long");
+	*bp = '\0';
+	sym = install("", NS_IDEN);
+	sym->u.s = xstrdup(buf);
+	sym->type = mktype(chartype, PTR, NULL, 0);
+	yynlval.sym = sym;
+	return STRING;
 }
 
 void
@@ -322,6 +388,8 @@ next(void)
 		yyntoken = iden();
 	else if (isdigit(c) || c == '-' || c == '+')
 		yyntoken = number();
+	else if (c == '"')
+		yyntoken = string();
 	else
 		yyntoken = operator();
 

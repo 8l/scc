@@ -79,7 +79,16 @@ emitsym2(Symbol *sym)
 static void
 emitconst(Node *np)
 {
-	printf("#%x", np->u.sym->u.i);
+	register char *bp, c;
+	Symbol *sym = np->u.sym;
+
+	if (np->type == inttype) {
+		printf("#%x", sym->u.i);
+	} else {
+		putchar('"');
+		for (bp = sym->u.s; c = *bp; ++bp)
+			printf("%02x", (unsigned) c);
+	}
 }
 
 void
