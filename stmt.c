@@ -17,7 +17,9 @@ Return(void)
 	expect(RETURN);
 	np = expr();
 	if (np->type != tp) {
-		if ((np = convert(np, tp, 0)) == NULL)
+		if (tp == voidtype)
+			warn(1, "function returning void returns a value");
+		else if ((np = convert(np, tp, 0)) == NULL)
 			error("incorrect type in return");
 	}
 	emitret(tp);
