@@ -121,6 +121,7 @@ repeat:
 	case 'v': c = '\v'; break;
 	case '\'': c = '\\'; break;
 	case '"': c ='"'; break;
+	case '?': c = '?'; break;
 	case 'x': /* TODO: */
 	case '0': /* TODO: */
 	case 'u': /* TODO: */
