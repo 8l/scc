@@ -206,8 +206,6 @@ typedef struct node {
 	struct node *childs[];
 } Node;
 
-typedef void (*Inst)(Node *); /* TODO: remove this typedef */
-
 enum {
 	OCAST = 1, OPTR, OADD, OARY, OSIZE, OMUL, OSUB,
 	OINC, ODEC, ODIV, OMOD, OSHL, OSHR,
@@ -229,7 +227,8 @@ extern void
 	emitprint(Node *);
 
 extern Node
-	*node(Inst code, Type *tp, union unode u, uint8_t nchilds),
+	*node(void (*code)(Node *),
+	      Type *tp, union unode u, uint8_t nchilds),
 	*unarycode(char op, Type *tp, Node *child),
 	*bincode(char op, Type *tp, Node *np1, Node *np2),
 	*castcode(Node *child, Type *tp),

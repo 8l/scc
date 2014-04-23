@@ -46,7 +46,7 @@ char *opcodes[] = {
 };
 
 Node *
-node(Inst code, Type *tp, union unode u, uint8_t nchilds)
+node(void (*code)(Node *), Type *tp, union unode u, uint8_t nchilds)
 {
 	Node *np = xmalloc(sizeof(*np) + nchilds * sizeof(np));
 
