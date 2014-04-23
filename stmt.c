@@ -1,12 +1,14 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "cc1.h"
 
 Symbol *curfun;
 
 extern Node *convert(Node *np, Type *tp1, char iscast);
+static void stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch);
 
 static Node *
 stmtexp(void)
@@ -38,16 +40,29 @@ void
 compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
 	expect('{');
-	while (!accept('}')) {
+	for (;;) {
 		switch (yytoken) {
+		case '}':
+			next();
+			return;
+		case '{':
+			compound(lbreak, lcont, lswitch);
+			break;
 		case TYPE: case SCLASS: case TQUALIFIER:
 			decl();
 			break;
-		case RETURN:
-			Return();
-			break;
 		default:
-			emitexp(stmtexp());
+			stmt(lbreak, lcont, lswitch);
 		}
+	}
+}
+
+static void
+stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
+{
+	switch (yytoken) {
+	case '{': compound(lbreak, lcont, lswitch); break;
+	case RETURN: Return(); break;
+	default: emitexp(stmtexp()); break;
 	}
 }
