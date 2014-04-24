@@ -135,6 +135,15 @@ Break(Symbol *lbreak)
 }
 
 static void
+Label(void)
+{
+	emitlabel(label(yytext));
+
+	expect(IDEN);
+	expect(':');
+}
+
+static void
 Continue(Symbol *lcont)
 {
 	expect(CONTINUE);
@@ -165,6 +174,8 @@ compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 static void
 stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
+
+repeat:
 	switch (yytoken) {
 	case '{':      compound(lbreak, lcont, lswitch); break;
 	case RETURN:   Return(); break;
@@ -173,6 +184,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 	case DO:       Dowhile(lswitch); break;
 	case BREAK:    Break(lbreak); break;
 	case CONTINUE: Continue(lcont); break;
+	case IDEN:     if (ahead() == ':') Label(); goto repeat;
 	default:       stmtexp(); break;
 	}
 }
