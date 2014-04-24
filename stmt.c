@@ -166,14 +166,14 @@ static void
 stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
 	switch (yytoken) {
-	case '{': compound(lbreak, lcont, lswitch); break;
-	case RETURN: Return(); break;
-	case WHILE: While(lswitch); break;
-	case FOR: For(lswitch); break;
-	case DO: Dowhile(lswitch); break;
-	case BREAK: Break(lbreak); break;
+	case '{':      compound(lbreak, lcont, lswitch); break;
+	case RETURN:   Return(); break;
+	case WHILE:    While(lswitch); break;
+	case FOR:      For(lswitch); break;
+	case DO:       Dowhile(lswitch); break;
+	case BREAK:    Break(lbreak); break;
 	case CONTINUE: Continue(lcont); break;
-	default: stmtexp(); break;
+	default:       stmtexp(); break;
 	}
 }
 
