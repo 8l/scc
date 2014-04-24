@@ -47,7 +47,7 @@ freesyms(uint8_t ns)
 }
 
 void
-context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
+context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	uint8_t ns;
 

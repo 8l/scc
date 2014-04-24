@@ -125,11 +125,12 @@ extern Symbol
 	*lookup(char *s, unsigned char ns),
 	*install(char *s, unsigned char ns);
 
-typedef void Ctxfun(Symbol *, Symbol *, Symbol *);
+typedef struct caselist Caselist;
+typedef void Ctxfun(Symbol *, Symbol *, Caselist *);
 
 extern Ctxfun compound;
 extern void context(Ctxfun *fun,
-                    Symbol *lbreak, Symbol *lcont, Symbol *lswitch);
+                    Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 extern Type *typename(void);
 

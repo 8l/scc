@@ -5,11 +5,22 @@
 
 #include "cc1.h"
 
+struct scase {
+	int val;
+	Symbol *label;
+	struct scase *next;
+};
+
+struct caselist {
+	short nr;
+	struct scase *head;
+};
+
 Symbol *curfun;
 
 extern Node *convert(Node *np, Type *tp1, char iscast);
 extern Node *iszero(Node *np), *eval(Node *np);
-static void stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch);
+static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 static Symbol *
 label(char *s, char define)
@@ -54,7 +65,7 @@ condition(void)
 }
 
 static void
-While(Symbol *lswitch)
+While(Caselist *lswitch)
 {
 	Symbol *begin, *cond, *end;
 	Node *np;
@@ -76,7 +87,7 @@ While(Symbol *lswitch)
 }
 
 static void
-For(Symbol *lswitch)
+For(Caselist *lswitch)
 {
 	Symbol *begin, *cond, *end;
 	Node *econd = NULL, *einc = NULL;
@@ -109,7 +120,7 @@ For(Symbol *lswitch)
 }
 
 static void
-Dowhile(Symbol *lswitch)
+Dowhile(Caselist *lswitch)
 {
 	Symbol *begin= label(NULL, 1), *end = label(NULL, 1);
 
@@ -189,7 +200,7 @@ Goto(void)
 }
 
 void
-compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
+compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	expect('{');
 	for (;;) {
@@ -207,7 +218,7 @@ compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 }
 
 static void
-stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
+stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 
 repeat:
