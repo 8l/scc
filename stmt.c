@@ -6,7 +6,6 @@
 #include "cc1.h"
 
 struct scase {
-	int val;
 	Symbol *label;
 	Node *expr;
 	struct scase *next;
@@ -223,6 +222,31 @@ Switch(Symbol *lcont)
 	if (lcase.deflabel)
 		emitdefault(lcase.deflabel);
 	emitlabel(lbreak);
+	/* TODO: free memory */
+}
+
+static void
+Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
+{
+	Node *np;
+	Symbol *lcase = label(NULL, 1);
+	struct scase *pcase;
+
+	if (!lswitch)
+		error("case label not within a switch statement");
+	expect(CASE);
+	if (yytoken == ':')
+		error("expected expression before ':'");
+	np = eval(expr());
+	/* TODO: check integer type */
+	expect(':');
+	emitlabel(lcase);
+	pcase = xmalloc(sizeof(*pcase));
+	pcase->expr = np;
+	pcase->label = lcase;
+	pcase->next = lswitch->head;
+	lswitch->head = pcase;
+	++lswitch->nr;
 }
 
 void
@@ -258,6 +282,7 @@ repeat:
 	case CONTINUE: Continue(lcont); break;
 	case GOTO:     Goto(); break;
 	case SWITCH:   Switch(lcont); break;
+	case CASE:     Case(lbreak, lcont, lswitch); break;
 	case IDEN:
 		if (ahead() == ':') {
 			Label();
