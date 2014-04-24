@@ -245,10 +245,9 @@ emitswitch(short nr, Node *np)
 void
 emitcase(Symbol *sym, Node *np)
 {
-	fputs("\tw", stdout);
-	(*np->code)(np);
-	putchar('\t');
-	emitlabel(sym);
+	fputs("\tw\t", stdout);
+	printf("L%d", sym->id);
+	emitexp(np);
 }
 
 void
