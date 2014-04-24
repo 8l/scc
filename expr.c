@@ -56,7 +56,7 @@ typeconv(Node **p1, Node **p2)
 	*p2 = np2;
 }
 
-static Node *
+Node *
 eval(Node *np)
 {
 	if (!ISNODECMP(np))
@@ -436,7 +436,6 @@ primary(void)
 		next();
 		np = expr();
 		expect(')');
-	case ';':
 		break;
 	default:
 		error("unexpected '%s'", yytext);

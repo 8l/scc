@@ -8,7 +8,7 @@
 Symbol *curfun;
 
 extern Node *convert(Node *np, Type *tp1, char iscast);
-extern Node * iszero(Node *np);
+extern Node *iszero(Node *np), *eval(Node *np);
 static void stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch);
 
 static Symbol *
@@ -131,9 +131,13 @@ Return(void)
 	Type *tp = curfun->type->type;
 
 	expect(RETURN);
-	np = expr();
+	np  =  (yytoken == ';') ? NULL : eval(expr());
 	expect(';');
-	if (np->type != tp) {
+	if (!np) {
+		if (tp != voidtype)
+			warn(1, "function returning non void returns no value");
+		tp = voidtype;
+	} else if (np->type != tp) {
 		if (tp == voidtype)
 			warn(1, "function returning void returns a value");
 		else if ((np = convert(np, tp, 0)) == NULL)
@@ -216,7 +220,11 @@ repeat:
 	case BREAK:    Break(lbreak); break;
 	case CONTINUE: Continue(lcont); break;
 	case GOTO:     Goto(); break;
-	case IDEN:     if (ahead() == ':') Label(); goto repeat;
+	case IDEN:
+		if (ahead() == ':') {
+			Label();
+			goto repeat;
+		}
 	default:       stmtexp(); break;
 	}
 }

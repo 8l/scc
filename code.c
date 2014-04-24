@@ -169,7 +169,8 @@ emitsizeof(Node *np)
 void
 emitexp(Node *np)
 {
-	(*np->code)(np);
+	if (np)
+		(*np->code)(np);
 	putchar('\n');
 }
 
