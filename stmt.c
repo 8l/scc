@@ -53,7 +53,7 @@ While(Symbol *lswitch)
 	emitjump(cond, NULL);
 	emitbloop();
 	emitlabel(begin);
-	stmt(begin, end, lswitch);
+	stmt(end, begin, lswitch);
 	emitlabel(cond);
 	emitjump(begin, np);
 	emiteloop();
@@ -80,7 +80,7 @@ For(Symbol *lswitch)
 	emitjump(cond, NULL);
 	emitbloop();
 	emitlabel(begin);
-	stmt(begin, end, lswitch);
+	stmt(end, begin, lswitch);
 	if (einc)
 		emitexp(einc);
 	emitlabel(cond);
@@ -98,7 +98,7 @@ Dowhile(Symbol *lswitch)
 	expect(DO);
 	emitbloop();
 	emitlabel(begin);
-	stmt(begin, end, lswitch);
+	stmt(end, begin, lswitch);
 	expect(WHILE);
 	emitjump(begin, condition());
 	emiteloop();
