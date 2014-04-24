@@ -57,6 +57,7 @@ While(Symbol *lswitch)
 	emitlabel(cond);
 	emitjump(begin, np);
 	emiteloop();
+	emitlabel(end);
 }
 
 static void
@@ -85,6 +86,7 @@ For(Symbol *lswitch)
 	emitlabel(cond);
 	emitjump(begin, econd);
 	emiteloop();
+	emitlabel(end);
 }
 
 static void
