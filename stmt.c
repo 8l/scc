@@ -134,6 +134,16 @@ Break(Symbol *lbreak)
 	expect(';');
 }
 
+static void
+Continue(Symbol *lcont)
+{
+	expect(CONTINUE);
+	if (!lcont)
+		error("continue statement not within loop");
+	emitjump(lcont, NULL);
+	expect(';');
+}
+
 void
 compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
@@ -162,6 +172,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 	case FOR: For(lswitch); break;
 	case DO: Dowhile(lswitch); break;
 	case BREAK: Break(lbreak); break;
+	case CONTINUE: Continue(lcont); break;
 	default: stmtexp(); break;
 	}
 }
