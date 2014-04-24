@@ -263,19 +263,22 @@ Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *end = label(NULL, 1);
+	Symbol *end, *lelse = label(NULL, 1);
 	Node *np;
 
 	expect(IF);
 	np = condition();
 	NEGATE(np, 1);
-	emitjump(end, np);
+	emitjump(lelse, np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
-		emitlabel(end);
+		end = label(NULL, 1);
+		emitjump(end, NULL);
+		emitlabel(lelse);
 		stmt(lbreak, lcont, lswitch);
-	} else {
 		emitlabel(end);
+	} else {
+		emitlabel(lelse);
 	}
 }
 
