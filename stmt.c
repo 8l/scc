@@ -264,10 +264,12 @@ static void
 If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *end = label(NULL, 1);
+	Node *np;
 
 	expect(IF);
-	/* TODO: negate the condition */
-	emitjump(end, condition());
+	np = condition();
+	NEGATE(np, 1);
+	emitjump(end, np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
 		emitlabel(end);

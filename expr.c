@@ -267,7 +267,7 @@ static Node *
 exp2cond(Node *np, char neg)
 {
 	if (ISNODECMP(np)) {
-		np->u.op ^= neg;
+		NEGATE(np, neg);
 		return np;
 	}
 
