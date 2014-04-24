@@ -260,6 +260,23 @@ Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	lswitch->deflabel = ldefault;
 }
 
+static void
+If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
+{
+	Symbol *end = label(NULL, 1);
+
+	expect(IF);
+	/* TODO: negate the condition */
+	emitjump(end, condition());
+	stmt(lbreak, lcont, lswitch);
+	if (accept(ELSE)) {
+		emitlabel(end);
+		stmt(lbreak, lcont, lswitch);
+	} else {
+		emitlabel(end);
+	}
+}
+
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -289,6 +306,7 @@ repeat:
 	case WHILE:    While(lswitch); break;
 	case FOR:      For(lswitch); break;
 	case DO:       Dowhile(lswitch); break;
+	case IF:       If(lbreak, lcont, lswitch); break;
 	case BREAK:    Break(lbreak); break;
 	case CONTINUE: Continue(lcont); break;
 	case GOTO:     Goto(); break;
