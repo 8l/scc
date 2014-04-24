@@ -33,7 +33,7 @@ freesyms(uint8_t ns)
 	static struct symtab *tbl;
 	register Symbol *sym;
 
-	tbl = &symtab[ns];
+	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
 	for (sym = tbl->head; sym; sym = sym->next) {
 		if (sym->ctx <= curctx)
 			break;
@@ -56,6 +56,8 @@ context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
+	if (curctx == CTX_OUTER)
+		freesyms(NS_LABEL);
 }
 
 Symbol *
