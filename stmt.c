@@ -22,12 +22,13 @@ label(char *s)
 	return install(s, NS_LABEL);
 }
 
-static Node *
+static void
 stmtexp(void)
 {
-	Node *np = expr();
+	if (accept(';'))
+		return;
+	emitexp(expr());
 	expect(';');
-	return np;
 }
 
 static Node *
@@ -59,13 +60,42 @@ While(Symbol *lswitch)
 }
 
 static void
+For(Symbol *lswitch)
+{
+	Symbol *begin= label(NULL), *cond = label(NULL), *end = label(NULL);
+	Node *econd = NULL, *einc = NULL;
+
+	expect(FOR);
+	expect('(');
+	stmtexp();
+
+	if (yytoken != ';')
+		econd = expr();
+	expect(';');
+	if (yytoken != ')')
+		einc = expr();
+	expect(')');
+
+	emitjump(cond, NULL);
+	emitbloop();
+	emitlabel(begin);
+	stmt(begin, end, lswitch);
+	if (einc)
+		emitexp(einc);
+	emitlabel(cond);
+	emitjump(begin, econd);
+	emiteloop();
+}
+
+static void
 Return(void)
 {
 	Node *np;
 	Type *tp = curfun->type->type;
 
 	expect(RETURN);
-	np = stmtexp();
+	np = expr();
+	expect(';');
 	if (np->type != tp) {
 		if (tp == voidtype)
 			warn(1, "function returning void returns a value");
@@ -101,7 +131,8 @@ stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 	case '{': compound(lbreak, lcont, lswitch); break;
 	case RETURN: Return(); break;
 	case WHILE: While(lswitch); break;
-	default: emitexp(stmtexp()); break;
+	case FOR: For(lswitch); break;
+	default: stmtexp(); break;
 	}
 }
 
