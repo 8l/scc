@@ -228,7 +228,8 @@ extern void
 	emitdcl(Symbol *), emitsframe(Symbol *), emiteframe(Symbol *),
 	emitsym(Node *), emitunary(Node *),
 	emitbin(Node *), emitexp(Node *),
-	emitprint(Node *);
+	emitprint(Node *), emitlabel(Symbol *), emitjump(Symbol *, Node *),
+	emitbloop(void), emiteloop(void);
 
 extern Node
 	*node(void (*code)(Node *),

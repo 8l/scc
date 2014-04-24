@@ -307,7 +307,7 @@ error:
 	error(err);
 }
 
-static Node *
+Node *
 iszero(Node *np)
 {
 	if (ISNODECMP(np))

@@ -206,6 +206,34 @@ emitret(Type *tp)
 	emittype(tp);
 }
 
+void
+emitlabel(Symbol *sym)
+{
+	printf("L%d\n", sym->id);
+}
+
+void
+emitbloop(void)
+{
+	puts("\td");
+}
+
+void
+emiteloop(void)
+{
+	puts("\tb");
+}
+
+void
+emitjump(Symbol *sym, Node *np)
+{
+	printf("\tj\tL%d", sym->id);
+	if (!np)
+		putchar('\n');
+	else
+		emitexp(np);
+}
+
 Node *
 castcode(Node *child, Type *tp)
 {
