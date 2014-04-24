@@ -124,6 +124,16 @@ Return(void)
 	emitexp(np);
 }
 
+static void
+Break(Symbol *lbreak)
+{
+	expect(BREAK);
+	if (!lbreak)
+		error("break statement not within loop or switch");
+	emitjump(lbreak, NULL);
+	expect(';');
+}
+
 void
 compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
@@ -151,6 +161,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 	case WHILE: While(lswitch); break;
 	case FOR: For(lswitch); break;
 	case DO: Dowhile(lswitch); break;
+	case BREAK: Break(lbreak); break;
 	default: stmtexp(); break;
 	}
 }
