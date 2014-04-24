@@ -57,8 +57,6 @@ context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
-	if (curctx == CTX_OUTER)
-		freesyms(NS_LABEL);
 }
 
 Symbol *
