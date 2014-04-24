@@ -31,13 +31,14 @@ void
 freesyms(uint8_t ns)
 {
 	static struct symtab *tbl;
-	register Symbol *sym;
+	register Symbol *sym, *next;
 
 	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
-	for (sym = tbl->head; sym; sym = sym->next) {
+	for (sym = tbl->head; sym; sym = next) {
 		if (sym->ctx <= curctx)
 			break;
 		tbl->htab[hash(sym->name)] = sym->hash;
+		next = tbl->head = sym->next;
 		free(sym->name);
 		free(sym);
 	}
