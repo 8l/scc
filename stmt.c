@@ -88,6 +88,22 @@ For(Symbol *lswitch)
 }
 
 static void
+Dowhile(Symbol *lswitch)
+{
+	Symbol *begin= label(NULL), *end = label(NULL);
+
+
+	expect(DO);
+	emitbloop();
+	emitlabel(begin);
+	stmt(begin, end, lswitch);
+	expect(WHILE);
+	emitjump(begin, condition());
+	emiteloop();
+	emitlabel(end);
+}
+
+static void
 Return(void)
 {
 	Node *np;
@@ -132,6 +148,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 	case RETURN: Return(); break;
 	case WHILE: While(lswitch); break;
 	case FOR: For(lswitch); break;
+	case DO: Dowhile(lswitch); break;
 	default: stmtexp(); break;
 	}
 }
