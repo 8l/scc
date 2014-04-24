@@ -249,6 +249,17 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	++lswitch->nr;
 }
 
+static void
+Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
+{
+	Symbol *ldefault = label(NULL, 1);
+
+	expect(DEFAULT);
+	expect(':');
+	emitlabel(ldefault);
+	lswitch->deflabel = ldefault;
+}
+
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -283,6 +294,7 @@ repeat:
 	case GOTO:     Goto(); break;
 	case SWITCH:   Switch(lcont); break;
 	case CASE:     Case(lbreak, lcont, lswitch); break;
+	case DEFAULT:  Default(lbreak, lcont, lswitch); break;
 	case IDEN:
 		if (ahead() == ':') {
 			Label();
