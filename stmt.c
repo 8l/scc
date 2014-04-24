@@ -153,6 +153,18 @@ Continue(Symbol *lcont)
 	expect(';');
 }
 
+static void
+Goto(void)
+{
+	expect(GOTO);
+
+	if (yytoken != IDEN)
+		error("unexpected '%s'", yytext);
+	emitjump(label(yytext), NULL);
+	next();
+	expect(';');
+}
+
 void
 compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 {
@@ -184,6 +196,7 @@ repeat:
 	case DO:       Dowhile(lswitch); break;
 	case BREAK:    Break(lbreak); break;
 	case CONTINUE: Continue(lcont); break;
+	case GOTO:     Goto(); break;
 	case IDEN:     if (ahead() == ':') Label(); goto repeat;
 	default:       stmtexp(); break;
 	}
