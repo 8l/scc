@@ -8,11 +8,13 @@
 struct scase {
 	int val;
 	Symbol *label;
+	Node *expr;
 	struct scase *next;
 };
 
 struct caselist {
 	short nr;
+	Symbol *deflabel;
 	struct scase *head;
 };
 
@@ -199,6 +201,30 @@ Goto(void)
 	expect(';');
 }
 
+static void
+Switch(Symbol *lcont)
+{
+	Caselist lcase = {.nr = 0, .head = NULL, .deflabel = NULL};
+	struct scase *p;
+	Symbol *lbreak = label(NULL, 1), *lcond = label(NULL, 1);
+	Node *cond;
+
+	expect(SWITCH);
+	expect ('(');
+	cond = eval(expr());
+	expect (')');
+	/* TODO: check integer type */
+	emitjump(lcond, NULL);
+	stmt(lbreak, lcont, &lcase);
+	emitlabel(lcond);
+	emitswitch(lcase.nr, cond);
+	for (p = lcase.head; p; p = p->next)
+		emitcase(p->label, p->expr);
+	if (lcase.deflabel)
+		emitdefault(lcase.deflabel);
+	emitlabel(lbreak);
+}
+
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -231,6 +257,7 @@ repeat:
 	case BREAK:    Break(lbreak); break;
 	case CONTINUE: Continue(lcont); break;
 	case GOTO:     Goto(); break;
+	case SWITCH:   Switch(lcont); break;
 	case IDEN:
 		if (ahead() == ':') {
 			Label();

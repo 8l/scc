@@ -235,6 +235,29 @@ emitjump(Symbol *sym, Node *np)
 		emitexp(np);
 }
 
+void
+emitswitch(short nr, Node *np)
+{
+	printf("\teI\t#%0x", nr);
+	emitexp(np);
+}
+
+void
+emitcase(Symbol *sym, Node *np)
+{
+	fputs("\tw", stdout);
+	(*np->code)(np);
+	putchar('\t');
+	emitlabel(sym);
+}
+
+void
+emitdefault(Symbol *sym)
+{
+	fputs("\tf\t", stdout);
+	emitlabel(sym);
+}
+
 Node *
 castcode(Node *child, Type *tp)
 {

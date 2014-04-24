@@ -231,7 +231,9 @@ extern void
 	emitsym(Node *), emitunary(Node *),
 	emitbin(Node *), emitexp(Node *),
 	emitprint(Node *), emitlabel(Symbol *), emitjump(Symbol *, Node *),
-	emitbloop(void), emiteloop(void);
+	emitbloop(void), emiteloop(void),
+	emitswitch(short, Node *), emitcase(Symbol *, Node *),
+	emitdefault(Symbol *);
 
 extern Node
 	*node(void (*code)(Node *),
