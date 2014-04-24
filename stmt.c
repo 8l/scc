@@ -85,9 +85,6 @@ compound(Symbol *lbreak, Symbol *lcont, Symbol *lswitch)
 		case '}':
 			next();
 			return;
-		case '{':
-			compound(lbreak, lcont, lswitch);
-			break;
 		case TYPE: case SCLASS: case TQUALIFIER:
 			decl();
 			break;
