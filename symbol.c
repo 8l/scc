@@ -37,6 +37,8 @@ freesyms(uint8_t ns)
 	for (sym = tbl->head; sym; sym = next) {
 		if (sym->ctx <= curctx)
 			break;
+		if (ns == NS_LABEL && !sym->s.isdefined)
+			error("label '%s' is not defined", sym->name);
 		tbl->htab[hash(sym->name)] = sym->hash;
 		next = tbl->head = sym->next;
 		free(sym->name);

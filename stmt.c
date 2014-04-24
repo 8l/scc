@@ -12,14 +12,25 @@ extern Node * iszero(Node *np);
 static void stmt(Symbol *lbreak, Symbol *lcont, Symbol *lswitch);
 
 static Symbol *
-label(char *s)
+label(char *s, char define)
 {
-	if (!s)
-		s = "";
-	else if (lookup(s, NS_LABEL))
-		error("label '%s' already defined", s);
+	Symbol *sym;
 
-	return install(s, NS_LABEL);
+	if (s) {
+		if ((sym = lookup(s, NS_LABEL)) != NULL) {
+			if (define && sym->s.isdefined)
+				error("label '%s' already defined", s);
+			else
+				sym->s.isdefined = 1;
+			return sym;
+		}
+	} else {
+		s = "";
+	}
+
+	sym = install(s, NS_LABEL);
+	sym->s.isdefined = define;
+	return sym;
 }
 
 static void
@@ -45,8 +56,12 @@ condition(void)
 static void
 While(Symbol *lswitch)
 {
-	Symbol *begin= label(NULL), *cond = label(NULL), *end = label(NULL);
+	Symbol *begin, *cond, *end;
 	Node *np;
+
+	begin = label(NULL, 1);
+	end = label(NULL, 1);
+	cond = label(NULL, 1);
 
 	expect(WHILE);
 	np = condition();
@@ -63,8 +78,12 @@ While(Symbol *lswitch)
 static void
 For(Symbol *lswitch)
 {
-	Symbol *begin= label(NULL), *cond = label(NULL), *end = label(NULL);
+	Symbol *begin, *cond, *end;
 	Node *econd = NULL, *einc = NULL;
+
+	begin = label(NULL, 1);
+	end = label(NULL, 1);
+	cond = label(NULL, 1);
 
 	expect(FOR);
 	expect('(');
@@ -92,7 +111,7 @@ For(Symbol *lswitch)
 static void
 Dowhile(Symbol *lswitch)
 {
-	Symbol *begin= label(NULL), *end = label(NULL);
+	Symbol *begin= label(NULL, 1), *end = label(NULL, 1);
 
 
 	expect(DO);
@@ -137,7 +156,7 @@ Break(Symbol *lbreak)
 static void
 Label(void)
 {
-	emitlabel(label(yytext));
+	emitlabel(label(yytext, 1));
 
 	expect(IDEN);
 	expect(':');
@@ -160,7 +179,7 @@ Goto(void)
 
 	if (yytoken != IDEN)
 		error("unexpected '%s'", yytext);
-	emitjump(label(yytext), NULL);
+	emitjump(label(yytext, 0), NULL);
 	next();
 	expect(';');
 }

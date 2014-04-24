@@ -100,6 +100,7 @@ struct symbol {
 		bool isstatic : 1;
 		bool isauto : 1;
 		bool isregister : 1;
+		bool isdefined : 1;
 	} s;
 	union {
 		int i;
