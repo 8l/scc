@@ -2,6 +2,7 @@
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
 	wrapper.o code.o stmt.o
 
+CFLAGS += -fno-diagnostics-show-caret -g
 
 all: cc1
 
