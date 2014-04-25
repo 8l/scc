@@ -26,20 +26,20 @@ Type
 	},
 	*schartype = &(Type) {
 		.op = INT,
-		.letter = 'C',
+		.letter = 'M',
 		.defined = 1,
 		.u.rank = RANK_SCHAR
 	},
 	*uchartype = &(Type) {
 		.op = INT,
-		.letter = 'M',
+		.letter = 'C',
 		.sign = 1,
 		.defined = 1,
 		.u.rank = RANK_UCHAR
 	},
 	*chartype = &(Type) {
 		.op = INT,
-		.letter = 'M',
+		.letter = 'C',
 		.sign = 1,
 		.defined = 1,
 		.u.rank = RANK_UCHAR
