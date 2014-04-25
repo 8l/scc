@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "sizes.h"
+#include <sizes.h>
+#include <cc.h>
 #include "cc1.h"
 
 #define ID_EXPECTED     1

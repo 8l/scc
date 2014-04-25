@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <cc.h>
 #include "cc1.h"
 
 struct scase {

@@ -1,11 +1,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-
 #include <stdint.h>
 
-#include "cc1.h"
-
+#include <cc.h>
 
 static void
 out_of_memory(void)

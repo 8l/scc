@@ -5,8 +5,9 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <sizes.h>
+#include <cc.h>
 #include "cc1.h"
-#include "sizes.h"
 
 static FILE *yyin;
 const char *filename;

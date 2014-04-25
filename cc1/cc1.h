@@ -1,9 +1,5 @@
-#ifndef CC_H
-#define CC_H
-
-#ifndef __bool_true_and_false_defined
-#include <stdbool.h>
-#endif
+#ifndef CC1_H
+#define CC1_H
 
 
 struct user_opt {
@@ -16,14 +12,8 @@ struct user_opt {
 };
 
 extern  struct user_opt options;
-
 extern void error(const char *fmt, ...);
-extern void die(const char *fmt, ...);
 extern void warn(signed char flag, const char *fmt, ...);
-extern void *xmalloc(size_t size);
-extern void *xcalloc(size_t nmemb, size_t size);
-extern char *xstrdup(const char *s);
-extern void *xrealloc(void *buff, register size_t size);
 
 /* definitions of types */
 

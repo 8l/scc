@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <cc.h>
 #include "cc1.h"
 
 extern unsigned linenum;
