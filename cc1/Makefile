@@ -1,22 +1,19 @@
 
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
-	wrapper.o code.o stmt.o
+	code.o stmt.o
 
-CFLAGS += -I../include
+CPPFLAGS = -I../inc
+LDFLAGS = -L../lib
+LIBS = -lcc
 
 all: cc1
 
-$(OBJS) : cc1.h
+$(OBJS) : cc1.h ../inc/cc.h
 
-cc1: $(OBJS)
-	$(CC) $(LDFLAGS) $(CFLAGS) $(LIBS) $(OBJS) -o $@
+cc1: $(OBJS) ../lib/libcc.a
+	$(CC) $(LDFLAGS) $(CFLAGS) $(OBJS) $(LIBS) -o $@
 
 clean:
 	rm -f $(OBJS)
 	rm -f cc1
 
-distclean: clean
-	rm -f *~
-	rm -f tags
-	rm -f cscope.*
-	rm -f makefile
