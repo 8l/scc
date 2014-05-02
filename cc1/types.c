@@ -12,104 +12,104 @@
 Type
 	*voidtype = &(Type) {
 		.op = VOID,
-		.letter = 'W'
+		.letter = L_VOID
 	},
 	*pvoidtype = &(Type) {
 		.op = PTR,
-		.letter = 'R'
+		.letter = L_POINTER
 	},
 	*booltype = &(Type) {
 		.op = INT,
-		.letter = 'B',
+		.letter = L_BOOL,
 		.defined = 1,
 		.u.rank = RANK_BOOL
 	},
 	*schartype = &(Type) {
 		.op = INT,
-		.letter = 'M',
+		.letter = L_SCHAR,
 		.defined = 1,
 		.u.rank = RANK_SCHAR
 	},
 	*uchartype = &(Type) {
 		.op = INT,
-		.letter = 'C',
+		.letter = L_UCHAR,
 		.sign = 1,
 		.defined = 1,
 		.u.rank = RANK_UCHAR
 	},
 	*chartype = &(Type) {
 		.op = INT,
-		.letter = 'C',
+		.letter = L_CHAR,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_UCHAR
+		.u.rank = RANK_CHAR
 	},
 	*ushortype = &(Type) {
 		.op = INT,
-		.letter = 'E',
+		.letter = L_USHORT,
 		.defined = 1,
 		.u.rank = RANK_USHORT
 	},
 	*shortype = &(Type) {
 		.op = INT,
-		.letter = 'K',
+		.letter = L_SHORT,
 		.defined = 1,
 		.u.rank = RANK_SHORT
 	},
 	*uinttype = &(Type) {
 		.op = INT,
-		.letter = 'U',
+		.letter = L_UINT,
 		.sign = 1,
 		.defined = 1,
 		.u.rank = RANK_UINT
 	},
 	*inttype = &(Type) {
 		.op = INT,
-		.letter = 'I',
+		.letter = L_INT,
 		.defined = 1,
 		.u.rank = RANK_INT
 	},
 	*longtype = &(Type) {
 		.op = INT,
-		.letter = 'L',
+		.letter = L_LONG,
 		.defined = 1,
 		.u.rank = RANK_LONG
 	},
 	*ulongtype = &(Type) {
 		.op = INT,
-		.letter = 'Z',
+		.letter = L_ULONG,
 		.sign = 1,
 		.defined = 1,
 		.u.rank = RANK_ULONG
 	},
 	*ullongtype = &(Type) {
 		.op = INT,
-		.letter = 'O',
+		.letter = L_ULLONG,
 		.sign = 1,
 		.defined = 1,
 		.u.rank = RANK_ULLONG
 	},
 	*llongtype = &(Type) {
 		.op = INT,
-		.letter = 'J',
+		.letter = L_LLONG,
 		.defined = 1,
 		.u.rank = RANK_LLONG
 	},
 	*floattype = &(Type) {
 		.op = FLOAT,
-		.letter = 'F',
+		.letter = L_FLOAT,
 		.defined = 1,
 		.u.rank = RANK_FLOAT
 	},
 	*doubletype = &(Type) {
 		.op = FLOAT,
-		.letter = 'D',
+		.letter = L_DOUBLE,
 		.defined = 1,
 		.u.rank = RANK_DOUBLE
 	},
 	*ldoubletype = &(Type) {
 		.op = FLOAT,
-		.letter = 'H',
+		.letter = L_LDOUBLE,
 		.defined = 1,
 		.u.rank = RANK_LDOUBLE
 	};
@@ -164,11 +164,11 @@ mktype(Type *tp, uint8_t op,
 	}
 
 	switch (op) {
-	case PTR:    letter = 'R'; break;
-	case FTN:    letter = 'F'; break;
-	case ARY:    letter = 'V'; break;
-	case ENUM:   letter = 'E'; break;
-	case STRUCT: letter = 'S'; break;
+	case PTR:    letter = L_POINTER; break;
+	case FTN:    letter = L_FUNCTION; break;
+	case ARY:    letter = L_ARRAY; break;
+	case ENUM:   letter = L_INT; break;
+	case STRUCT: letter = L_STRUCT; break;
 	default: letter = tp->letter;
 	}
 	bp = xmalloc(sizeof(*bp));
