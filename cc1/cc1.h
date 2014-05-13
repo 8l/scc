@@ -23,10 +23,9 @@ extern void warn(signed char flag, const char *fmt, ...);
 
 enum {
 	NS_IDEN = 0,
-	NS_LABEL,
 	NS_TAG,
-	NR_NAMESPACES,
-	NS_FREE
+	NS_LABEL,
+	NR_NAMESPACES
 };
 
 struct funpars;
@@ -71,7 +70,6 @@ struct symbol {
 	short id;
 	uint8_t ctx;
 	uint8_t token;
-	uint8_t ns;
 	struct {
 		bool isglobal : 1;
 		bool isstatic : 1;
@@ -83,7 +81,7 @@ struct symbol {
 		int i;
 		char *s;
 		struct symbol *sym;
-		uint8_t ns, token;
+		uint8_t token;
 	} u;
 	struct symbol *next;
 	struct symbol *hash;
@@ -106,6 +104,7 @@ typedef struct caselist Caselist;
 typedef void Ctxfun(Symbol *, Symbol *, Caselist *);
 
 extern Ctxfun compound;
+extern Type *aggregate(Type *(*fun)(void));
 extern void context(Ctxfun *fun,
                     Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 

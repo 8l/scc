@@ -10,7 +10,6 @@
 #define NR_SYM_HASH 32
 
 uint8_t curctx;
-uint8_t namespace = NS_FREE + 1;
 short symid;
 
 static struct symtab {
@@ -34,7 +33,7 @@ freesyms(uint8_t ns)
 	static struct symtab *tbl;
 	register Symbol *sym, *next;
 
-	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
+	tbl = &symtab[ns];
 	for (sym = tbl->head; sym; sym = next) {
 		if (sym->ctx <= curctx)
 			break;
@@ -47,17 +46,24 @@ freesyms(uint8_t ns)
 	}
 }
 
+Type *
+aggregate(Type * (*fun)(void))
+{
+	Type *tp;
+
+	++curctx;
+	tp = (*fun)();
+	--curctx;
+	freesyms(NS_IDEN);
+	return tp;
+}
+
 void
 context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	uint8_t ns;
-
-	ns = namespace;
 	++curctx;
 	(*fun)(lbreak, lcont, lswitch);
 	--curctx;
-	namespace = ns;
-
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
 }
@@ -65,14 +71,13 @@ context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 Symbol *
 lookup(register char *s, uint8_t ns)
 {
-	extern union yystype yylval;
 	static struct symtab *tbl;
 	register Symbol *sym;
 
-	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
+	tbl = &symtab[ns];
 	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
 		register char *t = sym->name;
-		if (sym->ns == ns && t && *t == *s && !strcmp(t, s))
+		if (*t == *s && !strcmp(t, s))
 			return sym;
 	}
 
@@ -89,9 +94,8 @@ install(char *s, uint8_t ns)
 	sym->name = xstrdup(s);
 	sym->ctx = curctx;
 	sym->token = IDEN;
-	sym->ns = ns;
 	sym->id = symid++;
-	tbl = &symtab[(ns >= NR_NAMESPACES) ? NS_IDEN : ns];
+	tbl = &symtab[ns];
 	sym->next = tbl->head;
 	tbl->head = sym;
 
