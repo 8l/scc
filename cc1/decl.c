@@ -270,7 +270,7 @@ newfield(Type *tp, Symbol *sym)
 		t = p->name;
 		if (*s == *t && !strcmp(s, t))
 			goto duplicated_name;
-		if (op == ENUM && sym->u.i == p->id)
+		if (sym->u.i == p->id)
 			goto duplicated_value;
 	}
 
