@@ -86,7 +86,7 @@ integeruop(char op, Node *np)
 }
 
 static Node *
-addr2ptr(Node *np)
+decay(Node *np)
 {
 	Type *tp;
 
@@ -128,7 +128,7 @@ convert(Node *np, Type *tp, char iscast)
 				return NULL;;
 			break;
 		case ARY: case FTN:
-			np = addr2ptr(np);
+			np = decay(np);
 		case PTR:
 			if (iscast ||
 			    utp == pvoidtype ||
@@ -161,7 +161,7 @@ parithmetic(char op, Node *np1, Node *np2)
 	tp = np1->utype;
 	size = sizeofcode(tp->type);
 	if (np2->typeop == ARY)
-		np2 = addr2ptr(np2);
+		np2 = decay(np2);
 
 	if (op == OSUB && np2->typeop == PTR) {
 		if (tp != np2->utype)
@@ -191,7 +191,7 @@ arithmetic(char op, Node *np1, Node *np2)
 			typeconv(&np1, &np2);
 			break;
 		case ARY:
-			np2 = addr2ptr(np2);
+			np2 = decay(np2);
 		case PTR:
 			if (op == OADD || op == OSUB)
 				return parithmetic(op, np2, np1);
@@ -200,7 +200,7 @@ arithmetic(char op, Node *np1, Node *np2)
 		}
 		break;
 	case ARY:
-		np1 = addr2ptr(np1);
+		np1 = decay(np1);
 	case PTR:
 		return parithmetic(op, np1, np2);
 	default:
@@ -245,7 +245,7 @@ compare(char op, Node *np1, Node *np2)
 			typeconv(&np1, &np2);
 			break;
 		case ARY: case FTN:
-			np2 = addr2ptr(np2);
+			np2 = decay(np2);
 		case PTR:
 			return pcompare(op, np2, np1);
 		default:
@@ -253,7 +253,7 @@ compare(char op, Node *np1, Node *np2)
 		}
 		break;
 	case ARY: case FTN:
-		np1 = addr2ptr(np1);
+		np1 = decay(np1);
 	case PTR:
 		return pcompare(op, np1, np2);
 	default:
@@ -390,7 +390,7 @@ content(char op, Node *np)
 {
 	switch (np->typeop) {
 	case ARY: case FTN:
-		np = addr2ptr(np);
+		np = decay(np);
 	case PTR:
 		np = unarycode(op, np->utype->type, np);
 		np->b.lvalue = 1;
@@ -405,7 +405,7 @@ negation(char op, Node *np)
 {
 	switch (np->typeop) {
 	case FTN: case ARY:
-		np = addr2ptr(np);
+		np = decay(np);
 	case INT: case FLOAT: case PTR:
 		return exp2cond(np, 1);
 	default:
