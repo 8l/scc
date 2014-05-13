@@ -141,8 +141,7 @@ ctype(int8_t type, int8_t sign, int8_t size)
 }
 
 Type *
-mktype(Type *tp, uint8_t op,
-       Symbol *sym, uint16_t nelem)
+mktype(Type *tp, uint8_t op, uint16_t nelem)
 {
 	static Type *typetab[NR_TYPE_HASH], **tbl;
 	static uint8_t t;
@@ -157,7 +156,7 @@ mktype(Type *tp, uint8_t op,
 	if (op != FTN || op != STRUCT || op != UNION || op != ENUM) {
 		for (bp = *tbl; bp; bp = bp->next) {
 			if (bp->type == tp && bp->op == op &&
-			    bp->sym == sym && bp->u.nelem == nelem) {
+			    (op != ARY || bp->u.nelem == nelem)) {
 				return bp;
 			}
 		}
@@ -176,7 +175,6 @@ mktype(Type *tp, uint8_t op,
 	bp->type = tp;
 	bp->op = op;
 	bp->u.nelem = nelem;
-	bp->sym = sym;
 	bp->letter = letter;
 	return *tbl = bp;
 }
@@ -194,6 +192,6 @@ qualifier(Type *tp, uint8_t qlf)
 		tp = tp->type;
 		qlf |= q;
 	}
-	return mktype(tp, qlf|TQUALIFIER, NULL, 0);
+	return mktype(tp, qlf|TQUALIFIER, 0);
 }
 

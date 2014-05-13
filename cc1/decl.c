@@ -143,13 +143,13 @@ declarator(Type *tp, int8_t flags)
 	for (bp = declarator0(data, flags); bp >= data; --bp) {
 		switch (bp->op) {
 		case PTR:
-			tp = qualifier(mktype(tp, PTR, NULL, 0), bp->u.qlf);
+			tp = qualifier(mktype(tp, PTR, 0), bp->u.qlf);
 			break;
 		case ARY:
-			tp = mktype(tp, ARY, NULL, bp->u.nelem);
+			tp = mktype(tp, ARY, bp->u.nelem);
 			break;
 		case FTN:
-			tp = mktype(tp, FTN, NULL, 0);
+			tp = mktype(tp, FTN, 0);
 			break;
 		case IDEN:
 			sym = bp->u.sym;
@@ -348,8 +348,7 @@ newtag(uint8_t tag)
 	} else {
 		sym = install("", NS_TAG);
 	}
-	tp = sym->type = mktype(NULL, tag, NULL, 0);
-	tp->sym = sym;
+	tp = sym->type = mktype(NULL, tag, 0);
 	return tp;
 
 bad_tag:

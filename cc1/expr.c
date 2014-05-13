@@ -90,7 +90,7 @@ addr2ptr(Node *np)
 {
 	Type *tp;
 
-	tp = mktype(np->utype->type, PTR, NULL, 0);
+	tp = mktype(np->utype->type, PTR, 0);
 	return unarycode(OADDR, tp, np);
 }
 
@@ -374,7 +374,7 @@ address(char op, Node *np)
 		goto no_lvalue;
 	if (np->b.symbol && np->u.sym->s.isregister)
 		goto reg_address;
-	return unarycode(op, mktype(np->type, PTR, NULL, 0), np);
+	return unarycode(op, mktype(np->type, PTR, 0), np);
 
 no_lvalue:
 	err = "lvalue required in unary expression";

@@ -37,7 +37,6 @@ struct ctype {
 	char letter;          /* letter of the type */
 	bool defined : 1; /* type defined (is not a forward reference) */
 	bool sign : 1;    /* sign type */
-	struct symbol *sym;   /* symbol of the tag identifier */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
 	union {
@@ -93,8 +92,7 @@ extern void freesyms(uint8_t ns);
 
 extern Type *qualifier(Type *tp, uint8_t qlf),
 	*ctype(int8_t type, int8_t sign, int8_t size),
-	*mktype(Type *tp,
-	        uint8_t op, Symbol *tag, uint16_t nelem);
+	*mktype(Type *tp, uint8_t op, uint16_t nelem);
 
 extern Symbol
 	*lookup(char *s, unsigned char ns),
