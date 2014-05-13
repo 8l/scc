@@ -315,7 +315,7 @@ fielddcl(Type *base, uint8_t ns)
 	if (yytoken != ';') {
 		do {
 			sym = declarator(tp, ns, ID_EXPECTED);
-			newfield(tp, sym);
+			newfield(base, sym);
 		} while (accept(','));
 	}
 
