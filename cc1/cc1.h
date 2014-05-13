@@ -50,7 +50,8 @@ struct ctype {
 typedef struct ctype Type;
 
 struct field {
-	struct symbol *sym;
+	char *name;
+	int id;
 	struct field *next;
 };
 

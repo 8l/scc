@@ -267,16 +267,17 @@ newfield(Type *tp, Symbol *sym)
 	s = sym->name;
 	op = tp->op;
 	for (q = p = tp->u.fields; p; q = p, p = p->next) {
-		t = p->sym->name;
+		t = p->name;
 		if (*s == *t && !strcmp(s, t))
 			goto duplicated_name;
-		if (op == ENUM && sym->u.i == p->sym->u.i)
+		if (op == ENUM && sym->u.i == p->id)
 			goto duplicated_value;
 	}
 
 	p = xmalloc(sizeof(*p));
+	p->name = xstrdup(s);
 	p->next = NULL;
-	p->sym = sym;
+	p->id = sym->id;
 	if (!q)
 		tp->u.fields = p;
 	else
