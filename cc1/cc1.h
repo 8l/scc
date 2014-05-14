@@ -223,9 +223,6 @@ extern Node
 	*symcode(Symbol *sym),
 	*fieldcode(Node *child, struct field *fp);
 
-#define SYM(s) ((union unode) {.sym = s})
-#define OP(s) ((union unode) {.op = s})
-#define TYP(s) ((union unode) {.type = s})
 #define NEGATE(n, v) ((n)->u.op ^= (v))
 /* TODO: remove some of these ugly macros */
 #define ISNODEBIN(n) ((n)->code == emitbin)

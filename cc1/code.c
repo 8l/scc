@@ -5,6 +5,9 @@
 #include <cc.h>
 #include "cc1.h"
 
+#define SYM(s) ((union unode) {.sym = s})
+#define TYP(s) ((union unode) {.type = s})
+#define OP(s) ((union unode) {.op = s})
 #define FIELD(s) ((union unode) {.field = s})
 
 char *opcodes[] = {
