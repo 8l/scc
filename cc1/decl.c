@@ -335,21 +335,19 @@ static Type *
 newtag(uint8_t tag)
 {
 	register Symbol *sym;
-	Type *tp;
+	register Type *tp;
 
 	if (yytoken == IDEN) {
-		sym = lookup(yytext, NS_TAG);
-		if (sym) {
-			if (sym->type->op != tag)
-				goto bad_tag;
-		} else {
+		if ((sym = lookup(yytext, NS_TAG)) == NULL)
 			sym = install(yytext, NS_TAG);
-		}
 		next();
 	} else {
 		sym = install("", NS_TAG);
 	}
-	tp = sym->type = mktype(NULL, tag, 0);
+	if (!(tp = sym->type))
+		tp = sym->type = mktype(NULL, tag, 0);
+	if (tp->op != tag)
+		goto bad_tag;
 	return tp;
 
 bad_tag:
@@ -365,7 +363,6 @@ structdcl(void)
 	tag = yylval.token;
 	next();
 	tp = newtag(tag);
-	tp->u.fields = NULL;
 	if (accept('{')) {
 		if (tp->defined)
 			goto redefined;

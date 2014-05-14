@@ -170,11 +170,10 @@ mktype(Type *tp, uint8_t op, uint16_t nelem)
 	case STRUCT: letter = L_STRUCT; break;
 	default: letter = tp->letter;
 	}
-	bp = xmalloc(sizeof(*bp));
+	bp = xcalloc(1, sizeof(*bp));
 	bp->next = *tbl;
 	bp->type = tp;
 	bp->op = op;
-	bp->u.nelem = nelem;
 	bp->letter = letter;
 	return *tbl = bp;
 }
