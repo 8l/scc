@@ -259,13 +259,11 @@ initializer(register Type *tp)
 static void
 newfield(Type *tp, Symbol *sym)
 {
-	register struct field *p, *q;
+	register Field *p, *q;
 	register char *s, *t;
-	static uint8_t op;
 	static char *err;
 
 	s = sym->name;
-	op = tp->op;
 	for (q = p = tp->u.fields; p; q = p, p = p->next) {
 		t = p->name;
 		if (*s == *t && !strcmp(s, t))
@@ -278,6 +276,7 @@ newfield(Type *tp, Symbol *sym)
 	p->name = xstrdup(s);
 	p->next = NULL;
 	p->id = sym->id;
+	p->type = tp;
 	if (!q)
 		tp->u.fields = p;
 	else

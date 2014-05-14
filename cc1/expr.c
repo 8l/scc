@@ -284,6 +284,27 @@ logic(char op, Node *np1, Node *np2)
 }
 
 static Node *
+field(Node *np)
+{
+	Field *fp;
+
+	if (yytoken != IDEN)
+		error("unexpected '%s'", yytext);
+	switch (np->typeop) {
+	case STRUCT: case UNION:
+		for (fp = np->utype->u.fields; fp; fp = fp->next) {
+			if (!strcmp(fp->name, yytext)) {
+				next();
+				return fieldcode(np, fp);
+			}
+		}
+		error("field '%s' not found", yytext);
+	default:
+		error("struct or union expected");
+	}
+}
+
+static Node *
 array(Node *np1, Node *np2)
 {
 	Type *tp;
@@ -462,8 +483,12 @@ postfix(void)
 			np1 = incdec(np1,  (yytoken == INC) ? OINC : ODEC);
 			next();
 			break;
-		/* TODO: case '.': */
-		/* TODO: case INDIR: */
+		case INDIR:
+			np1 = content(OPTR, np1);
+		case '.':
+			next();
+			np1 = field(np1);
+			break;
 		/* TODO: case '(' */
 		default:
 			return np1;

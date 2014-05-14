@@ -28,9 +28,17 @@ enum {
 	NR_NAMESPACES
 };
 
-struct funpars;
-struct symbol;
+typedef struct ctype Type;
+typedef struct symbol Symbol;
 
+struct funpars;
+
+typedef struct field {
+	char *name;
+	Type *type;
+	int id;
+	struct field *next;
+} Field;
 
 struct ctype {
 	uint8_t op;           /* type builder operator */
@@ -43,17 +51,11 @@ struct ctype {
 		unsigned char rank;   /* convertion rank */
 		short nelem;          /* number of elements in arrays */
 		struct funpar *pars;  /* function parameters */
-		struct field *fields; /* aggregate fields */
+		Field *fields; /* aggregate fields */
 	} u;
 };
 
-typedef struct ctype Type;
 
-struct field {
-	char *name;
-	int id;
-	struct field *next;
-};
 
 struct funpar {
 	Type *type;
@@ -87,7 +89,6 @@ struct symbol {
 	struct symbol *hash;
 };
 
-typedef struct symbol Symbol;
 
 extern void freesyms(uint8_t ns);
 
@@ -183,6 +184,7 @@ typedef struct node {
 		Symbol *sym;
 		Type *type;
 		char op;
+		Field *field;
 	} u;
 	struct node *childs[];
 } Node;
@@ -218,7 +220,8 @@ extern Node
 	*castcode(Node *child, Type *tp),
 	*sizeofcode(Type *tp), 
 	*ternarycode(Node *cond, Node *ifyes, Node *ifno),
-	*symcode(Symbol *sym);
+	*symcode(Symbol *sym),
+	*fieldcode(Node *child, struct field *fp);
 
 #define SYM(s) ((union unode) {.sym = s})
 #define OP(s) ((union unode) {.op = s})

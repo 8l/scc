@@ -5,6 +5,8 @@
 #include <cc.h>
 #include "cc1.h"
 
+#define FIELD(s) ((union unode) {.field = s})
+
 char *opcodes[] = {
 	[OADD] = "+",
 	[OSUB] = "-",
@@ -256,6 +258,25 @@ emitdefault(Symbol *sym)
 {
 	fputs("\tf\t", stdout);
 	emitlabel(sym);
+}
+
+void
+emitfield(Node *np)
+{
+	Node *child;
+
+	child = np->childs[0];
+	(*child->code)(child);
+
+	printf("\tM%d", np->u.field->id);
+}
+
+Node *
+fieldcode(Node *child, struct field *fp)
+{
+	Node *np = node(emitfield, fp->type, FIELD(fp), 1);
+	np->childs[0] = child;
+	return np;
 }
 
 Node *
