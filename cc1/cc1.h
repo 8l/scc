@@ -210,6 +210,8 @@ extern void
 	emitprint(Node *), emitlabel(Symbol *), emitjump(Symbol *, Node *),
 	emitbloop(void), emiteloop(void),
 	emitswitch(short, Node *), emitcase(Symbol *, Node *),
+	emitret(Type *tp),
+	emitfun(Symbol *sym),
 	emitdefault(Symbol *);
 
 extern Node
