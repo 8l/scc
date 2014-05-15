@@ -174,7 +174,7 @@ specifier(int8_t *sclass)
 	qlf = sign = type = cls = size = 0;
 
 	for (;;) {
-		register uint8_t *p;
+		register int8_t *p;
 		Type *(*dcl)(void) = NULL;
 
 		switch (yytoken) {
@@ -447,7 +447,7 @@ decl(void)
 Type *
 typename(void)
 {
-	uint8_t sclass;
+	int8_t sclass;
 	Type *tp;
 	Symbol *sym;
 
