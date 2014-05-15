@@ -10,8 +10,6 @@
 #define ID_EXPECTED     1
 #define ID_ACCEPTED     2
 
-int8_t forbid_eof;
-
 struct dcldata {
 	uint8_t op;
 	union {
@@ -465,8 +463,6 @@ extdecl(void)
 	int8_t sclass;
 	Symbol *sym;
 	char *err;
-
-	forbid_eof = 0; /* TODO: Fix when find EOF */
 
 	switch (yytoken) {
 	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:

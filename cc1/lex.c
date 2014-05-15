@@ -378,15 +378,11 @@ uint8_t
 next(void)
 {
 	static int c;
-	extern int8_t forbid_eof;
 
 	strcpy(yytext, yybuf);
 	yylval = yynlval;
-	if ((yytoken = yyntoken) == EOFTOK) {
-		if (forbid_eof)
-			error("Find EOF while parsing");
+	if ((yytoken = yyntoken) == EOFTOK)
 		goto ret;
-	}
 
 	while (isspace(c = getc(yyin))) {
 		if (c == '\n')
@@ -394,6 +390,7 @@ next(void)
 	}
 
 	if (c == EOF) {
+		strcpy(yybuf, "EOF");
 		yyntoken = EOFTOK;
 		goto ret;
 	}
