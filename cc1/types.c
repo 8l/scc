@@ -144,7 +144,7 @@ Type *
 mktype(Type *tp, uint8_t op, uint16_t nelem)
 {
 	static Type *typetab[NR_TYPE_HASH], **tbl;
-	static uint8_t t;
+	static uint8_t t, def;
 	register Type *bp;
 	char letter;
 
@@ -163,18 +163,20 @@ mktype(Type *tp, uint8_t op, uint16_t nelem)
 	}
 
 	switch (op) {
-	case PTR:    letter = L_POINTER; break;
-	case FTN:    letter = L_FUNCTION; break;
-	case ARY:    letter = L_ARRAY; break;
-	case ENUM:   letter = L_INT; break;
-	case STRUCT: letter = L_STRUCT; break;
-	default: letter = tp->letter;
+	case PTR:    letter = L_POINTER,  def = 1; break;
+	case FTN:    letter = L_FUNCTION, def = 1; break;
+	case ARY:    letter = L_ARRAY,    def = nelem != 0; break;
+	case ENUM:   letter = L_INT,      def = 0; break;
+	case STRUCT: letter = L_STRUCT,   def = 0; break;
+	/* TODO case UNION: */
+	default: letter = tp->letter; /* is it possible? */
 	}
 	bp = xcalloc(1, sizeof(*bp));
 	bp->next = *tbl;
 	bp->type = tp;
 	bp->op = op;
 	bp->letter = letter;
+	bp->defined = def;
 	return *tbl = bp;
 }
 

@@ -156,6 +156,8 @@ declarator(Type *tp, int8_t flags)
 			break;
 		}
 	}
+	if (!tp->defined)
+		error("declared variable '%s' of incomplete type", sym->name);
 	if (!sym)
 		sym = &dummy;
 	sym->type = tp;
