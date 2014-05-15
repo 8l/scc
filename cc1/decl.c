@@ -65,7 +65,6 @@ static struct dcldata *
 directdcl(struct dcldata *dp, int8_t flags)
 {
 	register Symbol *sym;
-	char *err;
 
 	if (accept('(')) {
 		dp = declarator0(dp, flags);

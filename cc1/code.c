@@ -132,7 +132,7 @@ void
 emitunary(Node *np)
 {
 	Node *child;
-	char op, letter;
+	char letter;
 
 	letter = np->type->letter;
 	child = np->childs[0];

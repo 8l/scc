@@ -156,7 +156,6 @@ parithmetic(char op, Node *np1, Node *np2)
 {
 	Type *tp;
 	Node *size;
-	char *err;
 
 	tp = np1->utype;
 	size = sizeofcode(tp->type);
@@ -504,7 +503,6 @@ unary(void)
 	register Node *(*fun)(char, Node *);
 	register char op;
 	Type *tp;
-	char *err;
 
 	switch (yytoken) {
 	case SIZEOF:
