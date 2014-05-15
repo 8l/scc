@@ -276,7 +276,7 @@ newfield(Type *tp, Symbol *sym)
 	p->name = xstrdup(s);
 	p->next = NULL;
 	p->id = sym->id;
-	p->type = tp;
+	p->type = sym->type;
 	if (!q)
 		tp->u.fields = p;
 	else
