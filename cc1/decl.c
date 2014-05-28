@@ -345,11 +345,8 @@ newtag(uint8_t tag)
 	if (!(tp = sym->type))
 		tp = sym->type = mktype(NULL, tag, 0);
 	if (tp->op != tag)
-		goto bad_tag;
+		error("'%s' defined as wrong kind of tag", yytext);
 	return tp;
-
-bad_tag:
-	error("'%s' defined as wrong kind of tag", yytext);
 }
 
 static Type *
@@ -363,16 +360,13 @@ structdcl(void)
 	tp = newtag(tag);
 	if (accept('{')) {
 		if (tp->defined)
-			goto redefined;
+			error("redefinition of struct/union '%s'", yytext);
 		tp->defined = 1;
 		while (!accept('}'))
 			fielddcl(tp);
 	}
 
 	return tp;
-
-redefined:
-	error("redefinition of struct/union '%s'", yytext);
 }
 
 static Type *
