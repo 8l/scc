@@ -29,16 +29,12 @@ label(char *s, char define)
 {
 	Symbol *sym;
 
-	if (s) {
-		if ((sym = lookup(s, NS_LABEL)) != NULL) {
-			if (define && sym->s.isdefined)
-				error("label '%s' already defined", s);
-			else
-				sym->s.isdefined = 1;
-			return sym;
-		}
-	} else {
-		s = "";
+	if ((sym = lookup(s, NS_LABEL)) != NULL) {
+		if (define && sym->s.isdefined)
+			error("label '%s' already defined", s);
+		else
+			sym->s.isdefined = 1;
+		return sym;
 	}
 
 	sym = install(s, NS_LABEL);
@@ -72,9 +68,9 @@ While(Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *np;
 
-	begin = label(NULL, 1);
-	end = label(NULL, 1);
-	cond = label(NULL, 1);
+	begin = label("", 1);
+	end = label("", 1);
+	cond = label("", 1);
 
 	expect(WHILE);
 	np = condition();
@@ -94,9 +90,9 @@ For(Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *econd = NULL, *einc = NULL;
 
-	begin = label(NULL, 1);
-	end = label(NULL, 1);
-	cond = label(NULL, 1);
+	begin = label("", 1);
+	end = label("", 1);
+	cond = label("", 1);
 
 	expect(FOR);
 	expect('(');
@@ -124,8 +120,7 @@ For(Caselist *lswitch)
 static void
 Dowhile(Caselist *lswitch)
 {
-	Symbol *begin= label(NULL, 1), *end = label(NULL, 1);
-
+	Symbol *begin = label("", 1), *end = label("", 1);
 
 	expect(DO);
 	emitbloop();
@@ -206,7 +201,7 @@ Switch(Symbol *lcont)
 {
 	Caselist lcase = {.nr = 0, .head = NULL, .deflabel = NULL};
 	struct scase *p;
-	Symbol *lbreak = label(NULL, 1), *lcond = label(NULL, 1);
+	Symbol *lbreak = label("", 1), *lcond = label("", 1);
 	Node *cond;
 
 	expect(SWITCH);
@@ -230,7 +225,7 @@ static void
 Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Node *np;
-	Symbol *lcase = label(NULL, 1);
+	Symbol *lcase = label("", 1);
 	struct scase *pcase;
 
 	if (!lswitch)
@@ -253,7 +248,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *ldefault = label(NULL, 1);
+	Symbol *ldefault = label("", 1);
 
 	expect(DEFAULT);
 	expect(':');
@@ -264,7 +259,7 @@ Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *end, *lelse = label(NULL, 1);
+	Symbol *end, *lelse = label("", 1);
 	Node *np;
 
 	expect(IF);
@@ -273,7 +268,7 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emitjump(lelse, np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
-		end = label(NULL, 1);
+		end = label("", 1);
 		emitjump(end, NULL);
 		emitlabel(lelse);
 		stmt(lbreak, lcont, lswitch);

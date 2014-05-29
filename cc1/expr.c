@@ -58,6 +58,17 @@ typeconv(Node **p1, Node **p2)
 	*p2 = np2;
 }
 
+static void
+chklvalue(Node *np, Type *tp)
+{
+	if (!np->b.lvalue)
+		error("lvalue required in operation");
+	if (np->utype == voidtype)
+		error("invalid use of void expression");
+	if (isconst(tp->op))
+		error("const value modified");
+}
+
 Node *
 eval(Node *np)
 {
@@ -341,12 +352,7 @@ incdec(Node *np, char op)
 {
 	Type *tp = np->utype;
 
-	if (!np->b.lvalue)
-		error("lvalue required in operation");
-	if (np->utype == voidtype)
-		error("invalid use of void expression");
-	if (isconst(tp->op))
-		error("const value modified");
+	chklvalue(np, np->utype);
 
 	switch (np->typeop) {
 	case PTR:
@@ -533,7 +539,7 @@ mul(void)
 		switch (yytoken) {
 		case '*': op = OMUL; fun = arithmetic; break;
 		case '/': op = ODIV; fun = arithmetic; break;
-		case '%': op = OMOD; fun = integerop;   break;
+		case '%': op = OMOD; fun = integerop;  break;
 		default: return np;
 		}
 		next();
@@ -708,12 +714,7 @@ assign(void)
 		case OR_EQ:  op = OA_OR;   fun = integerop;  break;
 		default: return np;
 		}
-		if (!np->b.lvalue)
-			error("lvalue required as left operand of assignment");
-		if (np->utype == voidtype)
-			error("invalid use of void expression");
-		if (isconst(np->type->op))
-			error("const value modified");
+		chklvalue(np, np->type);
 		next();
 		np = (fun)(op, np, eval(assign()));
 	}
