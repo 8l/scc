@@ -308,25 +308,16 @@ static Node *
 array(Node *np1, Node *np2)
 {
 	Type *tp;
-	char *err;
 
 	if (np1->typeop != INT && np2->typeop != INT)
-		goto bad_subs;
+		error("array subscript is not an integer");
 	np1 = arithmetic(OADD, np1, np2);
 	tp = np1->type;
 	if (tp->op != PTR)
-		goto bad_vector;
+		error("subscripted value is neither array nor pointer nor vector");
 	np1 =  unarycode(OARY, tp->type , np1);
 	np1->b.lvalue = 1;
 	return np1;
-
-bad_vector:
-	err = "subscripted value is neither array nor pointer nor vector";
-	goto error;
-bad_subs:
-	err = "array subscript is not an integer";
-error:
-	error(err);
 }
 
 Node *
@@ -348,62 +339,34 @@ assignop(char op, Node *np1, Node *np2)
 static Node *
 incdec(Node *np, char op)
 {
-	char *err;
 	Type *tp = np->utype;
 
 	if (!np->b.lvalue)
-		goto nolvalue;
+		error("lvalue required in operation");
 	if (np->utype == voidtype)
-		goto voidassign;
+		error("invalid use of void expression");
 	if (isconst(tp->op))
-		goto const_mod;
+		error("const value modified");
 
 	switch (np->typeop) {
 	case PTR:
 		if (!tp->defined)
-			goto nocomplete;
+			error("invalid use of indefined type");
 	case INT: case FLOAT:
 		return arithmetic(op, np, symcode(one));
 	default:
-		goto bad_type;
+		error("incorrect type in arithmetic operation");
 	}
-
-voidassign:
-	err = "invalid use of void expression";
-	goto error;
-nolvalue:
-	err = "lvalue required in operation";
-	goto error;
-nocomplete:
-	err = "invalid use of indefined type";
-	goto error;
-bad_type:
-	err = "incorrect type in arithmetic operation";
-	goto error;
-const_mod:
-	err = "const value modified";
-error:
-	error(err);
 }
 
 static Node *
 address(char op, Node *np)
 {
-	char *err;
-
 	if (!np->b.lvalue)
-		goto no_lvalue;
+		error("lvalue required in unary expression");
 	if (np->b.symbol && np->u.sym->s.isregister)
-		goto reg_address;
+		error("address of register variable '%s' requested", yytext);
 	return unarycode(op, mktype(np->type, PTR, 0), np);
-
-no_lvalue:
-	err = "lvalue required in unary expression";
-	goto error;
-reg_address:
-	err = "address of register variable '%s' requested";
-error:
-	error(err);
 }
 
 static Node *
@@ -728,7 +691,6 @@ assign(void)
 {
 	register Node *np, *(*fun)(char , Node *, Node *);
 	register char op;
-	char *err;
 
 	np = ternary();
 	for (;;) {
@@ -747,25 +709,14 @@ assign(void)
 		default: return np;
 		}
 		if (!np->b.lvalue)
-			goto nolvalue;
+			error("lvalue required as left operand of assignment");
 		if (np->utype == voidtype)
-			goto voidassign;
+			error("invalid use of void expression");
 		if (isconst(np->type->op))
-			goto const_mod;
+			error("const value modified");
 		next();
 		np = (fun)(op, np, eval(assign()));
 	}
-voidassign:
-	err = "invalid use of void expression";
-	goto error;
-const_mod:
-	err = "const value modified";
-	goto error;
-nolvalue:
-	err = "lvalue required as left operand of assignment";
-	goto error;
-error:
-	error(err);
 }
 
 Node *
