@@ -358,39 +358,31 @@ enumdcl(void)
 	register Type *tp;
 	Symbol *sym;
 	int val = 0;
-	char *err;
 
 	next();
 	tp = newtag(ENUM);
-	if (yytoken != ';') {
-		expect('{');
-		if (tp->defined)
-			goto redefined;
-		tp->defined = 1;
-		while (yytoken != '}') {
-			if (yytoken != IDEN)
-				goto iden_expected;
-			sym = newiden();
-			sym->type = inttype;
-			if (accept('='))
-				initializer(inttype);
-			sym->u.i = val++;
-			newfield(tp, sym);
-			if (!accept(','))
-				break;
-		}
-		expect('}');
+	if (yytoken == ';')
+		return tp;
+
+	expect('{');
+	if (tp->defined)
+		error("redefinition of enumeration '%s'", yytext);
+	tp->defined = 1;
+	while (yytoken != '}') {
+		if (yytoken != IDEN)
+			error("identifier expected");
+		sym = newiden();
+		sym->type = inttype;
+		if (accept('='))
+			initializer(inttype);
+		sym->u.i = val++;
+		newfield(tp, sym);
+		if (!accept(','))
+			break;
 	}
+	expect('}');
 
 	return tp;
-
-redefined:
-	err = "redefinition of enumeration '%s'";
-	goto error;
-iden_expected:
-	err = "identifier expected";
-error:
-	error(err, yytext);
 }
 
 void
