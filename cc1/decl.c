@@ -260,15 +260,15 @@ newfield(Type *tp, Symbol *sym)
 {
 	register Field *p, *q;
 	register char *s, *t;
-	static char *err;
 
 	s = sym->name;
 	for (q = p = tp->u.fields; p; q = p, p = p->next) {
 		t = p->name;
 		if (*s == *t && !strcmp(s, t))
-			goto duplicated_name;
+			error("duplicated fields '%s' and '%s'", s, t);
 		if (sym->u.i == p->id)
-			goto duplicated_value;
+			error("duplicated enumeration fields '%s' and '%s'",
+			      s, t);
 	}
 
 	p = xmalloc(sizeof(*p));
@@ -282,14 +282,6 @@ newfield(Type *tp, Symbol *sym)
 		q->next = p;
 
 	return;
-
-duplicated_name:
-	err = "duplicated fields '%s' and '%s'";
-	goto error;
-duplicated_value:
-	err = "duplicated enumeration fields '%s' and '%s'";
-error:
-	error(err, s, t);
 }
 
 static void
