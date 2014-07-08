@@ -289,17 +289,16 @@ fielddcl(Type *base)
 {
 	Type *tp;
 	Symbol *sym;
-	char *err;
 
 	switch (yytoken) {
 	case SCLASS:
-		goto bad_storage;
+		error("storage class '%s' in struct/union field", yytext);
 	case IDEN: case TYPE: case TQUALIFIER:
 		tp = specifier(NULL);
 	case ';':
 		break;
 	default:
-		goto dcl_expected;
+		error("declaration expected");
 	}
 
 	if (yytoken != ';') {
@@ -311,14 +310,6 @@ fielddcl(Type *base)
 
 	expect(';');
 	return;
-
-bad_storage:
-	err = "storage class '%s' in struct/union field";
-	goto error;
-dcl_expected:
-	err = "declaration expected";
-error:
-	error(err, yytext);
 }
 
 static Type *
