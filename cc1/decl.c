@@ -395,7 +395,7 @@ decl(void)
 	tp = specifier(&sclass);
 	if (yytoken != ';') {
 		do {
-			 sym = declarator(tp, ID_EXPECTED);
+			sym = declarator(tp, ID_EXPECTED);
 			switch (sclass) {
 			case REGISTER: sym->s.isregister = 1; break;
 			case STATIC: sym->s.isstatic = 1; break;
