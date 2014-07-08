@@ -430,7 +430,6 @@ extdecl(void)
 {
 	Type *base;
 	int8_t sclass;
-	Symbol *sym;
 
 	switch (yytoken) {
 	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:
@@ -439,6 +438,7 @@ extdecl(void)
 			error("incorrect storage class for file-scope declaration");
 		if (yytoken != ';')
 			break;
+		/* PASSTHROUGH */
 	case ';':
 		goto semicolon;
 	case '@':
@@ -450,33 +450,28 @@ extdecl(void)
 	}
 
 	do {
-		Type *tp;
-
-		sym = declarator(base, ID_EXPECTED);
-		tp = sym->type;
+		Symbol *sym = declarator(base, ID_EXPECTED);
+		Type *tp = sym->type;
 
 		if (!(sclass & STATIC))
 			sym->s.isglobal = 1;
-		if (BTYPE(tp) == FTN) {
-			if (yytoken == '{') {
-				extern Symbol *curfun;
-
-				curfun = sym;
-				emitfun(sym);
-				emitsframe(sym);
-				context(compound, NULL, NULL, NULL);
-				emiteframe(sym); /* FIX: sym is not used */
-				freesyms(NS_LABEL);
-				return;
-			}
-		} else {
+		if (BTYPE(tp) != FTN) {
 			sym->s.isstatic = 1;
 			if (sclass & EXTERN)
 				; /* TODO: handle extern */
 			else if (accept('='))
 				initializer(tp);
 			emitdcl(sym);
+		} else if (yytoken == '{') {
+			extern Symbol *curfun;
 
+			curfun = sym;
+			emitfun(sym);
+			emitsframe(sym);
+			context(compound, NULL, NULL, NULL);
+			emiteframe(sym); /* FIX: sym is not used */
+			freesyms(NS_LABEL);
+			return;
 		}
 	} while (accept(','));
 
@@ -484,3 +479,4 @@ semicolon:
 	expect(';');
 	return;
 }
+
