@@ -72,6 +72,8 @@ chklvalue(Node *np, Type *tp)
 Node *
 eval(Node *np)
 {
+	if (!np)
+		return NULL;
 	if (!ISNODECMP(np))
 		return np;
 	return ternarycode(np, symcode(one), symcode(zero));
