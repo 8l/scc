@@ -43,7 +43,7 @@ label(char *s, char define)
 }
 
 static void
-stmtexp(void)
+stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	if (yytoken != ';')
 		emitexp(expr());
@@ -62,7 +62,7 @@ condition(void)
 }
 
 static void
-While(Caselist *lswitch)
+While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *begin, *cond, *end;
 	Node *np;
@@ -84,7 +84,7 @@ While(Caselist *lswitch)
 }
 
 static void
-For(Caselist *lswitch)
+For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *begin, *cond, *end;
 	Node *econd = NULL, *einc = NULL;
@@ -117,7 +117,7 @@ For(Caselist *lswitch)
 }
 
 static void
-Dowhile(Caselist *lswitch)
+Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *begin = label("", 1), *end = label("", 1);
 
@@ -132,7 +132,7 @@ Dowhile(Caselist *lswitch)
 }
 
 static void
-Return(void)
+Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Node *np;
 	Type *tp = curfun->type->type;
@@ -155,7 +155,7 @@ Return(void)
 }
 
 static void
-Break(Symbol *lbreak)
+Break(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	expect(BREAK);
 	if (!lbreak)
@@ -164,17 +164,20 @@ Break(Symbol *lbreak)
 	expect(';');
 }
 
+static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
+
 static void
-Label(void)
+Label(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	emitlabel(label(yytext, 1));
 
 	expect(IDEN);
 	expect(':');
+	stmt(lbreak, lcont, lswitch);
 }
 
 static void
-Continue(Symbol *lcont)
+Continue(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	expect(CONTINUE);
 	if (!lcont)
@@ -184,7 +187,7 @@ Continue(Symbol *lcont)
 }
 
 static void
-Goto(void)
+Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	expect(GOTO);
 
@@ -196,13 +199,14 @@ Goto(void)
 }
 
 static void
-Switch(Symbol *lcont)
+Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Caselist lcase = {.nr = 0, .head = NULL, .deflabel = NULL};
 	struct scase *p;
-	Symbol *lbreak = label("", 1), *lcond = label("", 1);
 	Node *cond;
+	Symbol *lcond = label("", 1);
 
+	lbreak = label("", 1);
 	expect(SWITCH);
 	expect ('(');
 	cond = eval(expr());
@@ -298,27 +302,24 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
+	void (*fun)(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
-repeat:
 	switch (yytoken) {
-	case '{':      context(lbreak, lcont, lswitch); break;
-	case RETURN:   Return(); break;
-	case WHILE:    While(lswitch); break;
-	case FOR:      For(lswitch); break;
-	case DO:       Dowhile(lswitch); break;
-	case IF:       If(lbreak, lcont, lswitch); break;
-	case BREAK:    Break(lbreak); break;
-	case CONTINUE: Continue(lcont); break;
-	case GOTO:     Goto(); break;
-	case SWITCH:   Switch(lcont); break;
-	case CASE:     Case(lbreak, lcont, lswitch); break;
-	case DEFAULT:  Default(lbreak, lcont, lswitch); break;
-	case IDEN:
-		if (ahead() == ':') {
-			Label();
-			goto repeat;
-		}
-	default:       stmtexp(); break;
+	case '{':      fun = context;  break;
+	case RETURN:   fun = Return;   break;
+	case WHILE:    fun = While;    break;
+	case FOR:      fun = For;      break;
+	case DO:       fun = Dowhile;  break;
+	case IF:       fun = If;       break;
+	case BREAK:    fun = Break;    break;
+	case CONTINUE: fun = Continue; break;
+	case GOTO:     fun = Goto;     break;
+	case SWITCH:   fun = Switch;   break;
+	case CASE:     fun = Case;     break;
+	case DEFAULT:  fun = Default;  break;
+	default:       fun = stmtexp;  break;
+	case IDEN:     fun = (ahead() == ':') ? Label : stmtexp; break;
 	}
+	(*fun)(lbreak, lcont, lswitch);
 }
 
