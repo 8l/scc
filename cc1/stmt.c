@@ -203,27 +203,33 @@ static void
 Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Caselist lcase = {.nr = 0, .head = NULL, .deflabel = NULL};
-	struct scase *p;
+	struct scase *p, *next;
 	Node *cond;
 	Symbol *lcond;
+	void free(void *ptr);
+
+	expect(SWITCH);
+	expect ('(');
+	if ((cond = expr()) == NULL)
+		error("expected expression before '%s'", yytext);
+	if ((cond = convert(cond, inttype, 0)) == NULL)
+		error("incorrect type in switch statement");
+	expect (')');
 
 	lbreak = install("", NS_LABEL);
 	lcond = install("", NS_LABEL);
-	expect(SWITCH);
-	expect ('(');
-	cond = eval(expr());
-	expect (')');
-	/* TODO: check integer type */
 	emitjump(lcond, NULL);
 	stmt(lbreak, lcont, &lcase);
 	emitlabel(lcond);
 	emitswitch(lcase.nr, cond);
-	for (p = lcase.head; p; p = p->next)
+	for (p = lcase.head; p; p = next) {
 		emitcase(p->label, p->expr);
+		next = p->next;
+		free(p);
+	}
 	if (lcase.deflabel)
 		emitdefault(lcase.deflabel);
 	emitlabel(lbreak);
-	/* TODO: free memory */
 }
 
 static void
