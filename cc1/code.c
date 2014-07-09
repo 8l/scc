@@ -201,7 +201,7 @@ emitsframe(Symbol *sym)
 }
 
 void
-emiteframe(Symbol *sym)
+emiteframe(void)
 {
 	puts("}");
 }

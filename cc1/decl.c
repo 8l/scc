@@ -469,7 +469,7 @@ extdecl(void)
 			emitfun(sym);
 			emitsframe(sym);
 			context(compound, NULL, NULL, NULL);
-			emiteframe(sym); /* FIX: sym is not used */
+			emiteframe();
 			freesyms(NS_LABEL);
 			return;
 		}
