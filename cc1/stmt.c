@@ -301,7 +301,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 repeat:
 	switch (yytoken) {
-	case '{':      context(compound, lbreak, lcont, lswitch); break;
+	case '{':      context(lbreak, lcont, lswitch); break;
 	case RETURN:   Return(); break;
 	case WHILE:    While(lswitch); break;
 	case FOR:      For(lswitch); break;

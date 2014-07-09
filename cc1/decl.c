@@ -468,7 +468,7 @@ extdecl(void)
 			curfun = sym;
 			emitfun(sym);
 			emitsframe(sym);
-			context(compound, NULL, NULL, NULL);
+			context(NULL, NULL, NULL);
 			emiteframe();
 			freesyms(NS_LABEL);
 			return;

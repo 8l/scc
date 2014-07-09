@@ -101,12 +101,10 @@ extern Symbol
 	*install(char *s, unsigned char ns);
 
 typedef struct caselist Caselist;
-typedef void Ctxfun(Symbol *, Symbol *, Caselist *);
 
-extern Ctxfun compound;
+extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 extern Type *aggregate(Type *(*fun)(void));
-extern void context(Ctxfun *fun,
-                    Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
+extern void context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 extern Type *typename(void);
 

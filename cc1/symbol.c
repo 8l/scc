@@ -59,10 +59,10 @@ aggregate(Type * (*fun)(void))
 }
 
 void
-context(Ctxfun *fun, Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
+context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	++curctx;
-	(*fun)(lbreak, lcont, lswitch);
+	compound(lbreak, lcont, lswitch);
 	--curctx;
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
