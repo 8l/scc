@@ -230,23 +230,20 @@ static void
 Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Node *np;
-	Symbol *lcase;
 	struct scase *pcase;
 
-	lcase = install("", NS_LABEL);
+	expect(CASE);
 	if (!lswitch)
 		error("case label not within a switch statement");
-	expect(CASE);
-	if (yytoken == ':')
-		error("expected expression before ':'");
-	np = eval(expr());
-	/* TODO: check integer type */
+	if ((np = expr()) == NULL)
+		error("expected expression before '%s'", yytext);
+	if ((np = convert(np, inttype, 0)) == NULL)
+		error("incorrect type in case statement");
 	expect(':');
-	emitlabel(lcase);
 	pcase = xmalloc(sizeof(*pcase));
 	pcase->expr = np;
-	pcase->label = lcase;
 	pcase->next = lswitch->head;
+	emitlabel(pcase->label = install("", NS_LABEL));
 	lswitch->head = pcase;
 	++lswitch->nr;
 }
