@@ -45,9 +45,8 @@ label(char *s, char define)
 static void
 stmtexp(void)
 {
-	if (accept(';'))
-		return;
-	emitexp(expr());
+	if (yytoken != ';')
+		emitexp(expr());
 	expect(';');
 }
 
