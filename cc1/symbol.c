@@ -71,13 +71,10 @@ context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 Symbol *
 lookup(register char *s, uint8_t ns)
 {
-	static struct symtab *tbl;
 	register Symbol *sym;
 
-	tbl = &symtab[ns];
-	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
-		register char *t = sym->name;
-		if (*t == *s && !strcmp(t, s))
+	for (sym = symtab[ns].htab[hash(s)]; sym; sym = sym->hash) {
+		if (!strcmp(sym->name, s))
 			return sym;
 	}
 
