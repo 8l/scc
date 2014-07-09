@@ -429,7 +429,8 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		error("unexpected '%s'", yytext);
+		np = NULL;
+		break;
 	}
 	return np;
 }

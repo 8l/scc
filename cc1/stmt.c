@@ -30,10 +30,11 @@ label(char *s, char define)
 	Symbol *sym;
 
 	if ((sym = lookup(s, NS_LABEL)) != NULL) {
-		if (define && sym->s.isdefined)
-			error("label '%s' already defined", s);
-		else
+		if (define) {
+			if (sym->s.isdefined)
+				error("label '%s' already defined", s);
 			sym->s.isdefined = 1;
+		}
 		return sym;
 	}
 
@@ -67,9 +68,9 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *np;
 
-	begin = label("", 1);
-	end = label("", 1);
-	cond = label("", 1);
+	begin = install("", NS_LABEL);
+	end = install("", NS_LABEL);
+	cond = install("", NS_LABEL);
 
 	expect(WHILE);
 	np = condition();
@@ -87,29 +88,27 @@ static void
 For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *begin, *cond, *end;
-	Node *econd = NULL, *einc = NULL;
+	Node *econd, *einc, *einit;
 
-	begin = label("", 1);
-	end = label("", 1);
-	cond = label("", 1);
+	begin = install("", NS_LABEL);
+	end = install("", NS_LABEL);
+	cond = install("", NS_LABEL);
 
 	expect(FOR);
 	expect('(');
-	stmtexp();
-
-	if (yytoken != ';')
-		econd = expr();
+	einit = expr();
 	expect(';');
-	if (yytoken != ')')
-		einc = expr();
+	econd = expr();
+	expect(';');
+	einc = expr();
 	expect(')');
 
+	emitexp(einit);
 	emitjump(cond, NULL);
 	emitbloop();
 	emitlabel(begin);
 	stmt(end, begin, lswitch);
-	if (einc)
-		emitexp(einc);
+	emitexp(einc);
 	emitlabel(cond);
 	emitjump(begin, econd);
 	emiteloop();
@@ -119,8 +118,10 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *begin = label("", 1), *end = label("", 1);
+	Symbol *begin, *end;
 
+	begin = install("", NS_LABEL);
+	end = install("", NS_LABEL);
 	expect(DO);
 	emitbloop();
 	emitlabel(begin);
@@ -204,9 +205,10 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Caselist lcase = {.nr = 0, .head = NULL, .deflabel = NULL};
 	struct scase *p;
 	Node *cond;
-	Symbol *lcond = label("", 1);
+	Symbol *lcond;
 
-	lbreak = label("", 1);
+	lbreak = install("", NS_LABEL);
+	lcond = install("", NS_LABEL);
 	expect(SWITCH);
 	expect ('(');
 	cond = eval(expr());
@@ -228,9 +230,10 @@ static void
 Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Node *np;
-	Symbol *lcase = label("", 1);
+	Symbol *lcase;
 	struct scase *pcase;
 
+	lcase = install("", NS_LABEL);
 	if (!lswitch)
 		error("case label not within a switch statement");
 	expect(CASE);
@@ -251,7 +254,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *ldefault = label("", 1);
+	Symbol *ldefault = install("", NS_LABEL);
 
 	expect(DEFAULT);
 	expect(':');
@@ -262,16 +265,17 @@ Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *end, *lelse = label("", 1);
+	Symbol *end, *lelse;
 	Node *np;
 
+	lelse = install("", NS_LABEL);
 	expect(IF);
 	np = condition();
 	NEGATE(np, 1);
 	emitjump(lelse, np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
-		end = label("", 1);
+		end = install("", NS_LABEL);
 		emitjump(end, NULL);
 		emitlabel(lelse);
 		stmt(lbreak, lcont, lswitch);

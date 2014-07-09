@@ -92,6 +92,7 @@ install(char *s, uint8_t ns)
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->id = symid++;
+	sym->s.isdefined = 1;
 	tbl = &symtab[ns];
 	sym->next = tbl->head;
 	tbl->head = sym;
