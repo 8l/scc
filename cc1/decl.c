@@ -410,8 +410,9 @@ decl(void)
 
 		switch (sclass) {
 		case TYPEDEF:
-			/* TODO: */
-			break;
+			sym->token = TYPE;
+			sym->u.token = TYPENAME;
+			continue;
 		case STATIC:
 			sym->s.isstatic = 1;
 			break;
@@ -486,7 +487,10 @@ extdecl(void)
 			case EXTERN:
 				sym->s.isdefined = 0;
 				break;
-			case TYPEDEF: /* TODO: */ break;
+			case TYPEDEF:
+				sym->token = TYPE;
+				sym->u.token = TYPENAME;
+				continue;
 			}
 
 			if (BTYPE(tp) != FTN) {
