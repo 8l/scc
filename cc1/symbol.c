@@ -27,7 +27,7 @@ hash(register const char *s)
 	return h & NR_SYM_HASH - 1;
 }
 
-void
+static void
 freesyms(uint8_t ns)
 {
 	static struct symtab *tbl;
@@ -66,6 +66,8 @@ context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	--curctx;
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
+	if (curctx == 0)
+		freesyms(NS_LABEL);
 }
 
 Symbol *

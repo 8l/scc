@@ -477,7 +477,6 @@ extdecl(void)
 				emitsframe(sym);
 				context(NULL, NULL, NULL);
 				emiteframe();
-				freesyms(NS_LABEL);
 				return;
 			}
 		} while (accept(','));

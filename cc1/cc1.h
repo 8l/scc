@@ -89,9 +89,6 @@ struct symbol {
 	struct symbol *hash;
 };
 
-
-extern void freesyms(uint8_t ns);
-
 extern Type *qualifier(Type *tp, uint8_t qlf),
 	*ctype(int8_t type, int8_t sign, int8_t size),
 	*mktype(Type *tp, uint8_t op, uint16_t nelem);
