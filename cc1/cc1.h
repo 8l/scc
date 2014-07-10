@@ -199,7 +199,7 @@ enum {
 };
 
 extern void
-	emitdcl(Symbol *), emitsframe(Symbol *), emiteframe(void),
+	emitdcl(Symbol *), emitefun(void),
 	emitsym(Node *), emitunary(Node *),
 	emitbin(Node *), emitexp(Node *),
 	emitprint(Node *), emitlabel(Symbol *), emitjump(Symbol *, Node *),

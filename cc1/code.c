@@ -190,18 +190,14 @@ emitprint(Node *np)
 void
 emitfun(Symbol *sym)
 {
-	printf("%c%d\tn%s\n",
-	       sym->s.isglobal ? 'X' : 'Y', sym->id, sym->name);
+	printf("%c%d\tn%s%s\n",
+	       sym->s.isglobal ? 'X' : 'Y',
+	       sym->id, sym->name,
+	       sym->s.isdefined ? "\t{" : "");
 }
 
 void
-emitsframe(Symbol *sym)
-{
-	puts("{");
-}
-
-void
-emiteframe(void)
+emitefun(void)
 {
 	puts("}");
 }

@@ -474,9 +474,8 @@ extdecl(void)
 			} else if (yytoken == '{') {
 				curfun = sym;
 				emitfun(sym);
-				emitsframe(sym);
 				context(NULL, NULL, NULL);
-				emiteframe();
+				emitefun();
 				return;
 			}
 		} while (accept(','));
