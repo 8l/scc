@@ -240,12 +240,18 @@ invalid_type:
 	error("invalid type specification");
 }
 
-/* TODO: check storage class and correctness of the initializator  */
+/* TODO: check correctness of the initializator  */
+/* TODO: emit initializer */
 static struct node *
-initializer(register Type *tp)
+initializer(Symbol *sym)
 {
+	register Type *tp = sym->type;
+
+	if (!sym->s.isdefined)
+		error("'%s' initialized and declared extern", sym->name);
+
 	if (accept('{')) {
-		initializer(tp);
+		initializer(sym);
 		expect('}');
 	} else {
 		do {
@@ -375,7 +381,7 @@ enumdcl(void)
 		sym = newiden();
 		sym->type = inttype;
 		if (accept('='))
-			initializer(inttype);
+			initializer(sym);
 		sym->u.i = val++;
 		newfield(tp, sym);
 		if (!accept(','))
@@ -405,7 +411,7 @@ decl(void)
 			case AUTO: default: sym->s.isauto = 1;
 			}
 			if (accept('='))
-				initializer(sym->type); /* TODO: emit initializer */
+				initializer(sym);
 			emitdcl(sym);
 		} while (accept(','));
 	}
@@ -453,7 +459,7 @@ extdecl(void)
 
 			if (BTYPE(tp) != FTN) {
 				if (accept('='))
-					initializer(tp);
+					initializer(sym);
 				emitdcl(sym);
 			} else if (yytoken == '{') {
 				curfun = sym;
