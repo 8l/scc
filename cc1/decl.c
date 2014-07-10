@@ -397,7 +397,7 @@ decl(void)
 {
 	Type *tp;
 	Symbol *sym;
-	int8_t sclass;
+	int8_t sclass, isfun;
 
 	tp = specifier(&sclass);
 	if (accept(';'))
@@ -406,12 +406,30 @@ decl(void)
 	do {
 		sym = declarator(tp, ID_EXPECTED);
 		sym->s.isdefined = 1;
+		isfun = BTYPE(sym->type) != FTN;
+
 		switch (sclass) {
-		case REGISTER: sym->s.isregister = 1; break;
-		case STATIC: sym->s.isstatic = 1; break;
-		case EXTERN: sym->s.isdefined = 0; break;
-		case TYPEDEF: /* TODO: */;break;
-		case AUTO: default: sym->s.isauto = 1;
+		case TYPEDEF:
+			/* TODO: */
+			break;
+		case STATIC:
+			sym->s.isstatic = 1;
+			break;
+		case EXTERN:
+			sym->s.isdefined = 0;
+			break;
+		case REGISTER:
+			sym->s.isregister = 1;
+			if (isfun)
+				goto bad_function;
+			break;
+		case AUTO:
+			if (isfun)
+				goto bad_function;
+			/* passtrough */
+		default:
+			sym->s.isauto = 1;
+			break;
 		}
 		if (accept('='))
 			initializer(sym);
@@ -419,6 +437,10 @@ decl(void)
 	} while (accept(','));
 
 	expect(';');
+	return;
+
+bad_function:
+	error("invalid storage class for function '%s'", sym->name);
 }
 
 Type *
