@@ -13,12 +13,9 @@ static FILE *yyin;
 const char *filename;
 unsigned linenum;
 
-uint8_t yytoken, yyntoken;;
-union yystype yylval;
+uint8_t yytoken;
+struct yystype yylval;
 char yytext[IDENTSIZ + 1];
-
-static union yystype yynlval;
-static char yybuf[IDENTSIZ + 1];
 
 static uint8_t
 integer(char *s, char base)
@@ -50,10 +47,10 @@ type:
 
 	sym = install("", NS_IDEN);
 	sym->type = tp;
-	v = strtol(yybuf, NULL, base);
+	v = strtol(yytext, NULL, base);
 	if (tp == inttype)
 		sym->u.i = v;
-	yynlval.sym = sym;
+	yylval.sym = sym;
 	return CONSTANT;
 }
 
@@ -75,7 +72,7 @@ number(void)
 		ungetc(ch, yyin);
 	}
 
-	for (bp = yybuf ; bp < &yybuf[IDENTSIZ]; *bp++ = ch) {
+	for (bp = yytext ; bp < &yytext[IDENTSIZ]; *bp++ = ch) {
 		ch = getc(yyin);
 		switch (base) {
 		case 8:
@@ -94,11 +91,11 @@ number(void)
 	}
 
 end:
-	if (bp == &yybuf[IDENTSIZ])
-		error("identifier too long %s", yybuf);
+	if (bp == &yytext[IDENTSIZ])
+		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, yyin);
-	return integer(yybuf, base);
+	return integer(yytext, base);
 }
 
 static char *
@@ -150,7 +147,7 @@ character(void)
 	sym = install("", NS_IDEN);
 	sym->u.i = c;
 	sym->type = inttype;
-	yynlval.sym = sym;
+	yylval.sym = sym;
 	return CONSTANT;
 }
 
@@ -185,7 +182,7 @@ end_string:
 	sym = install("", NS_IDEN);
 	sym->u.s = xstrdup(buf);
 	sym->type = mktype(chartype, PTR, 0);
-	yynlval.sym = sym;
+	yylval.sym = sym;
 	return STRING;
 }
 
@@ -248,23 +245,21 @@ iden(void)
 {
 	register char *bp;
 	register int c;
-	Symbol *sym;
+	register Symbol *sym;
 
-	for (bp = yybuf; bp < &yybuf[IDENTSIZ]; *bp++ = c) {
+	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = c) {
 		if (!isalnum(c = getc(yyin)) && c != '_')
 			break;
 	}
-	if (bp == &yybuf[IDENTSIZ])
-		error("identifier too long %s", yybuf);
+	if (bp == &yytext[IDENTSIZ])
+		error("identifier too long %s", yytext);
 	*bp = '\0';
 	ungetc(c, yyin);
 
-	sym = lookup(yybuf, NS_IDEN);
-	if (!sym || sym->token == IDEN) {
-		yynlval.sym = sym;
+	sym = yylval.sym = lookup(yytext, NS_IDEN);
+	if (!sym || sym->token == IDEN)
 		return IDEN;
-	}
-	yynlval.token = sym->u.token;
+	yylval.token = sym->u.token;
 	return sym->token;
 }
 
@@ -274,8 +269,8 @@ follow(int expect, int ifyes, int ifno)
 	register int c = getc(yyin);
 
 	if (c == expect) {
-		yybuf[1] = c;
-		yybuf[2] = 0;
+		yytext[1] = c;
+		yytext[2] = 0;
 		return ifyes;
 	}
 	ungetc(c, yyin);
@@ -287,14 +282,14 @@ minus(void)
 {
 	register int c = getc(yyin);
 
-	yybuf[1] = c;
-	yybuf[2] = '\0';
+	yytext[1] = c;
+	yytext[2] = '\0';
 	switch (c) {
 	case '-': return DEC;
 	case '>': return INDIR;
 	case '=': return SUB_EQ;
 	default:
-		yybuf[1] = '\0';
+		yytext[1] = '\0';
 		ungetc(c, yyin);
 		return '-';
 	}
@@ -305,13 +300,13 @@ plus(void)
 {
 	register int c = getc(yyin);
 
-	yybuf[1] = c;
-	yybuf[2] = '\0';
+	yytext[1] = c;
+	yytext[2] = '\0';
 	switch (c) {
 	case '+': return INC;
 	case '=': return ADD_EQ;
 	default:
-		yybuf[1] = '\0';
+		yytext[1] = '\0';
 		ungetc(c, yyin);
 		return '+';
 	}
@@ -322,15 +317,15 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 {
 	register int c = getc(yyin);
 
-	yybuf[1] = c;
-	yybuf[2] = '\0';
+	yytext[1] = c;
+	yytext[2] = '\0';
 
 	if (c == '=')
 		return equal;
 	if (c == op)
 		return follow('=', assig, shift);
 	ungetc(c, yyin);
-	yybuf[1] = '\0';
+	yytext[1] = '\0';
 	return op;
 }
 
@@ -339,15 +334,15 @@ logic(uint8_t op, uint8_t equal, uint8_t logic)
 {
 	register int c = getc(yyin);
 
-	yybuf[1] = c;
-	yybuf[2] = '\0';
+	yytext[1] = c;
+	yytext[2] = '\0';
 
 	if (c == '=')
 		return equal;
 	if (c == op)
 		return logic;
 	ungetc(c, yyin);
-	yybuf[1] = '\0';
+	yytext[1] = '\0';
 	return op;
 }
 
@@ -356,8 +351,8 @@ operator(void)
 {
 	register uint8_t c = getc(yyin);
 
-	yybuf[0] = c;
-	yybuf[1] = '\0';
+	yytext[0] = c;
+	yytext[1] = '\0';
 	switch (c) {
 	case '<': return relational('<', LE, SHL, SHL_EQ);
 	case '>': return relational('>', GE, SHR, SHR_EQ);
@@ -374,40 +369,43 @@ operator(void)
 	}
 }
 
-uint8_t
-next(void)
+static int
+skipspaces(void)
 {
-	static int c;
 
-	strcpy(yytext, yybuf);
-	yylval = yynlval;
-	if ((yytoken = yyntoken) == EOFTOK)
-		goto ret;
+	register int c;
 
 	while (isspace(c = getc(yyin))) {
 		if (c == '\n')
 			++linenum;
 	}
+	return c;
+}
+
+uint8_t
+next(void)
+{
+	register int c;
+
+	ungetc(c = skipspaces(), yyin);
 
 	if (c == EOF) {
-		strcpy(yybuf, "EOF");
-		yyntoken = EOFTOK;
+		strcpy(yytext, "EOF");
+		yytoken = EOFTOK;
 		goto ret;
+	} else if (isalpha(c) || c == '_') {
+		yytoken = iden();
+	} else if (isdigit(c)) {
+		yytoken = number();
+	} else if (c == '"') {
+		yytoken = string();
+	} else if (c == '\'') {
+		yytoken = character();
+	} else {
+		yytoken = operator();
 	}
-
-	ungetc(c, yyin);
-	if (isalpha(c) || c == '_')
-		yyntoken = iden();
-	else if (isdigit(c))
-		yyntoken = number();
-	else if (c == '"')
-		yyntoken = string();
-	else if (c == '\'')
-		yyntoken = character();
-	else
-		yyntoken = operator();
-
-ret:	return yytoken;
+ret:
+	return yytoken;
 }
 
 void
@@ -416,6 +414,16 @@ expect(register uint8_t tok)
 	if (yytoken != tok)
 		error("unexpected %s", yytext);
 	next();
+}
+
+uint8_t
+ahead(void)
+{
+	register int c;
+	
+	ungetc(c = skipspaces(), yyin);
+
+	return c;
 }
 
 void
@@ -432,5 +440,5 @@ open_file(register const char *file)
 		filename = file;
 	}
 	linenum = 1;
-	next();      /* prefetch first token */
 }
+

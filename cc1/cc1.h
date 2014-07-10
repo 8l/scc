@@ -138,7 +138,7 @@ enum {
 #define REGISTER      5
 
 #define accept(t) ((yytoken == (t)) ? next() : 0)
-#define ahead()   yyntoken
+extern uint8_t ahead(void);
 
 enum tokens {
 	TQUALIFIER = 128, TYPE, IDEN, SCLASS,
@@ -152,14 +152,14 @@ enum tokens {
 	CONTINUE, BREAK, RETURN, EOFTOK, NOTOK
 };
 
-union yystype {
+struct yystype {
 	Symbol *sym;
 	uint8_t token;
 };
 
-extern union yystype yylval;
+extern struct yystype yylval;
 extern char yytext[];
-extern uint8_t yytoken, yyntoken;
+extern uint8_t yytoken;
 
 extern uint8_t next(void);
 extern void expect(uint8_t tok);

@@ -468,6 +468,28 @@ postfix(void)
 	}
 }
 
+static Node *unary(void);
+
+static Node *
+Sizeof(void)
+{
+	Type *tp;
+	Node *np;
+	bool paren = accept(')');
+
+	if (paren && yytoken == IDEN) {
+		tp = typename();
+	} else {
+		Node *np = unary();
+		tp = np->type;
+		/* TODO: free np */
+	}
+	np = sizeofcode(tp);
+	if (paren)
+		expect(')');
+	return np;
+}
+
 static Node *cast(void);
 
 static Node *
@@ -480,15 +502,7 @@ unary(void)
 	switch (yytoken) {
 	case SIZEOF:
 		next();
-		if (yytoken == '(' && ahead() == TYPE) {
-			next();
-			tp = typename();
-			expect(')');
-		} else {
-			tp = unary()->type;
-			/* TODO: Free memory */
-		}
-		return sizeofcode(tp);
+		return Sizeof();
 	case INC: case DEC:
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
@@ -507,28 +521,37 @@ unary(void)
 }
 
 static Node *
+cast2(void)
+{
+	register Node *np1, *np2;
+	register Type *tp;
+
+	switch(yytoken) {
+	case TQUALIFIER: case TYPE:
+		tp = typename();
+		expect(')');
+		np1 = eval(cast());
+		if ((np2 = convert(np1,  tp, 1)) == NULL)
+			error("bad type convertion requested");
+		np2->b.lvalue = np1->b.lvalue;
+		return np2;
+	default:
+		return unary();
+	}
+}
+
+static Node *
 cast(void)
 {
-	Type *tp;
-	register Node *np1, *np2;
+	register Node *np;
 
-	if (yytoken == '(') {
-		switch(ahead()) {
-		case TQUALIFIER: case TYPE:
-			next();
-			tp = typename();
-			expect(')');
-			np1 = eval(cast());
-			if ((np2 = convert(np1,  tp, 1)) == NULL)
-				error("bad type convertion requested");
-			np2->b.lvalue = np1->b.lvalue;
-			return np2;
-		default:
-			break;
-		}
+	if (accept('(')) {
+		np = cast2();
+		expect('(');
+	} else {
+		np = unary();
 	}
-
-	return unary();
+	return np;
 }
 
 static Node *
