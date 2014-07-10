@@ -240,6 +240,7 @@ invalid_type:
 	error("invalid type specification");
 }
 
+/* TODO: check storage class and correctness of the initializator  */
 static struct node *
 initializer(register Type *tp)
 {
@@ -443,13 +444,15 @@ extdecl(void)
 		do {
 			sym = declarator(base, ID_EXPECTED);
 			tp = sym->type;
-			if (!(sclass & STATIC))
+			sym->s.isstatic = 1;
+
+			if (sclass != STATIC)
 				sym->s.isglobal = 1;
+			else if (sclass != EXTERN)
+				sym->s.isdefined = 1;
+
 			if (BTYPE(tp) != FTN) {
-				sym->s.isstatic = 1;
-				if (sclass & EXTERN)
-					; /* TODO: handle extern */
-				else if (accept('='))
+				if (accept('='))
 					initializer(tp);
 				emitdcl(sym);
 			} else if (yytoken == '{') {
