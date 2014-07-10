@@ -428,55 +428,51 @@ typename(void)
 void
 extdecl(void)
 {
-	Type *base;
+	Type *base, *tp;
 	int8_t sclass;
+	Symbol *sym;
+	extern Symbol *curfun;
 
 	switch (yytoken) {
 	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:
 		base = specifier(&sclass);
 		if (sclass == REGISTER || sclass == AUTO)
 			error("incorrect storage class for file-scope declaration");
-		if (yytoken != ';')
-			break;
+		if (accept(';'))
+			return;
+		do {
+			sym = declarator(base, ID_EXPECTED);
+			tp = sym->type;
+			if (!(sclass & STATIC))
+				sym->s.isglobal = 1;
+			if (BTYPE(tp) != FTN) {
+				sym->s.isstatic = 1;
+				if (sclass & EXTERN)
+					; /* TODO: handle extern */
+				else if (accept('='))
+					initializer(tp);
+				emitdcl(sym);
+			} else if (yytoken == '{') {
+				curfun = sym;
+				emitfun(sym);
+				emitsframe(sym);
+				context(NULL, NULL, NULL);
+				emiteframe();
+				freesyms(NS_LABEL);
+				return;
+			}
+		} while (accept(','));
 		/* PASSTHROUGH */
 	case ';':
-		goto semicolon;
+		expect(';');
+		return;
 	case '@':
 		next();
 		emitprint(expr());
-		goto semicolon;
+		expect(';');
+		return;
 	default:
 		error("declaration expected");
 	}
-
-	do {
-		Symbol *sym = declarator(base, ID_EXPECTED);
-		Type *tp = sym->type;
-
-		if (!(sclass & STATIC))
-			sym->s.isglobal = 1;
-		if (BTYPE(tp) != FTN) {
-			sym->s.isstatic = 1;
-			if (sclass & EXTERN)
-				; /* TODO: handle extern */
-			else if (accept('='))
-				initializer(tp);
-			emitdcl(sym);
-		} else if (yytoken == '{') {
-			extern Symbol *curfun;
-
-			curfun = sym;
-			emitfun(sym);
-			emitsframe(sym);
-			context(NULL, NULL, NULL);
-			emiteframe();
-			freesyms(NS_LABEL);
-			return;
-		}
-	} while (accept(','));
-
-semicolon:
-	expect(';');
-	return;
 }
 
