@@ -400,21 +400,24 @@ decl(void)
 	int8_t sclass;
 
 	tp = specifier(&sclass);
-	if (yytoken != ';') {
-		do {
-			sym = declarator(tp, ID_EXPECTED);
-			switch (sclass) {
-			case REGISTER: sym->s.isregister = 1; break;
-			case STATIC: sym->s.isstatic = 1; break;
-			case EXTERN: /* TODO: */; break;
-			case TYPEDEF: /* TODO: */;break;
-			case AUTO: default: sym->s.isauto = 1;
-			}
-			if (accept('='))
-				initializer(sym);
-			emitdcl(sym);
-		} while (accept(','));
-	}
+	if (accept(';'))
+		return;
+
+	do {
+		sym = declarator(tp, ID_EXPECTED);
+		sym->s.isdefined = 1;
+		switch (sclass) {
+		case REGISTER: sym->s.isregister = 1; break;
+		case STATIC: sym->s.isstatic = 1; break;
+		case EXTERN: sym->s.isdefined = 0; break;
+		case TYPEDEF: /* TODO: */;break;
+		case AUTO: default: sym->s.isauto = 1;
+		}
+		if (accept('='))
+			initializer(sym);
+		emitdcl(sym);
+	} while (accept(','));
+
 	expect(';');
 }
 
