@@ -446,19 +446,26 @@ extdecl(void)
 	switch (yytoken) {
 	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:
 		base = specifier(&sclass);
-		if (sclass == REGISTER || sclass == AUTO)
-			error("incorrect storage class for file-scope declaration");
 		if (accept(';'))
 			return;
 		do {
 			sym = declarator(base, ID_EXPECTED);
 			tp = sym->type;
 			sym->s.isstatic = 1;
+			sym->s.isglobal= 1;
+			sym->s.isdefined = 1;
 
-			if (sclass != STATIC)
-				sym->s.isglobal = 1;
-			else if (sclass != EXTERN)
-				sym->s.isdefined = 1;
+			switch (sclass) {
+			case REGISTER: case AUTO:
+				error("incorrect storage class for file-scope declaration");
+			case STATIC:
+				sym->s.isglobal = 0;
+				break;
+			case EXTERN:
+				sym->s.isdefined = 0;
+				break;
+			case TYPEDEF: /* TODO: */ break;
+			}
 
 			if (BTYPE(tp) != FTN) {
 				if (accept('='))
