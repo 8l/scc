@@ -68,14 +68,13 @@ directdcl(struct dcldata *dp, int8_t flags)
 		dp = declarator0(dp, flags);
 		expect(')');
 	} else if (flags) {
-		if (yytoken == IDEN ||
-		    yytoken == TYPE && yylval.token == TYPENAME) {
+		if (yytoken == IDEN || yytoken == TYPEIDEN)
 			sym = newiden();
-		} else if (flags & ID_EXPECTED) {
+		else if (flags & ID_EXPECTED)
 			unexpected();
-		} else {
+		else
 			sym = install("", NS_IDEN);
-		}
+
 		dp->op = IDEN;
 		dp->u.sym = sym;
 		++dp;
@@ -180,16 +179,18 @@ specifier(int8_t *sclass)
 				goto invalid_type;
 			next();
 			continue;
+		case TYPEIDEN:
+			if (type)
+				goto check_types;
+			tp = yylval.sym->type;
+			p = &type;
+			break;
 		case TYPE:
 			switch (yylval.token) {
 			case ENUM:
 				dcl = enumdcl; p = &type; break;
 			case STRUCT: case UNION:
 				dcl = structdcl; p = &type; break;
-			case TYPENAME:
-				if (type)
-					goto check_types;
-				tp = yylval.sym->type;
 			case VOID:   case BOOL:  case CHAR:
 			case INT:    case FLOAT: case DOUBLE:
 				p = &type; break;
@@ -300,7 +301,7 @@ fielddcl(Type *base)
 	switch (yytoken) {
 	case SCLASS:
 		error("storage class '%s' in struct/union field", yytext);
-	case IDEN: case TYPE: case TQUALIFIER:
+	case IDEN: case TYPE: case TYPEIDEN: case TQUALIFIER:
 		tp = specifier(NULL);
 	case ';':
 		break;
@@ -326,17 +327,12 @@ newtag(uint8_t tag)
 	register Type *tp;
 
 	switch (yytoken) {
-	case TYPE:
-		if (yylval.token != TYPENAME)
-			goto no_tag;
-		/* pass through */
-	case IDEN:
+	case IDEN: case TYPEIDEN:
 		if ((sym = lookup(yytext, NS_TAG)) == NULL)
 			sym = install(yytext, NS_TAG);
 		next();
 		break;
 	default:
-	no_tag:
 		sym = install("", NS_TAG);
 		break;
 	}
@@ -418,8 +414,7 @@ decl(void)
 
 		switch (sclass) {
 		case TYPEDEF:
-			sym->token = TYPE;
-			sym->u.token = TYPENAME;
+			sym->token = TYPEIDEN;
 			continue;
 		case STATIC:
 			sym->s.isstatic = 1;
@@ -475,7 +470,7 @@ extdecl(void)
 	extern Symbol *curfun;
 
 	switch (yytoken) {
-	case IDEN: case TYPE: case SCLASS: case TQUALIFIER:
+	case IDEN: case TYPE: case TYPEIDEN: case SCLASS: case TQUALIFIER:
 		base = specifier(&sclass);
 		if (accept(';'))
 			return;
@@ -496,8 +491,7 @@ extdecl(void)
 				sym->s.isdefined = 0;
 				break;
 			case TYPEDEF:
-				sym->token = TYPE;
-				sym->u.token = TYPENAME;
+				sym->token = TYPEIDEN;
 				continue;
 			}
 

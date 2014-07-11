@@ -123,7 +123,7 @@ extern Type *voidtype, *pvoidtype, *booltype,
 
 
 enum {
-	FTN = 1, ENUM, TYPENAME, VOID, FLOAT, INT, BOOL,
+	FTN = 1, ENUM, TYPEIDEN, VOID, FLOAT, INT, BOOL,
 	STRUCT, UNION, PTR, ARY, CHAR, DOUBLE, SHORT,
 	LONG, COMPLEX, UNSIGNED, SIGNED
 };

@@ -171,7 +171,7 @@ static void
 Label(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	switch (yytoken) {
-	case IDEN: case TYPE:
+	case IDEN: case TYPEIDEN:
 		emitlabel(label(yytext, 1));
 		next();
 		expect(':');
@@ -302,8 +302,8 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		case '}':
 			next();
 			return;
-		case TYPE:
-			if (yylval.token == TYPENAME && ahead() == ':')
+		case TYPEIDEN:
+			if (ahead() == ':')
 				goto statement;
 			/* pass through */
 		case SCLASS: case TQUALIFIER:
@@ -335,7 +335,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case CASE:     fun = Case;     break;
 	case DEFAULT:  fun = Default;  break;
 	default:       fun = stmtexp;  break;
-	case TYPE: case IDEN:
+	case TYPEIDEN: case IDEN:
 		fun = (ahead() == ':') ? Label : stmtexp;
 		break;
 	}

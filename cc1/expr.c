@@ -494,15 +494,32 @@ postfix(void)
 static Node *unary(void);
 
 static Type *
-typeunary(void)
+typeof(Node *np)
 {
 	Type *tp;
-	Node *np;
 
-	if ((np = unary()) == NULL)
+	if (np == NULL)
 		unexpected();
 	tp = np->type;
 	/* TODO: free np */
+	return tp;
+}
+
+static Type *
+sizeexp(void)
+{
+	register Type *tp;
+
+	expect('(');
+	switch (yytoken) {
+	case TYPE: case TYPEIDEN:
+		tp = typename();
+		break;
+	default:
+		tp = typeof(unary());
+		break;
+	}
+	expect(')');
 	return tp;
 }
 
@@ -518,12 +535,7 @@ unary(void)
 	switch (yytoken) {
 	case SIZEOF:
 		next();
-		if (accept('(')) {
-			tp = (yytoken == TYPE) ? typename() : typeunary();
-			expect(')');
-		} else {
-			tp = typeunary();
-		}
+		tp = (yytoken == '(') ? sizeexp() : typeof(unary());
 		return sizeofcode(tp);
 	case INC: case DEC:
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
