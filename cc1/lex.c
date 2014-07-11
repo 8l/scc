@@ -347,6 +347,23 @@ logic(uint8_t op, uint8_t equal, uint8_t logic)
 }
 
 static uint8_t
+dot(void)
+{
+	int c;
+
+	if ((c = getc(yyin)) != '.') {
+		ungetc(c, yyin);
+		return '.';
+	} else if ((c = getc(yyin)) != '.') {
+		error("incorrect token '%s'", yytext);
+	} else {
+		yytext[2] = yytext[1] = '.';
+		yytext[3] = '\0';
+		return ELLIPSIS;
+	}
+}
+
+static uint8_t
 operator(void)
 {
 	register uint8_t c = getc(yyin);
@@ -365,6 +382,7 @@ operator(void)
 	case '!': return follow('=', NE, '!');
 	case '-': return minus();
 	case '+': return plus();
+	case '.': return dot();
 	default: return c;
 	}
 }
@@ -389,11 +407,7 @@ next(void)
 
 	ungetc(c = skipspaces(), yyin);
 
-	if (c == EOF) {
-		strcpy(yytext, "EOF");
-		yytoken = EOFTOK;
-		goto ret;
-	} else if (isalpha(c) || c == '_') {
+	if (isalpha(c) || c == '_') {
 		yytoken = iden();
 	} else if (isdigit(c)) {
 		yytoken = number();
@@ -401,10 +415,12 @@ next(void)
 		yytoken = string();
 	} else if (c == '\'') {
 		yytoken = character();
+	} else if (c == EOF) {
+		strcpy(yytext, "EOF");
+		yytoken = EOFTOK;
 	} else {
 		yytoken = operator();
 	}
-ret:
 	return yytoken;
 }
 
