@@ -303,7 +303,7 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 			next();
 			return;
 		case TYPE:
-			if (ahead() == ':')
+			if (yylval.token == TYPENAME && ahead() == ':')
 				goto statement;
 			/* pass through */
 		case SCLASS: case TQUALIFIER:
