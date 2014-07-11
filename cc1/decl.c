@@ -68,12 +68,13 @@ directdcl(struct dcldata *dp, int8_t flags)
 		dp = declarator0(dp, flags);
 		expect(')');
 	} else if (flags) {
-		if (yytoken != IDEN) {
-			if (flags & ID_EXPECTED)
-				unexpected();
-			sym = install("", NS_IDEN);
-		} else {
+		if (yytoken == IDEN ||
+		    yytoken == TYPE && yylval.token == TYPENAME) {
 			sym = newiden();
+		} else if (flags & ID_EXPECTED) {
+			unexpected();
+		} else {
+			sym = install("", NS_IDEN);
 		}
 		dp->op = IDEN;
 		dp->u.sym = sym;
@@ -186,6 +187,8 @@ specifier(int8_t *sclass)
 			case STRUCT: case UNION:
 				dcl = structdcl; p = &type; break;
 			case TYPENAME:
+				if (type)
+					goto check_types;
 				tp = yylval.sym->type;
 			case VOID:   case BOOL:  case CHAR:
 			case INT:    case FLOAT: case DOUBLE:
