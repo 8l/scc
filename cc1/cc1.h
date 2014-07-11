@@ -32,8 +32,6 @@ enum {
 typedef struct ctype Type;
 typedef struct symbol Symbol;
 
-struct funpars;
-
 typedef struct field {
 	char *name;
 	Type *type;

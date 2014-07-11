@@ -15,7 +15,7 @@ struct dcldata {
 	union {
 		unsigned short nelem;
 		Symbol *sym;
-		struct funpars *pars;
+		struct funpar *pars;
 		uint8_t qlf;
 	} u;
 };
@@ -34,15 +34,47 @@ arydcl(struct dcldata *dp)
 	return dp + 1;
 }
 
+static Type *parameter(void);
+
 static struct dcldata *
 fundcl(struct dcldata *dp)
 {
+	uint8_t n = 0;
+
 	expect('(');
+	dp->op = FTN;
+	dp->u.pars = NULL;
+
+	do {
+		struct funpar *fp;
+		Type *tp;
+
+		if ((tp = parameter()) == voidtype) {
+			if (n == 0)
+				break;
+			else
+				error("incorrect void parameter");
+		}
+		/* TODO: Use an array and allocate memory at the end */
+		fp = xmalloc(sizeof(*fp));
+		fp->type = tp;
+		fp->next = NULL;
+		if (!dp->u.pars) {
+			dp->u.pars = fp;
+		} else {
+			register struct funpar *p, *q;
+
+			for (p = dp->u.pars; q = p->next; p = q)
+				/* nothing */;
+			p->next = fp;
+		}
+		++n;
+	} while (accept(','));
+
+ret:
 	expect(')');;
 	if (dp->op == 255)
 		error("too much declarators");
-	dp->op = FTN;
-	dp->u.pars = NULL;
 	return dp + 1;
 }
 
@@ -394,6 +426,31 @@ enumdcl(void)
 	expect('}');
 
 	return tp;
+}
+
+static Type *
+parameter(void)
+{
+	Symbol *sym;
+	int8_t sclass;
+	Type *tp;
+
+	if ((tp = specifier(&sclass)) == voidtype)
+		return tp;
+	sym = declarator(tp, ID_ACCEPTED);
+	sym->s.isdefined = 1;
+	/* TODO: check type of the parameter */
+	switch (sclass) {
+	case REGISTER:
+		sym->s.isregister = 1;
+		break;
+	case 0:
+		sym->s.isauto = 1;
+		break;
+	default:
+		error("bad storage class in function parameter");
+	}
+	return sym->type;
 }
 
 void
