@@ -412,7 +412,7 @@ void
 expect(register uint8_t tok)
 {
 	if (yytoken != tok)
-		error("unexpected %s", yytext);
+		unexpected();
 	next();
 }
 

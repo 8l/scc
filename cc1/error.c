@@ -41,3 +41,10 @@ error(const char *fmt, ...)
 	warn_helper(-1, fmt, va);
 	va_end(va);
 }
+
+void
+unexpected(void)
+{
+	error("unexpected '%s'", yytext);
+}
+

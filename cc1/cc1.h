@@ -15,6 +15,7 @@ struct user_opt {
 extern  struct user_opt options;
 extern void error(const char *fmt, ...);
 extern void warn(signed char flag, const char *fmt, ...);
+extern void unexpected(void);
 
 /* definitions of types */
 

@@ -70,7 +70,7 @@ directdcl(struct dcldata *dp, int8_t flags)
 	} else if (flags) {
 		if (yytoken != IDEN) {
 			if (flags & ID_EXPECTED)
-				error("unexpected '%s'", yytext);
+				unexpected();
 			sym = install("", NS_IDEN);
 		} else {
 			sym = newiden();
@@ -302,7 +302,7 @@ fielddcl(Type *base)
 	case ';':
 		break;
 	default:
-		error("declaration expected");
+		unexpected();
 	}
 
 	if (yytoken != ';') {
@@ -374,7 +374,7 @@ enumdcl(void)
 	tp->defined = 1;
 	while (yytoken != '}') {
 		if (yytoken != IDEN)
-			error("identifier expected");
+			unexpected();
 		sym = newiden();
 		sym->type = inttype;
 		if (accept('='))
@@ -512,7 +512,7 @@ extdecl(void)
 		expect(';');
 		return;
 	default:
-		error("declaration expected");
+		unexpected();
 	}
 }
 

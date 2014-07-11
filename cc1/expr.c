@@ -302,7 +302,7 @@ field(Node *np)
 	Field *fp;
 
 	if (yytoken != IDEN)
-		error("unexpected '%s'", yytext);
+		unexpected();
 	switch (np->typeop) {
 	case STRUCT: case UNION:
 		for (fp = np->utype->u.fields; fp; fp = fp->next) {
@@ -477,7 +477,7 @@ typeunary(void)
 	Node *np;
 
 	if ((np = unary()) == NULL)
-		error("unexpected '%s'", yytext);
+		unexpected();
 	tp = np->type;
 	/* TODO: free np */
 	return tp;
@@ -530,7 +530,7 @@ cast2(void)
 		tp = typename();
 		expect(')');
 		if ((np1 = eval(cast())) == NULL)
-			error("unexpected '%s'", yytext);
+			unexpected();
 		if ((np2 = convert(np1,  tp, 1)) == NULL)
 			error("bad type convertion requested");
 		np2->b.lvalue = np1->b.lvalue;

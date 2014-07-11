@@ -193,7 +193,7 @@ Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(GOTO);
 
 	if (yytoken != IDEN)
-		error("unexpected '%s'", yytext);
+		unexpected();
 	emitjump(label(yytext, 0), NULL);
 	next();
 	expect(';');
@@ -211,7 +211,7 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(SWITCH);
 	expect ('(');
 	if ((cond = expr()) == NULL)
-		error("expected expression before '%s'", yytext);
+		unexpected();
 	if ((cond = convert(cond, inttype, 0)) == NULL)
 		error("incorrect type in switch statement");
 	expect (')');
@@ -242,7 +242,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	if (!lswitch)
 		error("case label not within a switch statement");
 	if ((np = expr()) == NULL)
-		error("expected expression before '%s'", yytext);
+		unexpected();
 	if ((np = convert(np, inttype, 0)) == NULL)
 		error("incorrect type in case statement");
 	expect(':');
