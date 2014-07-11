@@ -322,12 +322,20 @@ newtag(uint8_t tag)
 	register Symbol *sym;
 	register Type *tp;
 
-	if (yytoken == IDEN) {
+	switch (yytoken) {
+	case TYPE:
+		if (yylval.token != TYPENAME)
+			goto no_tag;
+		/* pass through */
+	case IDEN:
 		if ((sym = lookup(yytext, NS_TAG)) == NULL)
 			sym = install(yytext, NS_TAG);
 		next();
-	} else {
+		break;
+	default:
+	no_tag:
 		sym = install("", NS_TAG);
+		break;
 	}
 	if (!(tp = sym->type))
 		tp = sym->type = mktype(NULL, tag, 0);
