@@ -170,11 +170,16 @@ static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 static void
 Label(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	emitlabel(label(yytext, 1));
-
-	expect(IDEN);
-	expect(':');
-	stmt(lbreak, lcont, lswitch);
+	switch (yytoken) {
+	case IDEN: case TYPE:
+		emitlabel(label(yytext, 1));
+		next();
+		expect(':');
+		stmt(lbreak, lcont, lswitch);
+		break;
+	default:
+		unexpected();
+	}
 }
 
 static void
@@ -297,10 +302,15 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		case '}':
 			next();
 			return;
-		case TYPE: case SCLASS: case TQUALIFIER:
+		case TYPE:
+			if (ahead() == ':')
+				goto statement;
+			/* pass through */
+		case SCLASS: case TQUALIFIER:
 			decl();
 			break;
 		default:
+		statement:
 			stmt(lbreak, lcont, lswitch);
 		}
 	}
@@ -325,7 +335,9 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case CASE:     fun = Case;     break;
 	case DEFAULT:  fun = Default;  break;
 	default:       fun = stmtexp;  break;
-	case IDEN:     fun = (ahead() == ':') ? Label : stmtexp; break;
+	case TYPE: case IDEN:
+		fun = (ahead() == ':') ? Label : stmtexp;
+		break;
 	}
 	(*fun)(lbreak, lcont, lswitch);
 }
