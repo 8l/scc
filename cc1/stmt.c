@@ -306,7 +306,7 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 			if (ahead() == ':')
 				goto statement;
 			/* pass through */
-		case SCLASS: case TQUALIFIER:
+		case TYPE: case SCLASS: case TQUALIFIER:
 			decl();
 			break;
 		default:
