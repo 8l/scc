@@ -12,7 +12,7 @@ struct user_opt {
 	unsigned char pcompare;
 };
 
-extern  struct user_opt options;
+extern struct user_opt options;
 extern void error(const char *fmt, ...);
 extern void warn(signed char flag, const char *fmt, ...);
 extern void unexpected(void);
@@ -31,6 +31,7 @@ enum {
 
 typedef struct ctype Type;
 typedef struct symbol Symbol;
+typedef struct funpar Funpar;
 
 typedef struct field {
 	char *name;

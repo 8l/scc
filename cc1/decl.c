@@ -15,7 +15,7 @@ struct dcldata {
 	union {
 		unsigned short nelem;
 		Symbol *sym;
-		struct funpar *pars;
+		Funpar *pars;
 		uint8_t qlf;
 	} u;
 };
@@ -46,7 +46,7 @@ fundcl(struct dcldata *dp)
 	dp->u.pars = NULL;
 
 	do {
-		struct funpar *fp;
+		Funpar *fp;
 		Type *tp;
 
 		if ((tp = parameter()) == voidtype) {
@@ -62,7 +62,7 @@ fundcl(struct dcldata *dp)
 		if (!dp->u.pars) {
 			dp->u.pars = fp;
 		} else {
-			register struct funpar *p, *q;
+			register Funpar *p, *q;
 
 			for (p = dp->u.pars; q = p->next; p = q)
 				/* nothing */;
