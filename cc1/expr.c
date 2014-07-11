@@ -437,6 +437,27 @@ primary(void)
 	return np;
 }
 
+static Node *assign(void);
+
+static Node *
+arguments(Node *np)
+{
+	Node *par;
+
+	/* TODO: Check type of np */
+	expect('(');
+	if (accept(')'))
+		return np;
+
+	do {
+		if ((par = eval(assign())) == NULL)
+			unexpected();
+	} while (accept(','));
+
+	expect(')');
+	return np;
+}
+
 static Node *
 postfix(void)
 {
@@ -452,7 +473,7 @@ postfix(void)
 			expect(']');
 			break;
 		case DEC: case INC:
-			np1 = incdec(np1,  (yytoken == INC) ? OINC : ODEC);
+			np1 = incdec(np1, (yytoken == INC) ? OINC : ODEC);
 			next();
 			break;
 		case INDIR:
@@ -461,7 +482,9 @@ postfix(void)
 			next();
 			np1 = field(np1);
 			break;
-		/* TODO: case '(' */
+		case '(':
+			np1 = arguments(np1);
+			break;
 		default:
 			return np1;
 		}
