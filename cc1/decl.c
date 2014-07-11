@@ -70,7 +70,7 @@ directdcl(struct dcldata *dp, int8_t flags)
 	} else if (flags) {
 		if (yytoken != IDEN) {
 			if (flags & ID_EXPECTED)
-				goto expected;
+				error("unexpected '%s'", yytext);
 			sym = install("", NS_IDEN);
 		} else {
 			sym = newiden();
@@ -87,9 +87,6 @@ directdcl(struct dcldata *dp, int8_t flags)
 		default:   return dp;
 		}
 	}
-
-expected:
-	error("expected '(' or identifier before of '%s'" , yytext);
 }
 
 static struct dcldata*
