@@ -180,19 +180,3 @@ mktype(Type *tp, uint8_t op, uint16_t nelem)
 	return *tbl = bp;
 }
 
-Type *
-qualifier(Type *tp, uint8_t qlf)
-{
-	uint8_t q = tp->op;
-
-	if (!qlf)
-		return tp;
-	if (q & TQUALIFIER) {
-		if (q == qlf)
-			return tp;
-		tp = tp->type;
-		qlf |= q;
-	}
-	return mktype(tp, qlf|TQUALIFIER, 0);
-}
-

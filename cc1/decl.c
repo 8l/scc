@@ -156,7 +156,7 @@ declarator(Type *tp, int8_t flags)
 	for (bp = declarator0(data, flags); bp >= data; --bp) {
 		switch (bp->op) {
 		case PTR:
-			tp = qualifier(mktype(tp, PTR, 0), bp->u.qlf);
+			tp = mktype(tp, PTR, 0);
 			break;
 		case ARY:
 			tp = mktype(tp, ARY, bp->u.nelem);
@@ -254,7 +254,7 @@ check_types:
 		*sclass = cls;
 	if (!tp)
 		tp = ctype(type, sign, size);
-	return (qlf) ? qualifier(tp, qlf) : tp;
+	return tp;
 
 invalid_type:
 	error("invalid type specification");

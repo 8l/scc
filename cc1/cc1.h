@@ -89,8 +89,7 @@ struct symbol {
 	struct symbol *hash;
 };
 
-extern Type *qualifier(Type *tp, uint8_t qlf),
-	*ctype(int8_t type, int8_t sign, int8_t size),
+extern Type *ctype(int8_t type, int8_t sign, int8_t size),
 	*mktype(Type *tp, uint8_t op, uint16_t nelem);
 
 extern Symbol
