@@ -467,7 +467,7 @@ decl(void)
 	do {
 		sym = declarator(tp, ID_EXPECTED);
 		sym->s.isdefined = 1;
-		isfun = BTYPE(sym->type) != FTN;
+		isfun = sym->type->op != FTN;
 
 		switch (sclass) {
 		case TYPEDEF:
@@ -552,7 +552,7 @@ extdecl(void)
 				continue;
 			}
 
-			if (BTYPE(tp) != FTN) {
+			if (tp->op != FTN) {
 				if (accept('='))
 					initializer(sym);
 				emitdcl(sym);

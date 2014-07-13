@@ -58,8 +58,7 @@ node(void (*code)(Node *), Type *tp, union unode u, uint8_t nchilds)
 
 	np->code = code;
 	np->type = tp;
-	np->utype = UNQUAL(tp);
-	np->typeop = np->utype->op;
+	np->typeop = tp->op;
 	np->u = u;
 	np->b.symbol = np->b.lvalue = 0;
 

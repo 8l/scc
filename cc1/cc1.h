@@ -113,14 +113,6 @@ extern Type *voidtype, *pvoidtype, *booltype,
 	*ullongtype,  *llongtype,
 	*floattype,   *doubletype,  *ldoubletype;
 
-#define ISQUAL(t)    (isqual((t)->op))
-#define UNQUAL(t)    (ISQUAL(t) ? (t)->type : (t))
-#define BTYPE(t)     (UNQUAL(t)->op)
-#define isqual(op)   ((op) & TQUALIFIER)
-#define isconst(op) (((op) & (TQUALIFIER|CONST)) == \
-                                     (TQUALIFIER|CONST))
-
-
 enum {
 	FTN = 1, ENUM, TYPEIDEN, VOID, FLOAT, INT, BOOL,
 	STRUCT, UNION, PTR, ARY, CHAR, DOUBLE, SHORT,
@@ -168,7 +160,6 @@ extern void expect(uint8_t tok);
 typedef struct node {
 	void (*code)(struct node *);
 	Type *type;
-	Type *utype;
 	uint8_t typeop;
 	struct {
 		bool lvalue : 1;

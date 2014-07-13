@@ -29,7 +29,7 @@ promote(Node *np)
 
 	if (options.npromote)
 		return np;
-	tp = np->utype;
+	tp = np->type;
 	r = tp->u.rank;
 	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
 		return np;
@@ -46,8 +46,8 @@ typeconv(Node **p1, Node **p2)
 	np1 = promote(*p1);
 	np2 = promote(*p2);
 
-	tp1 = np1->utype;
-	tp2 = np2->utype;
+	tp1 = np1->type;
+	tp2 = np2->type;
 	if (tp1 != tp2) {
 		if ((n = tp1->u.rank - tp2->u.rank) > 0)
 			np2 = castcode(np2, tp1);
@@ -63,10 +63,8 @@ chklvalue(Node *np, Type *tp)
 {
 	if (!np->b.lvalue)
 		error("lvalue required in operation");
-	if (np->utype == voidtype)
+	if (np->type == voidtype)
 		error("invalid use of void expression");
-	if (isconst(tp->op))
-		error("const value modified");
 }
 
 Node *
@@ -104,7 +102,7 @@ decay(Node *np)
 {
 	Type *tp;
 
-	tp = mktype(np->utype->type, PTR, 0);
+	tp = mktype(np->type->type, PTR, 0);
 	return unarycode(OADDR, tp, np);
 }
 
@@ -114,15 +112,12 @@ decay(Node *np)
 Node *
 convert(Node *np, Type *tp, char iscast)
 {
-	Type *utp;
 	uint8_t t;
 
 	if (np->type == tp)
 		return np;
 
-	utp = UNQUAL(tp);
-	t = utp->op;
-
+	t = tp->op;
 	switch (np->typeop) {
 	case ENUM: case INT: case FLOAT:
 		switch (t) {
@@ -145,15 +140,14 @@ convert(Node *np, Type *tp, char iscast)
 			np = decay(np);
 		case PTR:
 			if (iscast ||
-			    utp == pvoidtype ||
-			    np->utype == pvoidtype) {
+			    tp == pvoidtype ||
+			    np->type == pvoidtype) {
 				/* TODO:
 				 * we assume conversion between pointers
 				 * do not need any operation, but due to
 				 * alignment problems that may be false
 				 */
 				np->type = tp;
-				np->utype = utp;
 				return np;
 			}
 		default:
@@ -171,13 +165,13 @@ parithmetic(char op, Node *np1, Node *np2)
 	Type *tp;
 	Node *size;
 
-	tp = np1->utype;
+	tp = np1->type;
 	size = sizeofcode(tp->type);
 	if (np2->typeop == ARY)
 		np2 = decay(np2);
 
 	if (op == OSUB && np2->typeop == PTR) {
-		if (tp != np2->utype)
+		if (tp != np2->type)
 			goto incorrect;
 		np1 = bincode(OSUB, inttype, np1, np2);
 		return bincode(ODIV, inttype, np1, size);
@@ -224,13 +218,6 @@ arithmetic(char op, Node *np1, Node *np2)
 	return bincode(op, np1->type, np1, np2);
 }
 
-/*
- * FIXME:
- * Pointers to the same basic type after removing type qualifiers
- * can be compared. It means that utype pointer must be a field
- * of the type, not of the Node, because in other case is
- * hard doing this check
- */
 static Node *
 pcompare(char op, Node *np1, Node *np2)
 {
@@ -305,7 +292,7 @@ field(Node *np)
 		unexpected();
 	switch (np->typeop) {
 	case STRUCT: case UNION:
-		for (fp = np->utype->u.fields; fp; fp = fp->next) {
+		for (fp = np->type->u.fields; fp; fp = fp->next) {
 			if (!strcmp(fp->name, yytext)) {
 				next();
 				return fieldcode(np, fp);
@@ -352,9 +339,9 @@ assignop(char op, Node *np1, Node *np2)
 static Node *
 incdec(Node *np, char op)
 {
-	Type *tp = np->utype;
+	Type *tp = np->type;
 
-	chklvalue(np, np->utype);
+	chklvalue(np, np->type);
 
 	switch (np->typeop) {
 	case PTR:
@@ -384,7 +371,7 @@ content(char op, Node *np)
 	case ARY: case FTN:
 		np = decay(np);
 	case PTR:
-		np = unarycode(op, np->utype->type, np);
+		np = unarycode(op, np->type->type, np);
 		np->b.lvalue = 1;
 		return np;
 	default:
