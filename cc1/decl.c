@@ -124,36 +124,23 @@ directdcl(struct dcldata *dp, int8_t flags)
 static struct dcldata*
 declarator0(struct dcldata *dp, int8_t flags)
 {
-	uint8_t buffer[NR_DECLARATORS];
-	register uint8_t *bp, n, qlf;
+	register uint8_t  n;
 
-	bp = buffer;
 	for (n = 0; accept('*'); ++n) {
-		if (n == NR_DECLARATORS)
-			goto too_much_declarators;
-		qlf = 0;
-		if (yytoken == TQUALIFIER) {
-			qlf |= yylval.token;
-			next();
-		}
-		*bp++ = qlf;
+		while (accept(TQUALIFIER))
+			/* nothing */;
 	}
 
 	dp = directdcl(dp, flags);
 
-	bp = buffer;
 	while (n--) {
 		if (dp->op == 255)
-			goto too_much_declarators;
+			error("too much declarators");
 		dp->op = PTR;
-		dp->u.qlf = *bp++;
 		++dp;
 	}
 
 	return dp;
-
-too_much_declarators:
-	error("too much declarators");
 }
 
 static Symbol *
