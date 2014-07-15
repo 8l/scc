@@ -13,26 +13,31 @@
 
 struct dcldata {
 	uint8_t op;
-	union {
+	union dclunion {
 		unsigned short nelem;
 		Symbol *sym;
 		Funpar *pars;
-		uint8_t qlf;
 	} u;
 };
 
-static struct dcldata *declarator0(struct dcldata *dp, int8_t flags);
+static struct dcldata *
+enqueue(struct dcldata *dp, uint8_t op, union dclunion u)
+{
+	if (dp->op == 255)
+		error("too much declarators");
+	dp->op = op;
+	dp->u = u;
+	return dp + 1;
+}
+
+static struct dcldata *declarator0(struct dcldata *dp);
 
 static struct dcldata *
 arydcl(struct dcldata *dp)
 {
 	expect('[');
 	expect(']');
-	if (dp->op == 255)
-		error("too much declarators");
-	dp->u.nelem = 0;
-	dp->op = ARY;
-	return dp + 1;
+	return enqueue(dp, ARY, (union dclunion) {.nelem = 0});
 }
 
 static Type *parameter(void);
@@ -41,13 +46,11 @@ static struct dcldata *
 fundcl(struct dcldata *dp)
 {
 	uint8_t n = 0;
+	Funpar *fp;
 
 	expect('(');
-	dp->op = FTN;
-	dp->u.pars = NULL;
 
 	do {
-		Funpar *fp;
 		Type *tp;
 
 		if ((tp = parameter()) == voidtype) {
@@ -74,9 +77,7 @@ fundcl(struct dcldata *dp)
 
 ret:
 	expect(')');;
-	if (dp->op == 255)
-		error("too much declarators");
-	return dp + 1;
+	return enqueue(dp, FTN, (union dclunion) {.pars = fp});
 }
 
 static Symbol *
@@ -105,10 +106,7 @@ directdcl(struct dcldata *dp)
 			sym = newiden();
 		else
 			sym = install("", NS_IDEN);
-
-		dp->op = IDEN;
-		dp->u.sym = sym;
-		++dp;
+		dp = enqueue(dp, IDEN, (union dclunion) {.sym = sym});
 	}
 
 	for (;;) {
@@ -132,12 +130,8 @@ declarator0(struct dcldata *dp)
 
 	dp = directdcl(dp);
 
-	while (n--) {
-		if (dp->op == 255)
-			error("too much declarators");
-		dp->op = PTR;
-		++dp;
-	}
+	while (n--)
+		dp = enqueue(dp, PTR, (union dclunion) {});
 
 	return dp;
 }
@@ -147,8 +141,7 @@ declarator(Type *tp, int8_t flags)
 {
 	struct dcldata data[NR_DECLARATORS+2];
 	register struct dcldata *bp;
-	Symbol *sym = NULL;
-	static Symbol dummy;
+	Symbol *sym;
 
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
