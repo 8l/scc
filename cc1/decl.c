@@ -9,6 +9,7 @@
 
 #define ID_EXPECTED     1
 #define ID_ACCEPTED     2
+#define ID_FORBIDDEN    3
 
 struct dcldata {
 	uint8_t op;
@@ -92,18 +93,16 @@ newiden(void)
 }
 
 static struct dcldata *
-directdcl(struct dcldata *dp, int8_t flags)
+directdcl(struct dcldata *dp)
 {
 	register Symbol *sym;
 
 	if (accept('(')) {
-		dp = declarator0(dp, flags);
+		dp = declarator0(dp);
 		expect(')');
-	} else if (flags) {
+	} else {
 		if (yytoken == IDEN || yytoken == TYPEIDEN)
 			sym = newiden();
-		else if (flags & ID_EXPECTED)
-			unexpected();
 		else
 			sym = install("", NS_IDEN);
 
@@ -122,7 +121,7 @@ directdcl(struct dcldata *dp, int8_t flags)
 }
 
 static struct dcldata*
-declarator0(struct dcldata *dp, int8_t flags)
+declarator0(struct dcldata *dp)
 {
 	register uint8_t  n;
 
@@ -131,7 +130,7 @@ declarator0(struct dcldata *dp, int8_t flags)
 			/* nothing */;
 	}
 
-	dp = directdcl(dp, flags);
+	dp = directdcl(dp);
 
 	while (n--) {
 		if (dp->op == 255)
@@ -153,7 +152,7 @@ declarator(Type *tp, int8_t flags)
 
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
-	for (bp = declarator0(data, flags); bp >= data; --bp) {
+	for (bp = declarator0(data); bp >= data; --bp) {
 		switch (bp->op) {
 		case PTR:
 			tp = mktype(tp, PTR, 0);
@@ -166,13 +165,15 @@ declarator(Type *tp, int8_t flags)
 			break;
 		case IDEN:
 			sym = bp->u.sym;
+			if (flags == ID_EXPECTED && *sym->name == '\0')
+				error("missed identifier in declaration");
+			if (flags == ID_FORBIDDEN && *sym->name != '\0')
+				error("unexpected identifier in type name");
 			break;
 		}
 	}
 	if (!tp->defined)
 		error("declared variable '%s' of incomplete type", sym->name);
-	if (!sym)
-		sym = &dummy;
 	sym->type = tp;
 	return sym;
 }
@@ -501,7 +502,7 @@ typename(void)
 	tp = specifier(&sclass);
 	if (sclass)
 		error("class storage in type name");
-	sym = declarator(tp, 0);
+	sym = declarator(tp, ID_FORBIDDEN);
 	return  sym->type;
 }
 
