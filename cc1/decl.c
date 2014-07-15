@@ -145,7 +145,7 @@ declarator0(struct dcldata *dp)
 static Symbol *
 declarator(Type *tp, int8_t flags)
 {
-	struct dcldata data[NR_DECLARATORS+1];
+	struct dcldata data[NR_DECLARATORS+2];
 	register struct dcldata *bp;
 	Symbol *sym = NULL;
 	static Symbol dummy;
