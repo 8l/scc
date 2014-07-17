@@ -30,6 +30,7 @@
 #define L_UINT16    'N'
 #define L_UINT32    'Z'
 #define L_UINT64    'O'
+#define L_INT       L_INT16
 
 #define L_VOID      '0'
 #define L_POINTER   'P'

@@ -1,5 +1,5 @@
 
-DIRS = lib cc1
+DIRS = lib cc1 cc2
 
 all clean:
 	for i in $(DIRS) ;\
