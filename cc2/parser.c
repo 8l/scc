@@ -5,6 +5,9 @@
 #include <cc.h>
 #include <sizes.h>
 
+#define STR(x) XSTR(x)
+#define XSTR(x) #x
+
 #define NR_STACKSIZ 32
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
@@ -196,20 +199,33 @@ declaration(char sclass)
 }
 
 static void
+chop(void)
+{
+	int c;
+
+	while ((c = getchar()) != EOF && c != '\n')
+		/* nothing */;
+}
+
+static void
 deflabel(void)
 {
 	Symbol *sym = &symtbl[getid()];
 
 	sym->u.l.addr = listp - listexp;
+	chop();
 }
 
-int
-parse(void)
+static void
+function(void)
 {
 	int c;
+	char name[IDENTSIZ + 1];
 
-	while ((c = getchar()) != EOF) {
-		switch (c) {
+	scanf("%" STR(IDENTSIZ) "s", name);
+	chop();
+	for (;;) {
+		switch (c = getchar()) {
 		case '\t':
 			expression();
 			break;
@@ -219,12 +235,37 @@ parse(void)
 		case 'S':
 			/* struct */
 			break;
-		case 'T': case 'A': case 'G': case 'R':
+		case 'T': case 'A': case 'R':
 			declaration(c);
 			break;
+		case '}':
+			chop();
+			return;
 		default:
 			esyntax();
 			break;
+		}
+	}
+}
+
+int
+parse(void)
+{
+	int c;
+
+	for (;;) {
+		switch (c = getchar()) {
+		case 'G':
+			declaration(c);
+			break;
+		case 'X':
+			function();
+			break;
+		case EOF:
+			return;
+			break;
+		default:
+			esyntax();
 		}
 	}
 }
