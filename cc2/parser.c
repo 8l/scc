@@ -8,6 +8,12 @@
 #define NR_STACKSIZ 32
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
+#define NR_SYMBOLS 1024
+
+typedef struct {
+	char vartype;
+	char storage;
+} Symbol;
 
 typedef struct node {
 	char op;
@@ -22,7 +28,7 @@ typedef struct node {
 static Node *stack[NR_STACKSIZ], **stackp = stack;
 static Node *listexp[NR_EXPRESSIONS], **listp = &listexp[0];
 static Node nodepool[NR_NODEPOOL], *newp = nodepool;
-char vars[1024];
+static Symbol symtbl[NR_SYMBOLS];
 
 extern void esyntax(void);
 
@@ -32,7 +38,7 @@ getid(void)
 	int i;
 
 	scanf("%d", &i);
-	if (i < 0 || i >= 1024)
+	if (i < 0 || i >= NR_SYMBOLS)
 		esyntax();
 	return i;
 }
@@ -86,9 +92,11 @@ static void
 variable(char op)
 {
 	Node *np = newnode();
+	short id = getid();
 
 	np->op = op;
-	np->type = vars[np->u.id = getid()];
+	np->u.id = id;
+	np->type = symtbl[id].vartype;
 	np->left = np->right = NULL;
 	push(np);
 }
@@ -160,11 +168,11 @@ expression(void)
 static void
 declaration(char sclass)
 {
-	short id;
+	Symbol *sym = &symtbl[getid()];
 
-	id = getid();
 	getchar(); /* skip tab */
-	vars[id] = gettype();
+	sym->storage = sclass;
+	sym->vartype = gettype();
 	if (getchar() != '\n')
 		esyntax();
 }
