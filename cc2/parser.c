@@ -11,8 +11,15 @@
 #define NR_SYMBOLS 1024
 
 typedef struct {
-	char vartype;
-	char storage;
+	union {
+		struct {
+			char type;
+			char storage;
+		} v;
+		struct {
+			short addr;
+		} l;
+	} u;
 } Symbol;
 
 typedef struct node {
@@ -96,7 +103,7 @@ variable(char op)
 
 	np->op = op;
 	np->u.id = id;
-	np->type = symtbl[id].vartype;
+	np->type = symtbl[id].u.v.type;
 	np->left = np->right = NULL;
 	push(np);
 }
@@ -125,6 +132,16 @@ operator(char op)
 	push(np);
 }
 
+static void
+label(char op)
+{
+	Node *np = newnode();
+
+	np->left = np->right = NULL;
+	np->op = 'L';
+	push(np);
+}
+
 static Node *
 getroot(void)
 {
@@ -142,6 +159,7 @@ static void (*optbl[])(char) = {
 	['A'] = variable,
 	['T'] = variable,
 	['G'] = variable,
+	['L'] = label,
 	['#'] = immediate,
 	['\177'] = NULL
 };
@@ -171,10 +189,18 @@ declaration(char sclass)
 	Symbol *sym = &symtbl[getid()];
 
 	getchar(); /* skip tab */
-	sym->storage = sclass;
-	sym->vartype = gettype();
+	sym->u.v.storage = sclass;
+	sym->u.v.type = gettype();
 	if (getchar() != '\n')
 		esyntax();
+}
+
+static void
+deflabel(void)
+{
+	Symbol *sym = &symtbl[getid()];
+
+	sym->u.l.addr = listp - listexp;
 }
 
 int
@@ -188,7 +214,7 @@ parse(void)
 			expression();
 			break;
 		case 'L':
-			/* label */
+			deflabel();
 			break;
 		case 'S':
 			/* struct */
