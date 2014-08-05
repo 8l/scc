@@ -1,9 +1,12 @@
 
 #include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include <cc.h>
 #include <sizes.h>
+
+#include "cc2.h"
 
 #define STR(x) XSTR(x)
 #define XSTR(x) #x
@@ -12,28 +15,6 @@
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
 #define NR_SYMBOLS 1024
-
-typedef struct {
-	union {
-		struct {
-			char type;
-			char storage;
-		} v;
-		struct {
-			short addr;
-		} l;
-	} u;
-} Symbol;
-
-typedef struct node {
-	char op;
-	char type;
-	union {
-		short id;
-		int imm;
-	} u;
-	struct node *left, *right;
-} Node;
 
 static Node *stack[NR_STACKSIZ], **stackp = stack;
 static Node *listexp[NR_EXPRESSIONS], **listp = &listexp[0];
@@ -248,10 +229,11 @@ function(void)
 	}
 }
 
-int
+void
 parse(void)
 {
 	int c;
+	void genaddr(Node *np);
 
 	for (;;) {
 		switch (c = getchar()) {
@@ -260,6 +242,7 @@ parse(void)
 			break;
 		case 'X':
 			function();
+			genaddr(listexp[0]);
 			break;
 		case EOF:
 			return;
