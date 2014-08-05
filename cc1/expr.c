@@ -9,6 +9,8 @@ static Symbol *zero, *one;
 
 Node *expr(void);
 
+/* TODO: Change np1 and np2 to left and right (or l, r) */
+
 void
 init_expr(void)
 {
@@ -111,9 +113,8 @@ convert(Node *np, Type *tp, char iscast)
 {
 	uint8_t t;
 
-	if (np->type == tp)
+	if (eqtype(np->type, tp))
 		return np;
-
 	t = tp->op;
 	switch (np->typeop) {
 	case ENUM: case INT: case FLOAT:

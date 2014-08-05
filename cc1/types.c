@@ -207,3 +207,27 @@ mktype(Type *tp, uint8_t op, void *data)
 	return *tbl = bp;
 }
 
+bool
+eqtype(Type *tp1, Type *tp2)
+{
+	Funpar *fp1, *fp2;
+
+	if (tp1 == tp2)
+		return 1;
+	if (tp1->op != tp2->op || tp1->op != PTR)
+		return 0;
+	tp1 = tp1->type;
+	tp2 = tp2->type;
+	if (tp1->op != tp2->op || tp1->op != FTN || !eqtype(tp1->type, tp2->type))
+		return 0;
+	fp2 = tp2->u.pars;
+	fp1 = tp1->u.pars;
+	while (fp1 && fp2) {
+		if (!eqtype(fp1->type, fp2->type))
+			break;
+		fp1 = fp1->next;
+		fp2 = fp2->next;
+	}
+
+	return fp1 == fp2;
+}

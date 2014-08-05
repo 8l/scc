@@ -85,6 +85,7 @@ struct symbol {
 	struct symbol *hash;
 };
 
+extern bool eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(int8_t type, int8_t sign, int8_t size),
 	*mktype(Type *tp, uint8_t op, void *data);
 
