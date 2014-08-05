@@ -1,5 +1,6 @@
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -121,23 +122,37 @@ ctype(int8_t type, int8_t sign, int8_t size)
 		type = FLOAT, size += LONG;
 
 	switch (type) {
-	case CHAR: if (sign == 0)
-					return chartype;
-				return (sign == UNSIGNED) ?  uchartype : schartype;
-	case VOID:            return voidtype;
-	case BOOL:            return booltype;
-	case INT: switch (size) {
-		case 0:          return (sign == UNSIGNED) ? uinttype   : inttype;
-		case SHORT:      return (sign == UNSIGNED) ? ushortype  : shortype;
-		case LONG:       return (sign == UNSIGNED) ? ulongtype  : longtype;
-		case LONG+LONG:  return (sign == UNSIGNED) ? ullongtype : llongtype;
+	case CHAR:
+		if (sign == 0)
+			return chartype;
+		return (sign == UNSIGNED) ?  uchartype : schartype;
+	case VOID:
+		return voidtype;
+	case BOOL:
+		return booltype;
+	case INT:
+		switch (size) {
+		case 0:
+			return (sign == UNSIGNED) ? uinttype   : inttype;
+		case SHORT:
+			return (sign == UNSIGNED) ? ushortype  : shortype;
+		case LONG:
+			return (sign == UNSIGNED) ? ulongtype  : longtype;
+		case LONG+LONG:
+			return (sign == UNSIGNED) ? ullongtype : llongtype;
 		}
-	case FLOAT: switch (size) {
-		case 0:          return floattype;
-		case LONG:       return doubletype;
-		case LONG+LONG:  return ldoubletype;
+	case FLOAT:
+		switch (size) {
+		case 0:
+			return floattype;
+		case LONG:
+			return doubletype;
+		case LONG+LONG:
+			return ldoubletype;
 		}
 	}
+	fputs("internal type error, aborting\n", stderr);
+	abort();
 }
 
 Type *
