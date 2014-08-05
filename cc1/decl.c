@@ -165,7 +165,9 @@ declarator(Type *tp, int8_t flags)
 			break;
 		}
 	}
-	if (!tp->defined)
+
+	/* TODO: deal with external array declarations of []  */
+	if (!tp->defined && *sym->name)
 		error("declared variable '%s' of incomplete type", sym->name);
 	sym->type = tp;
 	return sym;
