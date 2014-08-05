@@ -31,7 +31,6 @@ enum {
 
 typedef struct ctype Type;
 typedef struct symbol Symbol;
-typedef struct funpar Funpar;
 
 typedef struct field {
 	char *name;
@@ -40,6 +39,11 @@ typedef struct field {
 	struct field *next;
 } Field;
 
+typedef struct funpar {
+	Type *type;
+	struct funpar *next;
+} Funpar;
+
 struct ctype {
 	uint8_t op;           /* type builder operator */
 	char letter;          /* letter of the type */
@@ -47,7 +51,7 @@ struct ctype {
 	bool sign : 1;    /* sign type */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
-	union {
+	union typeval {
 		unsigned char rank;   /* convertion rank */
 		short nelem;          /* number of elements in arrays */
 		struct funpar *pars;  /* function parameters */
@@ -56,15 +60,7 @@ struct ctype {
 };
 
 
-
-struct funpar {
-	Type *type;
-	struct funpar *next;
-};
-
 /* definition of symbols */
-
-
 
 struct symbol {
 	char *name;
@@ -90,7 +86,7 @@ struct symbol {
 };
 
 extern Type *ctype(int8_t type, int8_t sign, int8_t size),
-	*mktype(Type *tp, uint8_t op, uint16_t nelem);
+	*mktype(Type *tp, uint8_t op, void *data);
 
 extern Symbol
 	*lookup(char *s, unsigned char ns),

@@ -11,6 +11,8 @@
 #define ID_ACCEPTED     2
 #define ID_FORBIDDEN    3
 
+/* TODO: check identifiers in enum declaration */
+
 struct dcldata {
 	uint8_t op;
 	union dclunion {
@@ -148,13 +150,13 @@ declarator(Type *tp, int8_t flags)
 	for (bp = declarator0(data); bp >= data; --bp) {
 		switch (bp->op) {
 		case PTR:
-			tp = mktype(tp, PTR, 0);
+			tp = mktype(tp, PTR, NULL);
 			break;
 		case ARY:
-			tp = mktype(tp, ARY, bp->u.nelem);
+			tp = mktype(tp, ARY, &bp->u.nelem);
 			break;
 		case FTN:
-			tp = mktype(tp, FTN, 0);
+			tp = mktype(tp, FTN, bp->u.pars);
 			break;
 		case IDEN:
 			sym = bp->u.sym;
@@ -351,8 +353,9 @@ newtag(uint8_t tag)
 		sym = install("", NS_TAG);
 		break;
 	}
-	if (!(tp = sym->type))
-		tp = sym->type = mktype(NULL, tag, 0);
+	if (!sym->type)
+		sym->type = mktype(NULL, tag, NULL);
+	tp = sym->type;
 	if (tp->op != tag)
 		error("'%s' defined as wrong kind of tag", yytext);
 	return tp;
