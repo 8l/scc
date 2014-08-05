@@ -8,7 +8,7 @@ LIBS = -lcc
 
 all: cc1
 
-$(OBJS) : cc1.h ../inc/cc.h
+$(OBJS) : cc1.h ../inc/cc.h ../inc/sizes.h
 
 cc1: $(OBJS) ../lib/libcc.a
 	$(CC) $(LDFLAGS) $(CFLAGS) $(OBJS) $(LIBS) -o $@
