@@ -100,10 +100,7 @@ integeruop(char op, Node *np)
 static Node *
 decay(Node *np)
 {
-	Type *tp;
-
-	tp = mktype(np->type->type, PTR, 0);
-	return unarycode(OADDR, tp, np);
+	return unarycode(OADDR, mktype(np->type, PTR, NULL), np);
 }
 
 /*
