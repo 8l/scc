@@ -329,8 +329,14 @@ iszero(Node *np)
 static Node *
 assignop(char op, Node *np1, Node *np2)
 {
-	if ((np2 = convert(np2, np1->type, 0)) == NULL)
-		error("incompatible types when assigning");
+	switch (np2->type->op) {
+	case FTN: case ARY:
+		np2 = decay(np2);
+		/* PASSTHROUGH */
+	default:
+		if ((np2 = convert(np2, np1->type, 0)) == NULL)
+			error("incompatible types when assigning");
+	}
 	return bincode(op, np1->type, np1, np2);
 }
 
