@@ -225,24 +225,45 @@ mktype(Type *tp, uint8_t op, void *data)
 bool
 eqtype(Type *tp1, Type *tp2)
 {
-	Funpar *fp1, *fp2;
-
 	if (tp1 == tp2)
 		return 1;
-	if (tp1->op != tp2->op || tp1->op != PTR)
+	if (tp1->op != tp2->op)
 		return 0;
-	tp1 = tp1->type;
-	tp2 = tp2->type;
-	if (tp1->op != tp2->op || tp1->op != FTN || !eqtype(tp1->type, tp2->type))
-		return 0;
-	fp2 = tp2->u.pars;
-	fp1 = tp1->u.pars;
-	while (fp1 && fp2) {
-		if (!eqtype(fp1->type, fp2->type))
-			break;
-		fp1 = fp1->next;
-		fp2 = fp2->next;
-	}
+	switch (tp1->op) {
+	case PTR:
+		return eqtype(tp1->type, tp2->type);
+	/* TODO: use the same struct for function parameters and fields */
+	case FTN: {
+		Funpar *fp1 = tp1->u.pars, *fp2 = tp2->u.pars;
 
-	return fp1 == fp2;
+		while (fp1 && fp2) {
+			if (!eqtype(fp1->type, fp2->type))
+				break;
+			fp1 = fp1->next;
+			fp2 = fp2->next;
+		}
+		return fp1 == fp2;
+	}
+	case UNION:
+	case STRUCT: {
+		Field *fp1 = tp1->u.fields, *fp2 = tp2->u.fields;
+
+		while (fp1 && fp2) {
+			if (!eqtype(fp1->type, fp2->type))
+				break;
+			fp1 = fp1->next;
+			fp2 = fp2->next;
+		}
+		return fp1 == fp2;
+	}
+	case ARY:
+		if (!eqtype(tp1->type, tp2->type))
+			return 0;
+		return tp1->u.nelem == tp2->u.nelem;
+	case ENUM:
+		return 1;
+	default:
+		fputs("internal type error, aborting\n", stderr);
+		abort();
+	}
 }
