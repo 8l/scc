@@ -111,17 +111,15 @@ decay(Node *np)
 Node *
 convert(Node *np, Type *tp, char iscast)
 {
-	uint8_t t;
-
 	if (eqtype(np->type, tp))
 		return np;
-	t = tp->op;
 	switch (np->typeop) {
 	case ENUM: case INT: case FLOAT:
-		switch (t) {
+		switch (tp->op) {
 		case PTR:
 			if (!iscast || np->typeop == FLOAT)
 				return NULL;
+			/* PASSTHROUGH */
 		case INT: case FLOAT: case ENUM: case VOID:
 			break;
 		default:
@@ -129,13 +127,11 @@ convert(Node *np, Type *tp, char iscast)
 		}
 		break;
 	case PTR:
-		switch (t) {
+		switch (tp->op) {
 		case ENUM: case INT: case VOID: /* TODO: allow p = 0 */
 			if (!iscast)
 				return NULL;;
 			break;
-		case ARY: case FTN:
-			np = decay(np);
 		case PTR:
 			if (iscast ||
 			    tp == pvoidtype ||
