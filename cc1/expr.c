@@ -551,6 +551,8 @@ cast2(void)
 	case TQUALIFIER: case TYPE:
 		tp = typename();
 		expect(')');
+		if (tp->op == ARY)
+			error("cast specify an array type");
 		if ((np1 = eval(cast())) == NULL)
 			unexpected();
 		if ((np2 = convert(np1,  tp, 1)) == NULL)

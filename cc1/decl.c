@@ -500,6 +500,8 @@ typename(void)
 	tp = specifier(&sclass);
 	if (sclass)
 		error("class storage in type name");
+	if (yytoken == '(')
+		error("type name specifies a function type");
 	sym = declarator(tp, ID_FORBIDDEN);
 	return  sym->type;
 }
