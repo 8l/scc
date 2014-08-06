@@ -186,60 +186,6 @@ end_string:
 	return STRING;
 }
 
-void
-init_keywords(void)
-{
-	static struct {
-		char *str;
-		uint8_t token, value;
-	} *bp, buff[] = {
-		{"auto", SCLASS, AUTO},
-		{"break", BREAK, BREAK},
-		{"_Bool", TYPE, BOOL},
-		{"case", CASE, CASE},
-		{"char", TYPE, CHAR},
-		{"const", TQUALIFIER, CONST},
-		{"continue", CONTINUE, CONTINUE},
-		{"default", DEFAULT, DEFAULT},
-		{"do", DO, DO},
-		{"double", TYPE, DOUBLE},
-		{"else", ELSE, ELSE},
-		{"enum", TYPE, ENUM},
-		{"extern", SCLASS, EXTERN},
-		{"float", TYPE, FLOAT},
-		{"for", FOR, FOR},
-		{"goto", GOTO, GOTO},
-		{"if", IF, IF},
-		{"int", TYPE, INT},
-		{"long", TYPE, LONG},
-		{"register", SCLASS, REGISTER},
-		{"restrict", TQUALIFIER, RESTRICT},
-		{"return", RETURN, RETURN},
-		{"short", TYPE, SHORT},
-		{"signed", TYPE, SIGNED},
-		{"sizeof", SIZEOF, SIZEOF},
-		{"static", SCLASS, STATIC},
-		{"struct", TYPE, STRUCT},
-		{"switch", SWITCH, SWITCH},
-		{"typedef", SCLASS, TYPEDEF},
-		{"union", TYPE, UNION},
-		{"unsigned", TYPE, UNSIGNED},
-		{"void", TYPE, VOID},
-		{"volatile", TQUALIFIER, VOLATILE},
-		{"while", WHILE, WHILE},
-		{NULL, 0, 0},
-	};
-	register Symbol *sym;
-	extern short symid;
-
-	for (bp = buff; bp->str; ++bp) {
-		sym = install(bp->str, NS_IDEN);
-		sym->token = bp->token;
-		sym->u.token = bp->value;
-	}
-	symid = 0;
-}
-
 static uint8_t
 iden(void)
 {

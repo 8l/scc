@@ -10,7 +10,8 @@
 #define NR_SYM_HASH 32
 
 uint8_t curctx;
-short symid;
+short localcnt;
+short globalcnt;
 
 static struct symtab {
 	Symbol *head;
@@ -66,8 +67,10 @@ context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	--curctx;
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
-	if (curctx == 0)
+	if (curctx == 0) {
+		localcnt = 0;
 		freesyms(NS_LABEL);
+	}
 }
 
 Symbol *
@@ -95,7 +98,7 @@ install(char *s, uint8_t ns)
 	sym->name = xstrdup(s);
 	sym->ctx = curctx;
 	sym->token = IDEN;
-	sym->id = symid++;
+	sym->id = (curctx) ? ++localcnt : ++globalcnt;
 	sym->s.isdefined = 1;
 	tbl = &symtab[ns];
 	sym->next = tbl->head;
@@ -104,4 +107,57 @@ install(char *s, uint8_t ns)
 	t = &tbl->htab[hash(s)];
 	sym->hash = *t;
 	return *t = sym;
+}
+
+void
+init_keywords(void)
+{
+	static struct {
+		char *str;
+		uint8_t token, value;
+	} *bp, buff[] = {
+		{"auto", SCLASS, AUTO},
+		{"break", BREAK, BREAK},
+		{"_Bool", TYPE, BOOL},
+		{"case", CASE, CASE},
+		{"char", TYPE, CHAR},
+		{"const", TQUALIFIER, CONST},
+		{"continue", CONTINUE, CONTINUE},
+		{"default", DEFAULT, DEFAULT},
+		{"do", DO, DO},
+		{"double", TYPE, DOUBLE},
+		{"else", ELSE, ELSE},
+		{"enum", TYPE, ENUM},
+		{"extern", SCLASS, EXTERN},
+		{"float", TYPE, FLOAT},
+		{"for", FOR, FOR},
+		{"goto", GOTO, GOTO},
+		{"if", IF, IF},
+		{"int", TYPE, INT},
+		{"long", TYPE, LONG},
+		{"register", SCLASS, REGISTER},
+		{"restrict", TQUALIFIER, RESTRICT},
+		{"return", RETURN, RETURN},
+		{"short", TYPE, SHORT},
+		{"signed", TYPE, SIGNED},
+		{"sizeof", SIZEOF, SIZEOF},
+		{"static", SCLASS, STATIC},
+		{"struct", TYPE, STRUCT},
+		{"switch", SWITCH, SWITCH},
+		{"typedef", SCLASS, TYPEDEF},
+		{"union", TYPE, UNION},
+		{"unsigned", TYPE, UNSIGNED},
+		{"void", TYPE, VOID},
+		{"volatile", TQUALIFIER, VOLATILE},
+		{"while", WHILE, WHILE},
+		{NULL, 0, 0},
+	};
+	register Symbol *sym;
+
+	for (bp = buff; bp->str; ++bp) {
+		sym = install(bp->str, NS_IDEN);
+		sym->token = bp->token;
+		sym->u.token = bp->value;
+	}
+	globalcnt = 0;
 }

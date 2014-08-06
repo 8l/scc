@@ -21,17 +21,37 @@ static Node *listexp[NR_EXPRESSIONS], **listp = &listexp[0];
 static Node nodepool[NR_NODEPOOL], *newp = nodepool;
 static Symbol symtbl[NR_SYMBOLS];
 
+static Symbol *localtbl;
+static Symbol *globaltbl;
+
 extern void esyntax(void);
 
-static short
-getid(void)
+static Symbol *
+local(void)
 {
-	int i;
+	unsigned i;
+	static unsigned nr;
 
-	scanf("%d", &i);
-	if (i < 0 || i >= NR_SYMBOLS)
+	scanf("%u", &i);
+	if (i >= NR_INT_IDENT)
 		esyntax();
-	return i;
+	if (i >= nr)
+		localtbl = xrealloc(localtbl, i+1);
+	return &localtbl[i];
+}
+
+static Symbol *
+global(void)
+{
+	unsigned i;
+	static unsigned nr;
+
+	scanf("%u", &i);
+	if (i >= NR_EXT_IDENT)
+		esyntax();
+	if (i >= nr)
+		globaltbl = xrealloc(globaltbl, i+1);
+	return &globaltbl[i];
 }
 
 static Node *
@@ -82,12 +102,31 @@ gettype(void)
 static void
 variable(char op)
 {
+	Symbol *sym;
 	Node *np = newnode();
-	short id = getid();
 
+	switch (op) {
+	case 'A':
+		sym = local();
+		op = AUTO;
+		break;
+	case 'R':
+		sym = local();
+		op = REGISTER;
+		break;
+	case 'T':
+		sym = local();
+		op = STATIC;
+		break;
+	case 'G':
+		sym = global();
+		op = STATIC;
+		break;
+	}
+
+	np->u.sym = sym;
 	np->op = op;
-	np->u.id = id;
-	np->type = symtbl[id].u.v.type;
+	np->type = sym->u.v.type;
 	np->left = np->right = NULL;
 	push(np);
 }
@@ -168,9 +207,9 @@ expression(void)
 }
 
 static void
-declaration(char sclass)
+declaration(char sclass, char islocal)
 {
-	Symbol *sym = &symtbl[getid()];
+	Symbol *sym = (islocal) ? local() : global();
 
 	getchar(); /* skip tab */
 	sym->u.v.storage = sclass;
@@ -191,7 +230,7 @@ chop(void)
 static void
 deflabel(void)
 {
-	Symbol *sym = &symtbl[getid()];
+	Symbol *sym = local();
 
 	sym->u.l.addr = listp - listexp;
 	chop();
@@ -217,7 +256,7 @@ function(void)
 			/* struct */
 			break;
 		case 'T': case 'A': case 'R':
-			declaration(c);
+			declaration(c, 1);
 			break;
 		case '}':
 			chop();
@@ -238,7 +277,7 @@ parse(void)
 	for (;;) {
 		switch (c = getchar()) {
 		case 'G':
-			declaration(c);
+			declaration(c, 0);
 			break;
 		case 'X':
 			function();
