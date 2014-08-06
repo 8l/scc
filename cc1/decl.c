@@ -198,7 +198,7 @@ specifier(int8_t *sclass)
 			continue;
 		case TYPEIDEN:
 			if (type)
-				goto check_types;
+				goto return_type;
 			tp = yylval.sym->type;
 			p = &type;
 			break;
@@ -223,31 +223,21 @@ specifier(int8_t *sclass)
 			}
 			break;
 		default:
-			goto check_types;
+			goto return_type;
 		}
 		if (*p)
 			goto invalid_type;
 		*p = yylval.token;
-		if (dcl)
+		if (dcl) {
+			if (size || sign)
+				goto invalid_type;
 			tp = aggregate(dcl);
-		else
+		} else {
 			next();
+		}
 	}
 
-check_types:
-	if (!type) {
-		if (!sign && !size) {
-			warn(options.implicit,
-			     "type defaults to 'int' in declaration");
-		}
-		type = INT;
-	}
-	if (sign && type != INT && type != CHAR ||
-	    size == SHORT && type != INT ||
-	    size == LONG  && type != INT && type != DOUBLE ||
-	    size == LONG+LONG && type != INT) {
-		goto invalid_type;
-	}
+return_type:
 	if (sclass)
 		*sclass = cls;
 	if (!tp)

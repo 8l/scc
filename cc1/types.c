@@ -118,18 +118,33 @@ Type
 Type *
 ctype(int8_t type, int8_t sign, int8_t size)
 {
-	if (type == DOUBLE)
-		type = FLOAT, size += LONG;
-
 	switch (type) {
 	case CHAR:
-		if (sign == 0)
+		if (size)
+			goto invalid_type;
+		switch (sign) {
+		case 0:
 			return chartype;
-		return (sign == UNSIGNED) ?  uchartype : schartype;
+		case SIGNED:
+			return schartype;
+		case UNSIGNED:
+			return uchartype;
+		}
+		break;
 	case VOID:
+		if (size || sign)
+			goto invalid_type;
 		return voidtype;
 	case BOOL:
+		if (size || sign)
+			goto invalid_type;
 		return booltype;
+	case 0:
+		if (!sign && !size) {
+			warn(options.implicit,
+			     "type defaults to 'int' in declaration");
+		}
+		/* fallthrough */
 	case INT:
 		switch (size) {
 		case 0:
@@ -142,7 +157,17 @@ ctype(int8_t type, int8_t sign, int8_t size)
 			return (sign == UNSIGNED) ? ullongtype : llongtype;
 		}
 		break;
+	case DOUBLE:
+		if (size == LONG+LONG)
+			goto invalid_type;
+		size += LONG;
+		goto floating;
 	case FLOAT:
+		if (size == LONG+LONG)
+			goto invalid_type;
+	floating:
+		if (sign)
+			goto invalid_type;
 		switch (size) {
 		case 0:
 			return floattype;
@@ -155,6 +180,9 @@ ctype(int8_t type, int8_t sign, int8_t size)
 	}
 	fputs("internal type error, aborting\n", stderr);
 	abort();
+
+invalid_type:
+	error("invalid type specification");
 }
 
 Type *
