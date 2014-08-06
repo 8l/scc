@@ -551,13 +551,18 @@ cast2(void)
 	case TQUALIFIER: case TYPE:
 		tp = typename();
 		expect(')');
-		if (tp->op == ARY)
+		switch (tp->op) {
+		case ARY:
 			error("cast specify an array type");
-		if ((np1 = eval(cast())) == NULL)
-			unexpected();
-		if ((np2 = convert(np1,  tp, 1)) == NULL)
-			error("bad type convertion requested");
-		np2->b.lvalue = np1->b.lvalue;
+		case FTN:
+			error("cast specify a function type");
+		default:
+			if ((np1 = eval(cast())) == NULL)
+				unexpected();
+			if ((np2 = convert(np1,  tp, 1)) == NULL)
+				error("bad type convertion requested");
+			np2->b.lvalue = np1->b.lvalue;
+		}
 		break;
 	default:
 		np2 = unary();

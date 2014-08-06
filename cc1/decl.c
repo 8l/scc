@@ -23,7 +23,7 @@ struct dcldata {
 };
 
 static struct dcldata *
-enqueue(struct dcldata *dp, uint8_t op, union dclunion u)
+queue(struct dcldata *dp, uint8_t op, union dclunion u)
 {
 	if (dp->op == 255)
 		error("too much declarators");
@@ -32,14 +32,12 @@ enqueue(struct dcldata *dp, uint8_t op, union dclunion u)
 	return dp + 1;
 }
 
-static struct dcldata *declarator0(struct dcldata *dp);
-
 static struct dcldata *
 arydcl(struct dcldata *dp)
 {
 	expect('[');
 	expect(']');
-	return enqueue(dp, ARY, (union dclunion) {.nelem = 0});
+	return queue(dp, ARY, (union dclunion) {.nelem = 0});
 }
 
 static Type *parameter(void);
@@ -79,7 +77,7 @@ fundcl(struct dcldata *dp)
 
 ret:
 	expect(')');;
-	return enqueue(dp, FTN, (union dclunion) {.pars = fp});
+	return queue(dp, FTN, (union dclunion) {.pars = fp});
 }
 
 static Symbol *
@@ -95,6 +93,8 @@ newiden(void)
 	return sym;
 }
 
+static struct dcldata *declarator0(struct dcldata *dp);
+
 static struct dcldata *
 directdcl(struct dcldata *dp)
 {
@@ -108,7 +108,7 @@ directdcl(struct dcldata *dp)
 			sym = newiden();
 		else
 			sym = install("", NS_IDEN);
-		dp = enqueue(dp, IDEN, (union dclunion) {.sym = sym});
+		dp = queue(dp, IDEN, (union dclunion) {.sym = sym});
 	}
 
 	for (;;) {
@@ -133,7 +133,7 @@ declarator0(struct dcldata *dp)
 	dp = directdcl(dp);
 
 	while (n--)
-		dp = enqueue(dp, PTR, (union dclunion) {});
+		dp = queue(dp, PTR, (union dclunion) {});
 
 	return dp;
 }
@@ -490,8 +490,6 @@ typename(void)
 	tp = specifier(&sclass);
 	if (sclass)
 		error("class storage in type name");
-	if (yytoken == '(')
-		error("type name specifies a function type");
 	sym = declarator(tp, ID_FORBIDDEN);
 	return  sym->type;
 }

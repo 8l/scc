@@ -305,6 +305,8 @@ sizeofcode(Type *tp)
 {
 	if (!tp->defined)
 		error("invalid use of indefined type");
+	if (tp->op == FTN)
+		error("sizeof of a function");
 	return node(emitsizeof, inttype, TYP(tp), 0);
 }
 
