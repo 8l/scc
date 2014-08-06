@@ -1,3 +1,5 @@
+Introduction
+============
 This is the kcc compiler, a one very stupid non retargetable compiler
 for z80. This compiler is intended to be very simple and suitable for
 running in small machines (like MSX for example), and let almost part
@@ -20,3 +22,69 @@ friends).
 
 This is the reason why I begin to develop this compiler, and I hope
 it will be useful for you.
+
+Changes from standar C
+======================
+This compiler is near of being full compatible with C99 standard, but
+it has some differences:
+
+- Type qualifiers are accepted but ignored.
+  -----------------------------------------
+
+Type qualifers make the type system ugly, and the useless of them
+add innecessary complexity to the compiler (with a bigger compilation
+time):
+	- const: The definition of const is not clear in the standard.
+	  If a const value is modified then the behaviour is implementation
+	  defined. It seems that it was defined more in order to can
+	  allocate variables in ROM that for the error detection. This
+	  implememtation will not warn about these modifications and
+	  the code will use them as normal variables (standard specifies
+	  that a diagnosis message must be printed).
+
+	- volatile: The definition of volatile is not concrete, because
+	  it is defined as 'remove all the optimizations about the
+	  variable', which of course depend of the king of optimizations
+	  applied to the variable. This qualifier was added to the standard
+	  to can deal with longjmp (local variables that are not volatile
+	  have undefined state), but this can achieved with special pragma
+	  values, and for memory mapped registers or variables whose
+	  value is modified asynchronous. In the first case, this is a
+	  a non portable code by definition (depend of the register mapped),
+	  so it is better to deal with it using another solution (compiler
+	  extensions or directly assembler), and in the second case it
+	  generated a lot of problems with moderm processors out of order
+	  and multiprocesor, where not hold the value in a register is
+	  good enough (it is needed a explicit memory barrier).
+
+	- restricted: This qualifer can be only applied to pointers, to
+	  mark that the pointed object has no other alias. This qualifer
+	  was introduced to can fix some performance problems in numerical
+	  algorithm, where FORTRAN can achieve a better performance (and
+	  in fact even with this specifier FORTRAN has a better performance
+	  in this field). Ignores it doesn't make the code non standard
+	  and in almost of the applications the performance will be the same.
+
+- Function type names
+  -------------------
+
+C99 allows to define type names of function types and write something like:
+
+int f(int (int));
+
+Accepting function types in typenames (or abstract declarators) makes the
+grammar ambiguous because it is impossible difference between:
+
+        (int (f))  -> function returning int with one parameter of type f
+        (int (f))  -> integer variable f
+
+Function type names are stupid, because they are used as an alias
+of the function pointer types, but it makes stupid that something
+like sizeof(int (int)) is not allowed (because here should be
+understood as the size of a function), but it is allowed f(int (int))
+because it is understood as a parameter with function pointer type.
+
+This complexity is not needed at all, because function pointers fix
+all these problems without this complexity (and they are the more usual
+way of writing such codes).
+
