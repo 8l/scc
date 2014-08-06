@@ -1,0 +1,23 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+	print "char *errlist[] = {"
+}
+/^enum nerrors {/ {
+	inhome = 1
+}
+/E[A-Z]*, / {
+	if (inhome == 1) {
+		sub(/,/, "", $1)
+		printf("\t[%s] = \"", $1)
+		for (i = 3; i < NF-1; ++i)
+			printf("%s ", $i)
+		printf("%s\",\n", $(NF-1));
+	}
+}
+/^}/ {
+	if (inhome)
+		print "};"
+	inhome = 0
+}
+

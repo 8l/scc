@@ -1,15 +1,29 @@
 
-#include <stddef.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <cc.h>
 #include <sizes.h>
 
+#include "cc2.h"
+#include "error.h"
+
 extern void parse(void);
 
 void
-esyntax(void)
+error(unsigned nerror, ...)
 {
-	die("incorrect intermediate file");
+	va_list va;
+	va_start(va, nerror);
+	if (nerror >= ENUMERR)
+		fprintf(stderr, "incorrect error number '%d'", nerror);
+	else
+		vfprintf(stderr, errlist[nerror], va);
+	va_end(va);
+	putc('\n', stderr);
+	exit(EXIT_FAILURE);
 }
 
 int
@@ -17,4 +31,3 @@ main(void)
 {
 	parse();
 }
-

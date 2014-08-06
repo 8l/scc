@@ -14,17 +14,13 @@
 #define NR_STACKSIZ 32
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
-#define NR_SYMBOLS 1024
 
 static Node *stack[NR_STACKSIZ], **stackp = stack;
 static Node *listexp[NR_EXPRESSIONS], **listp = &listexp[0];
 static Node nodepool[NR_NODEPOOL], *newp = nodepool;
-static Symbol symtbl[NR_SYMBOLS];
 
 static Symbol *localtbl;
 static Symbol *globaltbl;
-
-extern void esyntax(void);
 
 static Symbol *
 local(void)
@@ -34,7 +30,7 @@ local(void)
 
 	scanf("%u", &i);
 	if (i >= NR_INT_IDENT)
-		esyntax();
+		error(EINTNUM);
 	if (i >= nr)
 		localtbl = xrealloc(localtbl, i+1);
 	return &localtbl[i];
@@ -48,7 +44,7 @@ global(void)
 
 	scanf("%u", &i);
 	if (i >= NR_EXT_IDENT)
-		esyntax();
+		error(EEXTNUM);
 	if (i >= nr)
 		globaltbl = xrealloc(globaltbl, i+1);
 	return &globaltbl[i];
@@ -58,7 +54,7 @@ static Node *
 newnode(void)
 {
 	if (newp == &nodepool[NR_NODEPOOL])
-		esyntax();
+		error(ENODEOV);
 	return newp++;
 }
 
@@ -66,7 +62,7 @@ static void
 push(Node *np)
 {
 	if (stackp == &stack[NR_STACKSIZ])
-		esyntax();
+		error(ESTACKO);
 	*stackp++ = np;
 }
 
@@ -74,7 +70,7 @@ static Node *
 pop(void)
 {
 	if (stackp == stack)
-		esyntax();
+		error(ESTACKU);
 	return *--stackp;
 }
 
@@ -82,7 +78,7 @@ static void
 link(Node *np)
 {
 	if (listp == &listexp[NR_EXPRESSIONS])
-		esyntax();
+		error(EEXPROV);
 	*listp++ = np;
 }
 
@@ -95,7 +91,7 @@ gettype(void)
 	case L_INT16: case L_INT8:
 		return t;
 	default:
-		esyntax();
+		error(ETYPERR);
 	}
 }
 
@@ -170,7 +166,7 @@ getroot(void)
 {
 	Node *np = *--stackp;
 	if (stackp != stack)
-		esyntax();
+		error(EEXPBAL);
 	return np;
 }
 
@@ -195,14 +191,14 @@ expression(void)
 
 	do {
 		if (!isprint(c = getchar()))
-			esyntax();
+			error(ESYNTAX);
 		if ((fun = optbl[c]) == NULL)
-			esyntax();
+			error(ESYNTAX);
 		(*fun)(c);
 	} while ((c = getchar()) == '\t');
 
 	if (c != '\n')
-		esyntax();
+		error(ESYNTAX);
 	link(getroot());
 }
 
@@ -215,7 +211,7 @@ declaration(char sclass, char islocal)
 	sym->u.v.storage = sclass;
 	sym->u.v.type = gettype();
 	if (getchar() != '\n')
-		esyntax();
+		error(ESYNTAX);
 }
 
 static void
@@ -262,7 +258,7 @@ function(void)
 			chop();
 			return;
 		default:
-			esyntax();
+			error(ESYNTAX);
 			break;
 		}
 	}
@@ -287,7 +283,7 @@ parse(void)
 			return;
 			break;
 		default:
-			esyntax();
+			error(ESYNTAX);
 		}
 	}
 }

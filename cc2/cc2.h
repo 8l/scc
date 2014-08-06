@@ -23,6 +23,22 @@ typedef struct node {
 	struct node *left, *right;
 } Node;
 
-#define AUTO     'A'
+enum nerrors {
+	EINTNUM,       /* too much internal identifiers */
+	EEXTNUM,       /* too much external identifiers */
+	ENODEOV,       /* node overflow */
+	ESTACKO,       /* stack overflow */
+	ESTACKU,       /* stack underflow */
+	EEXPROV,       /* expression overflow */
+	ETYPERR,       /* incorrect type in expression */
+	EEXPBAL,       /* expression not balanced */
+	ESYNTAX,       /* syntax error */
+	ENUMERR
+};
+
+#define AUTO 'A'
 #define REGISTER 'R'
-#define STATIC   'S'
+#define STATIC 'S'
+
+extern void error(unsigned nerror, ...);
+
