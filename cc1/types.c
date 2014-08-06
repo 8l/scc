@@ -141,6 +141,7 @@ ctype(int8_t type, int8_t sign, int8_t size)
 		case LONG+LONG:
 			return (sign == UNSIGNED) ? ullongtype : llongtype;
 		}
+		break;
 	case FLOAT:
 		switch (size) {
 		case 0:
@@ -150,6 +151,7 @@ ctype(int8_t type, int8_t sign, int8_t size)
 		case LONG+LONG:
 			return ldoubletype;
 		}
+		break;
 	}
 	fputs("internal type error, aborting\n", stderr);
 	abort();
