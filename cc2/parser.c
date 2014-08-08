@@ -208,6 +208,7 @@ declaration(char *token)
 	case 'G': case 'R': case 'T':
 		break;
 	}
+	sym->type = VARIABLE;
 	sym->u.v.storage = class;
 	sym->u.v.type = gettype(strtok(NULL, "\t"));
 }
@@ -218,6 +219,7 @@ deflabel(char *token)
 	Symbol *sym;
 
 	sym = local(token);
+	sym->type = LABEL;
 	sym->u.l.addr = listp - listexp;
 }
 
@@ -228,6 +230,7 @@ function(char *token)
 	curfun = global(token);
 	if ((token = strtok(NULL, "\t")) == NULL)
 		error(ESYNTAX);
+	curfun->type = FUNCTION;
 	curfun->u.f.name = xstrdup(token);
 	listp = listexp;
 	newp = nodepool;

@@ -1,6 +1,7 @@
 
 typedef struct symbol {
 	char public;
+	char type;
 	struct symbol *next;
 	union {
 		struct {
@@ -46,6 +47,7 @@ enum nerrors {
 };
 
 #define FUNCTION   0
+#define VARIABLE   1
 #define AUTO      'A'
 #define REGISTER  'R'
 #define STATIC    'T'
