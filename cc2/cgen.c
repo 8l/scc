@@ -15,11 +15,15 @@
 static void
 xaddable(Node *np)
 {
+	Node *lp, *rp;
+
 	if (!np)
 		return;
 
 	np->complex = 0;
 	np->addable = 0;
+	lp = np->left;
+	rp = np->right;
 	switch (np->op) {
 	case AUTO:
 		np->addable = 11;
@@ -33,6 +37,10 @@ xaddable(Node *np)
 	case CONST:
 		np->addable = 20;
 		break;
+	case OADD:
+	case OSUB:
+		xaddable(lp);
+		xaddable(rp);
 	}
 }
 

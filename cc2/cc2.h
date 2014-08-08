@@ -43,6 +43,8 @@ enum nerrors {
 #define STATIC 'S'
 #define CONST '#'
 #define LABEL 'L'
+#define OADD  '+'
+#define OSUB  '-'
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);
