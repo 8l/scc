@@ -2,10 +2,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <cc.h>
 #include "cc2.h"
 
-
 #include <stdio.h>
+
 
 static void
 emit(char what, void *data)

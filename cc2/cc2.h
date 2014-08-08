@@ -1,11 +1,17 @@
 
+typedef struct {
+	short size;
+	bool sign : 1;
+	bool c_int : 1;
+} Type;
+
 typedef struct symbol {
 	char public;
 	char type;
 	struct symbol *next;
 	union {
 		struct {
-			char type;
+			Type *type;
 			char storage;
 		} v;
 		struct {
@@ -21,7 +27,7 @@ typedef struct symbol {
 
 typedef struct node {
 	char op;
-	char type;
+	Type *type;
 	int8_t complex;
 	int8_t addable;
 	union {

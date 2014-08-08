@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 #include <cc.h>
-#include <sizes.h>
 
 #include "cc2.h"
 #include "error.h"

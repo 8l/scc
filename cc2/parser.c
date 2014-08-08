@@ -24,6 +24,50 @@ static Node nodepool[NR_NODEPOOL], *newp = nodepool;
 static Symbol *localtbl;
 static Symbol *globaltbl;
 
+Type l_int8 = {
+	.size = 1,
+	.sign = 1,
+	.c_int = 1,
+};
+
+Type l_int16 = {
+	.size = 2,
+	.sign = 1,
+	.c_int = 1,
+};
+
+Type l_int32 = {
+	.size = 4,
+	.sign = 1,
+	.c_int = 1,
+};
+
+Type l_int64 = {
+	.size = 8,
+	.sign = 1,
+	.c_int = 1,
+};
+
+Type l_uint8 = {
+	.size = 1,
+	.c_int = 1,
+};
+
+Type l_uint16 = {
+	.size = 2,
+	.c_int = 1,
+};
+
+Type l_uint32 = {
+	.size = 4,
+	.c_int = 1,
+};
+
+Type l_uint64 = {
+	.size = 8,
+	.c_int = 1,
+};
+
 static Symbol *
 local(char *num)
 {
@@ -74,12 +118,26 @@ pop(void)
 	return *--stackp;
 }
 
-static char
+static Type *
 gettype(char *type)
 {
 	switch (type[0]) {
-	case L_INT16: case L_INT8:
-		return type[0];
+	case L_INT8:
+		return &l_int8;
+	case L_INT16:
+		return &l_int16;
+	case L_INT32:
+		return &l_int32;
+	case L_INT64:
+		return &l_int64;
+	case L_UINT8:
+		return &l_uint8;
+	case L_UINT16:
+		return &l_uint16;
+	case L_UINT32:
+		return &l_uint32;
+	case L_UINT64:
+		return &l_uint64;
 	default:
 		error(ETYPERR);
 	}
@@ -123,11 +181,13 @@ variable(char *token)
 static void
 immediate(char *token)
 {
+	static char buf[2];
 	Node *np = newnode();
 
 	np->op = CONST;
 	/* TODO: deal with constant non integer */
-	np->type = L_INT;
+	buf[0] = L_INT;
+	np->type = gettype(buf);
 	np->u.imm = atoi(token+1);
 	np->left = np->right = NULL;
 	push(np);
