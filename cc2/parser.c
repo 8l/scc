@@ -99,15 +99,15 @@ variable(char *token)
 		break;
 	case 'R':
 		sym = local(token);
-		op = REGISTER;
+		op = REG;
 		break;
 	case 'T':
 		sym = (funbody) ? local(token) : global(token);
-		op = STATIC;
+		op = MEM;
 		break;
 	case 'G':
 		sym = global(token);
-		op = STATIC;
+		op = MEM;
 		public = 1;
 		break;
 	}
@@ -208,7 +208,7 @@ declaration(char *token)
 	case 'G': case 'R': case 'T':
 		break;
 	}
-	sym->type = VARIABLE;
+	sym->type = VAR;
 	sym->u.v.storage = class;
 	sym->u.v.type = gettype(strtok(NULL, "\t"));
 }
@@ -230,7 +230,7 @@ function(char *token)
 	curfun = global(token);
 	if ((token = strtok(NULL, "\t")) == NULL)
 		error(ESYNTAX);
-	curfun->type = FUNCTION;
+	curfun->type = FUN;
 	curfun->u.f.name = xstrdup(token);
 	listp = listexp;
 	newp = nodepool;

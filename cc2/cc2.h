@@ -46,12 +46,12 @@ enum nerrors {
 	ENUMERR
 };
 
-#define FUNCTION   0
-#define VARIABLE   1
+#define FUN        0
+#define VAR        1
 #define AUTO      'A'
-#define REGISTER  'R'
-#define STATIC    'T'
-#define PARAMETER 'P'
+#define REG       'R'
+#define MEM       'T'
+#define PAR       'P'
 #define CONST     '#'
 #define LABEL     'L'
 #define OADD      '+'

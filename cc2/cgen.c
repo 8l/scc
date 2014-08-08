@@ -11,7 +11,7 @@ static void
 emit(char what, void *data)
 {
 	switch (what) {
-	case FUNCTION:
+	case FUN:
 		printf("%s:\n", data);
 		break;
 	default:
@@ -23,7 +23,7 @@ emit(char what, void *data)
 void
 cgen(Symbol *sym, Node *list[])
 {
-	emit(FUNCTION, sym->u.f.name);
+	emit(FUN, sym->u.f.name);
 }
 
 /*
@@ -49,10 +49,10 @@ xaddable(Node *np)
 	case AUTO:
 		np->addable = 11;
 		break;
-	case REGISTER:
+	case REG:
 		np->addable = 13;
 		break;
-	case STATIC:
+	case MEM:
 		np->addable = 12;
 		break;
 	case CONST:
