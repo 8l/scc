@@ -10,9 +10,7 @@
 
 #include "cc2.h"
 
-#define STR(x) XSTR(x)
-#define XSTR(x) #x
-
+#define MAXLINE 200
 #define NR_STACKSIZ 32
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
@@ -231,7 +229,7 @@ parse(void)
 	void (*fun)(char *tok);
 	uint8_t len;
 	int c;
-	char line[200];
+	char line[MAXLINE];
 
 	for (;;) {
 		switch (c = getchar()) {
