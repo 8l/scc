@@ -14,8 +14,8 @@ typedef struct {
 typedef struct node {
 	char op;
 	char type;
-	int8_t sethi;
-	int8_t addrtype;
+	int8_t complex;
+	int8_t addable;
 	union {
 		Symbol *sym;
 		int imm;
@@ -41,4 +41,4 @@ enum nerrors {
 #define STATIC 'S'
 
 extern void error(unsigned nerror, ...);
-
+extern void genaddable(Node *np);

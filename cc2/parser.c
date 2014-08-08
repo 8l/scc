@@ -277,7 +277,7 @@ parse(void)
 			break;
 		case 'X':
 			function();
-			genaddr(listexp[0]);
+			genaddable(listexp[0]);
 			break;
 		case EOF:
 			return;
