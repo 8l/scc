@@ -89,7 +89,7 @@ static void
 variable(char *token)
 {
 	Symbol *sym;
-	char op;
+	char op, public = 0;
 	Node *np = newnode();
 
 	switch (token[0]) {
@@ -102,15 +102,17 @@ variable(char *token)
 		op = REGISTER;
 		break;
 	case 'T':
-		sym = local(token);
+		sym = (funbody) ? local(token) : global(token);
 		op = STATIC;
 		break;
 	case 'G':
 		sym = global(token);
 		op = STATIC;
+		public = 1;
 		break;
 	}
 
+	sym->public = public;
 	np->u.sym = sym;
 	np->op = op;
 	np->type = sym->u.v.type;

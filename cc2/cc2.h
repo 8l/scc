@@ -1,5 +1,6 @@
 
 typedef struct {
+	char public;
 	union {
 		struct {
 			char type;
