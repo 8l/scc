@@ -197,6 +197,17 @@ declaration(char *token)
 
 	sym = (class == 'G') ? global(token) : local(token);
 
+	switch (class) {
+	case 'A':
+		sym->next = curfun->u.f.vars;
+		curfun->u.f.vars = sym;
+	case 'P':
+		sym->next = curfun->u.f.pars;
+		curfun->u.f.pars = sym;
+		break;
+	case 'G': case 'R': case 'T':
+		break;
+	}
 	sym->u.v.storage = class;
 	sym->u.v.type = gettype(strtok(NULL, "\t"));
 }
@@ -254,7 +265,7 @@ parse(void)
 		case 'S':
 			/* struct */
 			break;
-		case 'T': case 'A': case 'R':
+		case 'T': case 'A': case 'R': case 'P':
 			if (!funbody)
 				goto syntax_error;
 			fun = declaration;

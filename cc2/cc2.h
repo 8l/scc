@@ -1,6 +1,7 @@
 
-typedef struct {
+typedef struct symbol {
 	char public;
+	struct symbol *next;
 	union {
 		struct {
 			char type;
@@ -11,6 +12,8 @@ typedef struct {
 		} l;
 		struct {
 			char *name;
+			struct symbol *pars;
+			struct symbol *vars;
 		} f;
 	} u;
 } Symbol;
@@ -46,6 +49,7 @@ enum nerrors {
 #define AUTO      'A'
 #define REGISTER  'R'
 #define STATIC    'T'
+#define PARAMETER 'P'
 #define CONST     '#'
 #define LABEL     'L'
 #define OADD      '+'
