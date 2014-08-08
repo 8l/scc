@@ -75,14 +75,6 @@ pop(void)
 	return *--stackp;
 }
 
-static void
-link(Node *np)
-{
-	if (listp == &listexp[NR_EXPRESSIONS])
-		error(EEXPROV);
-	*listp++ = np;
-}
-
 static char
 gettype(char *type)
 {
@@ -163,15 +155,6 @@ label(char *token)
 	push(np);
 }
 
-static Node *
-getroot(void)
-{
-	Node *np = *--stackp;
-	if (stackp != stack)
-		error(EEXPBAL);
-	return np;
-}
-
 static void (*optbl[])(char *) = {
 	['+'] = operator,
 	['-'] = operator,
@@ -188,6 +171,7 @@ static void (*optbl[])(char *) = {
 static void
 expression(char *token)
 {
+	Node *np;
 	void (*fun)(char *);
 
 	do {
@@ -196,7 +180,12 @@ expression(char *token)
 		(*fun)(token);
 	} while ((token = strtok(NULL, "\t")) != NULL);
 
-	link(getroot());
+	np = pop();
+	if (stackp != stack)
+		error(EEXPBAL);
+	if (listp == &listexp[NR_EXPRESSIONS])
+		error(EEXPROV);
+	*listp++ = np;
 }
 
 static void
