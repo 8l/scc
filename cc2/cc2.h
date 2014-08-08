@@ -55,6 +55,7 @@ enum nerrors {
 
 #define FUN        0
 #define VAR        1
+#define EFUN       2
 #define AUTO      'A'
 #define REG       'R'
 #define MEM       'T'

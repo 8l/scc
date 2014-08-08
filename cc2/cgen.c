@@ -33,6 +33,10 @@ emit(char what, void *data)
 		       "\tADD\tHL,SP\n"
 		       "\tLD\tSP,HL\n", sym->u.f.name, -sym->u.f.stack);
 		return;
+	case EFUN:
+		printf("\tLD\tSP,IX\n"
+		       "\tRET\n");
+		return;
 	default:
 		fputs("internal error: incorrect emit\n", stderr);
 		abort();
@@ -43,6 +47,7 @@ void
 cgen(Symbol *sym, Node *list[])
 {
 	emit(FUN, sym);
+	emit(EFUN, NULL);
 }
 
 /*
