@@ -39,6 +39,7 @@ enum nerrors {
 #define AUTO 'A'
 #define REGISTER 'R'
 #define STATIC 'S'
+#define CONST '#'
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *np);

@@ -132,7 +132,8 @@ immediate(char op)
 {
 	Node *np = newnode();
 
-	np->op = '#';
+	np->op = CONST;
+	/* TODO: deal with constant non integer */
 	np->type = L_INT;
 	scanf("%d", &np->u.imm);
 	np->left = np->right = NULL;

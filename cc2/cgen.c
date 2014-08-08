@@ -5,6 +5,13 @@
 
 #include "cc2.h"
 
+/*
+ * calculate addresability as follows
+ *     AUTO => 11
+ *     REGISTER => 13
+ *     STATIC => 12
+ *     CONST => 20
+ */
 void
 genaddable(Node *np)
 {
@@ -23,6 +30,8 @@ genaddable(Node *np)
 	case STATIC:
 		np->addable = 12;
 		break;
+	case CONST:
+		np->addable = 20;
+		break;
 	}
-	return;
 }
