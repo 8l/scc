@@ -12,8 +12,8 @@
  *     STATIC => 12
  *     CONST => 20
  */
-void
-genaddable(Node *np)
+static void
+xaddable(Node *np)
 {
 	if (!np)
 		return;
@@ -34,4 +34,13 @@ genaddable(Node *np)
 		np->addable = 20;
 		break;
 	}
+}
+
+void
+genaddable(Node *list[])
+{
+	Node *np;
+
+	while ((np = *list++) != NULL)
+		xaddable(np);
 }

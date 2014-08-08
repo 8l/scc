@@ -1,7 +1,9 @@
 
-#include <ctype.h>
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <cc.h>
 #include <sizes.h>
@@ -15,20 +17,20 @@
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
 
+char funbody;
 static Node *stack[NR_STACKSIZ], **stackp = stack;
-static Node *listexp[NR_EXPRESSIONS], **listp = &listexp[0];
+static Node *listexp[NR_EXPRESSIONS], **listp = listexp;
 static Node nodepool[NR_NODEPOOL], *newp = nodepool;
 
 static Symbol *localtbl;
 static Symbol *globaltbl;
 
 static Symbol *
-local(void)
+local(char *num)
 {
-	unsigned i;
+	unsigned i = atoi(num+1);
 	static unsigned nr;
 
-	scanf("%u", &i);
 	if (i >= NR_INT_IDENT)
 		error(EINTNUM);
 	if (i >= nr)
@@ -37,12 +39,11 @@ local(void)
 }
 
 static Symbol *
-global(void)
+global(char *num)
 {
-	unsigned i;
+	unsigned i = atoi(num+1);
 	static unsigned nr;
 
-	scanf("%u", &i);
 	if (i >= NR_EXT_IDENT)
 		error(EEXTNUM);
 	if (i >= nr)
@@ -83,39 +84,38 @@ link(Node *np)
 }
 
 static char
-gettype(void)
+gettype(char *type)
 {
-	char t;
-
-	switch (t = getchar()) {
+	switch (type[0]) {
 	case L_INT16: case L_INT8:
-		return t;
+		return type[0];
 	default:
 		error(ETYPERR);
 	}
 }
 
 static void
-variable(char op)
+variable(char *token)
 {
 	Symbol *sym;
+	char op;
 	Node *np = newnode();
 
-	switch (op) {
+	switch (token[0]) {
 	case 'A':
-		sym = local();
+		sym = local(token);
 		op = AUTO;
 		break;
 	case 'R':
-		sym = local();
+		sym = local(token);
 		op = REGISTER;
 		break;
 	case 'T':
-		sym = local();
+		sym = local(token);
 		op = STATIC;
 		break;
 	case 'G':
-		sym = global();
+		sym = global(token);
 		op = STATIC;
 		break;
 	}
@@ -128,37 +128,38 @@ variable(char op)
 }
 
 static void
-immediate(char op)
+immediate(char *token)
 {
 	Node *np = newnode();
 
 	np->op = CONST;
 	/* TODO: deal with constant non integer */
 	np->type = L_INT;
-	scanf("%d", &np->u.imm);
+	np->u.imm = atoi(token+1);
 	np->left = np->right = NULL;
 	push(np);
 }
 
 static void
-operator(char op)
+operator(char *token)
 {
 	Node *np = newnode();
 
 	np->left = pop();
 	np->right = pop();
-	np->type = gettype();
-	np->op = op;
+	np->type = gettype(token+1);
+	np->op = token[0];
 	push(np);
 }
 
 static void
-label(char op)
+label(char *token)
 {
 	Node *np = newnode();
 
 	np->left = np->right = NULL;
-	np->op = 'L';
+	np->op = LABEL;
+	np->u.sym = local(token);
 	push(np);
 }
 
@@ -171,7 +172,7 @@ getroot(void)
 	return np;
 }
 
-static void (*optbl[])(char) = {
+static void (*optbl[])(char *) = {
 	['+'] = operator,
 	['-'] = operator,
 	['*'] = operator,
@@ -185,107 +186,118 @@ static void (*optbl[])(char) = {
 };
 
 static void
-expression(void)
+expression(char *token)
 {
-	int c;
-	void (*fun)(char);
+	void (*fun)(char *);
 
 	do {
-		if (!isprint(c = getchar()))
+		if ((fun = optbl[token[0]]) == NULL)
 			error(ESYNTAX);
-		if ((fun = optbl[c]) == NULL)
-			error(ESYNTAX);
-		(*fun)(c);
-	} while ((c = getchar()) == '\t');
+		(*fun)(token);
+	} while ((token = strtok(NULL, "\t")) != NULL);
 
-	if (c != '\n')
-		error(ESYNTAX);
 	link(getroot());
 }
 
 static void
-declaration(char sclass, char islocal)
+declaration(char *token)
 {
-	Symbol *sym = (islocal) ? local() : global();
+	char class = token[0];
+	Symbol *sym;
 
-	getchar(); /* skip tab */
-	sym->u.v.storage = sclass;
-	sym->u.v.type = gettype();
-	if (getchar() != '\n')
-		error(ESYNTAX);
+	sym = (class == 'G') ? global(token) : local(token);
+
+	sym->u.v.storage = class;
+	sym->u.v.type = gettype(strtok(NULL, "\t"));
 }
 
 static void
-chop(void)
+deflabel(char *token)
 {
-	int c;
+	Symbol *sym;
 
-	while ((c = getchar()) != EOF && c != '\n')
-		/* nothing */;
-}
-
-static void
-deflabel(void)
-{
-	Symbol *sym = local();
-
+	sym = local(token);
 	sym->u.l.addr = listp - listexp;
-	chop();
 }
 
 static void
-function(void)
+function(char *token)
 {
-	int c;
-	char name[IDENTSIZ + 1];
+	funbody = 1;
+	listp = listexp;
+	newp = nodepool;
+}
 
-	scanf("%" STR(IDENTSIZ) "s", name);
-	chop();
-	for (;;) {
-		switch (c = getchar()) {
-		case '\t':
-			expression();
-			break;
-		case 'L':
-			deflabel();
-			break;
-		case 'S':
-			/* struct */
-			break;
-		case 'T': case 'A': case 'R':
-			declaration(c, 1);
-			break;
-		case '}':
-			chop();
-			return;
-		default:
-			error(ESYNTAX);
-			break;
-		}
-	}
+static void
+endfunction(char *token)
+{
+	funbody = 0;
+	listp = NULL;
+	genaddable(listexp);
 }
 
 void
 parse(void)
 {
+	void (*fun)(char *tok);
+	uint8_t len;
 	int c;
-	void genaddr(Node *np);
+	char line[200];
 
 	for (;;) {
 		switch (c = getchar()) {
+		case 'L':
+			if (!funbody)
+				goto syntax_error;
+			fun = deflabel;
+			break;
+		case '\t':
+			if (!funbody)
+				goto syntax_error;
+			fun = expression;
+			break;
+		case 'S':
+			/* struct */
+			break;
+		case 'T': case 'A': case 'R':
+			if (!funbody)
+				goto syntax_error;
+			fun = declaration;
+			break;
 		case 'G':
-			declaration(c, 0);
+			if (funbody)
+				goto syntax_error;
+			fun = declaration;
 			break;
 		case 'X':
-			function();
-			genaddable(listexp[0]);
+			if (funbody)
+				goto syntax_error;
+			fun = function;
+			break;
+		case '}':
+			fun = endfunction;
 			break;
 		case EOF:
-			return;
-			break;
+			goto found_eof;
 		default:
-			error(ESYNTAX);
+			goto syntax_error;
 		}
-	}
-}
 
+		ungetc(c, stdin);
+		if (!fgets(line, sizeof(line), stdin))
+			break;
+		len = strlen(line);
+		if (line[len-1] != '\n')
+			error(ELNLINE);
+		line[len-1] = '\0';
+		(*fun)(strtok(line, "\t"));
+	}
+
+found_eof:
+	if (ferror(stdin))
+		error(EFERROR, strerror(errno));
+	return;
+
+syntax_error:
+	error(ESYNTAX);
+}

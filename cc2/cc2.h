@@ -33,6 +33,8 @@ enum nerrors {
 	ETYPERR,       /* incorrect type in expression */
 	EEXPBAL,       /* expression not balanced */
 	ESYNTAX,       /* syntax error */
+	ELNLINE,       /* line too long */
+	EFERROR,       /* error reading from file:%s*/
 	ENUMERR
 };
 
@@ -40,6 +42,7 @@ enum nerrors {
 #define REGISTER 'R'
 #define STATIC 'S'
 #define CONST '#'
+#define LABEL 'L'
 
 extern void error(unsigned nerror, ...);
-extern void genaddable(Node *np);
+extern void genaddable(Node *list[]);
