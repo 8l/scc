@@ -1,9 +1,30 @@
 
-#include <assert.h>
-#include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "cc2.h"
+
+
+#include <stdio.h>
+
+static void
+emit(char what, void *data)
+{
+	switch (what) {
+	case FUNCTION:
+		printf("%s:\n", data);
+		break;
+	default:
+		fputs("internal error: incorrect emit\n", stderr);
+		abort();
+	}
+}
+
+void
+cgen(Symbol *sym, Node *list[])
+{
+	emit(FUNCTION, sym->u.f.name);
+}
 
 /*
  * calculate addresability as follows

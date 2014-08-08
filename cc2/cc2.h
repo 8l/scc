@@ -8,6 +8,9 @@ typedef struct {
 		struct {
 			short addr;
 		} l;
+		struct {
+			char *name;
+		} f;
 	} u;
 } Symbol;
 
@@ -38,13 +41,15 @@ enum nerrors {
 	ENUMERR
 };
 
-#define AUTO 'A'
-#define REGISTER 'R'
-#define STATIC 'S'
-#define CONST '#'
-#define LABEL 'L'
-#define OADD  '+'
-#define OSUB  '-'
+#define FUNCTION   0
+#define AUTO      'A'
+#define REGISTER  'R'
+#define STATIC    'T'
+#define CONST     '#'
+#define LABEL     'L'
+#define OADD      '+'
+#define OSUB      '-'
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);
+extern void cgen(Symbol *sym, Node *list[]);

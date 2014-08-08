@@ -15,7 +15,8 @@
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
 
-char funbody;
+static char funbody;
+static Symbol *curfun;
 static Node *stack[NR_STACKSIZ], **stackp = stack;
 static Node *listexp[NR_EXPRESSIONS], **listp = listexp;
 static Node nodepool[NR_NODEPOOL], *newp = nodepool;
@@ -211,6 +212,10 @@ static void
 function(char *token)
 {
 	funbody = 1;
+	curfun = global(token);
+	if ((token = strtok(NULL, "\t")) == NULL)
+		error(ESYNTAX);
+	curfun->u.f.name = xstrdup(token);
 	listp = listexp;
 	newp = nodepool;
 }
@@ -221,6 +226,7 @@ endfunction(char *token)
 	funbody = 0;
 	listp = NULL;
 	genaddable(listexp);
+	cgen(curfun, listexp);
 }
 
 void
