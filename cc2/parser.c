@@ -305,6 +305,7 @@ endfunction(char *token)
 {
 	funbody = 0;
 	listp = NULL;
+	genstack(curfun);
 	genaddable(listexp);
 	cgen(curfun, listexp);
 }

@@ -19,6 +19,7 @@ typedef struct symbol {
 		} l;
 		struct {
 			char *name;
+			short stack;
 			struct symbol *pars;
 			struct symbol *vars;
 		} f;
@@ -66,3 +67,4 @@ enum nerrors {
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);
 extern void cgen(Symbol *sym, Node *list[]);
+extern void genstack(Symbol *fun);

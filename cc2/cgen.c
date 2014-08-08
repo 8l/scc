@@ -7,14 +7,32 @@
 
 #include <stdio.h>
 
+void
+genstack(Symbol *fun)
+{
+	Symbol *p;
+	short siz;
+
+	for (siz = 0, p = fun->u.f.vars; p; p = p->next)
+		siz += p->u.v.type->size;
+	fun->u.f.stack = siz;
+}
 
 static void
 emit(char what, void *data)
 {
+	Symbol *sym, *p;
+
 	switch (what) {
 	case FUN:
-		printf("%s:\n", data);
-		break;
+		sym = data;
+		printf("%s:\n"
+		       "\tPUSH\tIX\n"
+		       "\tLD\tIX,SP\n"
+		       "\tLD\tHL,%d\n"
+		       "\tADD\tHL,SP\n"
+		       "\tLD\tSP,HL\n", sym->u.f.name, -sym->u.f.stack);
+		return;
 	default:
 		fputs("internal error: incorrect emit\n", stderr);
 		abort();
@@ -24,7 +42,7 @@ emit(char what, void *data)
 void
 cgen(Symbol *sym, Node *list[])
 {
-	emit(FUN, sym->u.f.name);
+	emit(FUN, sym);
 }
 
 /*
