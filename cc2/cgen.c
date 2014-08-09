@@ -1,4 +1,5 @@
 
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -18,37 +19,75 @@ genstack(Symbol *fun)
 	fun->u.f.stack = siz;
 }
 
-static void
-emit(char what, void *data)
-{
-	Symbol *sym, *p;
+enum {
+	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR
+};
 
-	switch (what) {
-	case FUN:
-		sym = data;
-		printf("%s:\n"
-		       "\tPUSH\tIX\n"
-		       "\tLD\tIX,SP\n"
-		       "\tLD\tHL,%d\n"
-		       "\tADD\tHL,SP\n"
-		       "\tLD\tSP,HL\n", sym->u.f.name, -sym->u.f.stack);
-		return;
-	case EFUN:
-		puts("\tLD\tSP,IX\n"
-		     "\tPOP\tIX\n"
-		     "\tRET");
-		return;
-	default:
-		fputs("internal error: incorrect emit\n", stderr);
-		abort();
+enum {
+	AF, HL, DE, BC, IX, IY, SP, A, F, B, C, D, E, H, L, IXL, IXH, IYL, IYH
+};
+
+char *opnames[] = {
+	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
+	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD"
+};
+
+char *regnames[] = {
+	[AF] = "AF", [HL] = "HL", [DE] = "DE", [BC] = "BC", [IX] = "IX",
+	[IY] = "IY", [SP] = "SP", [A]  = "A",  [F]  = "F",  [B]  = "B",
+	[C]  = "C",  [D]  = "D",  [E]  = "E",  [H]  = "H",  [L]  = "L",
+	[IXL]= "IXL",[IXH]= "IXH",[IYL]= "IYL",[IYH]= "IYH"
+};
+
+void
+emit(char op, ...)
+{
+	va_list va;
+	uint8_t reg1, reg2;
+	short imm;
+	char *label;
+
+	va_start(va, op);
+	switch (op) {
+	case RET:
+		printf("\t%s\n", opnames[op]);
+		break;
+	case PUSH: case POP:
+		reg1 = va_arg(va, int);
+		printf("\t%s\t%s\n", opnames[op], regnames[reg1]);
+		break;
+	case ADD: case LD:
+		reg1 = va_arg(va, int);
+		reg2 = va_arg(va, int);
+		printf("\t%s\t%s,%s\n",
+		       opnames[op], regnames[reg1], regnames[reg2]);
+		break;
+	case ADDI: case LDI:
+		reg1 = va_arg(va, int);
+		imm = va_arg(va, int);
+		printf("\t%s\t%s,%hX\n", opnames[op], regnames[reg1], imm);
+		break;
+	case ADDR:
+		label = va_arg(va, char *);
+		printf("%s:\n", label);
+		break;
 	}
+
+	va_end(va);
 }
 
 void
 cgen(Symbol *sym, Node *list[])
 {
-	emit(FUN, sym);
-	emit(EFUN, NULL);
+	emit(ADDR, sym->u.f.name);
+	emit(PUSH, IX);
+	emit(LD, IX, SP);
+	emit(LDI, HL, -sym->u.f.stack);
+	emit(ADD, HL, SP);
+	emit(LD, SP, HL);
+	emit(LD, SP, IX);
+	emit(POP, IX);
+	emit(RET);
 }
 
 /*
