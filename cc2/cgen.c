@@ -34,8 +34,9 @@ emit(char what, void *data)
 		       "\tLD\tSP,HL\n", sym->u.f.name, -sym->u.f.stack);
 		return;
 	case EFUN:
-		printf("\tLD\tSP,IX\n"
-		       "\tRET\n");
+		puts("\tLD\tSP,IX\n"
+		     "\tPOP\tIX\n"
+		     "\tRET");
 		return;
 	default:
 		fputs("internal error: incorrect emit\n", stderr);
