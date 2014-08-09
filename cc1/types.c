@@ -290,8 +290,8 @@ eqtype(Type *tp1, Type *tp2)
 		if (!eqtype(tp1->type, tp2->type))
 			return 0;
 		return tp1->u.nelem == tp2->u.nelem;
-	case ENUM:
-		return 1;
+	case ENUM: case INT: case FLOAT:
+		return tp1->letter == tp2->letter;
 	default:
 		fputs("internal type error, aborting\n", stderr);
 		abort();
