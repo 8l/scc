@@ -79,15 +79,24 @@ emit(char op, ...)
 void
 cgen(Symbol *sym, Node *list[])
 {
+	extern char odebug;
+	char frame = sym->u.f.stack != 0 || odebug;
+
 	emit(ADDR, sym->u.f.name);
-	emit(PUSH, IX);
-	emit(LD, IX, SP);
-	emit(LDI, HL, -sym->u.f.stack);
-	emit(ADD, HL, SP);
-	emit(LD, SP, HL);
-	emit(LD, SP, IX);
-	emit(POP, IX);
-	emit(RET);
+	if (frame) {
+		emit(PUSH, IX);
+		emit(LD, IX, SP);
+		emit(LDI, HL, -sym->u.f.stack);
+		emit(ADD, HL, SP);
+		emit(LD, SP, HL);
+	}
+
+
+	if (frame) {
+		emit(LD, SP, IX);
+		emit(POP, IX);
+		emit(RET);
+	}
 }
 
 /*

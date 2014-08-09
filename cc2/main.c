@@ -11,6 +11,8 @@
 
 extern void parse(void);
 
+char odebug;
+
 void
 error(unsigned nerror, ...)
 {
