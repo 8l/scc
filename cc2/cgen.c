@@ -125,26 +125,7 @@ xcgen(Node *np)
 
 	switch (np->op) {
 	case OADD:
-		if (rp->op == CONST) {
-			/*  TODO: check that it is AUTO */
-			off = lp->u.sym->u.v.off;
-			imm = rp->u.imm;
-			emit(LDI, A, imm&0xFF);
-			emit(ADDX, A, IX, -(off+1));
-			emit(LD, L, A);
-			emit(LDI, A, imm >> 8);
-			emit(ADCX, A, IX, -off);
-			emit(LD, H, A);
-		} else {
-			abort();
-		}
-		break;
 	case OASSIG:
-		/*  TODO: check that it is really in HL and AUTO */
-		assert(lp->op == AUTO);
-		off = lp->u.sym->u.v.off;
-		emit(LDX, IX, -(off+1), L);
-		emit(LDX, IX, off, H);
 		break;
 	default:
 		abort();
@@ -212,36 +193,11 @@ xaddable(Node *np)
 	case OASSIG: case OADD: case OSUB:
 		xaddable(lp);
 		xaddable(rp);
-		switch (rp->addable) {
-		case 11:
-			switch (lp->addable) {
-			case 11:
-			case 20:
-				np->addable = 1;
-				goto complex;
-			default:
-				abort();
-			}
-		case 20:
-			switch (lp->addable) {
-			case 20:
-			case 11:
-				np->addable = 1;
-				goto complex;
-			default:
-				abort();
-			}
-		case 1:
-			break;
-		default:
-			abort();
-		}
 		break;
 	default:
 		abort();
 	}
 
-complex:
 	if (np->addable > 10)
 		return;
 	if (lp)
