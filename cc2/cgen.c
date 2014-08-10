@@ -126,6 +126,7 @@ xcgen(Node *np)
 	switch (np->op) {
 	case OINC:
 	case OADD: case OASSIG: case OMOD: case ODIV:
+	case OSHL: case OSHR:
 		break;
 	default:
 		abort();
@@ -192,6 +193,7 @@ xaddable(Node *np)
 		break;
 	case OINC:
 	case OASSIG: case OADD: case OSUB: case OMOD: case ODIV:
+	case OSHL:   case OSHR:
 		xaddable(lp);
 		xaddable(rp);
 		break;

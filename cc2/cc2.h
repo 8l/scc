@@ -71,6 +71,8 @@ enum nerrors {
 #define OINC      ';'
 #define OMOD      '%'
 #define ODIV      '/'
+#define OSHL      'l'
+#define OSHR      'r'
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);
