@@ -72,7 +72,8 @@ emit(char op, ...)
 	case ADDI: case LDI:
 		reg1 = va_arg(va, int);
 		imm = va_arg(va, int);
-		printf("\t%s\t%s,%hX\n", opnames[op], regnames[reg1], imm);
+		printf("\t%s\t%s,%hd\n", opnames[op], regnames[reg1], imm);
+		break;
 	case ADDX: case ADCX:
 		reg1 = va_arg(va, int);
 		reg2 = va_arg(va, int);
