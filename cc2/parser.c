@@ -243,15 +243,37 @@ increment(char *token)
 	}
 }
 
+static void
+assignment(char *token)
+{
+	Node *np = newnode();
+
+	np->right = pop();
+	np->left = pop();
+	np->op = *token;
+	switch (*++token) {
+	case OADD: case OSUB: case OINC:  case OMOD: case ODIV:
+	case OSHL: case OSHR: case OBAND: case OBOR: case OBXOR:
+		np->subop = *++token;
+	default:
+		np->type = gettype(token);
+		break;
+	}
+	push(np);
+}
+
 static void (*optbl[])(char *) = {
 	['+'] = operator,
 	['%'] = operator,
 	['-'] = operator,
 	['*'] = operator,
 	['/'] = operator,
-	[':'] = operator,
 	['l'] = operator,
 	['r'] = operator,
+	['&'] = operator,
+	['|'] = operator,
+	['^'] = operator,
+	[':'] = assignment,
 	[';'] = increment,
 	['A'] = variable,
 	['T'] = variable,
