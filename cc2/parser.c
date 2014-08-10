@@ -248,6 +248,7 @@ increment(char *token)
 
 static void (*optbl[])(char *) = {
 	['+'] = operator,
+	['%'] = operator,
 	['-'] = operator,
 	['*'] = operator,
 	['/'] = operator,
