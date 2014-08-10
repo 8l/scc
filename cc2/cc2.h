@@ -66,6 +66,7 @@ enum nerrors {
 #define LABEL     'L'
 #define OADD      '+'
 #define OSUB      '-'
+#define OASSIG    ':'
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);

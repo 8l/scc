@@ -26,7 +26,7 @@ genstack(Symbol *fun)
 }
 
 enum {
-	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX
+	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX
 };
 
 enum {
@@ -36,7 +36,7 @@ enum {
 char *opnames[] = {
 	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
 	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD", [ADDX] = "ADD",
-	[ADCX] = "ADC"
+	[ADCX] = "ADC" , [LDX] = "LD"
 };
 
 char *regnames[] = {
@@ -74,6 +74,13 @@ emit(char op, ...)
 		reg1 = va_arg(va, int);
 		imm = va_arg(va, int);
 		printf("\t%s\t%s,%hd\n", opnames[op], regnames[reg1], imm);
+		break;
+	case LDX:
+		reg1 = va_arg(va, int);
+		off = va_arg(va, int);
+		reg2 = va_arg(va, int);
+		printf("\t%s\t(%s%+hd),%s\n",
+		       opnames[op], regnames[reg1], off, regnames[reg2]);
 		break;
 	case ADDX: case ADCX:
 		reg1 = va_arg(va, int);
@@ -128,7 +135,16 @@ xcgen(Node *np)
 			emit(LDI, A, imm >> 8);
 			emit(ADCX, A, IX, -off);
 			emit(LD, H, A);
+		} else {
+			abort();
 		}
+		break;
+	case OASSIG:
+		/*  TODO: check that it is really in HL and AUTO */
+		assert(lp->op == AUTO);
+		off = lp->u.sym->u.v.off;
+		emit(LDX, IX, -(off+1), L);
+		emit(LDX, IX, off, H);
 		break;
 	default:
 		abort();
@@ -193,7 +209,7 @@ xaddable(Node *np)
 	case CONST:
 		np->addable = 20;
 		break;
-	case OADD: case OSUB:
+	case OASSIG: case OADD: case OSUB:
 		xaddable(lp);
 		xaddable(rp);
 		switch (rp->addable) {
@@ -215,6 +231,8 @@ xaddable(Node *np)
 			default:
 				abort();
 			}
+		case 1:
+			break;
 		default:
 			abort();
 		}

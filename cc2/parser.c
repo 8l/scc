@@ -233,6 +233,7 @@ static void (*optbl[])(char *) = {
 	['-'] = operator,
 	['*'] = operator,
 	['/'] = operator,
+	[':'] = operator,
 	['A'] = variable,
 	['T'] = variable,
 	['G'] = variable,
