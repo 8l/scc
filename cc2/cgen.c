@@ -203,7 +203,7 @@ xaddable(Node *np)
 	if (lp)
 		np->complex = lp->complex;
 	if (rp) {
-		int8_t d = rp->complex - np->complex;
+		int8_t d = np->complex - rp->complex;
 
 		if (d == 0)
 			++np->complex;
