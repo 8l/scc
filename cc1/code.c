@@ -88,7 +88,7 @@ emitconst(Node *np)
 	Symbol *sym = np->u.sym;
 
 	if (np->type == inttype) {
-		printf("#%x", sym->u.i);
+		printf("#%c%x", np->type->letter, sym->u.i);
 	} else {
 		putchar('"');
 		for (bp = sym->u.s; c = *bp; ++bp)

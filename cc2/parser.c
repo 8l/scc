@@ -193,14 +193,11 @@ variable(char *token)
 static void
 immediate(char *token)
 {
-	static char buf[2];
 	Node *np = newnode();
 
 	np->op = CONST;
-	/* TODO: deal with constant non integer */
-	buf[0] = L_INT;
-	np->type = gettype(buf);
-	np->u.imm = atoi(token+1);
+	np->type = gettype(token+1);
+	np->u.imm = atoi(token+2);
 	np->left = np->right = NULL;
 	push(np);
 }
