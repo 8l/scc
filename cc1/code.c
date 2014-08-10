@@ -16,7 +16,7 @@ char *opcodes[] = {
 	[OMUL] = "*",
 	[OARY] = "'",
 	[OINC] = ";+",
-	[ODEC] =  ";=",
+	[ODEC] =  ";-",
 	[OSIZE] = "#",
 	[OPTR] = "@",
 	[OMOD] = "*",
