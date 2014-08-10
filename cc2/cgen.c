@@ -25,7 +25,7 @@ genstack(Symbol *fun)
 }
 
 enum {
-	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR
+	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX
 };
 
 enum {
@@ -34,7 +34,8 @@ enum {
 
 char *opnames[] = {
 	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
-	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD"
+	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD", [ADDX] = "ADD",
+	[ADCX] = "ADC"
 };
 
 char *regnames[] = {
@@ -49,7 +50,8 @@ emit(char op, ...)
 {
 	va_list va;
 	uint8_t reg1, reg2;
-	short imm;
+	/* TODO: define a macro with the default integer type */
+	short imm, off;
 	char *label;
 
 	va_start(va, op);
@@ -71,6 +73,12 @@ emit(char op, ...)
 		reg1 = va_arg(va, int);
 		imm = va_arg(va, int);
 		printf("\t%s\t%s,%hX\n", opnames[op], regnames[reg1], imm);
+	case ADDX: case ADCX:
+		reg1 = va_arg(va, int);
+		reg2 = va_arg(va, int);
+		off = va_arg(va, int);
+		printf("\t%s\t%s,(%s%+hd)\n",
+		       opnames[op], regnames[reg1], regnames[reg2], off);
 		break;
 	case ADDR:
 		label = va_arg(va, char *);
@@ -82,9 +90,53 @@ emit(char op, ...)
 }
 
 void
+xcgen(Node *np)
+{
+	Node *lp, *rp;
+	/* TODO: define a macro with the default integer type */
+	unsigned imm, off;
+
+	if (!np || np->complex == 0)
+		return;
+	lp = np->left;
+	rp = np->right;
+	if (!lp) {
+		xcgen(rp);
+	} else if (!rp) {
+		xcgen(lp);
+	} else {
+		Node *p, *q;
+		if (lp->complex > rp->complex)
+			p = lp, q = rp;
+		else
+			p = rp, q = lp;
+		xcgen(p);
+		xcgen(q);
+	}
+
+	switch (np->op) {
+	case OADD:
+		if (lp->op == CONST) {
+			off = rp->u.sym->u.v.off;
+			imm = lp->u.imm;
+			emit(LDI, A, imm&0xFF);
+			emit(ADDX, A, IX, -(off+1));
+			emit(LD, L, A);
+			emit(LDI, A, imm >> 8);
+			emit(ADCX, A, IX, -off);
+			emit(LD, H, A);
+		}
+		break;
+	default:
+		abort();
+	}
+}
+
+void
 cgen(Symbol *sym, Node *list[])
 {
 	extern char odebug;
+	Node *np;
 	char frame = sym->u.f.stack != 0 || odebug;
 
 	emit(ADDR, sym->u.f.name);
@@ -96,6 +148,8 @@ cgen(Symbol *sym, Node *list[])
 		emit(LD, SP, HL);
 	}
 
+	while (np = *list++)
+		xcgen(np);
 
 	if (frame) {
 		emit(LD, SP, IX);
@@ -136,11 +190,52 @@ xaddable(Node *np)
 	case CONST:
 		np->addable = 20;
 		break;
-	case OADD:
-	case OSUB:
+	case OADD: case OSUB:
 		xaddable(lp);
 		xaddable(rp);
+		switch (rp->addable) {
+		case 11:
+			switch (lp->addable) {
+			case 11:
+			case 20:
+				np->addable = 1;
+				goto complex;
+			default:
+				abort();
+			}
+		case 20:
+			switch (lp->addable) {
+			case 20:
+			case 11:
+				np->addable = 1;
+				goto complex;
+			default:
+				abort();
+			}
+		default:
+			abort();
+		}
+		break;
+	default:
+		abort();
 	}
+
+complex:
+	if (np->addable > 10)
+		return;
+	if (lp)
+		np->complex = lp->complex;
+	if (rp) {
+		int8_t d = rp->complex - np->complex;
+
+		if (d == 0)
+			++np->complex;
+		else if (d < 0)
+			np->complex = rp->complex;
+	}
+	if (np->complex == 0)
+		++np->complex;
+	return;
 }
 
 void
@@ -148,6 +243,6 @@ genaddable(Node *list[])
 {
 	Node *np;
 
-	while ((np = *list++) != NULL)
+	while (np = *list++)
 		xaddable(np);
 }

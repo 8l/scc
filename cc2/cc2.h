@@ -31,8 +31,8 @@ typedef struct symbol {
 typedef struct node {
 	char op;
 	Type *type;
-	int8_t complex;
-	int8_t addable;
+	uint8_t complex;
+	uint8_t addable;
 	union {
 		Symbol *sym;
 		int imm;
