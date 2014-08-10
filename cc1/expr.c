@@ -340,6 +340,7 @@ static Node *
 incdec(Node *np, char op)
 {
 	Type *tp = np->type;
+	Node *inc;
 
 	chklvalue(np, np->type);
 
@@ -347,11 +348,15 @@ incdec(Node *np, char op)
 	case PTR:
 		if (!tp->defined)
 			error("invalid use of indefined type");
+		inc = sizeofcode(tp->type);
+		break;
 	case INT: case FLOAT:
-		return arithmetic(op, np, symcode(one));
+		inc = symcode(one);
+		break;
 	default:
 		error("incorrect type in arithmetic operation");
 	}
+	return arithmetic(op, np, inc);
 }
 
 static Node *
