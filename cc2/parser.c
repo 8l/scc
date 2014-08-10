@@ -273,7 +273,7 @@ declaration(char *token)
 		break;
 	}
 	sym->type = VAR;
-	sym->u.v.storage = class;
+	sym->u.v.sclass = class;
 	sym->u.v.type = gettype(strtok(NULL, "\t"));
 }
 

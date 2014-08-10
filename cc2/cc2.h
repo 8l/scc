@@ -12,7 +12,8 @@ typedef struct symbol {
 	union {
 		struct {
 			Type *type;
-			char storage;
+			char sclass;
+			short off;
 		} v;
 		struct {
 			short addr;
