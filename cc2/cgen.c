@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -117,9 +118,10 @@ xcgen(Node *np)
 
 	switch (np->op) {
 	case OADD:
-		if (lp->op == CONST) {
-			off = rp->u.sym->u.v.off;
-			imm = lp->u.imm;
+		if (rp->op == CONST) {
+			/*  TODO: check that it is AUTO */
+			off = lp->u.sym->u.v.off;
+			imm = rp->u.imm;
 			emit(LDI, A, imm&0xFF);
 			emit(ADDX, A, IX, -(off+1));
 			emit(LD, L, A);

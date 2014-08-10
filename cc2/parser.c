@@ -210,8 +210,8 @@ operator(char *token)
 {
 	Node *np = newnode();
 
-	np->left = pop();
 	np->right = pop();
+	np->left = pop();
 	np->type = gettype(token+1);
 	np->op = token[0];
 	push(np);
