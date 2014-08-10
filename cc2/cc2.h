@@ -1,6 +1,7 @@
 
 typedef struct {
 	short size;
+	uint8_t align;
 	bool sign : 1;
 	bool c_int : 1;
 } Type;

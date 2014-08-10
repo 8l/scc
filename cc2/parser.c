@@ -26,45 +26,53 @@ static Symbol *globaltbl;
 
 Type l_int8 = {
 	.size = 1,
+	.align = 2,
 	.sign = 1,
 	.c_int = 1,
 };
 
 Type l_int16 = {
 	.size = 2,
+	.align = 2,
 	.sign = 1,
 	.c_int = 1,
 };
 
 Type l_int32 = {
 	.size = 4,
+	.align = 4,
 	.sign = 1,
 	.c_int = 1,
 };
 
 Type l_int64 = {
 	.size = 8,
+	.align = 8,
 	.sign = 1,
 	.c_int = 1,
 };
 
 Type l_uint8 = {
 	.size = 1,
+	.align = 2,
 	.c_int = 1,
 };
 
 Type l_uint16 = {
 	.size = 2,
+	.align = 2,
 	.c_int = 1,
 };
 
 Type l_uint32 = {
 	.size = 4,
+	.align = 4,
 	.c_int = 1,
 };
 
 Type l_uint64 = {
 	.size = 8,
+	.align = 8,
 	.c_int = 1,
 };
 

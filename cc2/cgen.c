@@ -12,16 +12,16 @@ void
 genstack(Symbol *fun)
 {
 	Symbol *p;
-	short size;
+	short off;
 
-	for (size = 0, p = fun->u.f.vars; p; p = p->next) {
+	for (off = 0, p = fun->u.f.vars; p; p = p->next) {
 		if (p->u.v.sclass == AUTO) {
-			p->u.v.off = size;
-			size += p->u.v.type->size;
+			p->u.v.off = off;
+			off += p->u.v.type->align;
 		}
 	}
 
-	fun->u.f.stack = size;
+	fun->u.f.stack = off;
 }
 
 enum {
