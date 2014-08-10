@@ -30,6 +30,7 @@ typedef struct symbol {
 
 typedef struct node {
 	char op;
+	char subop;
 	Type *type;
 	uint8_t complex;
 	uint8_t addable;
@@ -67,6 +68,7 @@ enum nerrors {
 #define OADD      '+'
 #define OSUB      '-'
 #define OASSIG    ':'
+#define OINC      ';'
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);

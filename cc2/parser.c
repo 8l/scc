@@ -228,12 +228,31 @@ label(char *token)
 	push(np);
 }
 
+static void
+increment(char *token)
+{
+	Node *np = newnode();
+
+	np->right = pop();
+	np->left = pop();
+	np->type = gettype(token+2);
+	np->op = token[0];
+	switch (np->subop = token[1]) {
+	case '-': case '+':
+		push(np);
+		break;
+	default:
+		error(ESYNTAX);
+	}
+}
+
 static void (*optbl[])(char *) = {
 	['+'] = operator,
 	['-'] = operator,
 	['*'] = operator,
 	['/'] = operator,
 	[':'] = operator,
+	[';'] = increment,
 	['A'] = variable,
 	['T'] = variable,
 	['G'] = variable,
