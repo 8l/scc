@@ -76,6 +76,8 @@ enum nerrors {
 #define OBAND     '&'
 #define OBOR      '|'
 #define OBXOR     '^'
+#define OPTR      '@'
+#define OADDR     'a'
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);

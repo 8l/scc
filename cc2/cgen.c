@@ -124,6 +124,7 @@ xcgen(Node *np)
 	}
 
 	switch (np->op) {
+	case OPTR:   case OADDR:
 	case OINC:
 	case OADD: case OSUB:  case OASSIG: case OMOD: case ODIV:
 	case OSHL: case OSHR:
@@ -191,6 +192,9 @@ xaddable(Node *np)
 		break;
 	case CONST:
 		np->addable = 20;
+		break;
+	case OPTR:   case OADDR:
+		xaddable(lp);
 		break;
 	case OINC:
 	case OASSIG: case OADD: case OSUB: case OMOD: case ODIV:

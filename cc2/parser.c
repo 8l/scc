@@ -203,6 +203,18 @@ immediate(char *token)
 }
 
 static void
+unary(char *token)
+{
+	Node *np = newnode();
+
+	np->right = NULL;
+	np->left = pop();
+	np->type = gettype(token+1);
+	np->op = token[0];
+	push(np);
+}
+
+static void
 operator(char *token)
 {
 	Node *np = newnode();
@@ -280,6 +292,8 @@ static void (*optbl[])(char *) = {
 	['G'] = variable,
 	['L'] = label,
 	['#'] = immediate,
+	['@'] = unary,
+	['a'] = unary,
 	['\177'] = NULL
 };
 
