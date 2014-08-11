@@ -534,12 +534,13 @@ unary(void)
 		next();
 		return incdec(unary(), op);
 	case '!': op = 0; fun = negation; break;
+	/* FIXME: '-' and '+' can be applied to floats to */
 	case '+': op = OADD; fun = integeruop; break;
 	case '-': op = ONEG; fun = integeruop; break;
 	case '~': op = OCPL; fun = integeruop; break;
 	case '&': op = OADDR; fun = address; break;
 	case '*': op = OPTR; fun = content; break;
-	default: return postfix();
+	default:  return postfix();
 	}
 
 	next();

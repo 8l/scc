@@ -300,6 +300,8 @@ static void (*optbl[])(char *) = {
 	['['] = operator,
 	['='] = operator,
 	['!'] = operator,
+	['y'] = operator,
+	['o'] = operator,
 	['\177'] = NULL
 };
 
