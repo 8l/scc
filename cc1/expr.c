@@ -321,7 +321,7 @@ array(Node *np1, Node *np2)
 	tp = np1->type;
 	if (tp->op != PTR)
 		error("subscripted value is neither array nor pointer nor vector");
-	np1 =  unarycode(OARY, tp->type , np1);
+	np1 =  unarycode(OPTR, tp->type , np1);
 	np1->b.lvalue = 1;
 	return np1;
 }
