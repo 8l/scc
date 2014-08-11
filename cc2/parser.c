@@ -294,6 +294,12 @@ static void (*optbl[])(char *) = {
 	['#'] = immediate,
 	['@'] = unary,
 	['a'] = unary,
+	['<'] = operator,
+	['>'] = operator,
+	[']'] = operator,
+	['['] = operator,
+	['='] = operator,
+	['!'] = operator,
 	['\177'] = NULL
 };
 
