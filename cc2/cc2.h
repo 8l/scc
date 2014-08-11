@@ -88,6 +88,7 @@ enum nerrors {
 #define OAND      'y'
 #define ONEG      '_'
 #define OCPL      '~'
+#define OCOMMA    ','
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);

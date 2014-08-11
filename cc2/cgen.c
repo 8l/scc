@@ -124,6 +124,7 @@ xcgen(Node *np)
 	}
 
 	switch (np->op) {
+	case OCOMMA:
 	case ONEG:   case OCPL:
 	case OOR:    case OAND:
 	case OPTR:   case OADDR:
@@ -200,6 +201,7 @@ xaddable(Node *np)
 	case OPTR:   case OADDR:
 		xaddable(lp);
 		break;
+	case OCOMMA:
 	case OOR:    case OAND:
 	case OLT:    case OGT:  case OGE:  case OLE:  case OEQ:  case ONE:
 	case OINC:
@@ -238,3 +240,4 @@ genaddable(Node *list[])
 	while (np = *list++)
 		xaddable(np);
 }
+
