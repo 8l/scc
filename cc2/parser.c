@@ -307,7 +307,7 @@ expression(char *token)
 		if ((fun = optbl[token[0]]) == NULL)
 			error(ESYNTAX);
 		(*fun)(token);
-	} while ((token = strtok(NULL, "\t")) != NULL);
+	} while (token = strtok(NULL, "\t"));
 
 	np = pop();
 	if (stackp != stack)

@@ -126,9 +126,9 @@ xcgen(Node *np)
 	switch (np->op) {
 	case OPTR:   case OADDR:
 	case OINC:
-	case OADD: case OSUB:  case OASSIG: case OMOD: case ODIV:
-	case OSHL: case OSHR:
-	case OBAND: case OBOR: case OBXOR:
+	case OADD:   case OSUB:  case OASSIG: case OMOD: case ODIV:
+	case OSHL:   case OSHR:
+	case OBAND:  case OBOR:  case OBXOR:
 		break;
 	default:
 		abort();
