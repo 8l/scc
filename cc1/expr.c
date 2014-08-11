@@ -91,6 +91,18 @@ integerop(char op, Node *np1, Node *np2)
 }
 
 static Node *
+numericaluop(char op, Node *np)
+{
+	np = eval(np);
+	switch (np->typeop) {
+	case INT: case FLOAT:
+		return (op == OADD) ? np : unarycode(op, np->type, np);
+	default:
+		error("unary operator requires integer operand");
+	}
+}
+
+static Node *
 integeruop(char op, Node *np)
 {
 	np = eval(np);
@@ -534,9 +546,8 @@ unary(void)
 		next();
 		return incdec(unary(), op);
 	case '!': op = 0; fun = negation; break;
-	/* FIXME: '-' and '+' can be applied to floats to */
-	case '+': op = OADD; fun = integeruop; break;
-	case '-': op = ONEG; fun = integeruop; break;
+	case '+': op = OADD; fun = numericaluop; break;
+	case '-': op = ONEG; fun = numericaluop; break;
 	case '~': op = OCPL; fun = integeruop; break;
 	case '&': op = OADDR; fun = address; break;
 	case '*': op = OPTR; fun = content; break;
