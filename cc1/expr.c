@@ -535,8 +535,8 @@ unary(void)
 		return incdec(unary(), op);
 	case '!': op = 0; fun = negation; break;
 	case '+': op = OADD; fun = integeruop; break;
-	case '-': op = OSUB; fun = integeruop; break;
-	case '~': op = ONEG; fun = integeruop; break;
+	case '-': op = ONEG; fun = integeruop; break;
+	case '~': op = OCPL; fun = integeruop; break;
 	case '&': op = OADDR; fun = address; break;
 	case '*': op = OPTR; fun = content; break;
 	default: return postfix();
