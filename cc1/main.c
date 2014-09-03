@@ -13,8 +13,6 @@ struct user_opt options;
 int
 main(int argc, char *argv[])
 {
-	//setvbuf(stdin, NULL, _IONBF, 0);
-	//setvbuf(stdout, NULL, _IONBF, 0);
 	init_keywords();
 	init_expr();
 	open_file(NULL);
