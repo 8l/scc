@@ -544,11 +544,6 @@ extdecl(void)
 	case ';':
 		expect(';');
 		return;
-	case '@':
-		next();
-		emitprint(expr());
-		expect(';');
-		return;
 	default:
 		unexpected();
 	}
