@@ -15,7 +15,6 @@
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
 
-static char funbody;
 static Symbol *curfun;
 static Node *stack[NR_STACKSIZ], **stackp = stack;
 static Node *listexp[NR_EXPRESSIONS], **listp = listexp;
@@ -150,6 +149,8 @@ gettype(char *type)
 		return &l_uint32;
 	case L_UINT64:
 		return &l_uint64;
+	case 'F':
+		return NULL;
 	default:
 		error(ETYPERR);
 	}
@@ -163,26 +164,31 @@ variable(char *token)
 	Node *np = newnode();
 
 	switch (token[0]) {
-	case 'A':
-		sym = local(token);
-		op = AUTO;
-		break;
-	case 'R':
-		sym = local(token);
-		op = REG;
-		break;
 	case 'T':
-		sym = (funbody) ? local(token) : global(token);
+		if (!curfun)
+			goto global;
 		op = MEM;
+		goto local;
+	case 'P':
+		op = AUTO;
+		goto local;
+	case 'A':
+		op = AUTO;
+		goto local;
+	case 'R':
+		op = REG;
+	local:
+		sym = local(token);
 		break;
+	case 'X':
+		/* TODO */
 	case 'G':
+	global:
 		sym = global(token);
 		op = MEM;
-		public = 1;
 		break;
 	}
 
-	sym->public = public;
 	np->u.sym = sym;
 	np->op = op;
 	np->type = sym->u.v.type;
@@ -314,6 +320,9 @@ expression(char *token)
 	Node *np;
 	void (*fun)(char *);
 
+	if (!curfun)
+		error(ESYNTAX);
+
 	do {
 		if ((fun = optbl[token[0]]) == NULL)
 			error(ESYNTAX);
@@ -331,25 +340,58 @@ expression(char *token)
 static void
 declaration(char *token)
 {
-	char class = token[0];
+	char class = token[0], *type, *name, *brace;
 	Symbol *sym;
 
-	sym = (class == 'G') ? global(token) : local(token);
-
 	switch (class) {
-	case 'A':
-		sym->next = curfun->u.f.vars;
-		curfun->u.f.vars = sym;
 	case 'P':
+		if (!curfun)
+			error(ESYNTAX);
+		sym = local(token);
 		sym->next = curfun->u.f.pars;
 		curfun->u.f.pars = sym;
 		break;
-	case 'G': case 'R': case 'T':
+	case 'T':
+		if (!curfun) {
+			sym = global(token);
+			break;
+		}
+	case 'R': case 'A':
+		if (!curfun)
+			error(ESYNTAX);
+		sym = local(token);
+		sym->next = curfun->u.f.vars;
+		curfun->u.f.vars = sym;
+		break;
+	case 'X':
+		sym = global(token);
+		sym->extrn = 1;
+		break;
+	case 'G':
+		sym = global(token);
+		sym->public = 1;
 		break;
 	}
-	sym->type = VAR;
-	sym->u.v.sclass = class;
-	sym->u.v.type = gettype(strtok(NULL, "\t"));
+
+	type = strtok(NULL, "\t");
+	if (type[0] == 'F') {
+		sym->type = FUN;
+	} else {
+		sym->type = VAR;
+		sym->u.v.sclass = class;
+		sym->u.v.type = gettype(type);
+	}
+	if (name = strtok(NULL, "\t"))
+		sym->name = xstrdup(name);
+	if (brace = strtok(NULL, "\t")) {
+		if (brace[0] != '{' || type[0] != 'F' || curfun)
+			error(ESYNTAX);
+		sym->u.f.vars = NULL;
+		sym->u.f.pars = NULL;
+		curfun = sym;
+		listp = listexp;
+		newp = nodepool;
+	}
 }
 
 static void
@@ -357,32 +399,21 @@ deflabel(char *token)
 {
 	Symbol *sym;
 
+	if (!curfun)
+		error(ESYNTAX);
 	sym = local(token);
 	sym->type = LABEL;
 	sym->u.l.addr = listp - listexp;
 }
 
 static void
-function(char *token)
-{
-	funbody = 1;
-	curfun = global(token);
-	if ((token = strtok(NULL, "\t")) == NULL)
-		error(ESYNTAX);
-	curfun->type = FUN;
-	curfun->u.f.name = xstrdup(token);
-	listp = listexp;
-	newp = nodepool;
-}
-
-static void
 endfunction(char *token)
 {
-	funbody = 0;
 	listp = NULL;
 	genstack(curfun);
 	genaddable(listexp);
 	cgen(curfun, listexp);
+	curfun = NULL;
 }
 
 void
@@ -396,32 +427,16 @@ parse(void)
 	for (;;) {
 		switch (c = getchar()) {
 		case 'L':
-			if (!funbody)
-				goto syntax_error;
 			fun = deflabel;
 			break;
 		case '\t':
-			if (!funbody)
-				goto syntax_error;
 			fun = expression;
 			break;
 		case 'S':
 			/* struct */
 			break;
-		case 'T': case 'A': case 'R': case 'P':
-			if (!funbody)
-				goto syntax_error;
+		case 'T': case 'G': case 'A': case 'R': case 'P':
 			fun = declaration;
-			break;
-		case 'G':
-			if (funbody)
-				goto syntax_error;
-			fun = declaration;
-			break;
-		case 'X':
-			if (funbody)
-				goto syntax_error;
-			fun = function;
 			break;
 		case '}':
 			fun = endfunction;

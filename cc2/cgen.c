@@ -146,7 +146,7 @@ cgen(Symbol *sym, Node *list[])
 	Node *np;
 	char frame = sym->u.f.stack != 0 || odebug;
 
-	emit(ADDR, sym->u.f.name);
+	emit(ADDR, sym->name);
 	if (frame) {
 		emit(PUSH, IX);
 		emit(LD, IX, SP);

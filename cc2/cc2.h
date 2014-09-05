@@ -7,7 +7,9 @@ typedef struct {
 } Type;
 
 typedef struct symbol {
-	char public;
+	char *name;
+	bool public : 1;
+	bool extrn : 1;
 	char type;
 	struct symbol *next;
 	union {
@@ -20,7 +22,6 @@ typedef struct symbol {
 			short addr;
 		} l;
 		struct {
-			char *name;
 			short stack;
 			struct symbol *pars;
 			struct symbol *vars;
