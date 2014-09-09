@@ -84,8 +84,8 @@ local(char *num)
 	if (i >= NR_INT_IDENT)
 		error(EINTNUM);
 	if (i > nr) {
-		nr = i + 5;
-		localtbl = xrealloc(localtbl, nr);
+		nr = i + 50;
+		localtbl = xrealloc(localtbl, nr * sizeof(Symbol));
 	}
 	return &localtbl[i];
 }
@@ -99,8 +99,8 @@ global(char *num)
 	if (i >= NR_EXT_IDENT)
 		error(EEXTNUM);
 	if (i >= nr) {
-		nr = i + 5;
-		globaltbl = xrealloc(globaltbl, nr);
+		nr = i + 50;
+		globaltbl = xrealloc(globaltbl, nr * sizeof(Symbol));
 	}
 	return &globaltbl[i];
 }
