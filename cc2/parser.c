@@ -363,6 +363,8 @@ deflabel(char *token)
 static void
 endfunction(char *token)
 {
+	if (!curfun)
+		error(ESYNTAX);
 	listp = NULL;
 	genstack(curfun);
 	genaddable(listexp);
@@ -487,7 +489,8 @@ parse(void)
 found_eof:
 	if (ferror(stdin))
 		error(EFERROR, strerror(errno));
-	return;
+	if (!curfun)
+		return;
 
 syntax_error:
 	error(ESYNTAX);
