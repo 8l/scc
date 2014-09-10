@@ -176,43 +176,46 @@ gettype(char *type)
 	}
 }
 
-static void
-variable(char *token)
+static Symbol *
+symbol(uint8_t t, char *token)
 {
-	Symbol *sym;
-	char op, public = 0;
-	Node *np = newnode();
+	static Symbol *(*tbl[3])(char *)= {
+		[LOCAL] = local,
+		[GLOBAL] = global,
+		[PARAMETER] = parameter
+	};
+	return (*tbl[t])(token);
+}
 
-	switch (token[0]) {
-	case 'T':
-		op = MEM;
-		goto local;
-	case 'P':
-		op = AUTO;
-		goto local;
-	case 'A':
-		op = AUTO;
-		goto local;
-	case 'R':
-		op = REG;
-	local:
-		sym = local(token);
-		break;
-	case 'X':
-		/* TODO */
-	case 'Y':
-	case 'G':
-	global:
-		sym = global(token);
-		op = MEM;
-		break;
-	}
+static void
+variable(uint8_t t, char *token)
+{
+	Node *np = newnode();
+	Symbol *sym = symbol(t, token);
 
 	np->u.sym = sym;
-	np->op = op;
+	np->op = sym->u.v.sclass;
 	np->type = sym->u.v.type;
 	np->left = np->right = NULL;
 	push(np);
+}
+
+static void
+localvar(char *token)
+{
+	variable(LOCAL, token);
+}
+
+static void
+globvar(char *token)
+{
+	variable(GLOBAL, token);
+}
+
+static void
+paramvar(char *token)
+{
+	variable(PARAMETER, token);
 }
 
 static void
@@ -312,10 +315,11 @@ static void (*optbl[])(char *) = {
 	['^'] = operator,
 	[':'] = assignment,
 	[';'] = increment,
-	['Y'] = variable,
-	['A'] = variable,
-	['T'] = variable,
-	['G'] = variable,
+	['Y'] = globvar,
+	['A'] = localvar,
+	['T'] = localvar,
+	['G'] = globvar,
+	['P'] = paramvar,
 	['L'] = label,
 	['#'] = immediate,
 	['@'] = unary,
@@ -383,12 +387,7 @@ endfunction(char *token)
 static Symbol *
 declaration(uint8_t t, char class, char *token)
 {
-	static Symbol *(*tbl[3])(char *)= {
-		[LOCAL] = local,
-		[GLOBAL] = global,
-		[PARAMETER] = parameter
-	};
-	Symbol *sym = (*tbl[t])(token);
+	Symbol *sym = symbol(t, token);
 	char *s;
 
 	if (t == LOCAL && !curfun)
