@@ -45,6 +45,7 @@ typedef struct node {
 enum nerrors {
 	EINTNUM,       /* too much internal identifiers */
 	EEXTNUM,       /* too much external identifiers */
+	EPARNUM,       /* too much parameters */
 	ENODEOV,       /* node overflow */
 	ESTACKO,       /* stack overflow */
 	ESTACKU,       /* stack underflow */

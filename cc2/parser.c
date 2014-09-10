@@ -15,16 +15,15 @@
 #define NR_NODEPOOL 128
 #define NR_EXPRESSIONS 64
 
-#define LOCAL 0
-#define GLOBAL 1
+enum {
+	LOCAL, GLOBAL, PARAMETER
+};
 
 static Symbol *curfun;
 static Node *stack[NR_STACKSIZ], **stackp = stack;
 static Node *listexp[NR_EXPRESSIONS], **listp = listexp;
 static Node nodepool[NR_NODEPOOL], *newp = nodepool;
 
-static Symbol *localtbl;
-static Symbol *globaltbl;
 
 Type l_int8 = {
 	.size = 1,
@@ -79,8 +78,25 @@ Type l_uint64 = {
 };
 
 static Symbol *
+parameter(char *num)
+{
+	static Symbol *tbl;
+	unsigned i = atoi(num+1);
+	static unsigned nr;
+
+	if (i >= NR_FUNPARAM)
+		error(EPARNUM);
+	if (i > nr) {
+		nr = i + 50;
+		tbl = xrealloc(tbl, nr * sizeof(Symbol));
+	}
+	return &tbl[i];
+}
+
+static Symbol *
 local(char *num)
 {
+	static Symbol *tbl;
 	unsigned i = atoi(num+1);
 	static unsigned nr;
 
@@ -88,14 +104,15 @@ local(char *num)
 		error(EINTNUM);
 	if (i > nr) {
 		nr = i + 50;
-		localtbl = xrealloc(localtbl, nr * sizeof(Symbol));
+		tbl = xrealloc(tbl, nr * sizeof(Symbol));
 	}
-	return &localtbl[i];
+	return &tbl[i];
 }
 
 static Symbol *
 global(char *num)
 {
+	static Symbol *tbl;
 	unsigned i = atoi(num+1);
 	static unsigned nr;
 
@@ -103,9 +120,9 @@ global(char *num)
 		error(EEXTNUM);
 	if (i >= nr) {
 		nr = i + 50;
-		globaltbl = xrealloc(globaltbl, nr * sizeof(Symbol));
+		tbl = xrealloc(tbl, nr * sizeof(Symbol));
 	}
-	return &globaltbl[i];
+	return &tbl[i];
 }
 
 static Node *
@@ -366,8 +383,10 @@ endfunction(char *token)
 static Symbol *
 declaration(uint8_t t, char *token)
 {
-	static Symbol *(*tbl[2])(char *)= {
-		[LOCAL] = local, [GLOBAL] = global
+	static Symbol *(*tbl[3])(char *)= {
+		[LOCAL] = local,
+		[GLOBAL] = global,
+		[PARAMETER] = parameter
 	};
 	Symbol *sym = (*tbl[t])(token);
 	char *s;
@@ -420,7 +439,7 @@ globdcl(char *token)
 static void
 paramdcl(char *token)
 {
-	Symbol *sym = declaration(LOCAL, token);
+	Symbol *sym = declaration(PARAMETER, token);
 	sym->next = curfun->u.f.pars;
 	curfun->u.f.pars = sym;
 }
