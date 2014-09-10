@@ -381,7 +381,7 @@ endfunction(char *token)
 }
 
 static Symbol *
-declaration(uint8_t t, char *token)
+declaration(uint8_t t, char class, char *token)
 {
 	static Symbol *(*tbl[3])(char *)= {
 		[LOCAL] = local,
@@ -397,7 +397,7 @@ declaration(uint8_t t, char *token)
 		free(sym->name);
 	memset(sym, 0, sizeof(*sym));
 	sym->type = VAR;
-	sym->u.v.sclass = token[0];
+	sym->u.v.sclass = class;
 
 	if ((s = strtok(NULL, "\t")) == NULL)
 		error(ESYNTAX);
@@ -411,7 +411,7 @@ declaration(uint8_t t, char *token)
 static void
 globdcl(char *token)
 {
-	Symbol *sym = declaration(GLOBAL, token);
+	Symbol *sym = declaration(GLOBAL, MEM, token);
 
 	switch (token[0]) {
 	case 'X':
@@ -439,7 +439,7 @@ globdcl(char *token)
 static void
 paramdcl(char *token)
 {
-	Symbol *sym = declaration(PARAMETER, token);
+	Symbol *sym = declaration(PARAMETER, AUTO, token);
 	sym->next = curfun->u.f.pars;
 	curfun->u.f.pars = sym;
 }
@@ -447,7 +447,7 @@ paramdcl(char *token)
 static void
 localdcl(char *token)
 {
-	Symbol *sym = declaration(LOCAL, token);
+	Symbol *sym = declaration(LOCAL, token[0], token);
 	sym->next = curfun->u.f.vars;
 	curfun->u.f.vars = sym;
 }
