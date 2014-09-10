@@ -80,48 +80,34 @@ Type l_uint64 = {
 static Symbol *
 parameter(char *num)
 {
-	static Symbol *tbl;
+	static Symbol tbl[NR_FUNPARAM];
 	unsigned i = atoi(num);
-	static unsigned nr;
 
 	if (i >= NR_FUNPARAM)
 		error(EPARNUM);
-	if (i > nr) {
-		nr = i + 50;
-		tbl = xrealloc(tbl, nr * sizeof(Symbol));
-	}
 	return &tbl[i];
 }
 
 static Symbol *
 local(char *num)
 {
-	static Symbol *tbl;
+	static Symbol tbl[NR_INT_IDENT];
 	unsigned i = atoi(num);
-	static unsigned nr;
 
 	if (i >= NR_INT_IDENT)
 		error(EINTNUM);
-	if (i > nr) {
-		nr = i + 50;
-		tbl = xrealloc(tbl, nr * sizeof(Symbol));
-	}
 	return &tbl[i];
 }
 
 static Symbol *
 global(char *num)
 {
-	static Symbol *tbl;
+	static Symbol tbl[NR_EXT_IDENT];
 	unsigned i = atoi(num);
-	static unsigned nr;
 
 	if (i >= NR_EXT_IDENT)
 		error(EEXTNUM);
-	if (i >= nr) {
-		nr = i + 50;
-		tbl = xrealloc(tbl, nr * sizeof(Symbol));
-	}
+
 	return &tbl[i];
 }
 
