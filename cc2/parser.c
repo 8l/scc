@@ -81,7 +81,7 @@ static Symbol *
 parameter(char *num)
 {
 	static Symbol *tbl;
-	unsigned i = atoi(num+1);
+	unsigned i = atoi(num);
 	static unsigned nr;
 
 	if (i >= NR_FUNPARAM)
@@ -97,7 +97,7 @@ static Symbol *
 local(char *num)
 {
 	static Symbol *tbl;
-	unsigned i = atoi(num+1);
+	unsigned i = atoi(num);
 	static unsigned nr;
 
 	if (i >= NR_INT_IDENT)
@@ -113,7 +113,7 @@ static Symbol *
 global(char *num)
 {
 	static Symbol *tbl;
-	unsigned i = atoi(num+1);
+	unsigned i = atoi(num);
 	static unsigned nr;
 
 	if (i >= NR_EXT_IDENT)
@@ -184,7 +184,7 @@ symbol(uint8_t t, char *token)
 		[GLOBAL] = global,
 		[PARAMETER] = parameter
 	};
-	return (*tbl[t])(token);
+	return (*tbl[t])(token+1);
 }
 
 static void
