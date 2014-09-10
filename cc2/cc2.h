@@ -11,7 +11,6 @@ typedef struct symbol {
 	bool public : 1;
 	bool extrn : 1;
 	char type;
-	struct symbol *next;
 	union {
 		struct {
 			Type *type;
@@ -22,9 +21,8 @@ typedef struct symbol {
 			short addr;
 		} l;
 		struct {
-			short stack;
-			struct symbol *pars;
-			struct symbol *vars;
+			short locals;
+			short params;
 		} f;
 	} u;
 } Symbol;

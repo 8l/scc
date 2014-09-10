@@ -83,6 +83,8 @@ parameter(char *num)
 	static Symbol tbl[NR_FUNPARAM];
 	unsigned i = atoi(num);
 
+	if (!curfun)
+		error(ESYNTAX);
 	if (i >= NR_FUNPARAM)
 		error(EPARNUM);
 	return &tbl[i];
@@ -94,6 +96,8 @@ local(char *num)
 	static Symbol tbl[NR_INT_IDENT];
 	unsigned i = atoi(num);
 
+	if (!curfun)
+		error(ESYNTAX);
 	if (i >= NR_INT_IDENT)
 		error(EINTNUM);
 	return &tbl[i];
@@ -366,7 +370,6 @@ endfunction(char *token)
 	if (!curfun)
 		error(ESYNTAX);
 	listp = NULL;
-	genstack(curfun);
 	genaddable(listexp);
 	cgen(curfun, listexp);
 	curfun = NULL;
@@ -378,8 +381,6 @@ declaration(uint8_t t, char class, char *token)
 	Symbol *sym = symbol(t, token);
 	char *s;
 
-	if (t == LOCAL && !curfun)
-		error(ESYNTAX);
 	if (sym->name)
 		free(sym->name);
 	memset(sym, 0, sizeof(*sym));
@@ -416,8 +417,6 @@ globdcl(char *token)
 		error(ESYNTAX);
 
 	sym->type = FUN;
-	sym->u.f.vars = NULL;
-	sym->u.f.pars = NULL;
 	curfun = sym;
 	listp = listexp;
 	newp = nodepool;
@@ -427,16 +426,16 @@ static void
 paramdcl(char *token)
 {
 	Symbol *sym = declaration(PARAMETER, AUTO, token);
-	sym->next = curfun->u.f.pars;
-	curfun->u.f.pars = sym;
+	sym->u.v.off = -curfun->u.f.params;
+	curfun->u.f.params += sym->u.v.type->size;
 }
 
 static void
 localdcl(char *token)
 {
 	Symbol *sym = declaration(LOCAL, token[0], token);
-	sym->next = curfun->u.f.vars;
-	curfun->u.f.vars = sym;
+	sym->u.v.off = -curfun->u.f.locals;
+	curfun->u.f.locals += sym->u.v.type->size;
 }
 
 void

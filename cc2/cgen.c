@@ -9,21 +9,6 @@
 
 #include <stdio.h>
 
-void
-genstack(Symbol *fun)
-{
-	Symbol *p;
-	short off;
-
-	for (off = 0, p = fun->u.f.vars; p; p = p->next) {
-		if (p->u.v.sclass == AUTO) {
-			p->u.v.off = off;
-			off += p->u.v.type->align;
-		}
-	}
-
-	fun->u.f.stack = off;
-}
 
 enum {
 	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX
@@ -144,13 +129,13 @@ cgen(Symbol *sym, Node *list[])
 {
 	extern char odebug;
 	Node *np;
-	char frame = sym->u.f.stack != 0 || odebug;
+	char frame = sym->u.f.locals != 0 || odebug;
 
 	emit(ADDR, sym->name);
 	if (frame) {
 		emit(PUSH, IX);
 		emit(LD, IX, SP);
-		emit(LDI, HL, -sym->u.f.stack);
+		emit(LDI, HL, -sym->u.f.locals);
 		emit(ADD, HL, SP);
 		emit(LD, SP, HL);
 	}
