@@ -165,8 +165,6 @@ variable(char *token)
 
 	switch (token[0]) {
 	case 'T':
-		if (!curfun)
-			goto global;
 		op = MEM;
 		goto local;
 	case 'P':
@@ -182,6 +180,7 @@ variable(char *token)
 		break;
 	case 'X':
 		/* TODO */
+	case 'Y':
 	case 'G':
 	global:
 		sym = global(token);
@@ -293,6 +292,7 @@ static void (*optbl[])(char *) = {
 	['^'] = operator,
 	[':'] = assignment,
 	[';'] = increment,
+	['Y'] = variable,
 	['A'] = variable,
 	['T'] = variable,
 	['G'] = variable,
@@ -352,10 +352,10 @@ declaration(char *token)
 		curfun->u.f.pars = sym;
 		break;
 	case 'T':
-		if (!curfun) {
-			sym = global(token);
-			break;
-		}
+		if (!curfun)
+			error(ESYNTAX);
+		sym = local(token);
+		break;
 	case 'R': case 'A':
 		if (!curfun)
 			error(ESYNTAX);
@@ -366,6 +366,9 @@ declaration(char *token)
 	case 'X':
 		sym = global(token);
 		sym->extrn = 1;
+		break;
+	case 'Y':
+		sym = global(token);
 		break;
 	case 'G':
 		sym = global(token);
@@ -435,7 +438,7 @@ parse(void)
 		case 'S':
 			/* struct */
 			break;
-		case 'T': case 'G': case 'A': case 'R': case 'P':
+		case 'Y': case 'T': case 'G': case 'A': case 'R': case 'P':
 			fun = declaration;
 			break;
 		case '}':

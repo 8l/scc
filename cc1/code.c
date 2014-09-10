@@ -69,10 +69,12 @@ emitsym2(Symbol *sym)
 {
 	char c;
 
-	if (sym->s.isglobal)
-		c = 'G';
-	else if (sym->s.isstatic)
+	if (sym->s.isstatic && !sym->s.isglobal)
 		c = 'T';
+	else if (sym->s.isstatic && sym->s.isglobal)
+		c = 'Y';
+	else if (sym->s.isglobal)
+		c = 'G';
 	else if (sym->s.isregister)
 		c = 'Q';
 	else
@@ -189,7 +191,7 @@ void
 emitfun(Symbol *sym)
 {
 	printf("%c%d\tF\t%s\t{\n",
-	       sym->s.isglobal ? 'G' : 'T', sym->id, sym->name);
+	       sym->s.isglobal ? 'G' : 'Y', sym->id, sym->name);
 }
 
 void
