@@ -472,6 +472,8 @@ parse(void)
 			break;
 		case EOF:
 			goto found_eof;
+		case '\n':
+			continue;
 		default:
 			goto syntax_error;
 		}
