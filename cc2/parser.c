@@ -371,7 +371,7 @@ endfunction(char *token)
 		error(ESYNTAX);
 	listp = NULL;
 	genaddable(listexp);
-	cgen(curfun, listexp);
+	generate(curfun, listexp);
 	curfun = NULL;
 }
 

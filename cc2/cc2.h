@@ -92,5 +92,5 @@ enum nerrors {
 
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);
-extern void cgen(Symbol *sym, Node *list[]);
+extern void generate(Symbol *sym, Node *list[]);
 extern void genstack(Symbol *fun);

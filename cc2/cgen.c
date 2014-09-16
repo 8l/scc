@@ -84,28 +84,27 @@ emit(char op, ...)
 }
 
 void
-xcgen(Node *np)
+cgen(Node *np)
 {
 	Node *lp, *rp;
-	/* TODO: define a macro with the default integer type */
-	unsigned imm, off;
+	INT imm;
 
 	if (!np || np->complex == 0)
 		return;
 	lp = np->left;
 	rp = np->right;
 	if (!lp) {
-		xcgen(rp);
+		cgen(rp);
 	} else if (!rp) {
-		xcgen(lp);
+		cgen(lp);
 	} else {
 		Node *p, *q;
 		if (lp->complex > rp->complex)
 			p = lp, q = rp;
 		else
 			p = rp, q = lp;
-		xcgen(p);
-		xcgen(q);
+		cgen(p);
+		cgen(q);
 	}
 
 	switch (np->op) {
@@ -115,7 +114,7 @@ xcgen(Node *np)
 }
 
 void
-cgen(Symbol *sym, Node *list[])
+generate(Symbol *sym, Node *list[])
 {
 	extern char odebug;
 	Node *np;
@@ -131,7 +130,7 @@ cgen(Symbol *sym, Node *list[])
 	}
 
 	while (np = *list++)
-		xcgen(np);
+		cgen(np);
 
 	if (frame) {
 		emit(LD, SP, IX);
