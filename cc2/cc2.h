@@ -36,6 +36,7 @@ typedef struct node {
 	union {
 		Symbol *sym;
 		TINT imm;
+		char reg;
 	} u;
 	struct node *left, *right;
 } Node;

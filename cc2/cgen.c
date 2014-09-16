@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-
+/* TODO: Change emit to code */
 enum {
 	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX,
 	LDFX
@@ -157,15 +157,16 @@ move(Node *np)
 	Symbol *sym;
 	char reg;
 
+	reg = allocreg(np);
+
 	switch (np->op) {
 	case AUTO:
 		sym = np->u.sym;
 		switch (tp->size) {
 		case 1:
-			emit(LDFX, allocreg(np), sym->u.v.off);
+			emit(LDFX, reg, sym->u.v.off);
 			break;
 		case 2:
-			reg = allocreg(np);
 			emit(LDFX, lower(reg), IX, sym->u.v.off);
 			emit(LDFX, upper(reg), IX, sym->u.v.off+1);
 			break;
@@ -178,6 +179,20 @@ move(Node *np)
 	default:
 		abort();
 	}
+	/* TODO: Update symbol  if necessary */
+	np->op = REG;
+	np->u.reg = reg;
+}
+
+static void
+conmute(Node *np)
+{
+	Node *p, *q;
+
+	p = np->left;
+	q = np->right;
+	np->left = q;
+	np->right = p;
 }
 
 static void
@@ -210,7 +225,40 @@ cgen(Node *np)
 		cgen(q);
 	}
 
+	assert(lp && lp->op == REG || rp && rp->op == REG);
 	switch (np->op) {
+	case OADD:
+		switch (np->type->size) {
+		case 1:
+			if (rp->u.reg == A) {
+				conmute(np);
+				lp = np->left;
+				rp = np->right;
+			} else if (lp->u.reg != A) {
+				/* TODO: Move A to variable */
+				emit(PUSH, AF);
+				emit(LD, A, lp->u.reg);
+			}
+			emit(ADD, A, rp->u.reg);
+			break;
+		case 2:
+			if (rp->u.reg == HL || rp->u.reg == IY) {
+				conmute(np);
+				lp = np->left;
+				rp = np->right;
+			} else if (lp->u.reg != HL || lp->u.reg != IY) {
+				/* TODO: Move HL to variable */
+				emit(PUSH, HL);
+				emit(LD, H, upper(lp->u.reg));
+				emit(LD, L, lower(lp->u.reg));
+			}
+			emit(ADD, HL, rp->u.reg);
+			break;
+		case 4:
+		case 8:
+			abort();
+		}
+		break;
 	default:
 		abort();
 	}
