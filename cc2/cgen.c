@@ -109,16 +109,6 @@ xcgen(Node *np)
 	}
 
 	switch (np->op) {
-	case OCOMMA:
-	case ONEG:   case OCPL:
-	case OOR:    case OAND:
-	case OPTR:   case OADDR:
-	case OINC:
-	case OLT:    case OGT:   case OGE:    case OLE:  case OEQ:  case ONE:
-	case OADD:   case OSUB:  case OASSIG: case OMOD: case ODIV:
-	case OSHL:   case OSHR:
-	case OBAND:  case OBOR:  case OBXOR:
-		break;
 	default:
 		abort();
 	}
@@ -152,10 +142,10 @@ cgen(Symbol *sym, Node *list[])
 
 /*
  * calculate addresability as follows
- *     AUTO => 11
- *     REGISTER => 13
- *     STATIC => 12
- *     CONST => 20
+ *     AUTO => 11          value+fp
+ *     REGISTER => 13      register
+ *     STATIC => 12        (value)
+ *     CONST => 20         $value
  */
 static void
 xaddable(Node *np)
@@ -182,22 +172,12 @@ xaddable(Node *np)
 	case CONST:
 		np->addable = 20;
 		break;
-	case ONEG:   case OCPL:
-	case OPTR:   case OADDR:
-		xaddable(lp);
-		break;
-	case OCOMMA:
-	case OOR:    case OAND:
-	case OLT:    case OGT:  case OGE:  case OLE:  case OEQ:  case ONE:
-	case OINC:
-	case OASSIG: case OADD: case OSUB: case OMOD: case ODIV:
-	case OSHL:   case OSHR:
-	case OBAND:  case OBOR: case OBXOR:
-		xaddable(lp);
-		xaddable(rp);
-		break;
 	default:
-		abort();
+		if (lp)
+			xaddable(lp);
+		if (rp)
+			xaddable(rp);
+		break;
 	}
 
 	if (np->addable > 10)
