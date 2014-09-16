@@ -90,6 +90,8 @@ enum nerrors {
 #define OCPL      '~'
 #define OCOMMA    ','
 
+#define ADDABLE 10
+
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *list[]);
 extern void generate(Symbol *sym, Node *list[]);

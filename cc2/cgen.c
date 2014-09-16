@@ -11,24 +11,25 @@
 
 
 enum {
-	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX
+	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX,
+	LDFX
 };
 
 enum {
-	AF, HL, DE, BC, IX, IY, SP, A, F, B, C, D, E, H, L, IXL, IXH, IYL, IYH
+	A, B, C, D, E, H, L, IYL, IYH, NREGS, IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
 };
 
 char *opnames[] = {
 	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
 	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD", [ADDX] = "ADD",
-	[ADCX] = "ADC" , [LDX] = "LD"
+	[ADCX] = "ADC" , [LDX] = "LD" , [LDFX] = "LD"
 };
 
 char *regnames[] = {
 	[AF] = "AF", [HL] = "HL", [DE] = "DE", [BC] = "BC", [IX] = "IX",
 	[IY] = "IY", [SP] = "SP", [A]  = "A",  [F]  = "F",  [B]  = "B",
 	[C]  = "C",  [D]  = "D",  [E]  = "E",  [H]  = "H",  [L]  = "L",
-	[IXL]= "IXL",[IXH]= "IXH",[IYL]= "IYL",[IYH]= "IYH"
+	[IXL]= "IXL",[IXH]= "IXH",[IYL]= "IYL",[IYH]= "IYH", [I] = "I"
 };
 
 void
@@ -60,6 +61,13 @@ emit(char op, ...)
 		imm = va_arg(va, int);
 		printf("\t%s\t%s,%d\n", opnames[op], regnames[reg1], imm);
 		break;
+	case LDFX:
+		reg1 = va_arg(va, int);
+		reg2 = va_arg(va, int);
+		off = va_arg(va, int);
+		printf("\t%s\t%s,(%s%+d)\n",
+		       opnames[op], regnames[reg1], regnames[reg2], off);
+		break;
 	case LDX:
 		reg1 = va_arg(va, int);
 		off = va_arg(va, int);
@@ -83,16 +91,111 @@ emit(char op, ...)
 	va_end(va);
 }
 
-void
+static char
+upper(char pair)
+{
+	switch (pair) {
+	case HL: return H;
+	case BC: return B;
+	case DE: return D;
+	case IY: return IYH;
+	}
+}
+
+static char
+lower(char pair)
+{
+	switch (pair) {
+	case HL: return L;
+	case DE: return E;
+	case BC: return B;
+	case IY: return IYL;
+	}
+}
+
+static char
+allocreg(Node *np)
+{
+	static bool regs[NREGS], *bp;
+
+	switch (np->type->size) {
+	case 1:
+		for (bp = regs; bp < &regs[NREGS]; ++bp) {
+			if (*bp)
+				continue;
+			*bp = 1;
+			return bp - regs;
+		}
+		/* TODO: Move variable to stack using PUSH/POP */
+		break;
+	case 2:
+		if (!regs[H] && !regs[L]) {
+			regs[H] = regs [L] = 1;
+			return HL;
+		}
+		if (!regs[D] && !regs[E]) {
+			regs[D] = regs [E] = 1;
+			return DE;
+		}
+		if (!regs[C] && !regs[B]) {
+			regs[B] = regs [C] = 1;
+			return BC;
+		}
+		if (!regs[IYL] && !regs[IYH]) {
+			regs[IYL] = regs [IYH] = 1;
+			return IY;
+		}
+		/* TODO: Move variable to stack using PUSH/POP */
+	}
+	abort();
+}
+
+static void
+move(Node *np)
+{
+	Type *tp = np->type;
+	Symbol *sym;
+	char reg;
+
+	switch (np->op) {
+	case AUTO:
+		sym = np->u.sym;
+		switch (tp->size) {
+		case 1:
+			emit(LDFX, allocreg(np), sym->u.v.off);
+			break;
+		case 2:
+			reg = allocreg(np);
+			emit(LDFX, lower(reg), IX, sym->u.v.off);
+			emit(LDFX, upper(reg), IX, sym->u.v.off+1);
+			break;
+		case 4:
+		case 8:
+		default:
+			abort();
+		}
+		break;
+	default:
+		abort();
+	}
+}
+
+static void
 cgen(Node *np)
 {
 	Node *lp, *rp;
 	TINT imm;
 
-	if (!np || np->complex == 0)
+	if (!np)
 		return;
+
 	lp = np->left;
 	rp = np->right;
+	if (np->addable >= ADDABLE) {
+		move(np);
+		return;
+	}
+
 	if (!lp) {
 		cgen(rp);
 	} else if (!rp) {
