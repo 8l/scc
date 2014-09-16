@@ -36,8 +36,8 @@ emit(char op, ...)
 {
 	va_list va;
 	uint8_t reg1, reg2;
-	/* TODO: define a macro with the default integer type */
-	short imm, off;
+	TINT imm;
+	short off;
 	char *label;
 
 	va_start(va, op);
@@ -58,20 +58,20 @@ emit(char op, ...)
 	case ADDI: case LDI:
 		reg1 = va_arg(va, int);
 		imm = va_arg(va, int);
-		printf("\t%s\t%s,%hd\n", opnames[op], regnames[reg1], imm);
+		printf("\t%s\t%s,%d\n", opnames[op], regnames[reg1], imm);
 		break;
 	case LDX:
 		reg1 = va_arg(va, int);
 		off = va_arg(va, int);
 		reg2 = va_arg(va, int);
-		printf("\t%s\t(%s%+hd),%s\n",
+		printf("\t%s\t(%s%+d),%s\n",
 		       opnames[op], regnames[reg1], off, regnames[reg2]);
 		break;
 	case ADDX: case ADCX:
 		reg1 = va_arg(va, int);
 		reg2 = va_arg(va, int);
 		off = va_arg(va, int);
-		printf("\t%s\t%s,(%s%+hd)\n",
+		printf("\t%s\t%s,(%s%+d)\n",
 		       opnames[op], regnames[reg1], regnames[reg2], off);
 		break;
 	case ADDR:
@@ -87,7 +87,7 @@ void
 cgen(Node *np)
 {
 	Node *lp, *rp;
-	INT imm;
+	TINT imm;
 
 	if (!np || np->complex == 0)
 		return;

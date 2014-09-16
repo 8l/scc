@@ -35,7 +35,7 @@ typedef struct node {
 	uint8_t addable;
 	union {
 		Symbol *sym;
-		int imm;
+		TINT imm;
 	} u;
 	struct node *left, *right;
 } Node;

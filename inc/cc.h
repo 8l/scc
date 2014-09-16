@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #endif
 
+#define TINT short
+
 #define RANK_BOOL    0
 #define RANK_SCHAR   1
 #define RANK_UCHAR   2
