@@ -434,8 +434,8 @@ static void
 localdcl(char *token)
 {
 	Symbol *sym = declaration(LOCAL, token[0], token);
-	sym->u.v.off = -curfun->u.f.locals;
 	curfun->u.f.locals += sym->u.v.type->size;
+	sym->u.v.off = 1-curfun->u.f.locals;
 }
 
 void
