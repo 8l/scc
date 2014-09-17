@@ -164,7 +164,7 @@ move(Node *np)
 		sym = np->u.sym;
 		switch (tp->size) {
 		case 1:
-			emit(LDFX, reg, sym->u.v.off);
+			emit(LDFX, reg, IX, sym->u.v.off);
 			break;
 		case 2:
 			emit(LDFX, lower(reg), IX, sym->u.v.off);
