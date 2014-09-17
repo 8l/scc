@@ -252,7 +252,7 @@ cgen(Node *np)
 				emit(LD, H, upper(lp->u.reg));
 				emit(LD, L, lower(lp->u.reg));
 			}
-			emit(ADD, HL, rp->u.reg);
+			emit(ADD, lp->u.reg, rp->u.reg);
 			break;
 		case 4:
 		case 8:
