@@ -87,6 +87,7 @@ enum nerrors {
 #define ONE       '!'
 #define OOR       'o'
 #define OAND      'y'
+#define OCAST     'c'
 #define ONEG      '_'
 #define OCPL      '~'
 #define OCOMMA    ','

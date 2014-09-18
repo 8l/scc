@@ -16,21 +16,26 @@ enum {
 };
 
 enum {
-	A, B, C, D, E, H, L, IYL, IYH, NREGS, IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
+	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
+	IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
 };
 
-char *opnames[] = {
+static char *opnames[] = {
 	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
 	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD", [ADDX] = "ADD",
 	[ADCX] = "ADC" , [LDX] = "LD" , [LDFX] = "LD"
 };
 
-char *regnames[] = {
+static char *regnames[] = {
 	[AF] = "AF", [HL] = "HL", [DE] = "DE", [BC] = "BC", [IX] = "IX",
 	[IY] = "IY", [SP] = "SP", [A]  = "A",  [F]  = "F",  [B]  = "B",
 	[C]  = "C",  [D]  = "D",  [E]  = "E",  [H]  = "H",  [L]  = "L",
 	[IXL]= "IXL",[IXH]= "IXH",[IYL]= "IYL",[IYH]= "IYH", [I] = "I"
 };
+
+static bool reguse[NREGS];
+static char upper[] = {[DE] = D, [HL] = H, [BC] = B, [IX] = IXH, [IY] = IYH};
+static char lower[] = {[DE] = E, [HL] = L, [BC] = C, [IX] = IXL, [IY] = IYL};
 
 void
 emit(char op, ...)
@@ -61,7 +66,7 @@ emit(char op, ...)
 		imm = va_arg(va, int);
 		printf("\t%s\t%s,%d\n", opnames[op], regnames[reg1], imm);
 		break;
-	case LDFX:
+	case ADDX: case ADCX: case LDFX:
 		reg1 = va_arg(va, int);
 		reg2 = va_arg(va, int);
 		off = va_arg(va, int);
@@ -75,13 +80,6 @@ emit(char op, ...)
 		printf("\t%s\t(%s%+d),%s\n",
 		       opnames[op], regnames[reg1], off, regnames[reg2]);
 		break;
-	case ADDX: case ADCX:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		off = va_arg(va, int);
-		printf("\t%s\t%s,(%s%+d)\n",
-		       opnames[op], regnames[reg1], regnames[reg2], off);
-		break;
 	case ADDR:
 		label = va_arg(va, char *);
 		printf("%s:\n", label);
@@ -92,60 +90,34 @@ emit(char op, ...)
 }
 
 static char
-upper(char pair)
-{
-	switch (pair) {
-	case HL: return H;
-	case BC: return B;
-	case DE: return D;
-	case IY: return IYH;
-	}
-}
-
-static char
-lower(char pair)
-{
-	switch (pair) {
-	case HL: return L;
-	case DE: return E;
-	case BC: return B;
-	case IY: return IYL;
-	}
-}
-
-static char
 allocreg(Node *np)
 {
-	static bool regs[NREGS], *bp;
+	char reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
+	char reg16[] = {BC, HL, DE, IY, 0};
+	char *bp, c;
 
 	switch (np->type->size) {
 	case 1:
-		for (bp = regs; bp < &regs[NREGS]; ++bp) {
-			if (*bp)
+		for (bp = reg8; (c = *bp); ++bp) {
+			if (reguse[c])
 				continue;
-			*bp = 1;
-			return bp - regs;
+			reguse[c] = 1;
+			return c;
 		}
 		/* TODO: Move variable to stack using PUSH/POP */
 		break;
 	case 2:
-		if (!regs[H] && !regs[L]) {
-			regs[H] = regs [L] = 1;
-			return HL;
-		}
-		if (!regs[D] && !regs[E]) {
-			regs[D] = regs [E] = 1;
-			return DE;
-		}
-		if (!regs[C] && !regs[B]) {
-			regs[B] = regs [C] = 1;
-			return BC;
-		}
-		if (!regs[IYL] && !regs[IYH]) {
-			regs[IYL] = regs [IYH] = 1;
-			return IY;
+		for (bp = reg16; (c = *bp); ++bp) {
+			char u = upper[c], l = lower[c];
+
+			if (reguse[u] || reguse[l])
+				continue;
+			reguse[l] = 1;
+			reguse[u];
+			return c;
 		}
 		/* TODO: Move variable to stack using PUSH/POP */
+		break;
 	}
 	abort();
 }
@@ -164,11 +136,11 @@ move(Node *np)
 		sym = np->u.sym;
 		switch (tp->size) {
 		case 1:
-			emit(LDFX, reg, sym->u.v.off);
+			emit(LDFX, reg, IX, sym->u.v.off);
 			break;
 		case 2:
-			emit(LDFX, lower(reg), IX, sym->u.v.off);
-			emit(LDFX, upper(reg), IX, sym->u.v.off+1);
+			emit(LDFX, lower[reg], IX, sym->u.v.off);
+			emit(LDFX, upper[reg], IX, sym->u.v.off+1);
 			break;
 		case 4:
 		case 8:
@@ -246,13 +218,13 @@ cgen(Node *np)
 				conmute(np);
 				lp = np->left;
 				rp = np->right;
-			} else if (lp->u.reg != HL || lp->u.reg != IY) {
+			} else if (lp->u.reg != HL && lp->u.reg != IY) {
 				/* TODO: Move HL to variable */
 				emit(PUSH, HL);
-				emit(LD, H, upper(lp->u.reg));
-				emit(LD, L, lower(lp->u.reg));
+				emit(LD, H, upper[lp->u.reg]);
+				emit(LD, L, lower[lp->u.reg]);
 			}
-			emit(ADD, HL, rp->u.reg);
+			emit(ADD, lp->u.reg, rp->u.reg);
 			break;
 		case 4:
 		case 8:
