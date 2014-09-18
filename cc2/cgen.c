@@ -66,7 +66,7 @@ emit(char op, ...)
 		imm = va_arg(va, int);
 		printf("\t%s\t%s,%d\n", opnames[op], regnames[reg1], imm);
 		break;
-	case LDFX:
+	case ADDX: case ADCX: case LDFX:
 		reg1 = va_arg(va, int);
 		reg2 = va_arg(va, int);
 		off = va_arg(va, int);
@@ -79,13 +79,6 @@ emit(char op, ...)
 		reg2 = va_arg(va, int);
 		printf("\t%s\t(%s%+d),%s\n",
 		       opnames[op], regnames[reg1], off, regnames[reg2]);
-		break;
-	case ADDX: case ADCX:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		off = va_arg(va, int);
-		printf("\t%s\t%s,(%s%+d)\n",
-		       opnames[op], regnames[reg1], regnames[reg2], off);
 		break;
 	case ADDR:
 		label = va_arg(va, char *);
