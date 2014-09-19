@@ -237,21 +237,21 @@ cgen(Node *np)
 }
 
 void
-generate(Symbol *sym, Node *list[])
+generate(Symbol *fun)
 {
 	extern char odebug;
-	char frame = sym->u.f.locals != 0 || odebug;
+	char frame = fun->u.f.locals != 0 || odebug;
 
-	emit(ADDR, sym->name);
+	emit(ADDR, fun->name);
 	if (frame) {
 		emit(PUSH, IX);
 		emit(LD, IX, SP);
-		emit(LDI, HL, -sym->u.f.locals);
+		emit(LDI, HL, -fun->u.f.locals);
 		emit(ADD, HL, SP);
 		emit(LD, SP, HL);
 	}
 
-	apply(list, cgen);
+	apply(fun->u.f.body, cgen);
 
 	if (frame) {
 		emit(LD, SP, IX);

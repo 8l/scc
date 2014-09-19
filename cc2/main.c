@@ -9,8 +9,6 @@
 #include "cc2.h"
 #include "error.h"
 
-extern void parse(void);
-
 char odebug;
 
 void
@@ -30,5 +28,10 @@ error(unsigned nerror, ...)
 int
 main(void)
 {
-	parse();
+	Symbol *fun;
+
+	while (!feof(stdin) && (fun = parse())) {
+		apply(fun->u.f.body, genaddable);
+		generate(fun);
+	}
 }
