@@ -77,6 +77,15 @@ Type l_uint64 = {
 	.c_int = 1,
 };
 
+void
+apply(Node *list[], void (*fun)(Node *))
+{
+	Node *np;
+
+	while (np = *list++)
+		(*fun)(np);
+}
+
 static Symbol *
 parameter(char *num)
 {
@@ -396,7 +405,7 @@ endfunction(char *token)
 	if (!curfun)
 		error(ESYNTAX);
 	listp = NULL;
-	genaddable(listexp);
+	apply(listexp, genaddable);
 	generate(curfun, listexp);
 	curfun = NULL;
 }

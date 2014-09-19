@@ -240,7 +240,6 @@ void
 generate(Symbol *sym, Node *list[])
 {
 	extern char odebug;
-	Node *np;
 	char frame = sym->u.f.locals != 0 || odebug;
 
 	emit(ADDR, sym->name);
@@ -252,8 +251,7 @@ generate(Symbol *sym, Node *list[])
 		emit(LD, SP, HL);
 	}
 
-	while (np = *list++)
-		cgen(np);
+	apply(list, cgen);
 
 	if (frame) {
 		emit(LD, SP, IX);
@@ -269,8 +267,8 @@ generate(Symbol *sym, Node *list[])
  *     STATIC => 12        (value)
  *     CONST => 20         $value
  */
-static void
-xaddable(Node *np)
+void
+genaddable(Node *np)
 {
 	Node *lp, *rp;
 
@@ -296,9 +294,9 @@ xaddable(Node *np)
 		break;
 	default:
 		if (lp)
-			xaddable(lp);
+			genaddable(lp);
 		if (rp)
-			xaddable(rp);
+			genaddable(rp);
 		break;
 	}
 
@@ -318,13 +316,3 @@ xaddable(Node *np)
 		++np->complex;
 	return;
 }
-
-void
-genaddable(Node *list[])
-{
-	Node *np;
-
-	while (np = *list++)
-		xaddable(np);
-}
-

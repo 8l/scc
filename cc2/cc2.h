@@ -95,6 +95,7 @@ enum nerrors {
 #define ADDABLE 10
 
 extern void error(unsigned nerror, ...);
-extern void genaddable(Node *list[]);
+extern void genaddable(Node *np);
 extern void generate(Symbol *sym, Node *list[]);
 extern void genstack(Symbol *fun);
+extern void apply(Node *list[], void (*fun)(Node *));
