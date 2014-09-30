@@ -284,7 +284,7 @@ castcode(Node *child, Type *tp)
 	np->childs[0] = child;
 	return np;
 }
-	
+
 Node *
 unarycode(char op, Type *tp, Node *child)
 {
