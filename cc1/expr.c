@@ -545,12 +545,12 @@ unary(void)
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
 		return incdec(unary(), op);
-	case '!': op = 0; fun = negation; break;
-	case '+': op = OADD; fun = numericaluop; break;
-	case '-': op = ONEG; fun = numericaluop; break;
-	case '~': op = OCPL; fun = integeruop; break;
-	case '&': op = OADDR; fun = address; break;
-	case '*': op = OPTR; fun = content; break;
+	case '!': op = 0;     fun = negation;     break;
+	case '+': op = OADD;  fun = numericaluop; break;
+	case '-': op = ONEG;  fun = numericaluop; break;
+	case '~': op = OCPL;  fun = integeruop;   break;
+	case '&': op = OADDR; fun = address;      break;
+	case '*': op = OPTR;  fun = content;      break;
 	default:  return postfix();
 	}
 
