@@ -76,7 +76,7 @@ emitsym2(Symbol *sym)
 	else if (sym->s.isglobal)
 		c = 'G';
 	else if (sym->s.isregister)
-		c = 'Q';
+		c = 'R';
 	else
 		c = 'A';
 	printf("%c%d", c, sym->id);
