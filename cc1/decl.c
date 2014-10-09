@@ -443,7 +443,7 @@ decl(void)
 	do {
 		sym = declarator(tp, ID_EXPECTED);
 		sym->s.isdefined = 1;
-		isfun = sym->type->op != FTN;
+		isfun = sym->type->op == FTN;
 
 		switch (sclass) {
 		case TYPEDEF:
