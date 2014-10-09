@@ -559,15 +559,17 @@ unary(void)
 }
 
 static Node *
-cast2(void)
+cast(void)
 {
 	register Node *np1, *np2;
 	register Type *tp;
 
-	switch(yytoken) {
+	if (!accept('('))
+		return unary();
+
+	switch (yytoken) {
 	case TQUALIFIER: case TYPE:
 		tp = typename();
-		expect(')');
 		switch (tp->op) {
 		case ARY:
 			error("cast specify an array type");
@@ -582,17 +584,12 @@ cast2(void)
 		}
 		break;
 	default:
-		np2 = unary();
-		expect(')');
+		np2 = expr();
 		break;
 	}
-	return np2;
-}
+	expect(')');
 
-static Node *
-cast(void)
-{
-	return (accept('(')) ? cast2() : unary();
+	return np2;
 }
 
 static Node *
