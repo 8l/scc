@@ -185,6 +185,7 @@ emitprint(Node *np)
 {
 	(*np->code)(np);
 	printf("\tk%c\n", np->type->letter);
+	fflush(stdout);
 }
 
 void
