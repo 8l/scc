@@ -178,11 +178,13 @@ enum {
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR,
 	OA_AND, OA_XOR, OA_OR, OADDR,ONEG, OCPL, OEXC,
 	OCOMMA,
+	/* TODO: This order is important, but must be changed */
+	OAND, OOR,
 	/*
 	  * Complementary relational operators only differ in less
 	 * significant bit
 	 */
-	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT, OAND, OOR
+	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT
 };
 
 extern void
@@ -210,7 +212,8 @@ extern Node
 #define NEGATE(n, v) ((n)->u.op ^= (v))
 /* TODO: remove some of these ugly macros */
 #define ISNODEBIN(n) ((n)->code == emitbin)
-#define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
+#define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op >= OEQ)
+#define ISNODELOG(n) (ISNODEBIN(n) && (n)->u.op >= OAND)
 
 extern Node *expr(void);
 extern void extdecl(void), decl(void);

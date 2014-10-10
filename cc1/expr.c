@@ -74,7 +74,7 @@ eval(Node *np)
 {
 	if (!np)
 		return NULL;
-	if (!ISNODECMP(np))
+	if (!ISNODELOG(np))
 		return np;
 	return ternarycode(np, symcode(one), symcode(zero));
 }
