@@ -341,8 +341,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case '@':
 		next();
 		emitprint(expr());
-		break;
-		next();
+		return;
 	}
 	(*fun)(lbreak, lcont, lswitch);
 }
