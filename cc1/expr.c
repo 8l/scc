@@ -435,8 +435,7 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		np = NULL;
-		break;
+		unexpected();
 	}
 	return np;
 }

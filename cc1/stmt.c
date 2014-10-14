@@ -96,12 +96,12 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(FOR);
 	expect('(');
-	einit = expr();
+	einit = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	econd = expr();
+	econd = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	einc = expr();
-	expect(')');
+	einc = (yytoken != ')') ? expr() : NULL;
+	expect(';');
 
 	emitexp(einit);
 	emitjump(cond, NULL);
@@ -139,7 +139,7 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Type *tp = curfun->type->type;
 
 	expect(RETURN);
-	np  = eval(expr());
+	np = (yytoken != ';') ? eval(expr()) : NULL;
 	expect(';');
 	if (!np) {
 		if (tp != voidtype)
@@ -215,8 +215,7 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(SWITCH);
 	expect ('(');
-	if ((cond = expr()) == NULL)
-		unexpected();
+	cond = expr();
 	if ((cond = convert(cond, inttype, 0)) == NULL)
 		error("incorrect type in switch statement");
 	expect (')');
@@ -246,8 +245,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(CASE);
 	if (!lswitch)
 		error("case label not within a switch statement");
-	if ((np = expr()) == NULL)
-		unexpected();
+	np = expr();
 	if ((np = convert(np, inttype, 0)) == NULL)
 		error("incorrect type in case statement");
 	expect(':');
