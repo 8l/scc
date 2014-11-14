@@ -46,9 +46,15 @@ label(char *s, char define)
 static void
 stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	if (yytoken != ';')
-		emitexp(expr());
+	Node *np = NULL;;
+
+	if (yytoken != ';') {
+		np = expr();
+		emitexp(np);
+	}
+
 	expect(';');
+	freetree(np);
 }
 
 static Node *
@@ -82,6 +88,7 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emitjump(begin, np);
 	emiteloop();
 	emitlabel(end);
+	freetree(np);
 }
 
 static void
@@ -113,12 +120,16 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emitjump(begin, econd);
 	emiteloop();
 	emitlabel(end);
+	freetree(einit);
+	freetree(econd);
+	freetree(einc);
 }
 
 static void
 Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *begin, *end;
+	Node *np;
 
 	begin = install("", NS_LABEL);
 	end = install("", NS_LABEL);
@@ -127,9 +138,11 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emitlabel(begin);
 	stmt(end, begin, lswitch);
 	expect(WHILE);
-	emitjump(begin, condition());
+	np = condition();
+	emitjump(begin, np);
 	emiteloop();
 	emitlabel(end);
+	freetree(np);
 }
 
 static void
@@ -153,6 +166,7 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 	emitret(tp);
 	emitexp(np);
+	freetree(np);
 }
 
 static void
@@ -229,11 +243,13 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	for (p = lcase.head; p; p = next) {
 		emitcase(p->label, p->expr);
 		next = p->next;
+		freetree(p->expr);
 		free(p);
 	}
 	if (lcase.deflabel)
 		emitdefault(lcase.deflabel);
 	emitlabel(lbreak);
+	freetree(cond);
 }
 
 static void
@@ -289,6 +305,7 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	} else {
 		emitlabel(lelse);
 	}
+	freetree(np);
 }
 
 void
@@ -318,6 +335,7 @@ static void
 stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	void (*fun)(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
+	Node *np;
 
 	switch (yytoken) {
 	case '{':      fun = context;  break;
@@ -338,7 +356,9 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		break;
 	case '@':
 		next();
-		emitprint(expr());
+		np = expr();
+		emitprint(np);
+		freetree(np);
 		return;
 	}
 	(*fun)(lbreak, lcont, lswitch);

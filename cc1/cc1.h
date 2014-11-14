@@ -157,6 +157,7 @@ typedef struct node {
 	void (*code)(struct node *);
 	Type *type;
 	uint8_t typeop;
+	uint8_t nchilds;
 	struct {
 		bool lvalue : 1;
 		bool symbol: 1;
@@ -208,6 +209,8 @@ extern Node
 	*ternarycode(Node *cond, Node *ifyes, Node *ifno),
 	*symcode(Symbol *sym),
 	*fieldcode(Node *child, struct field *fp);
+
+extern void freetree(Node *np);
 
 #define NEGATE(n, v) ((n)->u.op ^= (v))
 /* TODO: remove some of these ugly macros */

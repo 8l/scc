@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <cc.h>
 #include "cc1.h"
@@ -58,10 +59,24 @@ node(void (*code)(Node *), Type *tp, union unode u, uint8_t nchilds)
 	np->code = code;
 	np->type = tp;
 	np->typeop = tp->op;
+	np->nchilds = nchilds;
 	np->u = u;
 	np->b.symbol = np->b.lvalue = 0;
 
 	return np;
+}
+
+void
+freetree(Node *np)
+{
+	Node **p;
+
+	if (!np)
+		return;
+
+	for (p = np->childs; np->nchilds--; ++p)
+		freetree(*p);
+	free(np);
 }
 
 static void
