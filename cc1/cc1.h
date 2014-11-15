@@ -46,11 +46,11 @@ struct ctype {
 	bool sign : 1;        /* sign type */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
-	short nelem;          /* number of elements in ary/ftn/strct/union */
-	union typeval {
-		unsigned char rank;   /* convertion rank */
-		void *pars;           /* parameters */
-	} u;
+	union {
+		unsigned char rank;  /* convertion rank */
+		short elem;          /* number of type parameters */
+	} n;
+	void *pars;           /* type parameters */
 };
 
 

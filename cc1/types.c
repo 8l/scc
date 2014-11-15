@@ -23,96 +23,96 @@ Type
 		.op = INT,
 		.letter = L_BOOL,
 		.defined = 1,
-		.u.rank = RANK_BOOL
+		.n.rank = RANK_BOOL
 	},
 	*schartype = &(Type) {
 		.op = INT,
 		.letter = L_SCHAR,
 		.defined = 1,
-		.u.rank = RANK_SCHAR
+		.n.rank = RANK_SCHAR
 	},
 	*uchartype = &(Type) {
 		.op = INT,
 		.letter = L_UCHAR,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_UCHAR
+		.n.rank = RANK_UCHAR
 	},
 	*chartype = &(Type) {
 		.op = INT,
 		.letter = L_CHAR,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_CHAR
+		.n.rank = RANK_CHAR
 	},
 	*ushortype = &(Type) {
 		.op = INT,
 		.letter = L_USHORT,
 		.defined = 1,
-		.u.rank = RANK_USHORT
+		.n.rank = RANK_USHORT
 	},
 	*shortype = &(Type) {
 		.op = INT,
 		.letter = L_SHORT,
 		.defined = 1,
-		.u.rank = RANK_SHORT
+		.n.rank = RANK_SHORT
 	},
 	*uinttype = &(Type) {
 		.op = INT,
 		.letter = L_UINT,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_UINT
+		.n.rank = RANK_UINT
 	},
 	*inttype = &(Type) {
 		.op = INT,
 		.letter = L_INT,
 		.defined = 1,
-		.u.rank = RANK_INT
+		.n.rank = RANK_INT
 	},
 	*longtype = &(Type) {
 		.op = INT,
 		.letter = L_LONG,
 		.defined = 1,
-		.u.rank = RANK_LONG
+		.n.rank = RANK_LONG
 	},
 	*ulongtype = &(Type) {
 		.op = INT,
 		.letter = L_ULONG,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_ULONG
+		.n.rank = RANK_ULONG
 	},
 	*ullongtype = &(Type) {
 		.op = INT,
 		.letter = L_ULLONG,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_ULLONG
+		.n.rank = RANK_ULLONG
 	},
 	*llongtype = &(Type) {
 		.op = INT,
 		.letter = L_LLONG,
 		.defined = 1,
-		.u.rank = RANK_LLONG
+		.n.rank = RANK_LLONG
 	},
 	*floattype = &(Type) {
 		.op = FLOAT,
 		.letter = L_FLOAT,
 		.defined = 1,
-		.u.rank = RANK_FLOAT
+		.n.rank = RANK_FLOAT
 	},
 	*doubletype = &(Type) {
 		.op = FLOAT,
 		.letter = L_DOUBLE,
 		.defined = 1,
-		.u.rank = RANK_DOUBLE
+		.n.rank = RANK_DOUBLE
 	},
 	*ldoubletype = &(Type) {
 		.op = FLOAT,
 		.letter = L_LDOUBLE,
 		.defined = 1,
-		.u.rank = RANK_LDOUBLE
+		.n.rank = RANK_LDOUBLE
 	};
 
 Type *
@@ -204,8 +204,8 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 	type.op = op;
 	type.sign = 0;
 	type.letter = letters[op];
-	type.nelem = nelem;
-	type.u.pars = data;
+	type.pars = data;
+	type.n.elem = nelem;
 
 	if (op == ARY && nelem == 0 || op == STRUCT || op == UNION)
 		type.defined = 0;
@@ -233,22 +233,22 @@ eqtype(Type *tp1, Type *tp2)
 
 	if (tp1 == tp2)
 		return 1;
-	if (tp1->op != tp2->op || tp1->nelem != tp2->nelem)
+	if (tp1->op != tp2->op || tp1->n.elem != tp2->n.elem)
 		return 0;
 	switch (tp1->op) {
 	case PTR:
 		return eqtype(tp1->type, tp2->type);
 	/* TODO: use the same struct for function parameters and fields */
 	case FTN:
-		p1 = tp1->u.pars, p2 = tp2->u.pars;
-		for (n = tp1->nelem; n != 0; --n) {
+		p1 = tp1->pars, p2 = tp2->pars;
+		for (n = tp1->n.elem; n != 0; --n) {
 			if (!eqtype(*p1++, *p2++))
 				return 0;
 		}
 		return 1;
 	case UNION:
 	case STRUCT: {
-		Field *fp1 = tp1->u.pars, *fp2 = tp2->u.pars;
+		Field *fp1 = tp1->pars, *fp2 = tp2->pars;
 
 		while (fp1 && fp2) {
 			if (!eqtype(fp1->type, fp2->type))

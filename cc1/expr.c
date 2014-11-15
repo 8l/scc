@@ -32,7 +32,7 @@ promote(Node *np)
 	if (options.npromote)
 		return np;
 	tp = np->type;
-	r = tp->u.rank;
+	r = tp->n.rank;
 	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
 		return np;
 	return castcode(np, (r == RANK_UINT) ? uinttype : inttype);
@@ -51,7 +51,7 @@ typeconv(Node **p1, Node **p2)
 	tp1 = np1->type;
 	tp2 = np2->type;
 	if (tp1 != tp2) {
-		if ((n = tp1->u.rank - tp2->u.rank) > 0)
+		if ((n = tp1->n.rank - tp2->n.rank) > 0)
 			np2 = castcode(np2, tp1);
 		else if (n < 0)
 			np1 = castcode(np1, tp2);
@@ -298,7 +298,7 @@ field(Node *np)
 		unexpected();
 	switch (np->typeop) {
 	case STRUCT: case UNION:
-		for (fp = np->type->u.pars; fp; fp = fp->next) {
+		for (fp = np->type->pars; fp; fp = fp->next) {
 			if (!strcmp(fp->name, yytext)) {
 				next();
 				return fieldcode(np, fp);
