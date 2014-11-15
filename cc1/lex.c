@@ -181,7 +181,7 @@ end_string:
 	*bp = '\0';
 	sym = install("", NS_IDEN);
 	sym->u.s = xstrdup(buf);
-	sym->type = mktype(chartype, PTR, 0);
+	sym->type = mktype(chartype, PTR, 0, NULL);
 	yylval.sym = sym;
 	return STRING;
 }

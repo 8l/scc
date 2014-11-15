@@ -39,23 +39,18 @@ typedef struct field {
 	struct field *next;
 } Field;
 
-typedef struct funpar {
-	Type *type;
-	struct funpar *next;
-} Funpar;
-
 struct ctype {
 	uint8_t op;           /* type builder operator */
 	char letter;          /* letter of the type */
-	bool defined : 1; /* type defined (is not a forward reference) */
-	bool sign : 1;    /* sign type */
+	bool defined : 1;     /* type defined (is not a forward reference) */
+	bool sign : 1;        /* sign type */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
+	short nelem;          /* number of elements in ary/ftn/strct/union */
 	union typeval {
 		unsigned char rank;   /* convertion rank */
-		short nelem;          /* number of elements in arrays */
-		struct funpar *pars;  /* function parameters */
-		Field *fields; /* aggregate fields */
+		Type **pars;         /* function parameters */
+		Field *fields;        /* aggregate fields */
 	} u;
 };
 
@@ -87,7 +82,7 @@ struct symbol {
 
 extern bool eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(int8_t type, int8_t sign, int8_t size),
-	*mktype(Type *tp, uint8_t op, void *data);
+	*mktype(Type *tp, uint8_t op, short nelem, void *data);
 
 extern Symbol
 	*lookup(char *s, unsigned char ns),

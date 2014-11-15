@@ -114,7 +114,7 @@ integeruop(char op, Node *np)
 static Node *
 decay(Node *np)
 {
-	return unarycode(OADDR, mktype(np->type, PTR, NULL), np);
+	return unarycode(OADDR, mktype(np->type, PTR, 0, NULL), np);
 }
 
 /*
@@ -378,7 +378,7 @@ address(char op, Node *np)
 		error("lvalue required in unary expression");
 	if (np->b.symbol && np->u.sym->s.isregister)
 		error("address of register variable '%s' requested", yytext);
-	return unarycode(op, mktype(np->type, PTR, 0), np);
+	return unarycode(op, mktype(np->type, PTR, 0, NULL), np);
 }
 
 static Node *

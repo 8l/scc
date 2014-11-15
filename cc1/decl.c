@@ -15,20 +15,18 @@
 
 struct dcldata {
 	uint8_t op;
-	union dclunion {
-		unsigned short nelem;
-		Symbol *sym;
-		Funpar *pars;
-	} u;
+	unsigned short nelem;
+	void *data;
 };
 
 static struct dcldata *
-queue(struct dcldata *dp, uint8_t op, union dclunion u)
+queue(struct dcldata *dp, uint8_t op, short nelem, void *data)
 {
 	if (dp->op == 255)
 		error("too much declarators");
 	dp->op = op;
-	dp->u = u;
+	dp->nelem = nelem;
+	dp->data = data;
 	return dp + 1;
 }
 
@@ -37,7 +35,7 @@ arydcl(struct dcldata *dp)
 {
 	expect('[');
 	expect(']');
-	return queue(dp, ARY, (union dclunion) {.nelem = 0});
+	return queue(dp, ARY, 0, NULL);
 }
 
 static Type *parameter(void);
@@ -46,38 +44,29 @@ static struct dcldata *
 fundcl(struct dcldata *dp)
 {
 	uint8_t n = 0;
-	Funpar *fp;
+	size_t siz;
+	Type *pars[NR_FUNPARAM], **tp = &pars[0];
 
 	expect('(');
 
 	do {
-		Type *tp;
-
-		if ((tp = parameter()) == voidtype) {
+		if (tp == &pars[NR_FUNPARAM])
+			error("too much parameters in function definition");
+		
+		if ((*tp++ = parameter()) == voidtype) {
 			if (n == 0)
 				break;
 			else
 				error("incorrect void parameter");
 		}
-		/* TODO: Use an array and allocate memory at the end */
-		fp = xmalloc(sizeof(*fp));
-		fp->type = tp;
-		fp->next = NULL;
-		if (!dp->u.pars) {
-			dp->u.pars = fp;
-		} else {
-			register Funpar *p, *q;
-
-			for (p = dp->u.pars; q = p->next; p = q)
-				/* nothing */;
-			p->next = fp;
-		}
 		++n;
 	} while (accept(','));
 
-ret:
-	expect(')');;
-	return queue(dp, FTN, (union dclunion) {.pars = fp});
+	expect(')');
+	siz = sizeof(*tp) * n;
+	tp = (siz > 0) ? memcpy(xmalloc(siz), pars, siz) : NULL;
+
+	return queue(dp, FTN, n, tp);
 }
 
 static Symbol *
@@ -108,7 +97,7 @@ directdcl(struct dcldata *dp)
 			sym = newiden();
 		else
 			sym = install("", NS_IDEN);
-		dp = queue(dp, IDEN, (union dclunion) {.sym = sym});
+		dp = queue(dp, IDEN, 0, sym);
 	}
 
 	for (;;) {
@@ -133,7 +122,7 @@ declarator0(struct dcldata *dp)
 	dp = directdcl(dp);
 
 	while (n--)
-		dp = queue(dp, PTR, (union dclunion) {});
+		dp = queue(dp, PTR, 0, NULL);
 
 	return dp;
 }
@@ -148,18 +137,10 @@ declarator(Type *tp, int8_t flags)
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
 	for (bp = declarator0(data)-1; bp >= data; --bp) {
-		switch (bp->op) {
-		case PTR:
-			tp = mktype(tp, PTR, NULL);
-			break;
-		case ARY:
-			tp = mktype(tp, ARY, &bp->u.nelem);
-			break;
-		case FTN:
-			tp = mktype(tp, FTN, bp->u.pars);
-			break;
-		case IDEN:
-			sym = bp->u.sym;
+		if (bp->op != IDEN) {
+			tp = mktype(tp, bp->op, bp->nelem, bp->data);
+		} else {
+			sym = bp->data;
 			if (flags == ID_EXPECTED && *sym->name == '\0')
 				error("missed identifier in declaration");
 			if (flags == ID_FORBIDDEN && *sym->name != '\0')
@@ -344,7 +325,7 @@ newtag(uint8_t tag)
 		break;
 	}
 	if (!sym->type)
-		sym->type = mktype(NULL, tag, NULL);
+		sym->type = mktype(NULL, tag, 0, NULL);
 	tp = sym->type;
 	if (tp->op != tag)
 		error("'%s' defined as wrong kind of tag", yytext);

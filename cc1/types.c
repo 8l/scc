@@ -186,7 +186,7 @@ invalid_type:
 }
 
 Type *
-mktype(Type *tp, uint8_t op, void *data)
+mktype(Type *tp, uint8_t op, short nelem, void *data)
 {
 	static Type *typetab[NR_TYPE_HASH], **tbl;
 	static uint8_t t, def;
@@ -203,9 +203,8 @@ mktype(Type *tp, uint8_t op, void *data)
 		look = 1;
 		break;
 	case ARY:
-		u.nelem = *(unsigned short *) data;
 		letter = L_ARRAY;
-		def = u.nelem != 0;
+		def = nelem != 0;
 		look = 1;
 		break;
 	case FTN:
@@ -236,7 +235,7 @@ mktype(Type *tp, uint8_t op, void *data)
 	if (look) {
 		for (bp = *tbl; bp; bp = bp->next) {
 			if (bp->type == tp && bp->op == op &&
-			    (op != ARY || bp->u.nelem == u.nelem)) {
+			    (op != ARY || bp->nelem == nelem)) {
 				return bp;
 			}
 		}
@@ -248,6 +247,7 @@ mktype(Type *tp, uint8_t op, void *data)
 	bp->op = op;
 	bp->letter = letter;
 	bp->defined = def;
+	bp->nelem = nelem;
 	bp->u = u;
 	return *tbl = bp;
 }
@@ -255,25 +255,24 @@ mktype(Type *tp, uint8_t op, void *data)
 bool
 eqtype(Type *tp1, Type *tp2)
 {
+	uint8_t n;
+	Type **p1, **p2;
+
 	if (tp1 == tp2)
 		return 1;
-	if (tp1->op != tp2->op)
+	if (tp1->op != tp2->op || tp1->nelem != tp2->nelem)
 		return 0;
 	switch (tp1->op) {
 	case PTR:
 		return eqtype(tp1->type, tp2->type);
 	/* TODO: use the same struct for function parameters and fields */
-	case FTN: {
-		Funpar *fp1 = tp1->u.pars, *fp2 = tp2->u.pars;
-
-		while (fp1 && fp2) {
-			if (!eqtype(fp1->type, fp2->type))
-				break;
-			fp1 = fp1->next;
-			fp2 = fp2->next;
+	case FTN:
+		p1 = tp1->u.pars, p2 = tp2->u.pars;
+		for (n = tp1->nelem; n != 0; --n) {
+			if (!eqtype(*p1++, *p2++))
+				return 0;
 		}
-		return fp1 == fp2;
-	}
+		return 1;
 	case UNION:
 	case STRUCT: {
 		Field *fp1 = tp1->u.fields, *fp2 = tp2->u.fields;
@@ -289,7 +288,7 @@ eqtype(Type *tp1, Type *tp2)
 	case ARY:
 		if (!eqtype(tp1->type, tp2->type))
 			return 0;
-		return tp1->u.nelem == tp2->u.nelem;
+		return 1;
 	case ENUM: case INT: case FLOAT:
 		return tp1->letter == tp2->letter;
 	default:
