@@ -234,8 +234,6 @@ invalid_type:
 static struct node *
 initializer(Symbol *sym)
 {
-	register Type *tp = sym->type;
-
 	if (!sym->s.isdefined)
 		error("'%s' initialized and declared extern", sym->name);
 
@@ -247,6 +245,7 @@ initializer(Symbol *sym)
 			expr();
 		} while (accept(','));
 	}
+	return NULL;
 }
 
 /* TODO: bitfields */
