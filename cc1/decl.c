@@ -147,7 +147,7 @@ declarator(Type *tp, int8_t flags)
 
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
-	for (bp = declarator0(data); bp >= data; --bp) {
+	for (bp = declarator0(data)-1; bp >= data; --bp) {
 		switch (bp->op) {
 		case PTR:
 			tp = mktype(tp, PTR, NULL);
