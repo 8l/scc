@@ -49,8 +49,7 @@ struct ctype {
 	short nelem;          /* number of elements in ary/ftn/strct/union */
 	union typeval {
 		unsigned char rank;   /* convertion rank */
-		Type **pars;         /* function parameters */
-		Field *fields;        /* aggregate fields */
+		void *pars;           /* parameters */
 	} u;
 };
 

@@ -188,67 +188,40 @@ invalid_type:
 Type *
 mktype(Type *tp, uint8_t op, short nelem, void *data)
 {
-	static Type *typetab[NR_TYPE_HASH], **tbl;
-	static uint8_t t, def;
+	static Type *typetab[NR_TYPE_HASH], **tbl, type;
+	static uint8_t t;
 	register Type *bp;
-	char letter, look;
-	union typeval u;
+	static char letters[] = {
+		[PTR] = L_POINTER,   [ARY] = L_ARRAY,
+		[FTN] = L_FUNCTION,  [ENUM] = L_INT,
+		[STRUCT] = L_STRUCT, [UNION] = L_UNION
+	};
 
-	switch (op) {
-	case PTR:
-		if (tp == voidtype)
-			return pvoidtype;
-		letter = L_POINTER;
-		def = 1;
-		look = 1;
-		break;
-	case ARY:
-		letter = L_ARRAY;
-		def = nelem != 0;
-		look = 1;
-		break;
-	case FTN:
-		u.pars = data;
-		letter = L_FUNCTION;
-		def = 1;
-		look = 0;
-		break;
-	case ENUM:
-		letter = L_INT;
-		def = 1;
-		look = 0;
-		break;
-	case STRUCT: case UNION:
-		letter = (op == STRUCT) ? L_STRUCT : L_UNION;
-		def = 0;
-		look = 0;
-		u.fields = NULL;
-		break;
-	default:
-		fputs("internal type error, aborting\n", stderr);
-		abort();
-	}
+	if (op == PTR && tp == voidtype)
+		return pvoidtype;
 
-	t = (op  ^  (uint8_t) ((unsigned short) tp >> 3))
-	         & NR_TYPE_HASH-1;
+	type.type = tp;
+	type.op = op;
+	type.sign = 0;
+	type.letter = letters[op];
+	type.nelem = nelem;
+	type.u.pars = data;
+
+	if (op == ARY && nelem == 0 || op == STRUCT || op == UNION)
+		type.defined = 0;
+	else
+		type.defined = 1;
+
+	t = (op ^ (uint8_t) ((unsigned short) tp >> 3)) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
-	if (look) {
-		for (bp = *tbl; bp; bp = bp->next) {
-			if (bp->type == tp && bp->op == op &&
-			    (op != ARY || bp->nelem == nelem)) {
-				return bp;
-			}
-		}
+	for (bp = *tbl; bp; bp = bp->next) {
+		if (eqtype(bp, &type))
+			return bp;
 	}
 
-	bp = xcalloc(1, sizeof(*bp));
+	bp = xmalloc(sizeof(*bp));
+	*bp = type;
 	bp->next = *tbl;
-	bp->type = tp;
-	bp->op = op;
-	bp->letter = letter;
-	bp->defined = def;
-	bp->nelem = nelem;
-	bp->u = u;
 	return *tbl = bp;
 }
 
@@ -275,7 +248,7 @@ eqtype(Type *tp1, Type *tp2)
 		return 1;
 	case UNION:
 	case STRUCT: {
-		Field *fp1 = tp1->u.fields, *fp2 = tp2->u.fields;
+		Field *fp1 = tp1->u.pars, *fp2 = tp2->u.pars;
 
 		while (fp1 && fp2) {
 			if (!eqtype(fp1->type, fp2->type))

@@ -298,7 +298,7 @@ field(Node *np)
 		unexpected();
 	switch (np->typeop) {
 	case STRUCT: case UNION:
-		for (fp = np->type->u.fields; fp; fp = fp->next) {
+		for (fp = np->type->u.pars; fp; fp = fp->next) {
 			if (!strcmp(fp->name, yytext)) {
 				next();
 				return fieldcode(np, fp);

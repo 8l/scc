@@ -258,7 +258,7 @@ newfield(Type *tp, Symbol *sym)
 	register char *s, *t;
 
 	s = sym->name;
-	for (q = p = tp->u.fields; p; q = p, p = p->next) {
+	for (q = p = tp->u.pars; p; q = p, p = p->next) {
 		t = p->name;
 		if (*s == *t && !strcmp(s, t))
 			error("duplicated fields '%s' and '%s'", s, t);
@@ -273,7 +273,7 @@ newfield(Type *tp, Symbol *sym)
 	p->id = sym->id;
 	p->type = sym->type;
 	if (!q)
-		tp->u.fields = p;
+		tp->u.pars= p;
 	else
 		q->next = p;
 
