@@ -377,7 +377,7 @@ address(char op, Node *np)
 {
 	if (!np->b.lvalue)
 		error("lvalue required in unary expression");
-	if (np->b.symbol && np->u.sym->s.isregister)
+	if (np->b.symbol && np->u.sym->isregister)
 		error("address of register variable '%s' requested", yytext);
 	return unarycode(op, mktype(np->type, PTR, 0, NULL), np);
 }

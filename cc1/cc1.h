@@ -58,15 +58,13 @@ struct symbol {
 	uint8_t ctx;
 	uint8_t ns;
 	uint8_t token;
-	struct {
-		bool isglobal : 1;
-		bool isstatic : 1;
-		bool isauto : 1;
-		bool isregister : 1;
-		bool isdefined : 1;
-		bool isfield : 1;
-		bool isparameter : 1;
-	} s;
+	bool isglobal : 1;
+	bool isstatic : 1;
+	bool isauto : 1;
+	bool isregister : 1;
+	bool isdefined : 1;
+	bool isfield : 1;
+	bool isparameter : 1;
 	union {
 		int i;
 		char *s;

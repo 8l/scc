@@ -31,15 +31,15 @@ label(char *s, char define)
 
 	if ((sym = lookup(s, NS_LABEL)) != NULL) {
 		if (define) {
-			if (sym->s.isdefined)
+			if (sym->isdefined)
 				error("label '%s' already defined", s);
-			sym->s.isdefined = 1;
+			sym->isdefined = 1;
 		}
 		return sym;
 	}
 
 	sym = install(s, NS_LABEL);
-	sym->s.isdefined = define;
+	sym->isdefined = define;
 	return sym;
 }
 

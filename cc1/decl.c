@@ -238,7 +238,7 @@ invalid_type:
 static struct node *
 initializer(Symbol *sym)
 {
-	if (!sym->s.isdefined)
+	if (!sym->isdefined)
 		error("'%s' initialized and declared extern", sym->name);
 
 	if (accept('{')) {
@@ -324,7 +324,7 @@ structdcl(void)
 
 		do {
 			sym = declarator(base, ID_EXPECTED, tagtype->ns);
-			sym->s.isfield = 1;
+			sym->isfield = 1;
 			tp = sym->type;
 			if (tp->op == FTN)
 				error("invalid type in struct/union");
@@ -387,7 +387,7 @@ parameter(void)
 	if ((tp = specifier(&sclass)) == voidtype)
 		return tp;
 	sym = declarator(tp, ID_ACCEPTED, NS_IDEN);
-	sym->s.isparameter = 1;
+	sym->isparameter = 1;
 	tp = sym->type;
 	if (tp->op == FTN)
 		error("incorrect function type for a function parameter");
@@ -395,10 +395,10 @@ parameter(void)
 		tp = mktype(tp->type, PTR, 0, NULL);
 	switch (sclass) {
 	case REGISTER:
-		sym->s.isregister = 1;
+		sym->isregister = 1;
 		break;
 	case 0:
-		sym->s.isauto = 1;
+		sym->isauto = 1;
 		break;
 	default:
 		error("bad storage class in function parameter");
@@ -426,13 +426,13 @@ decl(void)
 			sym->token = TYPEIDEN;
 			continue;
 		case STATIC:
-			sym->s.isstatic = 1;
+			sym->isstatic = 1;
 			break;
 		case EXTERN:
-			sym->s.isdefined = 0;
+			sym->isdefined = 0;
 			break;
 		case REGISTER:
-			sym->s.isregister = 1;
+			sym->isregister = 1;
 			if (isfun)
 				goto bad_function;
 			break;
@@ -441,7 +441,7 @@ decl(void)
 				goto bad_function;
 			/* passtrough */
 		default:
-			sym->s.isauto = 1;
+			sym->isauto = 1;
 			break;
 		}
 		if (accept('='))
@@ -486,17 +486,17 @@ extdecl(void)
 		do {
 			sym = declarator(base, ID_EXPECTED, NS_IDEN);
 			tp = sym->type;
-			sym->s.isstatic = 1;
-			sym->s.isglobal= 1;
+			sym->isstatic = 1;
+			sym->isglobal= 1;
 
 			switch (sclass) {
 			case REGISTER: case AUTO:
 				error("incorrect storage class for file-scope declaration");
 			case STATIC:
-				sym->s.isglobal = 0;
+				sym->isglobal = 0;
 				break;
 			case EXTERN:
-				sym->s.isdefined = 0;
+				sym->isdefined = 0;
 				break;
 			case TYPEDEF:
 				sym->token = TYPEIDEN;
