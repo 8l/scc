@@ -414,7 +414,6 @@ decl(void)
 
 	do {
 		sym = declarator(tp, ID_EXPECTED, NS_IDEN);
-		sym->s.isdefined = 1;
 		isfun = sym->type->op == FTN;
 
 		switch (sclass) {
@@ -484,7 +483,6 @@ extdecl(void)
 			tp = sym->type;
 			sym->s.isstatic = 1;
 			sym->s.isglobal= 1;
-			sym->s.isdefined = 1;
 
 			switch (sclass) {
 			case REGISTER: case AUTO:

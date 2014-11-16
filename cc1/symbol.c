@@ -90,7 +90,7 @@ install(char *s, uint8_t ns)
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->id = (curctx) ? ++localcnt : ++globalcnt;
-	sym->s.isdefined = 0;
+	sym->s.isdefined = 1;
 	sym->ns = ns;
 	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
 	sym->next = tbl->head;
