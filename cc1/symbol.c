@@ -10,8 +10,8 @@
 #define NR_SYM_HASH 32
 
 uint8_t curctx;
-short localcnt;
-short globalcnt;
+static short localcnt;
+static short globalcnt;
 
 static struct symtab {
 	Symbol *head;
