@@ -65,6 +65,7 @@ struct symbol {
 		bool isregister : 1;
 		bool isdefined : 1;
 		bool isfield : 1;
+		bool isparameter : 1;
 	} s;
 	union {
 		int i;

@@ -387,6 +387,7 @@ parameter(void)
 	if ((tp = specifier(&sclass)) == voidtype)
 		return tp;
 	sym = declarator(tp, ID_ACCEPTED, NS_IDEN);
+	sym->s.isparameter = 1;
 	tp = sym->type;
 	if (tp->op == FTN)
 		error("incorrect function type for a function parameter");

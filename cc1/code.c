@@ -94,6 +94,8 @@ emitvar(Symbol *sym)
 		c = 'R';
 	else if (sym->s.isfield)
 		c = 'M';
+	else if (sym->s.isparameter)
+		c = 'P';
 	else
 		c = 'A';
 	printf("%c%d", c, sym->id);

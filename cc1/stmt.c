@@ -332,8 +332,8 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 
 end_compound:
-	expect('}');
 	popctx();
+	expect('}');
 	return;
 }
 
