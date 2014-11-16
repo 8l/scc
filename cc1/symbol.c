@@ -47,18 +47,6 @@ freesyms(uint8_t ns)
 	}
 }
 
-Type *
-aggregate(Type * (*fun)(void))
-{
-	Type *tp;
-
-	++curctx;
-	tp = (*fun)();
-	--curctx;
-	freesyms(NS_IDEN);
-	return tp;
-}
-
 void
 context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -67,6 +55,7 @@ context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	--curctx;
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
+	freesyms(NS_STRUCTS);
 	if (curctx == 0) {
 		localcnt = 0;
 		freesyms(NS_LABEL);
@@ -79,9 +68,9 @@ lookup(register char *s, uint8_t ns)
 	struct symtab *tbl;
 	register Symbol *sym;
 
-	tbl = &symtab[ns];
+	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
 	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
-		if (!strcmp(sym->name, s))
+		if (!strcmp(sym->name, s) && sym->ns == ns)
 			return sym;
 	}
 
@@ -99,8 +88,9 @@ install(char *s, uint8_t ns)
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->id = (curctx) ? ++localcnt : ++globalcnt;
-	sym->s.isdefined = 1;
-	tbl = &symtab[ns];
+	sym->s.isdefined = 0;
+	sym->ns = ns;
+	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
 	sym->next = tbl->head;
 	tbl->head = sym;
 

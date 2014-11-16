@@ -92,6 +92,8 @@ emitsym2(Symbol *sym)
 		c = 'G';
 	else if (sym->s.isregister)
 		c = 'R';
+	else if (sym->s.isfield)
+		c = 'M';
 	else
 		c = 'A';
 	printf("%c%d", c, sym->id);
@@ -110,6 +112,18 @@ emitconst(Node *np)
 		for (bp = sym->u.s; c = *bp; ++bp)
 			printf("%02x", (unsigned) c);
 	}
+}
+
+void
+emitstruct(Symbol *sym)
+{
+	printf("S%d\t(\n", sym->id);
+}
+
+void
+emitestruct(void)
+{
+	puts(")");
 }
 
 void
@@ -280,14 +294,14 @@ emitfield(Node *np)
 
 	child = np->childs[0];
 	(*child->code)(child);
-
-	printf("\tM%d", np->u.field->id);
+	putchar('\t');
+	emitsym2(np->u.sym);
 }
 
 Node *
-fieldcode(Node *child, struct field *fp)
+fieldcode(Node *child, Symbol *field)
 {
-	Node *np = node(emitfield, fp->type, FIELD(fp), 1);
+	Node *np = node(emitfield, field->type, SYM(field), 1);
 	np->childs[0] = child;
 	return np;
 }

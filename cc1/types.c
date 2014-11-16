@@ -206,6 +206,7 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 	type.letter = letters[op];
 	type.pars = data;
 	type.n.elem = nelem;
+	type.ns = 0;
 
 	if (op == ARY && nelem == 0 || op == STRUCT || op == UNION)
 		type.defined = 0;
@@ -236,9 +237,11 @@ eqtype(Type *tp1, Type *tp2)
 	if (tp1->op != tp2->op || tp1->n.elem != tp2->n.elem)
 		return 0;
 	switch (tp1->op) {
+	case ARY:
 	case PTR:
 		return eqtype(tp1->type, tp2->type);
-	/* TODO: use the same struct for function parameters and fields */
+	case UNION:
+	case STRUCT:
 	case FTN:
 		p1 = tp1->pars, p2 = tp2->pars;
 		for (n = tp1->n.elem; n != 0; --n) {
@@ -246,23 +249,9 @@ eqtype(Type *tp1, Type *tp2)
 				return 0;
 		}
 		return 1;
-	case UNION:
-	case STRUCT: {
-		Field *fp1 = tp1->pars, *fp2 = tp2->pars;
-
-		while (fp1 && fp2) {
-			if (!eqtype(fp1->type, fp2->type))
-				break;
-			fp1 = fp1->next;
-			fp2 = fp2->next;
-		}
-		return fp1 == fp2;
-	}
-	case ARY:
-		if (!eqtype(tp1->type, tp2->type))
-			return 0;
-		return 1;
-	case ENUM: case INT: case FLOAT:
+	case ENUM:
+		/* TODO: Check when two enum are the same type */
+	case INT: case FLOAT:
 		return tp1->letter == tp2->letter;
 	default:
 		fputs("internal type error, aborting\n", stderr);

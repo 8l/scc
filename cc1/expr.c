@@ -292,19 +292,20 @@ logic(char op, Node *np1, Node *np2)
 static Node *
 field(Node *np)
 {
-	Field *fp;
+	extern uint8_t lex_ns;
+	Symbol *sym;
 
-	if (yytoken != IDEN)
-		unexpected();
 	switch (np->typeop) {
 	case STRUCT: case UNION:
-		for (fp = np->type->pars; fp; fp = fp->next) {
-			if (!strcmp(fp->name, yytext)) {
-				next();
-				return fieldcode(np, fp);
-			}
-		}
-		error("field '%s' not found", yytext);
+		lex_ns = np->type->ns;
+		next();
+		if (yytoken != IDEN)
+			unexpected();
+		if ((sym = yylval.sym) == NULL)
+			error("incorrect field in struct/union");
+		lex_ns = NS_IDEN;
+		next();
+		return fieldcode(np, sym);
 	default:
 		error("struct or union expected");
 	}
@@ -482,7 +483,6 @@ postfix(void)
 		case INDIR:
 			np1 = content(OPTR, np1);
 		case '.':
-			next();
 			np1 = field(np1);
 			break;
 		case '(':

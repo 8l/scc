@@ -70,33 +70,33 @@ fundcl(struct dcldata *dp)
 }
 
 static Symbol *
-newiden(void)
+newiden(uint8_t ns)
 {
 	Symbol *sym;
 	extern uint8_t curctx;
 
-	if (yylval.sym && yylval.sym->ctx == curctx)
+	if (yylval.sym && yylval.sym->ctx == curctx && yylval.sym->ns == ns)
 		error("redeclaration of '%s'", yytext);
-	sym = install(yytext, NS_IDEN);
+	sym = install(yytext, ns);
 	next();
 	return sym;
 }
 
-static struct dcldata *declarator0(struct dcldata *dp);
+static struct dcldata *declarator0(struct dcldata *dp, uint8_t ns);
 
 static struct dcldata *
-directdcl(struct dcldata *dp)
+directdcl(struct dcldata *dp, uint8_t ns)
 {
 	register Symbol *sym;
 
 	if (accept('(')) {
-		dp = declarator0(dp);
+		dp = declarator0(dp, ns);
 		expect(')');
 	} else {
 		if (yytoken == IDEN || yytoken == TYPEIDEN)
-			sym = newiden();
+			sym = newiden(ns);
 		else
-			sym = install("", NS_IDEN);
+			sym = install("", ns);
 		dp = queue(dp, IDEN, 0, sym);
 	}
 
@@ -110,7 +110,7 @@ directdcl(struct dcldata *dp)
 }
 
 static struct dcldata*
-declarator0(struct dcldata *dp)
+declarator0(struct dcldata *dp, uint8_t ns)
 {
 	register uint8_t  n;
 
@@ -119,7 +119,7 @@ declarator0(struct dcldata *dp)
 			/* nothing */;
 	}
 
-	dp = directdcl(dp);
+	dp = directdcl(dp, ns);
 
 	while (n--)
 		dp = queue(dp, PTR, 0, NULL);
@@ -128,7 +128,7 @@ declarator0(struct dcldata *dp)
 }
 
 static Symbol *
-declarator(Type *tp, int8_t flags)
+declarator(Type *tp, int8_t flags, uint8_t ns)
 {
 	struct dcldata data[NR_DECLARATORS+2];
 	register struct dcldata *bp;
@@ -136,7 +136,7 @@ declarator(Type *tp, int8_t flags)
 
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
-	for (bp = declarator0(data)-1; bp >= data; --bp) {
+	for (bp = declarator0(data, ns)-1; bp >= data; --bp) {
 		if (bp->op != IDEN) {
 			tp = mktype(tp, bp->op, bp->nelem, bp->data);
 		} else {
@@ -212,7 +212,7 @@ specifier(int8_t *sclass)
 		if (dcl) {
 			if (size || sign)
 				goto invalid_type;
-			tp = aggregate(dcl);
+			tp = (*dcl)();
 		} else {
 			next();
 		}
@@ -248,70 +248,11 @@ initializer(Symbol *sym)
 	return NULL;
 }
 
-/* TODO: bitfields */
-
-static void
-newfield(Type *tp, Symbol *sym)
-{
-	register Field *p, *q;
-	register char *s, *t;
-
-	s = sym->name;
-	for (q = p = tp->pars; p; q = p, p = p->next) {
-		t = p->name;
-		if (*s == *t && !strcmp(s, t))
-			error("duplicated fields '%s' and '%s'", s, t);
-		if (sym->u.i == p->id)
-			error("duplicated enumeration fields '%s' and '%s'",
-			      s, t);
-	}
-
-	p = xmalloc(sizeof(*p));
-	p->name = xstrdup(s);
-	p->next = NULL;
-	p->id = sym->id;
-	p->type = sym->type;
-	if (!q)
-		tp->pars= p;
-	else
-		q->next = p;
-
-	return;
-}
-
-static void
-fielddcl(Type *base)
-{
-	Type *tp;
-	Symbol *sym;
-
-	switch (yytoken) {
-	case SCLASS:
-		error("storage class '%s' in struct/union field", yytext);
-	case IDEN: case TYPE: case TYPEIDEN: case TQUALIFIER:
-		tp = specifier(NULL);
-	case ';':
-		break;
-	default:
-		unexpected();
-	}
-
-	if (yytoken != ';') {
-		do {
-			sym = declarator(tp, ID_EXPECTED);
-			newfield(base, sym);
-		} while (accept(','));
-	}
-
-	expect(';');
-	return;
-}
-
-static Type *
+static Symbol *
 newtag(uint8_t tag)
 {
 	register Symbol *sym;
-	register Type *tp;
+	static uint8_t ns = NS_STRUCTS;
 
 	switch (yytoken) {
 	case IDEN: case TYPEIDEN:
@@ -323,32 +264,80 @@ newtag(uint8_t tag)
 		sym = install("", NS_TAG);
 		break;
 	}
-	if (!sym->type)
+	if (!sym->type) {
+		if (ns == NS_STRUCTS + NR_MAXSTRUCTS)
+			error("too much tags declared");
 		sym->type = mktype(NULL, tag, 0, NULL);
-	tp = sym->type;
-	if (tp->op != tag)
+		sym->type->ns = ns++;
+	}
+	
+	if (sym->type->op != tag)
 		error("'%s' defined as wrong kind of tag", yytext);
-	return tp;
+	return sym;
 }
+
+/* TODO: bitfields */
 
 static Type *
 structdcl(void)
 {
-	Type *tp;
-	uint8_t tag;
+	Type *tagtype, *buff[NR_MAXSTRUCTS], **bp = &buff[0];
+	Symbol *tagsym, *sym;
+	uint8_t tag, n;
+	size_t siz;
 
 	tag = yylval.token;
 	next();
-	tp = newtag(tag);
-	if (accept('{')) {
-		if (tp->defined)
-			error("redefinition of struct/union '%s'", yytext);
-		tp->defined = 1;
-		while (!accept('}'))
-			fielddcl(tp);
+	tagsym = newtag(tag);
+	tagtype = tagsym->type;
+	if (!accept('{'))
+		return tagtype;
+
+	if (tagtype->defined)
+		error("redefinition of struct/union '%s'", yytext);
+	tagtype->defined = 1;
+	emitstruct(tagsym);
+
+	while (!accept('}')) {
+		Type *base, *tp;
+
+		switch (yytoken) {
+		case SCLASS:
+			error("storage class '%s' in struct/union field",
+			      yytext);
+		case IDEN: case TYPE: case TYPEIDEN: case TQUALIFIER:
+			base = specifier(NULL);
+			break;
+		case ';':
+			next();
+			continue;
+		default:
+			unexpected();
+		}
+
+		if (accept(';'))
+			error("identifier expected");
+
+		do {
+			sym = declarator(base, ID_EXPECTED, tagtype->ns);
+			sym->s.isfield = 1;
+			tp = sym->type;
+			if (tp->op == FTN)
+				error("invalid type in struct/union");
+			if (bp == &buff[NR_MAXSTRUCTS])
+				error("too much fields in struct/union");
+			*bp++ = sym->type;
+			emitdcl(sym);
+		} while (accept(','));
+		expect(';');
 	}
 
-	return tp;
+	emitestruct();
+	n = bp - buff - 1;
+	siz = sizeof(Type *) * n;
+	tagtype->n.elem = n;
+	tagtype->pars = memcpy(xmalloc(siz), buff, siz);
+	return tagtype;
 }
 
 static Type *
@@ -359,7 +348,8 @@ enumdcl(void)
 	int val = 0;
 
 	next();
-	tp = newtag(ENUM);
+	tp = newtag(ENUM)->type;
+
 	if (yytoken == ';')
 		return tp;
 
@@ -370,12 +360,11 @@ enumdcl(void)
 	while (yytoken != '}') {
 		if (yytoken != IDEN)
 			unexpected();
-		sym = newiden();
+		sym = newiden(NS_IDEN);
 		sym->type = inttype;
 		if (accept('='))
 			initializer(sym);
 		sym->u.i = val++;
-		newfield(tp, sym);
 		if (!accept(','))
 			break;
 	}
@@ -393,7 +382,7 @@ parameter(void)
 
 	if ((tp = specifier(&sclass)) == voidtype)
 		return tp;
-	sym = declarator(tp, ID_ACCEPTED);
+	sym = declarator(tp, ID_ACCEPTED, NS_IDEN);
 	sym->s.isdefined = 1;
 	/* TODO: check type of the parameter */
 	switch (sclass) {
@@ -421,7 +410,7 @@ decl(void)
 		return;
 
 	do {
-		sym = declarator(tp, ID_EXPECTED);
+		sym = declarator(tp, ID_EXPECTED, NS_IDEN);
 		sym->s.isdefined = 1;
 		isfun = sym->type->op == FTN;
 
@@ -470,7 +459,7 @@ typename(void)
 	tp = specifier(&sclass);
 	if (sclass)
 		error("class storage in type name");
-	sym = declarator(tp, ID_FORBIDDEN);
+	sym = declarator(tp, ID_FORBIDDEN, NS_IDEN);
 	return  sym->type;
 }
 
@@ -488,7 +477,7 @@ extdecl(void)
 		if (accept(';'))
 			return;
 		do {
-			sym = declarator(base, ID_EXPECTED);
+			sym = declarator(base, ID_EXPECTED, NS_IDEN);
 			tp = sym->type;
 			sym->s.isstatic = 1;
 			sym->s.isglobal= 1;

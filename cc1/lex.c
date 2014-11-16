@@ -10,6 +10,7 @@
 #include "cc1.h"
 
 static FILE *yyin;
+uint8_t lex_ns = NS_IDEN;
 const char *filename;
 unsigned linenum;
 
@@ -202,7 +203,7 @@ iden(void)
 	*bp = '\0';
 	ungetc(c, yyin);
 
-	sym = yylval.sym = lookup(yytext, NS_IDEN);
+	sym = yylval.sym = lookup(yytext, lex_ns);
 	if (!sym || sym->token == IDEN)
 		return IDEN;
 	yylval.token = sym->u.token;

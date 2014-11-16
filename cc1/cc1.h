@@ -26,31 +26,26 @@ enum {
 	NS_IDEN = 0,
 	NS_TAG,
 	NS_LABEL,
+	NS_STRUCTS,
 	NR_NAMESPACES
 };
 
 typedef struct ctype Type;
 typedef struct symbol Symbol;
 
-typedef struct field {
-	char *name;
-	Type *type;
-	int id;
-	struct field *next;
-} Field;
-
 struct ctype {
 	uint8_t op;           /* type builder operator */
+	uint8_t ns;
 	char letter;          /* letter of the type */
 	bool defined : 1;     /* type defined (is not a forward reference) */
 	bool sign : 1;        /* sign type */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
+	Type **pars;         /* type parameters */
 	union {
 		unsigned char rank;  /* convertion rank */
 		short elem;          /* number of type parameters */
 	} n;
-	void *pars;           /* type parameters */
 };
 
 
@@ -61,6 +56,7 @@ struct symbol {
 	Type *type;
 	short id;
 	uint8_t ctx;
+	uint8_t ns;
 	uint8_t token;
 	struct {
 		bool isglobal : 1;
@@ -68,11 +64,11 @@ struct symbol {
 		bool isauto : 1;
 		bool isregister : 1;
 		bool isdefined : 1;
+		bool isfield : 1;
 	} s;
 	union {
 		int i;
 		char *s;
-		struct symbol *sym;
 		uint8_t token;
 	} u;
 	struct symbol *next;
@@ -90,7 +86,6 @@ extern Symbol
 typedef struct caselist Caselist;
 
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
-extern Type *aggregate(Type *(*fun)(void));
 extern void context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 extern Type *typename(void);
@@ -161,7 +156,6 @@ typedef struct node {
 		Symbol *sym;
 		Type *type;
 		char op;
-		Field *field;
 	} u;
 	struct node *childs[];
 } Node;
@@ -191,7 +185,8 @@ extern void
 	emitswitch(short, Node *), emitcase(Symbol *, Node *),
 	emitret(Type *tp),
 	emitfun(Symbol *sym),
-	emitdefault(Symbol *);
+	emitdefault(Symbol *),
+	emitstruct(Symbol *sym), emitestruct(void);
 
 extern Node
 	*node(void (*code)(Node *),
@@ -202,7 +197,7 @@ extern Node
 	*sizeofcode(Type *tp), 
 	*ternarycode(Node *cond, Node *ifyes, Node *ifno),
 	*symcode(Symbol *sym),
-	*fieldcode(Node *child, struct field *fp);
+	*fieldcode(Node *child, Symbol *field);
 
 extern void freetree(Node *np);
 
