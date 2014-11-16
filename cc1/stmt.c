@@ -311,12 +311,13 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
+	pushctx();
 	expect('{');
+
 	for (;;) {
 		switch (yytoken) {
 		case '}':
-			next();
-			return;
+			goto end_compound;
 		case TYPEIDEN:
 			if (ahead() == ':')
 				goto statement;
@@ -329,6 +330,11 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 			stmt(lbreak, lcont, lswitch);
 		}
 	}
+
+end_compound:
+	expect('}');
+	popctx();
+	return;
 }
 
 static void
@@ -338,7 +344,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Node *np;
 
 	switch (yytoken) {
-	case '{':      fun = context;  break;
+	case '{':      fun = compound; break;
 	case RETURN:   fun = Return;   break;
 	case WHILE:    fun = While;    break;
 	case FOR:      fun = For;      break;

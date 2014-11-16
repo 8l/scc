@@ -83,10 +83,11 @@ extern Symbol
 	*lookup(char *s, unsigned char ns),
 	*install(char *s, unsigned char ns);
 
+extern void pushctx(void), popctx(void);
+
 typedef struct caselist Caselist;
 
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
-extern void context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 extern Type *typename(void);
 

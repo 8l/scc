@@ -50,10 +50,14 @@ freesyms(uint8_t ns)
 }
 
 void
-context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
+pushctx(void)
 {
 	++curctx;
-	compound(lbreak, lcont, lswitch);
+}
+
+void
+popctx(void)
+{
 	--curctx;
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);

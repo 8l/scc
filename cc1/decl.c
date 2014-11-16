@@ -47,6 +47,7 @@ fundcl(struct dcldata *dp)
 	size_t siz;
 	Type *pars[NR_FUNPARAM], **tp = &pars[0];
 
+	pushctx();
 	expect('(');
 
 	do {
@@ -65,6 +66,9 @@ fundcl(struct dcldata *dp)
 	expect(')');
 	siz = sizeof(*tp) * n;
 	tp = (siz > 0) ? memcpy(xmalloc(siz), pars, siz) : NULL;
+
+	if (yytoken != '{')
+		popctx();
 
 	return queue(dp, FTN, n, tp);
 }
@@ -505,8 +509,9 @@ extdecl(void)
 			} else if (yytoken == '{') {
 				curfun = sym;
 				emitfun(sym);
-				context(NULL, NULL, NULL);
+				compound(NULL, NULL, NULL);
 				emitefun();
+				popctx();
 				return;
 			}
 		} while (accept(','));
