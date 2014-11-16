@@ -383,8 +383,11 @@ parameter(void)
 	if ((tp = specifier(&sclass)) == voidtype)
 		return tp;
 	sym = declarator(tp, ID_ACCEPTED, NS_IDEN);
-	sym->s.isdefined = 1;
-	/* TODO: check type of the parameter */
+	tp = sym->type;
+	if (tp->op == FTN)
+		error("incorrect function type for a function parameter");
+	if (tp->op == ARY)
+		tp = mktype(tp->type, PTR, 0, NULL);
 	switch (sclass) {
 	case REGISTER:
 		sym->s.isregister = 1;
@@ -395,7 +398,7 @@ parameter(void)
 	default:
 		error("bad storage class in function parameter");
 	}
-	return sym->type;
+	return tp;
 }
 
 void
