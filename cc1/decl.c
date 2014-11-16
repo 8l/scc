@@ -52,7 +52,7 @@ fundcl(struct dcldata *dp)
 	do {
 		if (tp == &pars[NR_FUNPARAM])
 			error("too much parameters in function definition");
-		
+
 		if ((*tp++ = parameter()) == voidtype) {
 			if (n == 0)
 				break;
