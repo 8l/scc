@@ -80,7 +80,7 @@ freetree(Node *np)
 }
 
 static void
-emitsym2(Symbol *sym)
+emitvar(Symbol *sym)
 {
 	char c;
 
@@ -130,7 +130,7 @@ void
 emitsym(Node *np)
 {
 	putchar('\t');
-	(np->b.constant) ? emitconst(np) : emitsym2(np->u.sym);
+	(np->b.constant) ? emitconst(np) : emitvar(np->u.sym);
 }
 
 static void
@@ -142,7 +142,7 @@ emittype(Type *tp)
 void
 emitdcl(Symbol *sym)
 {
-	emitsym2(sym);
+	emitvar(sym);
 	putchar('\t');
 	emittype(sym->type);
 	putchar('\n');
@@ -295,7 +295,7 @@ emitfield(Node *np)
 	child = np->childs[0];
 	(*child->code)(child);
 	putchar('\t');
-	emitsym2(np->u.sym);
+	emitvar(np->u.sym);
 }
 
 Node *
