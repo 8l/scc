@@ -40,6 +40,8 @@ freesyms(uint8_t ns)
 			break;
 		if (ns == NS_LABEL && !sym->s.isdefined)
 			error("label '%s' is not defined", sym->name);
+		if (ns == NS_TAG)
+			sym->type->defined = 0;
 		tbl->htab[hash(sym->name)] = sym->hash;
 		next = tbl->head = sym->next;
 		free(sym->name);
