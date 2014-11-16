@@ -38,37 +38,51 @@ arydcl(struct dcldata *dp)
 	return queue(dp, ARY, 0, NULL);
 }
 
-static Type *parameter(void);
+static Symbol *parameter(void);
 
 static struct dcldata *
 fundcl(struct dcldata *dp)
 {
-	uint8_t n = 0;
 	size_t siz;
-	Type *pars[NR_FUNPARAM], **tp = &pars[0];
+	uint8_t n, i, noname;
+	Type *pars[NR_FUNPARAM], **tp = pars;
+	Symbol *syms[NR_FUNPARAM], **sp = syms, *sym;
 
 	pushctx();
 	expect('(');
 
+	n = noname = 0;
 	do {
-		if (tp == &pars[NR_FUNPARAM])
-			error("too much parameters in function definition");
-
-		if ((*tp++ = parameter()) == voidtype) {
+		if ((sym = parameter()) == NULL) {
 			if (n == 0)
 				break;
-			else
-				error("incorrect void parameter");
+			error("incorrect void parameter");
 		}
-		++n;
+		if (n++ == NR_FUNPARAM)
+			error("too much parameters in function definition");
+		*sp++ = sym;
+		*tp++ = sym->type;
+		noname |= sym->name[0] == '\0';
 	} while (accept(','));
 
 	expect(')');
-	siz = sizeof(*tp) * n;
-	tp = (siz > 0) ? memcpy(xmalloc(siz), pars, siz) : NULL;
+	if (n != 0) {
+		/* TODO: leak when type already exits (also in structs) */
+		siz = sizeof(*tp) * n;
+		tp = (siz > 0) ? memcpy(xmalloc(siz), pars, siz) : NULL;
+	}
 
-	if (yytoken != '{')
+	if (yytoken != '{') {
+		/* it is only a prototype */
 		popctx();
+	} else {
+		/* it is a function definition */
+		if (noname)
+			error("parameter name omitted");
+		sp = syms;
+		for (i = 0; i < n; ++i)
+			emitdcl(*sp++);
+	}
 
 	return queue(dp, FTN, n, tp);
 }
@@ -377,7 +391,7 @@ enumdcl(void)
 	return tp;
 }
 
-static Type *
+static Symbol *
 parameter(void)
 {
 	Symbol *sym;
@@ -385,7 +399,7 @@ parameter(void)
 	Type *tp;
 
 	if ((tp = specifier(&sclass)) == voidtype)
-		return tp;
+		return NULL;
 	sym = declarator(tp, ID_ACCEPTED, NS_IDEN);
 	sym->isparameter = 1;
 	tp = sym->type;
@@ -403,7 +417,7 @@ parameter(void)
 	default:
 		error("bad storage class in function parameter");
 	}
-	return tp;
+	return sym;
 }
 
 void
