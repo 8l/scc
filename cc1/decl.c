@@ -68,7 +68,9 @@ fundcl(struct dcldata *dp)
 	expect(')');
 	if (n != 0) {
 		siz = sizeof(*tp) * n;
-		tp = (siz > 0) ? memcpy(xmalloc(siz), pars, siz) : NULL;
+		tp = memcpy(xmalloc(siz), pars, siz);
+	} else {
+		tp = NULL;
 	}
 
 	if (yytoken != '{') {
@@ -350,10 +352,11 @@ structdcl(void)
 	}
 
 	emitestruct();
-	n = bp - buff - 1;
-	siz = sizeof(Type *) * n;
-	tagtype->n.elem = n;
-	tagtype->pars = memcpy(xmalloc(siz), buff, siz);
+	if ((n = bp - buff) != 0) {
+		siz = sizeof(Type *) * n;
+		tagtype->n.elem = n;
+		tagtype->pars = memcpy(xmalloc(siz), buff, siz);
+	}
 	return tagtype;
 }
 
