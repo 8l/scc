@@ -67,7 +67,6 @@ fundcl(struct dcldata *dp)
 
 	expect(')');
 	if (n != 0) {
-		/* TODO: leak when type already exits (also in structs) */
 		siz = sizeof(*tp) * n;
 		tp = (siz > 0) ? memcpy(xmalloc(siz), pars, siz) : NULL;
 	}

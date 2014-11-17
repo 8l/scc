@@ -216,8 +216,10 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 	t = (op ^ (uint8_t) ((unsigned short) tp >> 3)) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
 	for (bp = *tbl; bp; bp = bp->next) {
-		if (eqtype(bp, &type))
+		if (eqtype(bp, &type)) {
+			free(data);
 			return bp;
+		}
 	}
 
 	bp = xmalloc(sizeof(*bp));
