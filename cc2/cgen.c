@@ -9,17 +9,6 @@
 
 #include <stdio.h>
 
-/* TODO: Change emit to code */
-enum {
-	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX,
-	LDFX
-};
-
-enum {
-	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
-	IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
-};
-
 static char *opnames[] = {
 	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
 	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD", [ADDX] = "ADD",
@@ -37,57 +26,6 @@ static bool reguse[NREGS];
 static char upper[] = {[DE] = D, [HL] = H, [BC] = B, [IX] = IXH, [IY] = IYH};
 static char lower[] = {[DE] = E, [HL] = L, [BC] = C, [IX] = IXL, [IY] = IYL};
 
-void
-emit(char op, ...)
-{
-	va_list va;
-	uint8_t reg1, reg2;
-	TINT imm;
-	short off;
-	char *label;
-
-	va_start(va, op);
-	switch (op) {
-	case RET:
-		printf("\t%s\n", opnames[op]);
-		break;
-	case PUSH: case POP:
-		reg1 = va_arg(va, int);
-		printf("\t%s\t%s\n", opnames[op], regnames[reg1]);
-		break;
-	case ADD: case LD:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		printf("\t%s\t%s,%s\n",
-		       opnames[op], regnames[reg1], regnames[reg2]);
-		break;
-	case ADDI: case LDI:
-		reg1 = va_arg(va, int);
-		imm = va_arg(va, int);
-		printf("\t%s\t%s,%d\n", opnames[op], regnames[reg1], imm);
-		break;
-	case ADDX: case ADCX: case LDFX:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		off = va_arg(va, int);
-		printf("\t%s\t%s,(%s%+d)\n",
-		       opnames[op], regnames[reg1], regnames[reg2], off);
-		break;
-	case LDX:
-		reg1 = va_arg(va, int);
-		off = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		printf("\t%s\t(%s%+d),%s\n",
-		       opnames[op], regnames[reg1], off, regnames[reg2]);
-		break;
-	case ADDR:
-		label = va_arg(va, char *);
-		printf("%s:\n", label);
-		break;
-	}
-
-	va_end(va);
-}
 
 static char
 allocreg(Node *np)

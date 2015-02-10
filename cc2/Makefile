@@ -1,5 +1,5 @@
 
-OBJS = main.o parser.o cgen.o
+OBJS = main.o parser.o cgen.o code.o
 
 CPPFLAGS = -I../inc
 LDFLAGS = -L../lib

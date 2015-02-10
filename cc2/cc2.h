@@ -98,9 +98,21 @@ enum nerrors {
 
 #define ADDABLE 10
 
+
+enum {
+	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX,
+	LDFX
+};
+
+enum {
+	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
+	IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
+};
+
 extern void error(unsigned nerror, ...);
 extern void genaddable(Node *np);
 extern void generate(Symbol *fun);
 extern void genstack(Symbol *fun);
 extern void apply(Node *list[], void (*fun)(Node *));
 extern Symbol *parse(void);
+extern void emit(char op, ...);
