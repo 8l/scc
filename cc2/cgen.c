@@ -74,11 +74,11 @@ move(Node *np)
 		sym = np->u.sym;
 		switch (tp->size) {
 		case 1:
-			emit(LDFX, reg, IX, sym->u.v.off);
+			code(LDFX, reg, IX, sym->u.v.off);
 			break;
 		case 2:
-			emit(LDFX, lower[reg], IX, sym->u.v.off);
-			emit(LDFX, upper[reg], IX, sym->u.v.off+1);
+			code(LDFX, lower[reg], IX, sym->u.v.off);
+			code(LDFX, upper[reg], IX, sym->u.v.off+1);
 			break;
 		case 4:
 		case 8:
@@ -146,10 +146,10 @@ cgen(Node *np)
 				rp = np->right;
 			} else if (lp->u.reg != A) {
 				/* TODO: Move A to variable */
-				emit(PUSH, AF);
-				emit(LD, A, lp->u.reg);
+				code(PUSH, AF);
+				code(LD, A, lp->u.reg);
 			}
-			emit(ADD, A, rp->u.reg);
+			code(ADD, A, rp->u.reg);
 			break;
 		case 2:
 			if (rp->u.reg == HL || rp->u.reg == IY) {
@@ -158,11 +158,11 @@ cgen(Node *np)
 				rp = np->right;
 			} else if (lp->u.reg != HL && lp->u.reg != IY) {
 				/* TODO: Move HL to variable */
-				emit(PUSH, HL);
-				emit(LD, H, upper[lp->u.reg]);
-				emit(LD, L, lower[lp->u.reg]);
+				code(PUSH, HL);
+				code(LD, H, upper[lp->u.reg]);
+				code(LD, L, lower[lp->u.reg]);
 			}
-			emit(ADD, lp->u.reg, rp->u.reg);
+			code(ADD, lp->u.reg, rp->u.reg);
 			break;
 		case 4:
 		case 8:
@@ -180,21 +180,21 @@ generate(Symbol *fun)
 	extern char odebug;
 	char frame = fun->u.f.locals != 0 || odebug;
 
-	emit(ADDR, fun->name);
+	code(ADDR, fun->name);
 	if (frame) {
-		emit(PUSH, IX);
-		emit(LD, IX, SP);
-		emit(LDI, HL, -fun->u.f.locals);
-		emit(ADD, HL, SP);
-		emit(LD, SP, HL);
+		code(PUSH, IX);
+		code(LD, IX, SP);
+		code(LDI, HL, -fun->u.f.locals);
+		code(ADD, HL, SP);
+		code(LD, SP, HL);
 	}
 
 	apply(fun->u.f.body, cgen);
 
 	if (frame) {
-		emit(LD, SP, IX);
-		emit(POP, IX);
-		emit(RET);
+		code(LD, SP, IX);
+		code(POP, IX);
+		code(RET);
 	}
 }
 

@@ -23,7 +23,7 @@ static char *regnames[] = {
 };
 
 void
-emit(char op, ...)
+code(char op, ...)
 {
 	va_list va;
 	uint8_t reg1, reg2;

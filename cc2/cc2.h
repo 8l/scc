@@ -115,4 +115,4 @@ extern void generate(Symbol *fun);
 extern void genstack(Symbol *fun);
 extern void apply(Node *list[], void (*fun)(Node *));
 extern Symbol *parse(void);
-extern void emit(char op, ...);
+extern void code(char op, ...);
