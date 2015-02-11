@@ -22,54 +22,48 @@ static char *regnames[] = {
 	[IXL]= "IXL",[IXH]= "IXH",[IYL]= "IYL",[IYH]= "IYH", [I] = "I"
 };
 
+static char *opfmt[] = {
+	[RET]  = "\to",
+	[PUSH] = "\to\tr",
+	[POP]  = "\to\tr",
+	[ADD]  = "\to\tr,r",
+	[LD]   = "\to\tr,r",
+	[ADDI] = "\to\tr,i",
+	[LDI]  = "\to\tr,i",
+	[ADDX] = "\to\tr,(r+i)",
+	[ADCX] = "\to\tr,(r+i)",
+	[LDFX] = "\to\tr,(r+i)",
+	[LDX]  = "\to\t(r+i),r",
+	[ADDR] = "a:"
+};
+
 void
 code(char op, ...)
 {
 	va_list va;
-	uint8_t reg1, reg2;
-	TINT imm;
-	short off;
-	char *label;
+	char *cp, c;
 
 	va_start(va, op);
-	switch (op) {
-	case RET:
-		printf("\t%s\n", opnames[op]);
-		break;
-	case PUSH: case POP:
-		reg1 = va_arg(va, int);
-		printf("\t%s\t%s\n", opnames[op], regnames[reg1]);
-		break;
-	case ADD: case LD:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		printf("\t%s\t%s,%s\n",
-		       opnames[op], regnames[reg1], regnames[reg2]);
-		break;
-	case ADDI: case LDI:
-		reg1 = va_arg(va, int);
-		imm = va_arg(va, int);
-		printf("\t%s\t%s,%d\n", opnames[op], regnames[reg1], imm);
-		break;
-	case ADDX: case ADCX: case LDFX:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		off = va_arg(va, int);
-		printf("\t%s\t%s,(%s%+d)\n",
-		       opnames[op], regnames[reg1], regnames[reg2], off);
-		break;
-	case LDX:
-		reg1 = va_arg(va, int);
-		off = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		printf("\t%s\t(%s%+d),%s\n",
-		       opnames[op], regnames[reg1], off, regnames[reg2]);
-		break;
-	case ADDR:
-		label = va_arg(va, char *);
-		printf("%s:\n", label);
-		break;
+	for (cp = opfmt[op]; c = *cp; ++cp) {
+		switch (c) {
+		case 'o':
+			fputs(opnames[op], stdout);
+			break;
+		case 'r':
+			fputs(regnames[va_arg(va, int)], stdout);
+			break;
+		case 'i':
+			printf("%d", va_arg(va, int));
+			break;
+		case 'a':
+			fputs(va_arg(va, char *), stdout);
+			break;
+		default:
+			putchar(c);
+			break;
+		}
 	}
+	putchar('\n');
 
 	va_end(va);
 }
