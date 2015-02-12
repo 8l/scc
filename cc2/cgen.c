@@ -122,7 +122,6 @@ cgen(Node *np, Node *parent)
 		cgen(q);
 	}
 
-	assert(lp && lp->op == REG || rp && rp->op == REG);
 	switch (np->op) {
 	case OADD:
 		switch (np->type->size) {
