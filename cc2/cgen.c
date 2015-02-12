@@ -93,7 +93,7 @@ conmute(Node *np)
 }
 
 static void
-cgen(Node *np)
+cgen(Node *np, Node *parent)
 {
 	Node *lp, *rp;
 	TINT imm;
@@ -161,6 +161,13 @@ cgen(Node *np)
 	}
 }
 
+static Node *
+applycgen(Node *np)
+{
+	cgen(np, NULL);
+	return NULL;
+}
+
 void
 generate(Symbol *fun)
 {
@@ -176,7 +183,7 @@ generate(Symbol *fun)
 		code(LD, SP, HL);
 	}
 
-	apply(fun->u.f.body, cgen);
+	apply(fun->u.f.body, applycgen);
 
 	if (frame) {
 		code(LD, SP, IX);
@@ -186,19 +193,21 @@ generate(Symbol *fun)
 }
 
 /*
+ * This is strongly influenced by
+ * http://plan9.bell-labs.com/sys/doc/compiler.ps
  * calculate addresability as follows
  *     AUTO => 11          value+fp
  *     REGISTER => 13      register
  *     STATIC => 12        (value)
  *     CONST => 20         $value
  */
-void
+Node *
 genaddable(Node *np)
 {
 	Node *lp, *rp;
 
 	if (!np)
-		return;
+		return np;
 
 	np->complex = 0;
 	np->addable = 0;
@@ -226,7 +235,7 @@ genaddable(Node *np)
 	}
 
 	if (np->addable > 10)
-		return;
+		return np;
 	if (lp)
 		np->complex = lp->complex;
 	if (rp) {
@@ -239,5 +248,5 @@ genaddable(Node *np)
 	}
 	if (np->complex == 0)
 		++np->complex;
-	return;
+	return np;
 }

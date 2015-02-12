@@ -104,12 +104,12 @@ prtree(Node *np)
 }
 
 void
-apply(Node *list[], void (*fun)(Node *))
+apply(Node *list[], Node *(*fun)(Node *))
 {
 	Node *np;
 
-	while (np = *list++)
-		(*fun)(np);
+	while (np = *list)
+		*list++ = (*fun)(np);
 }
 
 static Symbol *

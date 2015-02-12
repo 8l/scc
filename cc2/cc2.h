@@ -111,10 +111,10 @@ enum {
 };
 
 extern void error(unsigned nerror, ...);
-extern void genaddable(Node *np);
+extern Node *genaddable(Node *np);
 extern void generate(Symbol *fun);
 extern void genstack(Symbol *fun);
-extern void apply(Node *list[], void (*fun)(Node *));
+extern void apply(Node *list[], Node *(*fun)(Node *));
 extern Symbol *parse(void);
 extern void code(char op, ...);
 extern void prtree(Node *np);
