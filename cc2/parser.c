@@ -26,6 +26,7 @@ static Node nodepool[NR_NODEPOOL], *newp;
 
 
 Type l_int8 = {
+	.letter = L_INT8,
 	.size = 1,
 	.align = 2,
 	.sign = 1,
@@ -33,6 +34,7 @@ Type l_int8 = {
 };
 
 Type l_int16 = {
+	.letter = L_INT16,
 	.size = 2,
 	.align = 2,
 	.sign = 1,
@@ -40,6 +42,7 @@ Type l_int16 = {
 };
 
 Type l_int32 = {
+	.letter = L_INT32,
 	.size = 4,
 	.align = 4,
 	.sign = 1,
@@ -47,6 +50,7 @@ Type l_int32 = {
 };
 
 Type l_int64 = {
+	.letter = L_INT64,
 	.size = 8,
 	.align = 8,
 	.sign = 1,
@@ -54,28 +58,50 @@ Type l_int64 = {
 };
 
 Type l_uint8 = {
+	.letter = L_UINT8,
 	.size = 1,
 	.align = 2,
 	.c_int = 1,
 };
 
 Type l_uint16 = {
+	.letter = L_UINT16,
 	.size = 2,
 	.align = 2,
 	.c_int = 1,
 };
 
 Type l_uint32 = {
+	.letter = L_UINT32,
 	.size = 4,
 	.align = 4,
 	.c_int = 1,
 };
 
 Type l_uint64 = {
+	.letter = L_UINT64,
 	.size = 8,
 	.align = 8,
 	.c_int = 1,
 };
+
+
+static void
+prnode(Node *np)
+{
+	if (np->left)
+		prnode(np->left);
+	if (np->right)
+		prnode(np->right);
+	fprintf(stderr, "\t%c%c", np->op, np->type->letter);
+}
+
+void
+prtree(Node *np)
+{
+	prnode(np);
+	putc('\n', stderr);
+}
 
 void
 apply(Node *list[], void (*fun)(Node *))

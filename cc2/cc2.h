@@ -5,6 +5,7 @@ typedef struct node Node;
 typedef struct {
 	short size;
 	uint8_t align;
+	char letter;
 	bool sign : 1;
 	bool c_int : 1;
 } Type;
@@ -116,3 +117,4 @@ extern void genstack(Symbol *fun);
 extern void apply(Node *list[], void (*fun)(Node *));
 extern Symbol *parse(void);
 extern void code(char op, ...);
+extern void prtree(Node *np);
