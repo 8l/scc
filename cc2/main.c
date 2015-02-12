@@ -31,6 +31,7 @@ main(void)
 	Symbol *fun;
 
 	while (!feof(stdin) && (fun = parse())) {
+		apply(fun->u.f.body, optimize);
 		apply(fun->u.f.body, genaddable);
 		generate(fun);
 	}

@@ -117,4 +117,5 @@ extern void genstack(Symbol *fun);
 extern void apply(Node *list[], Node *(*fun)(Node *));
 extern Symbol *parse(void);
 extern void code(char op, ...);
+extern Node *optimize(Node *np);
 extern void prtree(Node *np);
