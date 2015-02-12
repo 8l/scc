@@ -138,6 +138,8 @@ cgen(Node *np, Node *parent)
 				code(LD, A, lp->u.reg);
 			}
 			code(ADD, A, rp->u.reg);
+			np->op = REG;
+			np->u.reg = A;
 			break;
 		case 2:
 			if (rp->u.reg == HL || rp->u.reg == IY) {
