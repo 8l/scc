@@ -104,22 +104,24 @@ cgen(Node *np, Node *parent)
 	lp = np->left;
 	rp = np->right;
 	if (np->addable >= ADDABLE) {
+		if (parent && parent->op == OASSIG)
+			return;
 		move(np);
 		return;
 	}
 
 	if (!lp) {
-		cgen(rp);
+		cgen(rp, np);
 	} else if (!rp) {
-		cgen(lp);
+		cgen(lp, np);
 	} else {
 		Node *p, *q;
 		if (lp->complex > rp->complex)
 			p = lp, q = rp;
 		else
 			p = rp, q = lp;
-		cgen(p);
-		cgen(q);
+		cgen(p, np);
+		cgen(q, np);
 	}
 
 	switch (np->op) {
@@ -149,9 +151,28 @@ cgen(Node *np, Node *parent)
 				code(LD, L, lower[lp->u.reg]);
 			}
 			code(ADD, lp->u.reg, rp->u.reg);
+			np->op = REG;
+			np->u.reg = lp->u.reg;
 			break;
 		case 4:
 		case 8:
+			abort();
+		}
+		break;
+	case OASSIG:
+		switch (np->type->size) {
+		case 1:
+			switch (lp->op) {
+			case AUTO:
+				code(LDX, IX, lp->u.sym->u.v.off, rp->u.reg);
+				break;
+			case REG:
+			case MEM:
+			default:
+				abort();
+			}
+			break;
+		default:
 			abort();
 		}
 		break;
