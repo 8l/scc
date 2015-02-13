@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <cc.h>
-#include <sizes.h>
+#include "../inc/cc.h"
+#include "../inc/sizes.h"
 
 #include "cc2.h"
 

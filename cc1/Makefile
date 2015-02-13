@@ -2,7 +2,7 @@
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
 	code.o stmt.o
 
-CPPFLAGS = -I../inc
+CPPFLAGS =
 LDFLAGS = -L../lib
 LIBS = -lcc
 

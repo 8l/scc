@@ -5,8 +5,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <sizes.h>
-#include <cc.h>
+#include "../inc/sizes.h"
+#include "../inc/cc.h"
 #include "cc1.h"
 
 static FILE *yyin;

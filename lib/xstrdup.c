@@ -1,6 +1,6 @@
 
 #include <string.h>
-#include <cc.h>
+#include "../inc/cc.h"
 
 char *
 xstrdup(const char *s)

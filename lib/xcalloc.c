@@ -1,6 +1,6 @@
 
 #include <stdlib.h>
-#include <cc.h>
+#include "../inc/cc.h"
 
 void *
 xcalloc(size_t n, size_t size)

@@ -1,7 +1,7 @@
 
 OBJS = main.o parser.o cgen.o code.o optm.o
 
-CPPFLAGS = -I../inc
+CPPFLAGS =
 LDFLAGS = -L../lib
 LIBS = -lcc
 

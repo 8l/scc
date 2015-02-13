@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sizes.h>
-#include <cc.h>
+#include "../inc/sizes.h"
+#include "../inc/cc.h"
 #include "cc1.h"
 
 #define NR_TYPE_HASH 16

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 
 void
 die(const char *fmt, ...)

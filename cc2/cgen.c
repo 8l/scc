@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 #include "cc2.h"
 
 #include <stdio.h>

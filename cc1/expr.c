@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 #include "cc1.h"
 
 static Symbol *zero, *one;

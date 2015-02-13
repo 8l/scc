@@ -1,6 +1,6 @@
 
 #include <stdlib.h>
-#include <cc.h>
+#include "../inc/cc.h"
 
 void *
 xrealloc(void *buff, register size_t size)
