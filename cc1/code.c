@@ -104,7 +104,7 @@ emitvar(Symbol *sym)
 static void
 emitconst(Node *np)
 {
-	register char *bp, c;
+	char *bp, c;
 	Symbol *sym = np->u.sym;
 
 	if (np->type == inttype) {

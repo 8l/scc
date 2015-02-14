@@ -106,7 +106,7 @@ static struct dcldata *declarator0(struct dcldata *dp, uint8_t ns);
 static struct dcldata *
 directdcl(struct dcldata *dp, uint8_t ns)
 {
-	register Symbol *sym;
+	Symbol *sym;
 
 	if (accept('(')) {
 		dp = declarator0(dp, ns);
@@ -131,7 +131,7 @@ directdcl(struct dcldata *dp, uint8_t ns)
 static struct dcldata*
 declarator0(struct dcldata *dp, uint8_t ns)
 {
-	register uint8_t  n;
+	uint8_t  n;
 
 	for (n = 0; accept('*'); ++n) {
 		while (accept(TQUALIFIER))
@@ -150,7 +150,7 @@ static Symbol *
 declarator(Type *tp, int8_t flags, uint8_t ns)
 {
 	struct dcldata data[NR_DECLARATORS+2];
-	register struct dcldata *bp;
+	struct dcldata *bp;
 	Symbol *sym;
 
 	memset(data, 0, sizeof(data));
@@ -186,7 +186,7 @@ specifier(int8_t *sclass)
 	qlf = sign = type = cls = size = 0;
 
 	for (;;) {
-		register int8_t *p;
+		int8_t *p;
 		Type *(*dcl)(void) = NULL;
 
 		switch (yytoken) {
@@ -270,7 +270,7 @@ initializer(Symbol *sym)
 static Symbol *
 newtag(uint8_t tag)
 {
-	register Symbol *sym;
+	Symbol *sym;
 	static uint8_t ns = NS_STRUCTS;
 
 	switch (yytoken) {
@@ -363,7 +363,7 @@ structdcl(void)
 static Type *
 enumdcl(void)
 {
-	register Type *tp;
+	Type *tp;
 	Symbol *sym;
 	int val = 0;
 

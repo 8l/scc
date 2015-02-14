@@ -5,7 +5,7 @@
 void *
 xcalloc(size_t n, size_t size)
 {
-	register void *p = calloc(n, size);
+	void *p = calloc(n, size);
 
 	if (!p)
 		die("out of memory");

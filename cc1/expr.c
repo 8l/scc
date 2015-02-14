@@ -465,7 +465,7 @@ arguments(Node *np)
 static Node *
 postfix(void)
 {
-	register Node *np1, *np2;
+	Node *np1, *np2;
 
 	np1 = primary();
 	for (;;) {
@@ -511,7 +511,7 @@ typeof(Node *np)
 static Type *
 sizeexp(void)
 {
-	register Type *tp;
+	Type *tp;
 
 	expect('(');
 	switch (yytoken) {
@@ -531,8 +531,8 @@ static Node *cast(void);
 static Node *
 unary(void)
 {
-	register Node *(*fun)(char, Node *);
-	register char op;
+	Node *(*fun)(char, Node *);
+	char op;
 	Type *tp;
 
 	switch (yytoken) {
@@ -560,8 +560,8 @@ unary(void)
 static Node *
 cast(void)
 {
-	register Node *np1, *np2;
-	register Type *tp;
+	Node *np1, *np2;
+	Type *tp;
 
 	if (!accept('('))
 		return unary();
@@ -594,8 +594,8 @@ cast(void)
 static Node *
 mul(void)
 {
-	register Node *np, *(*fun)(char, Node *, Node *);
-	register char op;
+	Node *np, *(*fun)(char, Node *, Node *);
+	char op;
 
 	np = cast();
 	for (;;) {
@@ -613,8 +613,8 @@ mul(void)
 static Node *
 add(void)
 {
-	register char op;
-	register Node *np;
+	char op;
+	Node *np;
 
 	np = mul();
 	for (;;) {
@@ -631,8 +631,8 @@ add(void)
 static Node *
 shift(void)
 {
-	register char op;
-	register Node *np;
+	char op;
+	Node *np;
 
 	np = add();
 	for (;;) {
@@ -649,8 +649,8 @@ shift(void)
 static Node *
 relational(void)
 {
-	register char op;
-	register Node *np;
+	char op;
+	Node *np;
 
 	np = shift();
 	for (;;) {
@@ -669,8 +669,8 @@ relational(void)
 static Node *
 eq(void)
 {
-	register char op;
-	register Node *np;
+	char op;
+	Node *np;
 
 	np = relational();
 	for (;;) {
@@ -687,7 +687,7 @@ eq(void)
 static Node *
 bit_and(void)
 {
-	register Node *np;
+	Node *np;
 
 	np = eq();
 	while (accept('&'))
@@ -698,7 +698,7 @@ bit_and(void)
 static Node *
 bit_xor(void)
 {
-	register Node *np;
+	Node *np;
 
 	np = bit_and();
 	while (accept('^'))
@@ -709,7 +709,7 @@ bit_xor(void)
 static Node *
 bit_or(void)
 {
-	register Node *np;
+	Node *np;
 
 	np = bit_xor();
 	while (accept('|'))
@@ -720,7 +720,7 @@ bit_or(void)
 static Node *
 and(void)
 {
-	register Node *np;
+	Node *np;
 
 	np = bit_or();
 	while (accept(AND))
@@ -731,7 +731,7 @@ and(void)
 static Node *
 or(void)
 {
-	register Node *np;
+	Node *np;
 
 	np = and();
 	while (accept(OR))
@@ -758,8 +758,8 @@ ternary(void)
 static Node *
 assign(void)
 {
-	register Node *np, *(*fun)(char , Node *, Node *);
-	register char op;
+	Node *np, *(*fun)(char , Node *, Node *);
+	char op;
 
 	np = ternary();
 	for (;;) {
@@ -786,7 +786,7 @@ assign(void)
 Node *
 expr(void)
 {
-	register Node *np1, *np2;
+	Node *np1, *np2;
 
 	np1 = assign();
 	while (accept(',')) {
