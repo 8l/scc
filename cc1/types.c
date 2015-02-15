@@ -23,96 +23,96 @@ Type
 		.op = INT,
 		.letter = L_BOOL,
 		.defined = 1,
-		.u.rank = RANK_BOOL
+		.n.rank = RANK_BOOL
 	},
 	*schartype = &(Type) {
 		.op = INT,
 		.letter = L_SCHAR,
 		.defined = 1,
-		.u.rank = RANK_SCHAR
+		.n.rank = RANK_SCHAR
 	},
 	*uchartype = &(Type) {
 		.op = INT,
 		.letter = L_UCHAR,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_UCHAR
+		.n.rank = RANK_UCHAR
 	},
 	*chartype = &(Type) {
 		.op = INT,
 		.letter = L_CHAR,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_CHAR
+		.n.rank = RANK_CHAR
 	},
 	*ushortype = &(Type) {
 		.op = INT,
 		.letter = L_USHORT,
 		.defined = 1,
-		.u.rank = RANK_USHORT
+		.n.rank = RANK_USHORT
 	},
 	*shortype = &(Type) {
 		.op = INT,
 		.letter = L_SHORT,
 		.defined = 1,
-		.u.rank = RANK_SHORT
+		.n.rank = RANK_SHORT
 	},
 	*uinttype = &(Type) {
 		.op = INT,
 		.letter = L_UINT,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_UINT
+		.n.rank = RANK_UINT
 	},
 	*inttype = &(Type) {
 		.op = INT,
 		.letter = L_INT,
 		.defined = 1,
-		.u.rank = RANK_INT
+		.n.rank = RANK_INT
 	},
 	*longtype = &(Type) {
 		.op = INT,
 		.letter = L_LONG,
 		.defined = 1,
-		.u.rank = RANK_LONG
+		.n.rank = RANK_LONG
 	},
 	*ulongtype = &(Type) {
 		.op = INT,
 		.letter = L_ULONG,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_ULONG
+		.n.rank = RANK_ULONG
 	},
 	*ullongtype = &(Type) {
 		.op = INT,
 		.letter = L_ULLONG,
 		.sign = 1,
 		.defined = 1,
-		.u.rank = RANK_ULLONG
+		.n.rank = RANK_ULLONG
 	},
 	*llongtype = &(Type) {
 		.op = INT,
 		.letter = L_LLONG,
 		.defined = 1,
-		.u.rank = RANK_LLONG
+		.n.rank = RANK_LLONG
 	},
 	*floattype = &(Type) {
 		.op = FLOAT,
 		.letter = L_FLOAT,
 		.defined = 1,
-		.u.rank = RANK_FLOAT
+		.n.rank = RANK_FLOAT
 	},
 	*doubletype = &(Type) {
 		.op = FLOAT,
 		.letter = L_DOUBLE,
 		.defined = 1,
-		.u.rank = RANK_DOUBLE
+		.n.rank = RANK_DOUBLE
 	},
 	*ldoubletype = &(Type) {
 		.op = FLOAT,
 		.letter = L_LDOUBLE,
 		.defined = 1,
-		.u.rank = RANK_LDOUBLE
+		.n.rank = RANK_LDOUBLE
 	};
 
 Type *
@@ -186,111 +186,74 @@ invalid_type:
 }
 
 Type *
-mktype(Type *tp, uint8_t op, void *data)
+mktype(Type *tp, uint8_t op, short nelem, void *data)
 {
-	static Type *typetab[NR_TYPE_HASH], **tbl;
-	static uint8_t t, def;
+	static Type *typetab[NR_TYPE_HASH], **tbl, type;
+	static uint8_t t;
 	register Type *bp;
-	char letter, look;
-	union typeval u;
+	static char letters[] = {
+		[PTR] = L_POINTER,   [ARY] = L_ARRAY,
+		[FTN] = L_FUNCTION,  [ENUM] = L_INT,
+		[STRUCT] = L_STRUCT, [UNION] = L_UNION
+	};
 
-	switch (op) {
-	case PTR:
-		if (tp == voidtype)
-			return pvoidtype;
-		letter = L_POINTER;
-		def = 1;
-		look = 1;
-		break;
-	case ARY:
-		u.nelem = *(unsigned short *) data;
-		letter = L_ARRAY;
-		def = u.nelem != 0;
-		look = 1;
-		break;
-	case FTN:
-		u.pars = data;
-		letter = L_FUNCTION;
-		def = 1;
-		look = 0;
-		break;
-	case ENUM:
-		letter = L_INT;
-		def = 1;
-		look = 0;
-		break;
-	case STRUCT: case UNION:
-		letter = (op == STRUCT) ? L_STRUCT : L_UNION;
-		def = 0;
-		look = 0;
-		u.fields = NULL;
-		break;
-	default:
-		fputs("internal type error, aborting\n", stderr);
-		abort();
-	}
+	if (op == PTR && tp == voidtype)
+		return pvoidtype;
 
-	t = (op  ^  (uint8_t) ((unsigned short) tp >> 3))
-	         & NR_TYPE_HASH-1;
+	type.type = tp;
+	type.op = op;
+	type.sign = 0;
+	type.letter = letters[op];
+	type.pars = data;
+	type.n.elem = nelem;
+	type.ns = 0;
+
+	if (op == ARY && nelem == 0 || op == STRUCT || op == UNION)
+		type.defined = 0;
+	else
+		type.defined = 1;
+
+	t = (op ^ (uint8_t) ((unsigned short) tp >> 3)) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
-	if (look) {
-		for (bp = *tbl; bp; bp = bp->next) {
-			if (bp->type == tp && bp->op == op &&
-			    (op != ARY || bp->u.nelem == u.nelem)) {
-				return bp;
-			}
+	for (bp = *tbl; bp; bp = bp->next) {
+		if (eqtype(bp, &type)) {
+			free(data);
+			return bp;
 		}
 	}
 
-	bp = xcalloc(1, sizeof(*bp));
+	bp = xmalloc(sizeof(*bp));
+	*bp = type;
 	bp->next = *tbl;
-	bp->type = tp;
-	bp->op = op;
-	bp->letter = letter;
-	bp->defined = def;
-	bp->u = u;
 	return *tbl = bp;
 }
 
 bool
 eqtype(Type *tp1, Type *tp2)
 {
+	uint8_t n;
+	Type **p1, **p2;
+
 	if (tp1 == tp2)
 		return 1;
-	if (tp1->op != tp2->op)
+	if (tp1->op != tp2->op || tp1->n.elem != tp2->n.elem)
 		return 0;
 	switch (tp1->op) {
+	case ARY:
 	case PTR:
 		return eqtype(tp1->type, tp2->type);
-	/* TODO: use the same struct for function parameters and fields */
-	case FTN: {
-		Funpar *fp1 = tp1->u.pars, *fp2 = tp2->u.pars;
-
-		while (fp1 && fp2) {
-			if (!eqtype(fp1->type, fp2->type))
-				break;
-			fp1 = fp1->next;
-			fp2 = fp2->next;
-		}
-		return fp1 == fp2;
-	}
 	case UNION:
-	case STRUCT: {
-		Field *fp1 = tp1->u.fields, *fp2 = tp2->u.fields;
-
-		while (fp1 && fp2) {
-			if (!eqtype(fp1->type, fp2->type))
-				break;
-			fp1 = fp1->next;
-			fp2 = fp2->next;
+	case STRUCT:
+	case FTN:
+		p1 = tp1->pars, p2 = tp2->pars;
+		for (n = tp1->n.elem; n != 0; --n) {
+			if (!eqtype(*p1++, *p2++))
+				return 0;
 		}
-		return fp1 == fp2;
-	}
-	case ARY:
-		if (!eqtype(tp1->type, tp2->type))
-			return 0;
-		return tp1->u.nelem == tp2->u.nelem;
-	case ENUM: case INT: case FLOAT:
+		return 1;
+	case ENUM:
+		/* TODO: Check when two enum are the same type */
+	case INT: case FLOAT:
 		return tp1->letter == tp2->letter;
 	default:
 		fputs("internal type error, aborting\n", stderr);

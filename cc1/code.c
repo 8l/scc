@@ -1,6 +1,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <cc.h>
 #include "cc1.h"
@@ -58,25 +59,43 @@ node(void (*code)(Node *), Type *tp, union unode u, uint8_t nchilds)
 	np->code = code;
 	np->type = tp;
 	np->typeop = tp->op;
+	np->nchilds = nchilds;
 	np->u = u;
 	np->b.symbol = np->b.lvalue = 0;
 
 	return np;
 }
 
+void
+freetree(Node *np)
+{
+	Node **p;
+
+	if (!np)
+		return;
+
+	for (p = np->childs; np->nchilds--; ++p)
+		freetree(*p);
+	free(np);
+}
+
 static void
-emitsym2(Symbol *sym)
+emitvar(Symbol *sym)
 {
 	char c;
 
-	if (sym->s.isstatic && !sym->s.isglobal)
+	if (sym->isstatic && !sym->isglobal)
 		c = 'T';
-	else if (sym->s.isstatic && sym->s.isglobal)
+	else if (sym->isstatic && sym->isglobal)
 		c = 'Y';
-	else if (sym->s.isglobal)
+	else if (sym->isglobal)
 		c = 'G';
-	else if (sym->s.isregister)
-		c = 'Q';
+	else if (sym->isregister)
+		c = 'R';
+	else if (sym->isfield)
+		c = 'M';
+	else if (sym->isparameter)
+		c = 'P';
 	else
 		c = 'A';
 	printf("%c%d", c, sym->id);
@@ -98,10 +117,22 @@ emitconst(Node *np)
 }
 
 void
+emitstruct(Symbol *sym)
+{
+	printf("S%d\t(\n", sym->id);
+}
+
+void
+emitestruct(void)
+{
+	puts(")");
+}
+
+void
 emitsym(Node *np)
 {
 	putchar('\t');
-	(np->b.constant) ? emitconst(np) : emitsym2(np->u.sym);
+	(np->b.constant) ? emitconst(np) : emitvar(np->u.sym);
 }
 
 static void
@@ -113,7 +144,7 @@ emittype(Type *tp)
 void
 emitdcl(Symbol *sym)
 {
-	emitsym2(sym);
+	emitvar(sym);
 	putchar('\t');
 	emittype(sym->type);
 	putchar('\n');
@@ -185,13 +216,14 @@ emitprint(Node *np)
 {
 	(*np->code)(np);
 	printf("\tk%c\n", np->type->letter);
+	fflush(stdout);
 }
 
 void
 emitfun(Symbol *sym)
 {
 	printf("%c%d\tF\t%s\t{\n",
-	       sym->s.isglobal ? 'G' : 'Y', sym->id, sym->name);
+	       sym->isglobal ? 'G' : 'Y', sym->id, sym->name);
 }
 
 void
@@ -264,14 +296,14 @@ emitfield(Node *np)
 
 	child = np->childs[0];
 	(*child->code)(child);
-
-	printf("\tM%d", np->u.field->id);
+	putchar('\t');
+	emitvar(np->u.sym);
 }
 
 Node *
-fieldcode(Node *child, struct field *fp)
+fieldcode(Node *child, Symbol *field)
 {
-	Node *np = node(emitfield, fp->type, FIELD(fp), 1);
+	Node *np = node(emitfield, field->type, SYM(field), 1);
 	np->childs[0] = child;
 	return np;
 }
@@ -284,7 +316,7 @@ castcode(Node *child, Type *tp)
 	np->childs[0] = child;
 	return np;
 }
-	
+
 Node *
 unarycode(char op, Type *tp, Node *child)
 {

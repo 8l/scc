@@ -20,12 +20,13 @@ enum {
 };
 
 static Symbol *curfun;
-static Node *stack[NR_STACKSIZ], **stackp = stack;
-static Node *listexp[NR_EXPRESSIONS], **listp = listexp;
-static Node nodepool[NR_NODEPOOL], *newp = nodepool;
+static Node *stack[NR_STACKSIZ], **stackp;
+static Node *listexp[NR_EXPRESSIONS], **listp;
+static Node nodepool[NR_NODEPOOL], *newp;
 
 
 Type l_int8 = {
+	.letter = L_INT8,
 	.size = 1,
 	.align = 2,
 	.sign = 1,
@@ -33,6 +34,7 @@ Type l_int8 = {
 };
 
 Type l_int16 = {
+	.letter = L_INT16,
 	.size = 2,
 	.align = 2,
 	.sign = 1,
@@ -40,6 +42,7 @@ Type l_int16 = {
 };
 
 Type l_int32 = {
+	.letter = L_INT32,
 	.size = 4,
 	.align = 4,
 	.sign = 1,
@@ -47,6 +50,7 @@ Type l_int32 = {
 };
 
 Type l_int64 = {
+	.letter = L_INT64,
 	.size = 8,
 	.align = 8,
 	.sign = 1,
@@ -54,28 +58,59 @@ Type l_int64 = {
 };
 
 Type l_uint8 = {
+	.letter = L_UINT8,
 	.size = 1,
 	.align = 2,
 	.c_int = 1,
 };
 
 Type l_uint16 = {
+	.letter = L_UINT16,
 	.size = 2,
 	.align = 2,
 	.c_int = 1,
 };
 
 Type l_uint32 = {
+	.letter = L_UINT32,
 	.size = 4,
 	.align = 4,
 	.c_int = 1,
 };
 
 Type l_uint64 = {
+	.letter = L_UINT64,
 	.size = 8,
 	.align = 8,
 	.c_int = 1,
 };
+
+
+static void
+prnode(Node *np)
+{
+	if (np->left)
+		prnode(np->left);
+	if (np->right)
+		prnode(np->right);
+	fprintf(stderr, "\t%c%c", np->op, np->type->letter);
+}
+
+void
+prtree(Node *np)
+{
+	prnode(np);
+	putc('\n', stderr);
+}
+
+void
+apply(Node *list[], Node *(*fun)(Node *))
+{
+	Node *np;
+
+	while (np = *list)
+		*list++ = (*fun)(np);
+}
 
 static Symbol *
 parameter(char *num)
@@ -390,17 +425,6 @@ deflabel(char *token)
 	sym->u.l.addr = listp - listexp;
 }
 
-static void
-endfunction(char *token)
-{
-	if (!curfun)
-		error(ESYNTAX);
-	listp = NULL;
-	genaddable(listexp);
-	generate(curfun, listexp);
-	curfun = NULL;
-}
-
 static Symbol *
 declaration(uint8_t t, char class, char *token)
 {
@@ -444,7 +468,7 @@ globdcl(char *token)
 
 	sym->type = FUN;
 	curfun = sym;
-	listp = listexp;
+	sym->u.f.body = listp = listexp;
 	newp = nodepool;
 }
 
@@ -464,13 +488,18 @@ localdcl(char *token)
 	sym->u.v.off = 1-curfun->u.f.locals;
 }
 
-void
+Symbol *
 parse(void)
 {
 	void (*fun)(char *tok);
 	uint8_t len;
 	int c;
 	char line[MAXLINE];
+
+	curfun = NULL;
+	stackp = stack;
+	listp = listexp;
+	newp = nodepool;
 
 	for (;;) {
 		switch (c = getchar()) {
@@ -493,10 +522,15 @@ parse(void)
 			fun = globdcl;
 			break;
 		case '}':
-			fun = endfunction;
-			break;
+			if (!curfun)
+				error(ESYNTAX);
+			return curfun;
 		case EOF:
-			goto found_eof;
+			if (ferror(stdin))
+				error(EFERROR, strerror(errno));
+			if (curfun)
+				goto syntax_error;
+			return NULL;
 		case '\n':
 			continue;
 		default:
@@ -514,11 +548,10 @@ parse(void)
 	}
 
 found_eof:
-	if (ferror(stdin))
-		error(EFERROR, strerror(errno));
-	if (!curfun)
-		return;
 
+
+	if (!curfun)
+		return curfun;
 syntax_error:
 	error(ESYNTAX);
 }

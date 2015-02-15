@@ -32,7 +32,7 @@ promote(Node *np)
 	if (options.npromote)
 		return np;
 	tp = np->type;
-	r = tp->u.rank;
+	r = tp->n.rank;
 	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
 		return np;
 	return castcode(np, (r == RANK_UINT) ? uinttype : inttype);
@@ -51,7 +51,7 @@ typeconv(Node **p1, Node **p2)
 	tp1 = np1->type;
 	tp2 = np2->type;
 	if (tp1 != tp2) {
-		if ((n = tp1->u.rank - tp2->u.rank) > 0)
+		if ((n = tp1->n.rank - tp2->n.rank) > 0)
 			np2 = castcode(np2, tp1);
 		else if (n < 0)
 			np1 = castcode(np1, tp2);
@@ -74,7 +74,7 @@ eval(Node *np)
 {
 	if (!np)
 		return NULL;
-	if (!ISNODECMP(np))
+	if (!ISNODELOG(np))
 		return np;
 	return ternarycode(np, symcode(one), symcode(zero));
 }
@@ -114,7 +114,7 @@ integeruop(char op, Node *np)
 static Node *
 decay(Node *np)
 {
-	return unarycode(OADDR, mktype(np->type, PTR, NULL), np);
+	return unarycode(OADDR, mktype(np->type, PTR, 0, NULL), np);
 }
 
 /*
@@ -292,19 +292,20 @@ logic(char op, Node *np1, Node *np2)
 static Node *
 field(Node *np)
 {
-	Field *fp;
+	extern uint8_t lex_ns;
+	Symbol *sym;
 
-	if (yytoken != IDEN)
-		unexpected();
 	switch (np->typeop) {
 	case STRUCT: case UNION:
-		for (fp = np->type->u.fields; fp; fp = fp->next) {
-			if (!strcmp(fp->name, yytext)) {
-				next();
-				return fieldcode(np, fp);
-			}
-		}
-		error("field '%s' not found", yytext);
+		lex_ns = np->type->ns;
+		next();
+		if (yytoken != IDEN)
+			unexpected();
+		if ((sym = yylval.sym) == NULL)
+			error("incorrect field in struct/union");
+		lex_ns = NS_IDEN;
+		next();
+		return fieldcode(np, sym);
 	default:
 		error("struct or union expected");
 	}
@@ -376,9 +377,9 @@ address(char op, Node *np)
 {
 	if (!np->b.lvalue)
 		error("lvalue required in unary expression");
-	if (np->b.symbol && np->u.sym->s.isregister)
+	if (np->b.symbol && np->u.sym->isregister)
 		error("address of register variable '%s' requested", yytext);
-	return unarycode(op, mktype(np->type, PTR, 0), np);
+	return unarycode(op, mktype(np->type, PTR, 0, NULL), np);
 }
 
 static Node *
@@ -435,8 +436,7 @@ primary(void)
 		expect(')');
 		break;
 	default:
-		np = NULL;
-		break;
+		unexpected();
 	}
 	return np;
 }
@@ -483,7 +483,6 @@ postfix(void)
 		case INDIR:
 			np1 = content(OPTR, np1);
 		case '.':
-			next();
 			np1 = field(np1);
 			break;
 		case '(':
@@ -545,12 +544,12 @@ unary(void)
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
 		return incdec(unary(), op);
-	case '!': op = 0; fun = negation; break;
-	case '+': op = OADD; fun = numericaluop; break;
-	case '-': op = ONEG; fun = numericaluop; break;
-	case '~': op = OCPL; fun = integeruop; break;
-	case '&': op = OADDR; fun = address; break;
-	case '*': op = OPTR; fun = content; break;
+	case '!': op = 0;     fun = negation;     break;
+	case '+': op = OADD;  fun = numericaluop; break;
+	case '-': op = ONEG;  fun = numericaluop; break;
+	case '~': op = OCPL;  fun = integeruop;   break;
+	case '&': op = OADDR; fun = address;      break;
+	case '*': op = OPTR;  fun = content;      break;
 	default:  return postfix();
 	}
 
@@ -559,15 +558,17 @@ unary(void)
 }
 
 static Node *
-cast2(void)
+cast(void)
 {
 	register Node *np1, *np2;
 	register Type *tp;
 
-	switch(yytoken) {
+	if (!accept('('))
+		return unary();
+
+	switch (yytoken) {
 	case TQUALIFIER: case TYPE:
 		tp = typename();
-		expect(')');
 		switch (tp->op) {
 		case ARY:
 			error("cast specify an array type");
@@ -582,17 +583,12 @@ cast2(void)
 		}
 		break;
 	default:
-		np2 = unary();
-		expect(')');
+		np2 = expr();
 		break;
 	}
-	return np2;
-}
+	expect(')');
 
-static Node *
-cast(void)
-{
-	return (accept('(')) ? cast2() : unary();
+	return np2;
 }
 
 static Node *

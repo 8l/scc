@@ -10,8 +10,8 @@
 #define NR_SYM_HASH 32
 
 uint8_t curctx;
-short localcnt;
-short globalcnt;
+static short localcnt;
+static short globalcnt;
 
 static struct symtab {
 	Symbol *head;
@@ -38,8 +38,10 @@ freesyms(uint8_t ns)
 	for (sym = tbl->head; sym; sym = next) {
 		if (sym->ctx <= curctx)
 			break;
-		if (ns == NS_LABEL && !sym->s.isdefined)
+		if (ns == NS_LABEL && !sym->isdefined)
 			error("label '%s' is not defined", sym->name);
+		if (ns == NS_TAG)
+			sym->type->defined = 0;
 		tbl->htab[hash(sym->name)] = sym->hash;
 		next = tbl->head = sym->next;
 		free(sym->name);
@@ -47,26 +49,19 @@ freesyms(uint8_t ns)
 	}
 }
 
-Type *
-aggregate(Type * (*fun)(void))
+void
+pushctx(void)
 {
-	Type *tp;
-
 	++curctx;
-	tp = (*fun)();
-	--curctx;
-	freesyms(NS_IDEN);
-	return tp;
 }
 
 void
-context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
+popctx(void)
 {
-	++curctx;
-	compound(lbreak, lcont, lswitch);
 	--curctx;
 	freesyms(NS_IDEN);
 	freesyms(NS_TAG);
+	freesyms(NS_STRUCTS);
 	if (curctx == 0) {
 		localcnt = 0;
 		freesyms(NS_LABEL);
@@ -79,9 +74,9 @@ lookup(register char *s, uint8_t ns)
 	struct symtab *tbl;
 	register Symbol *sym;
 
-	tbl = &symtab[ns];
+	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
 	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
-		if (!strcmp(sym->name, s))
+		if (!strcmp(sym->name, s) && sym->ns == ns)
 			return sym;
 	}
 
@@ -99,8 +94,9 @@ install(char *s, uint8_t ns)
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->id = (curctx) ? ++localcnt : ++globalcnt;
-	sym->s.isdefined = 1;
-	tbl = &symtab[ns];
+	sym->isdefined = 1;
+	sym->ns = ns;
+	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
 	sym->next = tbl->head;
 	tbl->head = sym;
 

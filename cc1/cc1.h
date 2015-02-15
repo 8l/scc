@@ -26,37 +26,26 @@ enum {
 	NS_IDEN = 0,
 	NS_TAG,
 	NS_LABEL,
+	NS_STRUCTS,
 	NR_NAMESPACES
 };
 
 typedef struct ctype Type;
 typedef struct symbol Symbol;
 
-typedef struct field {
-	char *name;
-	Type *type;
-	int id;
-	struct field *next;
-} Field;
-
-typedef struct funpar {
-	Type *type;
-	struct funpar *next;
-} Funpar;
-
 struct ctype {
 	uint8_t op;           /* type builder operator */
+	uint8_t ns;
 	char letter;          /* letter of the type */
-	bool defined : 1; /* type defined (is not a forward reference) */
-	bool sign : 1;    /* sign type */
+	bool defined : 1;     /* type defined (is not a forward reference) */
+	bool sign : 1;        /* sign type */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
-	union typeval {
-		unsigned char rank;   /* convertion rank */
-		short nelem;          /* number of elements in arrays */
-		struct funpar *pars;  /* function parameters */
-		Field *fields; /* aggregate fields */
-	} u;
+	Type **pars;         /* type parameters */
+	union {
+		unsigned char rank;  /* convertion rank */
+		short elem;          /* number of type parameters */
+	} n;
 };
 
 
@@ -67,18 +56,18 @@ struct symbol {
 	Type *type;
 	short id;
 	uint8_t ctx;
+	uint8_t ns;
 	uint8_t token;
-	struct {
-		bool isglobal : 1;
-		bool isstatic : 1;
-		bool isauto : 1;
-		bool isregister : 1;
-		bool isdefined : 1;
-	} s;
+	bool isglobal : 1;
+	bool isstatic : 1;
+	bool isauto : 1;
+	bool isregister : 1;
+	bool isdefined : 1;
+	bool isfield : 1;
+	bool isparameter : 1;
 	union {
 		int i;
 		char *s;
-		struct symbol *sym;
 		uint8_t token;
 	} u;
 	struct symbol *next;
@@ -87,17 +76,17 @@ struct symbol {
 
 extern bool eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(int8_t type, int8_t sign, int8_t size),
-	*mktype(Type *tp, uint8_t op, void *data);
+	*mktype(Type *tp, uint8_t op, short nelem, void *data);
 
 extern Symbol
 	*lookup(char *s, unsigned char ns),
 	*install(char *s, unsigned char ns);
 
+extern void pushctx(void), popctx(void);
+
 typedef struct caselist Caselist;
 
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
-extern Type *aggregate(Type *(*fun)(void));
-extern void context(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 extern Type *typename(void);
 
@@ -157,6 +146,7 @@ typedef struct node {
 	void (*code)(struct node *);
 	Type *type;
 	uint8_t typeop;
+	uint8_t nchilds;
 	struct {
 		bool lvalue : 1;
 		bool symbol: 1;
@@ -166,7 +156,6 @@ typedef struct node {
 		Symbol *sym;
 		Type *type;
 		char op;
-		Field *field;
 	} u;
 	struct node *childs[];
 } Node;
@@ -178,11 +167,13 @@ enum {
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR,
 	OA_AND, OA_XOR, OA_OR, OADDR,ONEG, OCPL, OEXC,
 	OCOMMA,
+	/* TODO: This order is important, but must be changed */
+	OAND, OOR,
 	/*
 	  * Complementary relational operators only differ in less
 	 * significant bit
 	 */
-	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT, OAND, OOR
+	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT
 };
 
 extern void
@@ -194,7 +185,8 @@ extern void
 	emitswitch(short, Node *), emitcase(Symbol *, Node *),
 	emitret(Type *tp),
 	emitfun(Symbol *sym),
-	emitdefault(Symbol *);
+	emitdefault(Symbol *),
+	emitstruct(Symbol *sym), emitestruct(void);
 
 extern Node
 	*node(void (*code)(Node *),
@@ -205,12 +197,15 @@ extern Node
 	*sizeofcode(Type *tp), 
 	*ternarycode(Node *cond, Node *ifyes, Node *ifno),
 	*symcode(Symbol *sym),
-	*fieldcode(Node *child, struct field *fp);
+	*fieldcode(Node *child, Symbol *field);
+
+extern void freetree(Node *np);
 
 #define NEGATE(n, v) ((n)->u.op ^= (v))
 /* TODO: remove some of these ugly macros */
 #define ISNODEBIN(n) ((n)->code == emitbin)
-#define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op & 0x40)
+#define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op >= OEQ)
+#define ISNODELOG(n) (ISNODEBIN(n) && (n)->u.op >= OAND)
 
 extern Node *expr(void);
 extern void extdecl(void), decl(void);

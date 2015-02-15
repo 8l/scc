@@ -9,85 +9,10 @@
 
 #include <stdio.h>
 
-/* TODO: Change emit to code */
-enum {
-	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX,
-	LDFX
-};
-
-enum {
-	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
-	IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
-};
-
-static char *opnames[] = {
-	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
-	[RET]  = "RET" , [ADDI]= "ADD", [LDI] = "LD", [ADDX] = "ADD",
-	[ADCX] = "ADC" , [LDX] = "LD" , [LDFX] = "LD"
-};
-
-static char *regnames[] = {
-	[AF] = "AF", [HL] = "HL", [DE] = "DE", [BC] = "BC", [IX] = "IX",
-	[IY] = "IY", [SP] = "SP", [A]  = "A",  [F]  = "F",  [B]  = "B",
-	[C]  = "C",  [D]  = "D",  [E]  = "E",  [H]  = "H",  [L]  = "L",
-	[IXL]= "IXL",[IXH]= "IXH",[IYL]= "IYL",[IYH]= "IYH", [I] = "I"
-};
-
 static bool reguse[NREGS];
 static char upper[] = {[DE] = D, [HL] = H, [BC] = B, [IX] = IXH, [IY] = IYH};
 static char lower[] = {[DE] = E, [HL] = L, [BC] = C, [IX] = IXL, [IY] = IYL};
 
-void
-emit(char op, ...)
-{
-	va_list va;
-	uint8_t reg1, reg2;
-	TINT imm;
-	short off;
-	char *label;
-
-	va_start(va, op);
-	switch (op) {
-	case RET:
-		printf("\t%s\n", opnames[op]);
-		break;
-	case PUSH: case POP:
-		reg1 = va_arg(va, int);
-		printf("\t%s\t%s\n", opnames[op], regnames[reg1]);
-		break;
-	case ADD: case LD:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		printf("\t%s\t%s,%s\n",
-		       opnames[op], regnames[reg1], regnames[reg2]);
-		break;
-	case ADDI: case LDI:
-		reg1 = va_arg(va, int);
-		imm = va_arg(va, int);
-		printf("\t%s\t%s,%d\n", opnames[op], regnames[reg1], imm);
-		break;
-	case ADDX: case ADCX: case LDFX:
-		reg1 = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		off = va_arg(va, int);
-		printf("\t%s\t%s,(%s%+d)\n",
-		       opnames[op], regnames[reg1], regnames[reg2], off);
-		break;
-	case LDX:
-		reg1 = va_arg(va, int);
-		off = va_arg(va, int);
-		reg2 = va_arg(va, int);
-		printf("\t%s\t(%s%+d),%s\n",
-		       opnames[op], regnames[reg1], off, regnames[reg2]);
-		break;
-	case ADDR:
-		label = va_arg(va, char *);
-		printf("%s:\n", label);
-		break;
-	}
-
-	va_end(va);
-}
 
 static char
 allocreg(Node *np)
@@ -136,11 +61,11 @@ move(Node *np)
 		sym = np->u.sym;
 		switch (tp->size) {
 		case 1:
-			emit(LDFX, reg, IX, sym->u.v.off);
+			code(LDFX, reg, IX, sym->u.v.off);
 			break;
 		case 2:
-			emit(LDFX, lower[reg], IX, sym->u.v.off);
-			emit(LDFX, upper[reg], IX, sym->u.v.off+1);
+			code(LDFX, lower[reg], IX, sym->u.v.off);
+			code(LDFX, upper[reg], IX, sym->u.v.off+1);
 			break;
 		case 4:
 		case 8:
@@ -168,7 +93,7 @@ conmute(Node *np)
 }
 
 static void
-cgen(Node *np)
+cgen(Node *np, Node *parent)
 {
 	Node *lp, *rp;
 	TINT imm;
@@ -179,25 +104,26 @@ cgen(Node *np)
 	lp = np->left;
 	rp = np->right;
 	if (np->addable >= ADDABLE) {
+		if (parent && parent->op == OASSIG)
+			return;
 		move(np);
 		return;
 	}
 
 	if (!lp) {
-		cgen(rp);
+		cgen(rp, np);
 	} else if (!rp) {
-		cgen(lp);
+		cgen(lp, np);
 	} else {
 		Node *p, *q;
 		if (lp->complex > rp->complex)
 			p = lp, q = rp;
 		else
 			p = rp, q = lp;
-		cgen(p);
-		cgen(q);
+		cgen(p, np);
+		cgen(q, np);
 	}
 
-	assert(lp && lp->op == REG || rp && rp->op == REG);
 	switch (np->op) {
 	case OADD:
 		switch (np->type->size) {
@@ -208,10 +134,12 @@ cgen(Node *np)
 				rp = np->right;
 			} else if (lp->u.reg != A) {
 				/* TODO: Move A to variable */
-				emit(PUSH, AF);
-				emit(LD, A, lp->u.reg);
+				code(PUSH, AF);
+				code(LD, A, lp->u.reg);
 			}
-			emit(ADD, A, rp->u.reg);
+			code(ADD, A, rp->u.reg);
+			np->op = REG;
+			np->u.reg = A;
 			break;
 		case 2:
 			if (rp->u.reg == HL || rp->u.reg == IY) {
@@ -220,14 +148,33 @@ cgen(Node *np)
 				rp = np->right;
 			} else if (lp->u.reg != HL && lp->u.reg != IY) {
 				/* TODO: Move HL to variable */
-				emit(PUSH, HL);
-				emit(LD, H, upper[lp->u.reg]);
-				emit(LD, L, lower[lp->u.reg]);
+				code(PUSH, HL);
+				code(LD, H, upper[lp->u.reg]);
+				code(LD, L, lower[lp->u.reg]);
 			}
-			emit(ADD, lp->u.reg, rp->u.reg);
+			code(ADD, lp->u.reg, rp->u.reg);
+			np->op = REG;
+			np->u.reg = lp->u.reg;
 			break;
 		case 4:
 		case 8:
+			abort();
+		}
+		break;
+	case OASSIG:
+		switch (np->type->size) {
+		case 1:
+			switch (lp->op) {
+			case AUTO:
+				code(LDX, IX, lp->u.sym->u.v.off, rp->u.reg);
+				break;
+			case REG:
+			case MEM:
+			default:
+				abort();
+			}
+			break;
+		default:
 			abort();
 		}
 		break;
@@ -236,46 +183,53 @@ cgen(Node *np)
 	}
 }
 
+static Node *
+applycgen(Node *np)
+{
+	cgen(np, NULL);
+	return NULL;
+}
+
 void
-generate(Symbol *sym, Node *list[])
+generate(Symbol *fun)
 {
 	extern char odebug;
-	Node *np;
-	char frame = sym->u.f.locals != 0 || odebug;
+	char frame = fun->u.f.locals != 0 || odebug;
 
-	emit(ADDR, sym->name);
+	code(ADDR, fun->name);
 	if (frame) {
-		emit(PUSH, IX);
-		emit(LD, IX, SP);
-		emit(LDI, HL, -sym->u.f.locals);
-		emit(ADD, HL, SP);
-		emit(LD, SP, HL);
+		code(PUSH, IX);
+		code(LD, IX, SP);
+		code(LDI, HL, -fun->u.f.locals);
+		code(ADD, HL, SP);
+		code(LD, SP, HL);
 	}
 
-	while (np = *list++)
-		cgen(np);
+	apply(fun->u.f.body, applycgen);
 
 	if (frame) {
-		emit(LD, SP, IX);
-		emit(POP, IX);
-		emit(RET);
+		code(LD, SP, IX);
+		code(POP, IX);
+		code(RET);
 	}
 }
 
 /*
+ * This is strongly influenced by
+ * http://plan9.bell-labs.com/sys/doc/compiler.ps
  * calculate addresability as follows
  *     AUTO => 11          value+fp
  *     REGISTER => 13      register
  *     STATIC => 12        (value)
  *     CONST => 20         $value
  */
-static void
-xaddable(Node *np)
+Node *
+genaddable(Node *np)
 {
 	Node *lp, *rp;
 
 	if (!np)
-		return;
+		return np;
 
 	np->complex = 0;
 	np->addable = 0;
@@ -296,14 +250,14 @@ xaddable(Node *np)
 		break;
 	default:
 		if (lp)
-			xaddable(lp);
+			genaddable(lp);
 		if (rp)
-			xaddable(rp);
+			genaddable(rp);
 		break;
 	}
 
 	if (np->addable > 10)
-		return;
+		return np;
 	if (lp)
 		np->complex = lp->complex;
 	if (rp) {
@@ -316,15 +270,5 @@ xaddable(Node *np)
 	}
 	if (np->complex == 0)
 		++np->complex;
-	return;
+	return np;
 }
-
-void
-genaddable(Node *list[])
-{
-	Node *np;
-
-	while (np = *list++)
-		xaddable(np);
-}
-

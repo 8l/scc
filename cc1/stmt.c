@@ -31,24 +31,30 @@ label(char *s, char define)
 
 	if ((sym = lookup(s, NS_LABEL)) != NULL) {
 		if (define) {
-			if (sym->s.isdefined)
+			if (sym->isdefined)
 				error("label '%s' already defined", s);
-			sym->s.isdefined = 1;
+			sym->isdefined = 1;
 		}
 		return sym;
 	}
 
 	sym = install(s, NS_LABEL);
-	sym->s.isdefined = define;
+	sym->isdefined = define;
 	return sym;
 }
 
 static void
 stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	if (yytoken != ';')
-		emitexp(expr());
+	Node *np = NULL;;
+
+	if (yytoken != ';') {
+		np = expr();
+		emitexp(np);
+	}
+
 	expect(';');
+	freetree(np);
 }
 
 static Node *
@@ -82,6 +88,7 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emitjump(begin, np);
 	emiteloop();
 	emitlabel(end);
+	freetree(np);
 }
 
 static void
@@ -96,11 +103,11 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(FOR);
 	expect('(');
-	einit = expr();
+	einit = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	econd = expr();
+	econd = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	einc = expr();
+	einc = (yytoken != ')') ? expr() : NULL;
 	expect(')');
 
 	emitexp(einit);
@@ -113,12 +120,16 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emitjump(begin, econd);
 	emiteloop();
 	emitlabel(end);
+	freetree(einit);
+	freetree(econd);
+	freetree(einc);
 }
 
 static void
 Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *begin, *end;
+	Node *np;
 
 	begin = install("", NS_LABEL);
 	end = install("", NS_LABEL);
@@ -127,9 +138,11 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emitlabel(begin);
 	stmt(end, begin, lswitch);
 	expect(WHILE);
-	emitjump(begin, condition());
+	np = condition();
+	emitjump(begin, np);
 	emiteloop();
 	emitlabel(end);
+	freetree(np);
 }
 
 static void
@@ -139,7 +152,7 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Type *tp = curfun->type->type;
 
 	expect(RETURN);
-	np  = eval(expr());
+	np = (yytoken != ';') ? eval(expr()) : NULL;
 	expect(';');
 	if (!np) {
 		if (tp != voidtype)
@@ -153,6 +166,7 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 	emitret(tp);
 	emitexp(np);
+	freetree(np);
 }
 
 static void
@@ -215,8 +229,7 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(SWITCH);
 	expect ('(');
-	if ((cond = expr()) == NULL)
-		unexpected();
+	cond = expr();
 	if ((cond = convert(cond, inttype, 0)) == NULL)
 		error("incorrect type in switch statement");
 	expect (')');
@@ -230,11 +243,13 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	for (p = lcase.head; p; p = next) {
 		emitcase(p->label, p->expr);
 		next = p->next;
+		freetree(p->expr);
 		free(p);
 	}
 	if (lcase.deflabel)
 		emitdefault(lcase.deflabel);
 	emitlabel(lbreak);
+	freetree(cond);
 }
 
 static void
@@ -246,8 +261,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(CASE);
 	if (!lswitch)
 		error("case label not within a switch statement");
-	if ((np = expr()) == NULL)
-		unexpected();
+	np = expr();
 	if ((np = convert(np, inttype, 0)) == NULL)
 		error("incorrect type in case statement");
 	expect(':');
@@ -291,17 +305,19 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	} else {
 		emitlabel(lelse);
 	}
+	freetree(np);
 }
 
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
+	pushctx();
 	expect('{');
+
 	for (;;) {
 		switch (yytoken) {
 		case '}':
-			next();
-			return;
+			goto end_compound;
 		case TYPEIDEN:
 			if (ahead() == ':')
 				goto statement;
@@ -314,15 +330,21 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 			stmt(lbreak, lcont, lswitch);
 		}
 	}
+
+end_compound:
+	popctx();
+	expect('}');
+	return;
 }
 
 static void
 stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	void (*fun)(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
+	Node *np;
 
 	switch (yytoken) {
-	case '{':      fun = context;  break;
+	case '{':      fun = compound; break;
 	case RETURN:   fun = Return;   break;
 	case WHILE:    fun = While;    break;
 	case FOR:      fun = For;      break;
@@ -340,9 +362,10 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		break;
 	case '@':
 		next();
-		emitprint(expr());
-		break;
-		next();
+		np = expr();
+		emitprint(np);
+		freetree(np);
+		return;
 	}
 	(*fun)(lbreak, lcont, lswitch);
 }

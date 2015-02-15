@@ -1,12 +1,16 @@
 
+typedef struct symbol Symbol;
+typedef struct node Node;
+
 typedef struct {
 	short size;
 	uint8_t align;
+	char letter;
 	bool sign : 1;
 	bool c_int : 1;
 } Type;
 
-typedef struct symbol {
+struct symbol {
 	char *name;
 	bool public : 1;
 	bool extrn : 1;
@@ -23,11 +27,12 @@ typedef struct symbol {
 		struct {
 			short locals;
 			short params;
+			Node **body;
 		} f;
 	} u;
-} Symbol;
+};
 
-typedef struct node {
+struct node {
 	char op;
 	char subop;
 	Type *type;
@@ -39,7 +44,7 @@ typedef struct node {
 		char reg;
 	} u;
 	struct node *left, *right;
-} Node;
+};
 
 enum nerrors {
 	EINTNUM,       /* too much internal identifiers */
@@ -94,7 +99,23 @@ enum nerrors {
 
 #define ADDABLE 10
 
+
+enum {
+	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX,
+	LDFX
+};
+
+enum {
+	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
+	IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
+};
+
 extern void error(unsigned nerror, ...);
-extern void genaddable(Node *list[]);
-extern void generate(Symbol *sym, Node *list[]);
+extern Node *genaddable(Node *np);
+extern void generate(Symbol *fun);
 extern void genstack(Symbol *fun);
+extern void apply(Node *list[], Node *(*fun)(Node *));
+extern Symbol *parse(void);
+extern void code(char op, ...);
+extern Node *optimize(Node *np);
+extern void prtree(Node *np);
