@@ -101,7 +101,7 @@ enum nerrors {
 
 
 enum {
-	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDR, ADDX, ADCX, LDX,
+	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDX, ADCX, LDX,
 	LDFX
 };
 

@@ -34,7 +34,6 @@ static char *opfmt[] = {
 	[ADCX] = "\to\tr,(r+i)",
 	[LDFX] = "\to\tr,(r+i)",
 	[LDX]  = "\to\t(r+i),r",
-	[ADDR] = "a:"
 };
 
 void
@@ -54,9 +53,6 @@ code(char op, ...)
 			break;
 		case 'i':
 			printf("%d", va_arg(va, int));
-			break;
-		case 'a':
-			fputs(va_arg(va, char *), stdout);
 			break;
 		default:
 			putchar(c);
