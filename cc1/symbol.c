@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 #include "cc1.h"
 
 #define NR_SYM_HASH 32
@@ -19,9 +19,9 @@ static struct symtab {
 } symtab [NR_NAMESPACES];
 
 static inline uint8_t
-hash(register const char *s)
+hash(const char *s)
 {
-	register uint8_t h, ch;
+	uint8_t h, ch;
 
 	for (h = 0; ch = *s++; h += ch)
 		/* nothing */;
@@ -32,7 +32,7 @@ static void
 freesyms(uint8_t ns)
 {
 	static struct symtab *tbl;
-	register Symbol *sym, *next;
+	Symbol *sym, *next;
 
 	tbl = &symtab[ns];
 	for (sym = tbl->head; sym; sym = next) {
@@ -69,10 +69,10 @@ popctx(void)
 }
 
 Symbol *
-lookup(register char *s, uint8_t ns)
+lookup(char *s, uint8_t ns)
 {
 	struct symtab *tbl;
-	register Symbol *sym;
+	Symbol *sym;
 
 	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
 	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
@@ -86,7 +86,7 @@ lookup(register char *s, uint8_t ns)
 Symbol *
 install(char *s, uint8_t ns)
 {
-	register Symbol *sym, **t;
+	Symbol *sym, **t;
 	struct symtab *tbl;
 
 	sym = xcalloc(1, sizeof(*sym));
@@ -148,7 +148,7 @@ init_keywords(void)
 		{"while", WHILE, WHILE},
 		{NULL, 0, 0},
 	};
-	register Symbol *sym;
+	Symbol *sym;
 
 	for (bp = buff; bp->str; ++bp) {
 		sym = install(bp->str, NS_IDEN);

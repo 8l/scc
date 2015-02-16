@@ -5,8 +5,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <sizes.h>
-#include <cc.h>
+#include "../inc/sizes.h"
+#include "../inc/cc.h"
 #include "cc1.h"
 
 static FILE *yyin;
@@ -58,7 +58,7 @@ type:
 static uint8_t
 number(void)
 {
-	register char ch, *bp;
+	char ch, *bp;
 	static char base;
 
 	if ((ch = getc(yyin)) == '0') {
@@ -137,7 +137,7 @@ static uint8_t
 character(void)
 {
 	static char c;
-	register Symbol *sym;
+	Symbol *sym;
 
 	getc(yyin);   /* discard the initial ' */
 	c = getc(yyin);
@@ -156,8 +156,8 @@ static uint8_t
 string(void)
 {
 	static char buf[STRINGSIZ+1];
-	register char *bp;
-	register int c;
+	char *bp;
+	int c;
 	static Symbol *sym;
 
 	getc(yyin); /* discard the initial " */
@@ -190,9 +190,9 @@ end_string:
 static uint8_t
 iden(void)
 {
-	register char *bp;
-	register int c;
-	register Symbol *sym;
+	char *bp;
+	int c;
+	Symbol *sym;
 
 	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = c) {
 		if (!isalnum(c = getc(yyin)) && c != '_')
@@ -213,7 +213,7 @@ iden(void)
 static uint8_t
 follow(int expect, int ifyes, int ifno)
 {
-	register int c = getc(yyin);
+	int c = getc(yyin);
 
 	if (c == expect) {
 		yytext[1] = c;
@@ -227,7 +227,7 @@ follow(int expect, int ifyes, int ifno)
 static uint8_t
 minus(void)
 {
-	register int c = getc(yyin);
+	int c = getc(yyin);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -245,7 +245,7 @@ minus(void)
 static uint8_t
 plus(void)
 {
-	register int c = getc(yyin);
+	int c = getc(yyin);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -262,7 +262,7 @@ plus(void)
 static uint8_t
 relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 {
-	register int c = getc(yyin);
+	int c = getc(yyin);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -279,7 +279,7 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 static uint8_t
 logic(uint8_t op, uint8_t equal, uint8_t logic)
 {
-	register int c = getc(yyin);
+	int c = getc(yyin);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -313,7 +313,7 @@ dot(void)
 static uint8_t
 operator(void)
 {
-	register uint8_t c = getc(yyin);
+	uint8_t c = getc(yyin);
 
 	yytext[0] = c;
 	yytext[1] = '\0';
@@ -338,7 +338,7 @@ static int
 skipspaces(void)
 {
 
-	register int c;
+	int c;
 
 	while (isspace(c = getc(yyin))) {
 		if (c == '\n')
@@ -350,7 +350,7 @@ skipspaces(void)
 uint8_t
 next(void)
 {
-	register int c;
+	int c;
 
 	ungetc(c = skipspaces(), yyin);
 
@@ -372,7 +372,7 @@ next(void)
 }
 
 void
-expect(register uint8_t tok)
+expect(uint8_t tok)
 {
 	if (yytoken != tok)
 		unexpected();
@@ -382,7 +382,7 @@ expect(register uint8_t tok)
 uint8_t
 ahead(void)
 {
-	register int c;
+	int c;
 	
 	ungetc(c = skipspaces(), yyin);
 
@@ -390,7 +390,7 @@ ahead(void)
 }
 
 void
-open_file(register const char *file)
+open_file(const char *file)
 {
 	if (yyin != NULL)
 		fclose(yyin);

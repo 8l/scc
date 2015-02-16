@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 #include "cc2.h"
 
 #include <stdio.h>
@@ -196,7 +196,6 @@ generate(Symbol *fun)
 	extern char odebug;
 	char frame = fun->u.f.locals != 0 || odebug;
 
-	code(ADDR, fun->name);
 	if (frame) {
 		code(PUSH, IX);
 		code(LD, IX, SP);

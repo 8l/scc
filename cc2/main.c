@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 
 #include "cc2.h"
 #include "error.h"

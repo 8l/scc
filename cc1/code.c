@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 #include "cc1.h"
 
 #define SYM(s) ((union unode) {.sym = s})
@@ -104,7 +104,7 @@ emitvar(Symbol *sym)
 static void
 emitconst(Node *np)
 {
-	register char *bp, c;
+	char *bp, c;
 	Symbol *sym = np->u.sym;
 
 	if (np->type == inttype) {

@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <cc.h>
-#include <sizes.h>
+#include "../inc/cc.h"
+#include "../inc/sizes.h"
 
 #include "cc2.h"
 
@@ -19,7 +19,7 @@ enum {
 	LOCAL, GLOBAL, PARAMETER
 };
 
-static Symbol *curfun;
+Symbol *curfun;
 static Node *stack[NR_STACKSIZ], **stackp;
 static Node *listexp[NR_EXPRESSIONS], **listp;
 static Node nodepool[NR_NODEPOOL], *newp;

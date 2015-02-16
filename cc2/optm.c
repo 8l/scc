@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 #include "cc2.h"
 
 

@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sizes.h>
-#include <cc.h>
+#include "../inc/sizes.h"
+#include "../inc/cc.h"
 #include "cc1.h"
 
 #define NR_TYPE_HASH 16
@@ -190,7 +190,7 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 {
 	static Type *typetab[NR_TYPE_HASH], **tbl, type;
 	static uint8_t t;
-	register Type *bp;
+	Type *bp;
 	static char letters[] = {
 		[PTR] = L_POINTER,   [ARY] = L_ARRAY,
 		[FTN] = L_FUNCTION,  [ENUM] = L_INT,

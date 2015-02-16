@@ -5,9 +5,26 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <cc.h>
+#include "../inc/cc.h"
 #include "cc2.h"
 
+typedef struct inst Inst;
+typedef struct addr Addr;
+
+struct addr {
+	char kind;
+	union {
+		char reg;
+		Inst *pc;
+		Symbol *sym;
+	} u;
+};
+
+struct inst {
+	char op;
+	Addr from, to;
+	Inst *next;
+};
 
 static char *opnames[] = {
 	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
@@ -34,36 +51,27 @@ static char *opfmt[] = {
 	[ADCX] = "\to\tr,(r+i)",
 	[LDFX] = "\to\tr,(r+i)",
 	[LDX]  = "\to\t(r+i),r",
-	[ADDR] = "a:"
 };
+
+Inst *prog, *pc;
+
+Inst *
+inst(uint8_t op)
+{
+	Inst *new;
+
+	new = xmalloc(sizeof(*new));
+	if (!pc)
+		prog = new;
+	else
+		pc->next = new;
+	pc = new;
+	pc->op = op;
+	pc->next = NULL;
+	return pc;
+}
 
 void
 code(char op, ...)
 {
-	va_list va;
-	char *cp, c;
-
-	va_start(va, op);
-	for (cp = opfmt[op]; c = *cp; ++cp) {
-		switch (c) {
-		case 'o':
-			fputs(opnames[op], stdout);
-			break;
-		case 'r':
-			fputs(regnames[va_arg(va, int)], stdout);
-			break;
-		case 'i':
-			printf("%d", va_arg(va, int));
-			break;
-		case 'a':
-			fputs(va_arg(va, char *), stdout);
-			break;
-		default:
-			putchar(c);
-			break;
-		}
-	}
-	putchar('\n');
-
-	va_end(va);
 }

@@ -1,11 +1,11 @@
 
 #include <stdlib.h>
-#include <cc.h>
+#include "../inc/cc.h"
 
 void *
 xmalloc(size_t size)
 {
-	register void *p = malloc(size);
+	void *p = malloc(size);
 
 	if (!p)
 		die("out of memory");
