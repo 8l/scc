@@ -17,7 +17,7 @@ struct symbol {
 	char type;
 	union {
 		struct {
-			Type *type;
+			Type type;
 			char sclass;
 			short off;
 		} v;
@@ -35,7 +35,7 @@ struct symbol {
 struct node {
 	char op;
 	char subop;
-	Type *type;
+	Type type;
 	uint8_t complex;
 	uint8_t addable;
 	union {

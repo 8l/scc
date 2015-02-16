@@ -93,7 +93,7 @@ prnode(Node *np)
 		prnode(np->left);
 	if (np->right)
 		prnode(np->right);
-	fprintf(stderr, "\t%c%c", np->op, np->type->letter);
+	fprintf(stderr, "\t%c%c", np->op, np->type.letter);
 }
 
 void
@@ -249,7 +249,7 @@ immediate(char *token)
 	Node *np = newnode();
 
 	np->op = CONST;
-	np->type = gettype(token+1);
+	np->type = *gettype(token+1);
 	np->u.imm = atoi(token+2);
 	np->left = np->right = NULL;
 	push(np);
@@ -262,7 +262,7 @@ unary(char *token)
 
 	np->right = NULL;
 	np->left = pop();
-	np->type = gettype(token+1);
+	np->type = *gettype(token+1);
 	np->op = token[0];
 	push(np);
 }
@@ -274,7 +274,7 @@ operator(char *token)
 
 	np->right = pop();
 	np->left = pop();
-	np->type = gettype(token+1);
+	np->type = *gettype(token+1);
 	np->op = token[0];
 	push(np);
 }
@@ -297,7 +297,7 @@ increment(char *token)
 
 	np->right = pop();
 	np->left = pop();
-	np->type = gettype(token+2);
+	np->type = *gettype(token+2);
 	np->op = token[0];
 	switch (np->subop = token[1]) {
 	case '-': case '+':
@@ -321,7 +321,7 @@ assignment(char *token)
 	case OSHL: case OSHR: case OBAND: case OBOR: case OBXOR:
 		np->subop = *++token;
 	default:
-		np->type = gettype(token);
+		np->type = *gettype(token);
 		break;
 	}
 	push(np);
@@ -335,7 +335,7 @@ cast(char *token)
 	np->right = NULL;
 	np->left = pop();
 	np->op = OCAST;
-	np->type = gettype(token+1);
+	np->type = *gettype(token+1);
 	push(np);
 }
 
@@ -439,7 +439,7 @@ declaration(uint8_t t, char class, char *token)
 
 	if ((s = strtok(NULL, "\t")) == NULL)
 		error(ESYNTAX);
-	sym->u.v.type = gettype(s);
+	sym->u.v.type = *gettype(s);
 	if ((s = strtok(NULL, "\t")) != NULL)
 		sym->name = xstrdup(s);
 
@@ -460,7 +460,7 @@ globdcl(char *token)
 		break;
 	}
 
-	if (sym->u.v.type != NULL)
+	if (sym->u.v.type.size == 0)
 		return;
 
 	if (curfun)
@@ -477,14 +477,14 @@ paramdcl(char *token)
 {
 	Symbol *sym = declaration(PARAMETER, AUTO, token);
 	sym->u.v.off = -curfun->u.f.params;
-	curfun->u.f.params += sym->u.v.type->size;
+	curfun->u.f.params += sym->u.v.type.size;
 }
 
 static void
 localdcl(char *token)
 {
 	Symbol *sym = declaration(LOCAL, token[0], token);
-	curfun->u.f.locals += sym->u.v.type->size;
+	curfun->u.f.locals += sym->u.v.type.size;
 	sym->u.v.off = 1-curfun->u.f.locals;
 }
 

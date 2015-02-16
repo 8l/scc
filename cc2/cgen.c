@@ -21,7 +21,7 @@ allocreg(Node *np)
 	char reg16[] = {BC, HL, DE, IY, 0};
 	char *bp, c;
 
-	switch (np->type->size) {
+	switch (np->type.size) {
 	case 1:
 		for (bp = reg8; (c = *bp); ++bp) {
 			if (reguse[c])
@@ -50,7 +50,7 @@ allocreg(Node *np)
 static void
 move(Node *np)
 {
-	Type *tp = np->type;
+	Type *tp = &np->type;
 	Symbol *sym;
 	char reg;
 
@@ -126,7 +126,7 @@ cgen(Node *np, Node *parent)
 
 	switch (np->op) {
 	case OADD:
-		switch (np->type->size) {
+		switch (np->type.size) {
 		case 1:
 			if (rp->u.reg == A) {
 				conmute(np);
@@ -162,7 +162,7 @@ cgen(Node *np, Node *parent)
 		}
 		break;
 	case OASSIG:
-		switch (np->type->size) {
+		switch (np->type.size) {
 		case 1:
 			switch (lp->op) {
 			case AUTO:

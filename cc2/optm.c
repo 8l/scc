@@ -18,16 +18,16 @@ repeat:
 	switch (np->op) {
 	case OCAST:
 		/* TODO: be careful with the sign */
-		if (np->type->c_int && np->type->size >= tp->size) {
+		if (np->type.c_int && np->type.size >= tp->size) {
 			np = np->left;
 			goto repeat;
 		}
 		break;
 	case OASSIG:
-		tp = np->type;
+		tp = &np->type;
 		break;
 	default:
-		np->type = tp;
+		np->type = *tp;
 	}
 
 	np->left = optcasts(np->left, tp);
@@ -38,6 +38,6 @@ repeat:
 Node *
 optimize(Node *np)
 {
-	np = optcasts(np, np->type);
+	np = optcasts(np, &np->type);
 	return np;
 }
