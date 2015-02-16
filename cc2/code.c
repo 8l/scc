@@ -39,27 +39,4 @@ static char *opfmt[] = {
 void
 code(char op, ...)
 {
-	va_list va;
-	char *cp, c;
-
-	va_start(va, op);
-	for (cp = opfmt[op]; c = *cp; ++cp) {
-		switch (c) {
-		case 'o':
-			fputs(opnames[op], stdout);
-			break;
-		case 'r':
-			fputs(regnames[va_arg(va, int)], stdout);
-			break;
-		case 'i':
-			printf("%d", va_arg(va, int));
-			break;
-		default:
-			putchar(c);
-			break;
-		}
-	}
-	putchar('\n');
-
-	va_end(va);
 }
