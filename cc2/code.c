@@ -8,6 +8,23 @@
 #include "../inc/cc.h"
 #include "cc2.h"
 
+typedef struct inst Inst;
+typedef struct addr Addr;
+
+struct addr {
+	char kind;
+	union {
+		char reg;
+		Inst *pc;
+		Symbol *sym;
+	} u;
+};
+
+struct inst {
+	char op;
+	Addr from, to;
+	Inst *next;
+};
 
 static char *opnames[] = {
 	[PUSH] = "PUSH", [POP] = "POP", [LD]  = "LD", [ADD] = "ADD",
@@ -35,6 +52,24 @@ static char *opfmt[] = {
 	[LDFX] = "\to\tr,(r+i)",
 	[LDX]  = "\to\t(r+i),r",
 };
+
+Inst *prog, *pc;
+
+Inst *
+inst(uint8_t op)
+{
+	Inst *new;
+
+	new = xmalloc(sizeof(*new));
+	if (!pc)
+		prog = new;
+	else
+		pc->next = new;
+	pc = new;
+	pc->op = op;
+	pc->next = NULL;
+	return pc;
+}
 
 void
 code(char op, ...)
