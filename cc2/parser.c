@@ -510,7 +510,7 @@ parse(void)
 			fun = expression;
 			break;
 		case 'S':
-			/* struct */
+			/* TODO: struct */
 			break;
 		case 'P':
 			fun = paramdcl;
