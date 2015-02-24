@@ -1,7 +1,7 @@
 
 #include <assert.h>
 #include <stdarg.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 
 #include "../inc/cc.h"

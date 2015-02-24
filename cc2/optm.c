@@ -1,6 +1,6 @@
 
 #include <stddef.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 #include "../inc/cc.h"
 #include "cc2.h"

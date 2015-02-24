@@ -3,7 +3,11 @@
 #define CC_H_
 
 #ifndef __bool_true_and_false_defined
+#ifdef NBOOL
+typedef unsigned bool;
+#else
 #include <stdbool.h>
+#endif
 #endif
 
 #define TINT short
