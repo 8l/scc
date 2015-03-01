@@ -10,110 +10,129 @@
 
 #define NR_TYPE_HASH 16
 
-Type
-	*voidtype = &(Type) {
+
+/*
+ * Initializaion of type pointers were done with
+ * a C99 initilizator '... = &(Type) {...', but
+ * c compiler in Plan9 gives error with this
+ * syntax, so I have switched it to this ugly form
+ * I hope I will change it again in the future
+ */
+static Type types[] = {
+	{       /* 0 = voidtype */
 		.op = VOID,
 		.letter = L_VOID
 	},
-	*pvoidtype = &(Type) {
+	{       /* 1 = pvoidtype */
 		.op = PTR,
 		.letter = L_POINTER
 	},
-	*booltype = &(Type) {
+	{      /* 2 = booltype */
 		.op = INT,
 		.letter = L_BOOL,
 		.defined = 1,
 		.n.rank = RANK_BOOL
 	},
-	*schartype = &(Type) {
+	{       /* 3 = schartype */
 		.op = INT,
 		.letter = L_SCHAR,
 		.defined = 1,
 		.n.rank = RANK_SCHAR
 	},
-	*uchartype = &(Type) {
+	{      /* 4 = uchartype */
 		.op = INT,
 		.letter = L_UCHAR,
 		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_UCHAR
 	},
-	*chartype = &(Type) {
+	{      /* 5 = chartype */
 		.op = INT,
 		.letter = L_CHAR,
 		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_CHAR
 	},
-	*ushortype = &(Type) {
+	{       /* 6 = ushortype */
 		.op = INT,
 		.letter = L_USHORT,
 		.defined = 1,
 		.n.rank = RANK_USHORT
 	},
-	*shortype = &(Type) {
+	{       /* 7 = shortype */
 		.op = INT,
 		.letter = L_SHORT,
 		.defined = 1,
 		.n.rank = RANK_SHORT
 	},
-	*uinttype = &(Type) {
+	{       /* 8 = uinttype */
 		.op = INT,
 		.letter = L_UINT,
 		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_UINT
 	},
-	*inttype = &(Type) {
+	{       /* 9 = inttype */
 		.op = INT,
 		.letter = L_INT,
 		.defined = 1,
 		.n.rank = RANK_INT
 	},
-	*longtype = &(Type) {
+	{      /* 10 = longtype */
 		.op = INT,
 		.letter = L_LONG,
 		.defined = 1,
 		.n.rank = RANK_LONG
 	},
-	*ulongtype = &(Type) {
+	{       /* 11 = ulongtype
 		.op = INT,
 		.letter = L_ULONG,
 		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_ULONG
 	},
-	*ullongtype = &(Type) {
+	{	/* 12 = ullongtype */
 		.op = INT,
 		.letter = L_ULLONG,
 		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_ULLONG
 	},
-	*llongtype = &(Type) {
+	{       /* 13 = llongtype */
 		.op = INT,
 		.letter = L_LLONG,
 		.defined = 1,
 		.n.rank = RANK_LLONG
 	},
-	*floattype = &(Type) {
+	{       /* 14 = floattype */
 		.op = FLOAT,
 		.letter = L_FLOAT,
 		.defined = 1,
 		.n.rank = RANK_FLOAT
 	},
-	*doubletype = &(Type) {
+	{       /* 15 = doubletype */
 		.op = FLOAT,
 		.letter = L_DOUBLE,
 		.defined = 1,
 		.n.rank = RANK_DOUBLE
 	},
-	*ldoubletype = &(Type) {
+	{       /* 16 = ldoubletype */
 		.op = FLOAT,
 		.letter = L_LDOUBLE,
 		.defined = 1,
 		.n.rank = RANK_LDOUBLE
-	};
+	}
+};
+
+Type *voidtype = &types[0], *pvoidtype = &types[1],
+	*booltype = &types[2], *schartype = &types[3],
+	*uchartype = &types[4], *chartype = &types[5],
+	*ushortype = &types[6], *shortype = &types[7],
+	*uinttype = &types[8], *inttype = &types[9],
+	*longtype = &types[10], *ulongtype = &types[11],
+	*ullongtype = &types[12], *llongtype = &types[13],
+	*floattype = &types[14], *doubletype = &types[15],
+	*ldoubletype = &types[16];
 
 Type *
 ctype(int8_t type, int8_t sign, int8_t size)
