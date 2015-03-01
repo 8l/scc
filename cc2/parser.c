@@ -25,6 +25,10 @@ static Node *listexp[NR_EXPRESSIONS], **listp;
 static Node nodepool[NR_NODEPOOL], *newp;
 
 
+Type Funct = {
+	.letter = L_FUNCTION,
+};
+
 Type l_int8 = {
 	.letter = L_INT8,
 	.size = 1,
@@ -194,8 +198,8 @@ gettype(char *type)
 		return &l_uint32;
 	case L_UINT64:
 		return &l_uint64;
-	case 'F':
-		return NULL;
+	case L_FUNCTION:
+		return &Funct;;
 	default:
 		error(ETYPERR);
 	}
@@ -460,7 +464,7 @@ globdcl(char *token)
 		break;
 	}
 
-	if (sym->u.v.type.size == 0)
+	if (sym->u.v.type.letter != L_FUNCTION)
 		return;
 
 	if (curfun)
