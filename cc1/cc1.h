@@ -38,7 +38,6 @@ struct ctype {
 	uint8_t ns;
 	char letter;          /* letter of the type */
 	bool defined : 1;     /* type defined (is not a forward reference) */
-	bool sign : 1;        /* sign type */
 	struct ctype *type;   /* base type */
 	struct ctype *next;   /* next element in the hash */
 	Type **pars;         /* type parameters */

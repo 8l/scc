@@ -42,14 +42,12 @@ static Type types[] = {
 	{      /* 4 = uchartype */
 		.op = INT,
 		.letter = L_UCHAR,
-		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_UCHAR
 	},
 	{      /* 5 = chartype */
 		.op = INT,
 		.letter = L_CHAR,
-		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_CHAR
 	},
@@ -68,7 +66,6 @@ static Type types[] = {
 	{       /* 8 = uinttype */
 		.op = INT,
 		.letter = L_UINT,
-		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_UINT
 	},
@@ -87,14 +84,12 @@ static Type types[] = {
 	{       /* 11 = ulongtype
 		.op = INT,
 		.letter = L_ULONG,
-		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_ULONG
 	},
 	{	/* 12 = ullongtype */
 		.op = INT,
 		.letter = L_ULLONG,
-		.sign = 1,
 		.defined = 1,
 		.n.rank = RANK_ULLONG
 	},
@@ -221,7 +216,6 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 
 	type.type = tp;
 	type.op = op;
-	type.sign = 0;
 	type.letter = letters[op];
 	type.pars = data;
 	type.n.elem = nelem;
