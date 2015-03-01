@@ -1,7 +1,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 #include "../inc/cc.h"

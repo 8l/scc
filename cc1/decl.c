@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 
 #include "../inc/sizes.h"
