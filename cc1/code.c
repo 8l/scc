@@ -2,14 +2,10 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "../inc/cc.h"
 #include "cc1.h"
-
-#define SYM(s) ((union unode) {.sym = s})
-#define TYP(s) ((union unode) {.type = s})
-#define OP(s) ((union unode) {.op = s})
-#define FIELD(s) ((union unode) {.field = s})
 
 char *opcodes[] = {
 	[OADD] = "+",
@@ -50,21 +46,6 @@ char *opcodes[] = {
 	[OOR] = "o",
 	[OCOMMA] = ","
 };
-
-Node *
-node(void (*code)(Node *), Type *tp, union unode u, uint8_t nchilds)
-{
-	Node *np = xmalloc(sizeof(*np) + nchilds * sizeof(np));
-
-	np->code = code;
-	np->type = tp;
-	np->typeop = tp->op;
-	np->nchilds = nchilds;
-	np->u = u;
-	np->b.symbol = np->b.lvalue = 0;
-
-	return np;
-}
 
 void
 freetree(Node *np)
@@ -156,7 +137,7 @@ emitcast(Node *np)
 	Node *child = np->childs[0];
 
 	(*child->code)(child);
-	printf("\t%c%c", np->u.type->letter, np->type->letter);
+	printf("\t%c%c", child->type->letter, np->type->letter);
 }
 
 void
@@ -300,67 +281,89 @@ emitfield(Node *np)
 	emitvar(np->u.sym);
 }
 
-Node *
-fieldcode(Node *child, Symbol *field)
-{
-	Node *np = node(emitfield, field->type, SYM(field), 1);
-	np->childs[0] = child;
-	return np;
-}
+enum {
+	SYM, TYP, OP
+};
+
+
+/*TODO: Remove type of union unode */
+
+struct kindnode {
+	uint8_t nchilds;
+	char unode;
+	void (*code)(Node *);
+} kindnodes [] = {
+	[CAST]= {
+		.nchilds = 1,
+		.code = emitcast
+	},
+	[FIELD] = {  /*TODO: Create a node for the symbol */
+		.nchilds = 1,
+		.unode = SYM,
+		.code = emitfield
+	},
+	[UNARY] = {
+		.nchilds = 1,
+		.unode = OP,
+		.code = emitunary
+	},
+	[BINARY] = {
+		.nchilds = 2,
+		.unode = OP,
+		.code = emitbin
+	},
+	[SIZEOFCODE] = {
+		.nchilds = 0,
+		.unode = TYP,
+		.code = emitsizeof
+	},
+	[SYMBOL] = {
+		.nchilds = 0,
+		.unode = SYM,
+		.code = emitsym
+	},
+	[TERNARY] = {
+		.nchilds = 3,
+		.code = emitternary
+	}
+};
 
 Node *
-castcode(Node *child, Type *tp)
+node(char kind, Type *tp, ...)
 {
-	Node *np = node(emitcast, tp, TYP(child->type), 1);
-
-	np->childs[0] = child;
-	return np;
-}
-
-Node *
-unarycode(char op, Type *tp, Node *child)
-{
-	Node *np = node(emitunary, tp, OP(op), 1);
-	np->childs[0] = child;
-	return np;
-}
-
-Node *
-bincode(char op, Type *tp, Node *np1, Node *np2)
-{
-	Node *np = node(emitbin, tp, OP(op), 2);
-	np->childs[0] = np1;
-	np->childs[1] = np2;
-	return np;
-}
-
-Node *
-sizeofcode(Type *tp)
-{
-	if (!tp->defined)
-		error("invalid use of indefined type");
-	if (tp->op == FTN)
-		error("sizeof of a function");
-	return node(emitsizeof, inttype, TYP(tp), 0);
-}
-
-Node *
-ternarycode(Node *cond, Node *ifyes, Node *ifno)
-{
-	Node *np= node(emitternary, ifyes->type, OP(0), 3);
-	np->childs[0] = cond;
-	np->childs[1] = ifyes;
-	np->childs[2] = ifno;
-	return np;
-}
-
-Node *
-symcode(Symbol *sym)
-{
+	uint8_t nchilds, i;
+	va_list va;
+	struct kindnode *kp;
 	Node *np;
 
-	np = node(emitsym, sym->type, SYM(sym), 0);
-	np->b.symbol = 1;
-	np->b.constant = 1;
+	va_start(va, tp);
+	kp = &kindnodes[kind];
+	nchilds = kp->nchilds;
+	np = xmalloc(sizeof(*np) + nchilds * sizeof(np));
+
+	np->code = kp->code;
+	np->nchilds = nchilds;
+	np->type = tp;
+	np->typeop = tp->op;
+	np->b.symbol = np->b.lvalue = 0;
+
+	switch (kp->unode) {
+	case TYP:
+		np->u.type = va_arg(va, Type *);
+		break;
+	case SYM:
+		np->u.sym = va_arg(va, Symbol *);
+		np->b.symbol = 1;
+		np->b.constant = 1;
+		break;
+	case OP:
+		np->u.op = va_arg(va, int);
+		break;
+	}
+
+	for (i = 0; i < nchilds; ++i)
+		np->childs[i] = va_arg(va, Node *);
+
+	va_end(va);
 	return np;
 }

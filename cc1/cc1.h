@@ -160,7 +160,7 @@ typedef struct node {
 } Node;
 
 enum {
-	OCAST = 1, OPTR, OADD, OSIZE, OMUL, OSUB,
+	OPTR = 1, OADD, OSIZE, OMUL, OSUB,
 	OINC, ODEC, ODIV, OMOD, OSHL, OSHR,
 	OBAND, OBXOR, OBOR, OASSIGN, OA_MUL, OA_DIV,
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR,
@@ -187,16 +187,12 @@ extern void
 	emitdefault(Symbol *),
 	emitstruct(Symbol *sym), emitestruct(void);
 
-extern Node
-	*node(void (*code)(Node *),
-	      Type *tp, union unode u, uint8_t nchilds),
-	*unarycode(char op, Type *tp, Node *child),
-	*bincode(char op, Type *tp, Node *np1, Node *np2),
-	*castcode(Node *child, Type *tp),
-	*sizeofcode(Type *tp), 
-	*ternarycode(Node *cond, Node *ifyes, Node *ifno),
-	*symcode(Symbol *sym),
-	*fieldcode(Node *child, Symbol *field);
+enum {
+	CAST, FIELD, UNARY, BINARY,
+	SIZEOFCODE, SYMBOL, TERNARY
+};
+
+extern Node *node(char kind, Type *tp, ...);
 
 extern void freetree(Node *np);
 
