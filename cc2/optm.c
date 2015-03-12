@@ -18,7 +18,7 @@ repeat:
 	switch (np->op) {
 	case OCAST:
 		/* TODO: be careful with the sign */
-		if (np->type.c_int && np->type.size >= tp->size) {
+		if (np->type.flags & INTF && np->type.size >= tp->size) {
 			np = np->left;
 			goto repeat;
 		}

@@ -33,60 +33,59 @@ Type l_int8 = {
 	.letter = L_INT8,
 	.size = 1,
 	.align = 2,
-	.sign = 1,
-	.c_int = 1,
+	.flags = SIGNF | INTF
 };
 
 Type l_int16 = {
 	.letter = L_INT16,
 	.size = 2,
 	.align = 2,
-	.sign = 1,
-	.c_int = 1,
+	.flags = SIGNF | INTF
+
 };
 
 Type l_int32 = {
 	.letter = L_INT32,
 	.size = 4,
 	.align = 4,
-	.sign = 1,
-	.c_int = 1,
+	.flags = SIGNF | INTF
+
 };
 
 Type l_int64 = {
 	.letter = L_INT64,
 	.size = 8,
 	.align = 8,
-	.sign = 1,
-	.c_int = 1,
+	.flags = SIGNF | INTF
+
 };
 
 Type l_uint8 = {
 	.letter = L_UINT8,
 	.size = 1,
 	.align = 2,
-	.c_int = 1,
+	.flags =  INTF
 };
 
 Type l_uint16 = {
 	.letter = L_UINT16,
 	.size = 2,
 	.align = 2,
-	.c_int = 1,
+	.flags =  INTF
 };
 
 Type l_uint32 = {
 	.letter = L_UINT32,
 	.size = 4,
 	.align = 4,
-	.c_int = 1,
+	.flags =  INTF
 };
 
 Type l_uint64 = {
 	.letter = L_UINT64,
 	.size = 8,
 	.align = 8,
-	.c_int = 1,
+	.flags =  INTF
 };
 
 

@@ -1,4 +1,7 @@
 
+#define SIGNF 1
+#define INTF  2
+
 typedef struct symbol Symbol;
 typedef struct node Node;
 
@@ -6,8 +9,7 @@ typedef struct {
 	short size;
 	uint8_t align;
 	char letter;
-	bool sign : 1;
-	bool c_int : 1;
+	uint8_t flags;
 } Type;
 
 struct symbol {
