@@ -5,7 +5,8 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-#define Q(sym)  node(SYMBOL, inttype, (sym))
+#define BTYPE(np) ((np)->type->op)
+#define TYPE(tp) node(OTYP, (tp), NULL, NULL)
 
 static Symbol *zero, *one;
 
@@ -38,7 +39,7 @@ promote(Node *np)
 	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
 		return np;
 	tp = (r == RANK_UINT) ? uinttype : inttype;
-	return node(CAST, tp, np);
+	return node(OCAST, tp, np, NULL);
 }
 
 static void
@@ -55,9 +56,9 @@ typeconv(Node **p1, Node **p2)
 	tp2 = np2->type;
 	if (tp1 != tp2) {
 		if ((n = tp1->n.rank - tp2->n.rank) > 0)
-			np2 = node(CAST, tp1, np2);
+			np2 = node(OCAST, tp1, np2, NULL);
 		else if (n < 0)
-			np1 = node(CAST, tp2, np1);
+			np1 = node(OCAST, tp2, np1, NULL);
 	}
 	*p1 = np1;
 	*p2 = np2;
@@ -66,7 +67,7 @@ typeconv(Node **p1, Node **p2)
 static void
 chklvalue(Node *np, Type *tp)
 {
-	if (!np->b.lvalue)
+	if (!np->lvalue)
 		error("lvalue required in operation");
 	if (np->type == voidtype)
 		error("invalid use of void expression");
@@ -75,11 +76,14 @@ chklvalue(Node *np, Type *tp)
 Node *
 eval(Node *np)
 {
+	Node *p;
+
 	if (!np)
 		return NULL;
 	if (!ISNODELOG(np))
 		return np;
-	return node(TERNARY, inttype, np, Q(one), Q(zero));
+	p = node(0, inttype, symbol(one), symbol(zero));
+	return node(OASK, inttype, np, p);
 }
 
 static Node *
@@ -87,21 +91,21 @@ integerop(char op, Node *np1, Node *np2)
 {
 	np1 = eval(np1);
 	np2 = eval(np2);
-	if (np1->typeop != INT || np2->typeop != INT)
+	if (BTYPE(np1) != INT || BTYPE(np2) != INT)
 		error("operator requires integer operands");
 	typeconv(&np1, &np2);
-	return node(BINARY, np1->type, op, np1, np2);
+	return node(op, np1->type, np1, np2);
 }
 
 static Node *
 numericaluop(char op, Node *np)
 {
 	np = eval(np);
-	switch (np->typeop) {
+	switch (BTYPE(np)) {
 	case INT: case FLOAT:
 		if (op == OADD)
 			return np;
-		return node(UNARY, np->type, op, np);
+		return node(op, np->type, np, NULL);
 	default:
 		error("unary operator requires integer operand");
 	}
@@ -111,15 +115,15 @@ static Node *
 integeruop(char op, Node *np)
 {
 	np = eval(np);
-	if (np->typeop != INT)
+	if (BTYPE(np) != INT)
 		error("unary operator requires integer operand");
-	return node(UNARY, np->type, op, np);
+	return node(op, np->type, np, NULL);
 }
 
 static Node *
 decay(Node *np)
 {
-	return node(UNARY, mktype(np->type, PTR, 0, NULL), OADDR, np);
+	return node(OADDR, mktype(np->type, PTR, 0, NULL), np, NULL);
 }
 
 /*
@@ -130,11 +134,11 @@ convert(Node *np, Type *tp, char iscast)
 {
 	if (eqtype(np->type, tp))
 		return np;
-	switch (np->typeop) {
+	switch (BTYPE(np)) {
 	case ENUM: case INT: case FLOAT:
 		switch (tp->op) {
 		case PTR:
-			if (!iscast || np->typeop == FLOAT)
+			if (!iscast || BTYPE(np) == FLOAT)
 				return NULL;
 			/* PASSTHROUGH */
 		case INT: case FLOAT: case ENUM: case VOID:
@@ -167,7 +171,7 @@ convert(Node *np, Type *tp, char iscast)
 	default:
 			return NULL;
 	}
-	return node(CAST, tp, np);
+	return node(OCAST, tp, np, NULL);
 }
 
 static Node *
@@ -177,21 +181,21 @@ parithmetic(char op, Node *np1, Node *np2)
 	Node *size;
 
 	tp = np1->type;
-	size = node(SIZEOFCODE, inttype, tp->type);
-	if (np2->typeop == ARY)
+	size = node(OSIZE, inttype, TYPE(tp->type), NULL);
+	if (BTYPE(np2) == ARY)
 		np2 = decay(np2);
 
-	if (op == OSUB && np2->typeop == PTR) {
+	if (op == OSUB && BTYPE(np2) == PTR) {
 		if (tp != np2->type)
 			goto incorrect;
-		np1 = node(BINARY, inttype, OSUB, np1, np2);
-		return node(BINARY, inttype, ODIV, np1, size);
+		np1 = node(OSUB, inttype, np1, np2);
+		return node(ODIV, inttype, np1, size);
 	}
-	if (np2->typeop != INT)
+	if (BTYPE(np2) != INT)
 		goto incorrect;
-	np2 = node(CAST, tp, promote(np2));
-	np2 = node(BINARY, tp, OMUL, np2, size);
-	return node(BINARY, tp, op, np1, np2);
+	np2 = node(OCAST, tp, promote(np2), NULL);
+	np2 = node(OMUL, tp, np2, size);
+	return node(op, tp, np1, np2);
 
 incorrect:
 	error("incorrect arithmetic operands");
@@ -202,9 +206,9 @@ arithmetic(char op, Node *np1, Node *np2)
 {
 	np1 = eval(np1);
 	np2 = eval(np2);
-	switch (np1->typeop) {
+	switch (BTYPE(np1)) {
 	case INT: case FLOAT:
-		switch (np2->typeop) {
+		switch (BTYPE(np2)) {
 		case INT: case FLOAT:
 			typeconv(&np1, &np2);
 			break;
@@ -226,22 +230,27 @@ arithmetic(char op, Node *np1, Node *np2)
 		error("incorrect arithmetic operands");
 	}
 
-	return node(BINARY, np1->type, op, np1, np2);
+	return node(op, np1->type, np1, np2);
 }
 
 static Node *
 pcompare(char op, Node *np1, Node *np2)
 {
-	if (np2->typeop == INT && np2->b.symbol && np2->u.sym->u.i == 0) {
-		np2 = node(CAST, pvoidtype, np2);
-	} else if (np2->typeop != PTR) {
+	switch (BTYPE(np2)) {
+	case INT:
+		if (np2->symbol && np2->sym->u.i == 0)
+			np2 = node(OCAST, pvoidtype, np2, NULL);
+		break;
+	case PTR:
+		if (np1->type != np2->type)
+			warn(options.pcompare,
+			     "comparision between different pointer types");
+		break;
+	default:
 		error("incompatibles type in comparision");
-	} else {
-		warn(options.pcompare,
-		     "comparision between different pointer types");
 	}
 
-	return node(BINARY, np1->type, op, np1, np2);
+	return node(op, np1->type, np1, np2);
 }
 
 static Node *
@@ -249,9 +258,9 @@ compare(char op, Node *np1, Node *np2)
 {
 	np1 = eval(np1);
 	np2 = eval(np2);
-	switch (np1->typeop) {
+	switch (BTYPE(np1)) {
 	case INT: case FLOAT:
-		switch (np1->typeop) {
+		switch (BTYPE(np1)) {
 		case INT: case FLOAT:
 			typeconv(&np1, &np2);
 			break;
@@ -272,7 +281,7 @@ compare(char op, Node *np1, Node *np2)
 		error("incompatibles type in comparision");
 	}
 
-	return node(BINARY, inttype, op, np1, np2);
+	return node(op, inttype, np1, np2);
 }
 
 static Node *
@@ -283,7 +292,7 @@ exp2cond(Node *np, char neg)
 		return np;
 	}
 
-	return compare(ONE ^ neg, np, Q(zero));
+	return compare(ONE ^ neg, np, symbol(zero));
 }
 
 static Node *
@@ -291,7 +300,7 @@ logic(char op, Node *np1, Node *np2)
 {
 	np1 = exp2cond(np1, 0);
 	np2 = exp2cond(np2, 0);
-	return node(BINARY, inttype, op, np1, np2);
+	return node(op, inttype, np1, np2);
 }
 
 static Node *
@@ -300,7 +309,7 @@ field(Node *np)
 	extern uint8_t lex_ns;
 	Symbol *sym;
 
-	switch (np->typeop) {
+	switch (BTYPE(np)) {
 	case STRUCT: case UNION:
 		lex_ns = np->type->ns;
 		next();
@@ -310,7 +319,7 @@ field(Node *np)
 			error("incorrect field in struct/union");
 		lex_ns = NS_IDEN;
 		next();
-		return node(FIELD, sym->type, sym, np);
+		return node(OFIELD, sym->type, symbol(sym), np);
 	default:
 		error("struct or union expected");
 	}
@@ -321,14 +330,14 @@ array(Node *np1, Node *np2)
 {
 	Type *tp;
 
-	if (np1->typeop != INT && np2->typeop != INT)
+	if (BTYPE(np1) != INT && BTYPE(np2) != INT)
 		error("array subscript is not an integer");
 	np1 = arithmetic(OADD, np1, np2);
 	tp = np1->type;
 	if (tp->op != PTR)
 		error("subscripted value is neither array nor pointer nor vector");
-	np1 =  node(UNARY, tp->type, OPTR, np1);
-	np1->b.lvalue = 1;
+	np1 =  node(OPTR, tp->type, np1, NULL);
+	np1->lvalue = 1;
 	return np1;
 }
 
@@ -337,7 +346,7 @@ iszero(Node *np)
 {
 	if (ISNODECMP(np))
 		return np;
-	return compare(ONE, np, Q(zero));
+	return compare(ONE, np, symbol(zero));
 }
 
 static Node *
@@ -351,7 +360,7 @@ assignop(char op, Node *np1, Node *np2)
 		if ((np2 = convert(np2, np1->type, 0)) == NULL)
 			error("incompatible types when assigning");
 	}
-	return node(BINARY, np1->type, op, np1, np2);
+	return node(op, np1->type, np1, np2);
 }
 
 static Node *
@@ -362,14 +371,14 @@ incdec(Node *np, char op)
 
 	chklvalue(np, np->type);
 
-	switch (np->typeop) {
+	switch (BTYPE(np)) {
 	case PTR:
 		if (!tp->defined)
 			error("invalid use of indefined type");
-		inc = node(SIZEOFCODE, inttype, tp->type);
+		inc = node(OSIZE, inttype, TYPE(tp->type), NULL);
 		break;
 	case INT: case FLOAT:
-		inc = Q(one);
+		inc = symbol(one);
 		break;
 	default:
 		error("incorrect type in arithmetic operation");
@@ -380,22 +389,22 @@ incdec(Node *np, char op)
 static Node *
 address(char op, Node *np)
 {
-	if (!np->b.lvalue)
+	if (!np->lvalue)
 		error("lvalue required in unary expression");
-	if (np->b.symbol && np->u.sym->isregister)
+	if (np->symbol && np->sym->isregister)
 		error("address of register variable '%s' requested", yytext);
-	return node(UNARY, mktype(np->type, PTR, 0, NULL), op, np);
+	return node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
 }
 
 static Node *
 content(char op, Node *np)
 {
-	switch (np->typeop) {
+	switch (BTYPE(np)) {
 	case ARY: case FTN:
 		np = decay(np);
 	case PTR:
-		np = node(UNARY, np->type, op, np);
-		np->b.lvalue = 1;
+		np = node(op, np->type->type, np, NULL);
+		np->lvalue = 1;
 		return np;
 	default:
 		error("invalid argument of unary '*'");
@@ -405,7 +414,7 @@ content(char op, Node *np)
 static Node *
 negation(char op, Node *np)
 {
-	switch (np->typeop) {
+	switch (BTYPE(np)) {
 	case FTN: case ARY:
 		np = decay(np);
 	case INT: case FLOAT: case PTR:
@@ -428,10 +437,10 @@ primary(void)
 	case STRING: case CONSTANT: case IDEN:
 		if ((sym = yylval.sym) == NULL)
 			error("'%s' undeclared", yytext);
-		np = node(SYMBOL, yylval.sym->type, yylval.sym);
+		np = symbol(yylval.sym);
 		if (yytoken == IDEN) {
-			np->b.lvalue = 1;
-			np->b.constant = 0;
+			np->lvalue = 1;
+			np->constant = 0;
 		}
 		next();
 		break;
@@ -544,7 +553,7 @@ unary(void)
 	case SIZEOF:
 		next();
 		tp = (yytoken == '(') ? sizeexp() : typeof(unary());
-		return node(SIZEOFCODE, inttype, tp);
+		return node(OSIZE, inttype, TYPE(tp), NULL);
 	case INC: case DEC:
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
@@ -584,7 +593,7 @@ cast(void)
 				unexpected();
 			if ((np2 = convert(np1,  tp, 1)) == NULL)
 				error("bad type convertion requested");
-			np2->b.lvalue = np1->b.lvalue;
+			np2->lvalue = np1->lvalue;
 		}
 		break;
 	default:
@@ -747,17 +756,21 @@ or(void)
 static Node *
 ternary(void)
 {
-	Node *np, *ifyes, *ifno;
+	Node *cond;
 
-	np = or();
+	cond = or();
 	while (accept('?')) {
+		Node *ifyes, *ifno, *np;
+
+		cond = exp2cond(cond, 0);
 		ifyes = promote(expr());
 		expect(':');
 		ifno = promote(ternary());
 		typeconv(&ifyes, &ifno);
-		np = node(TERNARY, ifyes->type, np, ifyes, ifno);
+		np = node(0, ifyes->type, ifyes, ifno);
+		cond = node(OASK, np->type, cond, np);
 	}
-	return np;
+	return cond;
 }
 
 static Node *
@@ -796,7 +809,7 @@ expr(void)
 	np1 = assign();
 	while (accept(',')) {
 		np2 = assign();
-		np1 = node(BINARY, np2->type, OCOMMA, np1, np2);
+		np1 = node(OCOMMA, np2->type, np1, np2);
 	}
 
 	return np1;

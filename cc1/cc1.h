@@ -140,23 +140,14 @@ extern uint8_t yytoken;
 extern uint8_t next(void);
 extern void expect(uint8_t tok);
 
-
 typedef struct node {
-	void (*code)(struct node *);
+	uint8_t op;
 	Type *type;
-	uint8_t typeop;
-	uint8_t nchilds;
-	struct {
-		bool lvalue : 1;
-		bool symbol: 1;
-		bool constant : 1;
-	} b;
-	union unode {
-		Symbol *sym;
-		Type *type;
-		char op;
-	} u;
-	struct node *childs[];
+	Symbol *sym;
+	bool lvalue : 1;
+	bool symbol: 1;
+	bool constant : 1;
+	struct node *left, *rigth;
 } Node;
 
 enum {
@@ -165,7 +156,7 @@ enum {
 	OBAND, OBXOR, OBOR, OASSIGN, OA_MUL, OA_DIV,
 	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR,
 	OA_AND, OA_XOR, OA_OR, OADDR,ONEG, OCPL, OEXC,
-	OCOMMA,
+	OCOMMA, OCAST, OSYM, OASK, OFIELD, OTYP,
 	/* TODO: This order is important, but must be changed */
 	OAND, OOR,
 	/*
@@ -175,10 +166,10 @@ enum {
 	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT
 };
 
+/*TODO: clean these declarations */
 extern void
 	emitdcl(Symbol *), emitefun(void),
-	emitsym(Node *), emitunary(Node *),
-	emitbin(Node *), emitexp(Node *),
+	emitexp(Node *),
 	emitprint(Node *), emitlabel(Symbol *), emitjump(Symbol *, Node *),
 	emitbloop(void), emiteloop(void),
 	emitswitch(short, Node *), emitcase(Symbol *, Node *),
@@ -187,20 +178,13 @@ extern void
 	emitdefault(Symbol *),
 	emitstruct(Symbol *sym), emitestruct(void);
 
-enum {
-	CAST, FIELD, UNARY, BINARY,
-	SIZEOFCODE, SYMBOL, TERNARY
-};
-
-extern Node *node(char kind, Type *tp, ...);
-
+extern Node *node(uint8_t op, Type *tp, Node *left, Node *rigth);
+extern Node *symbol(Symbol *sym);
 extern void freetree(Node *np);
 
-#define NEGATE(n, v) ((n)->u.op ^= (v))
-/* TODO: remove some of these ugly macros */
-#define ISNODEBIN(n) ((n)->code == emitbin)
-#define ISNODECMP(n) (ISNODEBIN(n) && (n)->u.op >= OEQ)
-#define ISNODELOG(n) (ISNODEBIN(n) && (n)->u.op >= OAND)
+#define NEGATE(n, v) ((n)->op ^= (v))
+#define ISNODECMP(n) ((n)->op >= OEQ)
+#define ISNODELOG(n) ((n)->op >= OAND)
 
 extern Node *expr(void);
 extern void extdecl(void), decl(void);

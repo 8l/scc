@@ -7,7 +7,11 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-char *opcodes[] = {
+static void emitbin(Node *), emitunary(Node *), emitternary(Node *),
+     emitcast(Node *), emitsym(Node *), emitfield(Node *),
+     emitsizeof(Node *);
+
+char *optxt[] = {
 	[OADD] = "+",
 	[OSUB] = "-",
 	[OMUL] = "*",
@@ -47,6 +51,50 @@ char *opcodes[] = {
 	[OCOMMA] = ","
 };
 
+void (*opcode[])(Node *) = {
+	[OADD] = emitbin,
+	[OSUB] = emitbin,
+	[OMUL] = emitbin,
+	[OINC] = emitunary,
+	[ODEC] =  emitunary,
+	[OSIZE] = emitsizeof,
+	[OPTR] = emitunary,
+	[OMOD] = emitbin,
+	[ODIV] = emitbin,
+	[OSHL] = emitbin,
+	[OSHR]  = emitbin,
+	[OLT] = emitbin,
+	[OGT] = emitbin,
+	[OGE] = emitbin,
+	[OLE] =  emitbin,
+	[OEQ] = emitbin,
+	[ONE] = emitunary,
+	[OBAND] = emitbin,
+	[OBXOR]  = emitbin,
+	[OBOR] = emitbin,
+	[OASSIGN] = emitbin,
+	[OA_MUL] = emitbin,
+	[OA_DIV] = emitbin,
+	[OA_MOD] = emitbin,
+	[OA_ADD] = emitbin,
+	[OA_SUB] = emitbin,
+	[OA_SHL] = emitbin,
+	[OA_SHR] = emitbin,
+	[OA_AND] = emitbin,
+	[OA_XOR] = emitbin,
+	[OA_OR] = emitbin,
+	[OADDR] = emitunary,
+	[ONEG] = emitunary,
+	[OCPL] = emitunary,
+	[OAND] = emitbin,
+	[OOR] = emitbin,
+	[OCOMMA] = emitbin,
+	[OCAST] = emitcast,
+	[OSYM] = emitsym,
+	[OASK] = emitternary,
+	[OFIELD]= emitfield
+};
+
 void
 freetree(Node *np)
 {
@@ -54,9 +102,8 @@ freetree(Node *np)
 
 	if (!np)
 		return;
-
-	for (p = np->childs; np->nchilds--; ++p)
-		freetree(*p);
+	freetree(np->left);
+	freetree(np->rigth);
 	free(np);
 }
 
@@ -86,7 +133,7 @@ static void
 emitconst(Node *np)
 {
 	char *bp, c;
-	Symbol *sym = np->u.sym;
+	Symbol *sym = np->sym;
 
 	if (np->type == inttype) {
 		printf("#%c%x", np->type->letter, sym->u.i);
@@ -113,7 +160,7 @@ void
 emitsym(Node *np)
 {
 	putchar('\t');
-	(np->b.constant) ? emitconst(np) : emitvar(np->u.sym);
+	(np->constant) ? emitconst(np) : emitvar(np->sym);
 }
 
 static void
@@ -134,34 +181,34 @@ emitdcl(Symbol *sym)
 void
 emitcast(Node *np)
 {
-	Node *child = np->childs[0];
+	Node *lp = np->left;
 
-	(*child->code)(child);
-	printf("\t%c%c", child->type->letter, np->type->letter);
+	(*opcode[lp->op])(lp);
+	printf("\t%c%c", lp->type->letter, np->type->letter);
 }
 
 void
 emitunary(Node *np)
 {
-	Node *child;
+	Node *lp;
 	char letter;
 
 	letter = np->type->letter;
-	child = np->childs[0];
-	(*child->code)(child);
-	printf("\t%s%c", opcodes[np->u.op], letter);
+	lp = np->left;
+	(*opcode[lp->op])(lp);
+	printf("\t%s%c", optxt[np->op], letter);
 }
 
 void
 emitbin(Node *np)
 {
-	Node *child1, *child2;
+	Node *lp, *rp;
 
-	child1 = np->childs[0];
-	child2 = np->childs[1];
-	(*child1->code)(child1);
-	(*child2->code)(child2);
-	printf("\t%s%c", opcodes[np->u.op], np->type->letter);
+	lp = np->left;
+	rp = np->rigth;
+	(*opcode[lp->op])(lp);
+	(*opcode[rp->op])(rp);
+	printf("\t%s%c", optxt[np->op], np->type->letter);
 }
 
 void
@@ -169,33 +216,33 @@ emitternary(Node *np)
 {
 	Node *cond, *ifyes, *ifno;
 
-	cond = np->childs[0];
-	ifyes = np->childs[1];
-	ifno = np->childs[2];
-	(*cond->code)(cond);
-	(*ifyes->code)(ifyes);
-	(*ifno->code)(ifno);
+	cond = np->left;
+	ifyes = np->rigth->left;
+	ifno = np->rigth->rigth;
+	(*opcode[cond->op])(cond);
+	(*opcode[ifyes->op])(ifyes);
+	(*opcode[ifno->op])(ifno);
 	printf("\t?%c", np->type->letter);
 }
 
 void
 emitsizeof(Node *np)
 {
-	printf("\t#%c", np->u.type->letter);
+	printf("\t#%c", np->left->type->letter);
 }
 
 void
 emitexp(Node *np)
 {
 	if (np)
-		(*np->code)(np);
+		(*opcode[np->op])(np);
 	putchar('\n');
 }
 
 void
 emitprint(Node *np)
 {
-	(*np->code)(np);
+	(*opcode[np->op])(np);
 	printf("\tk%c\n", np->type->letter);
 	fflush(stdout);
 }
@@ -273,97 +320,36 @@ emitdefault(Symbol *sym)
 void
 emitfield(Node *np)
 {
-	Node *child;
+	Node *lp = np->left;
 
-	child = np->childs[0];
-	(*child->code)(child);
+	(*opcode[lp->op])(lp);
 	putchar('\t');
-	emitvar(np->u.sym);
+	emitvar(np->sym);
 }
 
-enum {
-	SYM, TYP, OP
-};
-
-
-/*TODO: Remove type of union unode */
-
-struct kindnode {
-	uint8_t nchilds;
-	char unode;
-	void (*code)(Node *);
-} kindnodes [] = {
-	[CAST]= {
-		.nchilds = 1,
-		.code = emitcast
-	},
-	[FIELD] = {  /*TODO: Create a node for the symbol */
-		.nchilds = 1,
-		.unode = SYM,
-		.code = emitfield
-	},
-	[UNARY] = {
-		.nchilds = 1,
-		.unode = OP,
-		.code = emitunary
-	},
-	[BINARY] = {
-		.nchilds = 2,
-		.unode = OP,
-		.code = emitbin
-	},
-	[SIZEOFCODE] = {
-		.nchilds = 0,
-		.unode = TYP,
-		.code = emitsizeof
-	},
-	[SYMBOL] = {
-		.nchilds = 0,
-		.unode = SYM,
-		.code = emitsym
-	},
-	[TERNARY] = {
-		.nchilds = 3,
-		.code = emitternary
-	}
-};
-
 Node *
-node(char kind, Type *tp, ...)
+node(uint8_t op, Type *tp, Node *left, Node *rigth)
 {
-	uint8_t nchilds, i;
-	va_list va;
-	struct kindnode *kp;
 	Node *np;
 
-	va_start(va, tp);
-	kp = &kindnodes[kind];
-	nchilds = kp->nchilds;
-	np = xmalloc(sizeof(*np) + nchilds * sizeof(np));
-
-	np->code = kp->code;
-	np->nchilds = nchilds;
+	np = xmalloc(sizeof(*np));
+	np->op = op;
 	np->type = tp;
-	np->typeop = tp->op;
-	np->b.symbol = np->b.lvalue = 0;
+	np->sym = NULL;
+	np->constant = np->symbol = np->lvalue = 0;
+	np->left = left;
+	np->rigth = rigth;
+	return np;
+}
 
-	switch (kp->unode) {
-	case TYP:
-		np->u.type = va_arg(va, Type *);
-		break;
-	case SYM:
-		np->u.sym = va_arg(va, Symbol *);
-		np->b.symbol = 1;
-		np->b.constant = 1;
-		break;
-	case OP:
-		np->u.op = va_arg(va, int);
-		break;
-	}
+Node *
+symbol(Symbol *sym)
+{
+	Node *np;
 
-	for (i = 0; i < nchilds; ++i)
-		np->childs[i] = va_arg(va, Node *);
-
-	va_end(va);
+	np = node(OSYM, sym->type, NULL, NULL);
+	np->symbol = 1;
+	np->constant = 1;
+	np->sym = sym;
 	return np;
 }
