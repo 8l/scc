@@ -398,12 +398,13 @@ expression(char *token)
 {
 	Node *np;
 	void (*fun)(char *);
+	unsigned c;
 
 	if (!curfun)
 		error(ESYNTAX);
 
 	do {
-		if ((fun = optbl[token[0]]) == NULL)
+		if ((c = token[0]) > 0x1f || (fun = optbl[c]) == NULL)
 			error(ESYNTAX);
 		(*fun)(token);
 	} while (token = strtok(NULL, "\t"));
