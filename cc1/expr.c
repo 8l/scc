@@ -589,6 +589,7 @@ cast(void)
 		case FTN:
 			error("cast specify a function type");
 		default:
+			expect(')');
 			if ((np1 = eval(cast())) == NULL)
 				unexpected();
 			if ((np2 = convert(np1,  tp, 1)) == NULL)
@@ -597,10 +598,10 @@ cast(void)
 		}
 		break;
 	default:
+		expect(')');
 		np2 = expr();
 		break;
 	}
-	expect(')');
 
 	return np2;
 }
