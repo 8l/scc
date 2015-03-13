@@ -27,7 +27,9 @@ repeat:
 		tp = &np->type;
 		break;
 	default:
-		np->type = *tp;
+		if (np->type.size > tp->size)
+			np->type = *tp;
+		break;
 	}
 
 	np->left = optcasts(np->left, tp);
