@@ -34,5 +34,6 @@ main(void)
 		apply(fun->u.f.body, optimize);
 		apply(fun->u.f.body, genaddable);
 		generate(fun);
+		writeout();
 	}
 }

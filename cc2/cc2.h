@@ -2,68 +2,7 @@
 #define SIGNF 1
 #define INTF  2
 
-typedef struct symbol Symbol;
-typedef struct node Node;
-
-typedef struct {
-	short size;
-	uint8_t align;
-	char letter;
-	uint8_t flags;
-} Type;
-
-struct symbol {
-	char *name;
-	bool public : 1;
-	bool extrn : 1;
-	char type;
-	union {
-		struct {
-			Type type;
-			char sclass;
-			short off;
-		} v;
-		struct {
-			short addr;
-		} l;
-		struct {
-			short locals;
-			short params;
-			Node **body;
-		} f;
-	} u;
-};
-
-struct node {
-	char op;
-	char subop;
-	Type type;
-	uint8_t complex;
-	uint8_t addable;
-	union {
-		Symbol *sym;
-		TINT imm;
-		char reg;
-	} u;
-	struct node *left, *right;
-};
-
-enum nerrors {
-	EINTNUM,       /* too much internal identifiers */
-	EEXTNUM,       /* too much external identifiers */
-	EPARNUM,       /* too much parameters */
-	ENODEOV,       /* node overflow */
-	ESTACKO,       /* stack overflow */
-	ESTACKU,       /* stack underflow */
-	EEXPROV,       /* expression overflow */
-	ETYPERR,       /* incorrect type in expression */
-	EEXPBAL,       /* expression not balanced */
-	ESYNTAX,       /* syntax error */
-	ELNLINE,       /* line too long */
-	EFERROR,       /* error reading from file:%s*/
-	ENUMERR
-};
-
+#define NONE       0
 #define FUN        0
 #define VAR        1
 #define EFUN       2
@@ -102,22 +41,93 @@ enum nerrors {
 #define ADDABLE 10
 
 
+typedef struct symbol Symbol;
+typedef struct node Node;
+
+typedef struct {
+	short size;
+	uint8_t align;
+	char letter;
+	uint8_t flags;
+} Type;
+
+struct symbol {
+	char *name;
+	bool public : 1;
+	bool extrn : 1;
+	char type;
+	union {
+		struct {
+			Type type;
+			char sclass;
+			short off;
+		} v;
+		struct {
+			short addr;
+		} l;
+		struct {
+			short locals;
+			short params;
+			Node **body;
+		} f;
+	} u;
+};
+
+struct node {
+	char op;
+	char subop;
+	Type type;
+	uint8_t complex;
+	uint8_t addable;
+	uint8_t kind;
+	union {
+		Symbol *sym;
+		/* TODO: Admit inmediate of other type */
+		TINT imm;
+		uint8_t reg;
+	} u;
+	struct node *left, *right;
+};
+
+enum nerrors {
+	EINTNUM,       /* too much internal identifiers */
+	EEXTNUM,       /* too much external identifiers */
+	EPARNUM,       /* too much parameters */
+	ENODEOV,       /* node overflow */
+	ESTACKO,       /* stack overflow */
+	ESTACKU,       /* stack underflow */
+	EEXPROV,       /* expression overflow */
+	ETYPERR,       /* incorrect type in expression */
+	EEXPBAL,       /* expression not balanced */
+	ESYNTAX,       /* syntax error */
+	ELNLINE,       /* line too long */
+	EFERROR,       /* error reading from file:%s*/
+	ENUMERR
+};
+
+
+
 enum {
-	PUSH, POP, LD, ADD, RET, ADDI, LDI, ADDX, ADCX, LDX,
-	LDFX
+	LDW, LDL, LDH, MOV, ADD, PUSH, POP, RET, NOP
 };
 
 enum {
 	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
-	IXL, IXH, F, I, SP, AF, HL, DE, BC, IX, IY
+	SP = NREGS, AF, HL, DE, BC, IX, IY
 };
 
+extern Type Funct, l_int8,  l_int16,  l_int32,  l_int64,
+                   l_uint8, l_uint16, l_uint32, l_uint64;
+
+/*TODO: separate functions for file */
 extern void error(unsigned nerror, ...);
 extern Node *genaddable(Node *np);
 extern void generate(Symbol *fun);
 extern void genstack(Symbol *fun);
 extern void apply(Node *list[], Node *(*fun)(Node *));
 extern Symbol *parse(void);
-extern void code(char op, ...);
+extern void code(uint8_t op, Node *to, Node *from);
 extern Node *optimize(Node *np);
 extern void prtree(Node *np);
+extern Node *imm(TINT i, Type *tp);
+extern void writeout(void);

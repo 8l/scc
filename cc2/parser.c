@@ -161,6 +161,18 @@ newnode(void)
 	return newp++;
 }
 
+
+Node *
+imm(TINT i, Type *tp)
+{
+	Node *np = newnode();
+
+	np->op = CONST;
+	np->type = *tp;
+	np->u.imm = i;
+	np->left = np->right = NULL;
+}
+
 static void
 push(Node *np)
 {
@@ -249,13 +261,7 @@ paramvar(char *token)
 static void
 immediate(char *token)
 {
-	Node *np = newnode();
-
-	np->op = CONST;
-	np->type = *gettype(token+1);
-	np->u.imm = atoi(token+2);
-	np->left = np->right = NULL;
-	push(np);
+	push(imm(atoi(token+2), gettype(token+1)));
 }
 
 static void
