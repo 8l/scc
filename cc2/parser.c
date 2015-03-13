@@ -163,11 +163,11 @@ prtree(Node *np)
 }
 
 void
-apply(Node *list[], Node *(*fun)(Node *))
+apply(Node *(*fun)(Node *))
 {
-	Node *np;
+	Node **list, *np;
 
-	while (np = *list)
+	for (list = curfun->u.f.body; np = *list; ++list)
 		*list++ = (*fun)(np);
 }
 
@@ -503,7 +503,7 @@ localdcl(char *token)
 	sym->u.v.off = 1-curfun->u.f.locals;
 }
 
-Symbol *
+void
 parse(void)
 {
 	void (*fun)(char *tok);
@@ -537,17 +537,8 @@ parse(void)
 			fun = globdcl;
 			break;
 		case '}':
-			if (!curfun)
-				error(ESYNTAX);
-			return curfun;
-		case EOF:
-			if (ferror(stdin))
-				error(EFERROR, strerror(errno));
 			if (curfun)
-				goto syntax_error;
-			return NULL;
-		case '\n':
-			continue;
+				return;
 		default:
 			goto syntax_error;
 		}
@@ -562,11 +553,6 @@ parse(void)
 		(*fun)(strtok(line, "\t"));
 	}
 
-found_eof:
-
-
-	if (!curfun)
-		return curfun;
 syntax_error:
 	error(ESYNTAX);
 }

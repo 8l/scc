@@ -260,20 +260,20 @@ applycgen(Node *np)
 }
 
 void
-generate(Symbol *fun)
+generate(void)
 {
 	extern char odebug;
-	char frame = fun->u.f.locals != 0 || odebug;
+	char frame = curfun->u.f.locals != 0 || odebug;
 
 	if (frame) {
 		code(PUSH, NULL, regs[IX]);
 		code(MOV, regs[IX], regs[SP]);
-		code(MOV, regs[HL], imm(-fun->u.f.locals, &l_int16));
+		code(MOV, regs[HL], imm(-curfun->u.f.locals, &l_int16));
 		code(ADD, regs[HL], regs[SP]);
 		code(MOV, regs[SP], regs[HL]);
 	}
 
-	apply(fun->u.f.body, applycgen);
+	apply(applycgen);
 
 	if (frame) {
 		code(MOV, regs[SP], regs[IX]);
@@ -339,4 +339,10 @@ genaddable(Node *np)
 	if (np->complex == 0)
 		++np->complex;
 	return np;
+}
+
+void
+addable(void)
+{
+	apply(genaddable);
 }

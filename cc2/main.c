@@ -25,15 +25,29 @@ error(unsigned nerror, ...)
 	exit(EXIT_FAILURE);
 }
 
+bool
+moreinput(void)
+{
+	int c;
+
+repeat:
+	if (feof(stdin))
+		return 0;
+	if ((c = getchar()) == '\n' || c == EOF)
+		goto repeat;
+	ungetc(c, stdin);
+	return 1;
+}
+
 int
 main(void)
 {
-	Symbol *fun;
-
-	while (!feof(stdin) && (fun = parse())) {
-		apply(fun->u.f.body, optimize);
-		apply(fun->u.f.body, genaddable);
-		generate(fun);
+	while (moreinput()) {
+		parse();
+		optimize();
+		addable();
+		generate();
 		writeout();
 	}
+	return 0;
 }

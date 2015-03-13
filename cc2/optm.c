@@ -37,9 +37,15 @@ repeat:
 	return np;			
 }
 
-Node *
-optimize(Node *np)
+static Node *
+opt(Node *np)
 {
 	np = optcasts(np, &np->type);
 	return np;
+}
+
+void
+optimize(void)
+{
+	apply(opt);
 }
