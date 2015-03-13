@@ -50,7 +50,6 @@ allocreg(Node *np)
 static void
 move(Node *np)
 {
-	Type *tp = &np->type;
 	Symbol *sym;
 	char reg;
 
@@ -59,7 +58,7 @@ move(Node *np)
 	switch (np->op) {
 	case AUTO:
 		sym = np->u.sym;
-		switch (tp->size) {
+		switch (np->type.size) {
 		case 1:
 			code(LDFX, reg, IX, sym->u.v.off);
 			break;
