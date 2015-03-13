@@ -1,6 +1,3 @@
-#ifndef CC1_H
-#define CC1_H
-
 
 
 struct user_opt {
@@ -188,5 +185,3 @@ extern void freetree(Node *np);
 
 extern Node *expr(void);
 extern void extdecl(void), decl(void);
-
-#endif
