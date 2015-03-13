@@ -88,6 +88,62 @@ Type l_uint64 = {
 	.flags =  INTF
 };
 
+static void cast(char *), operator(char *), assignment(char *), increment(char *),
+            globvar(char *), localvar(char *), paramvar(char *), label(char *),
+            immediate(char *), unary(char *);
+
+static void (*optbl[])(char *) = {
+	[L_INT8] = cast,
+	[L_INT16] = cast,
+	[L_INT32] = cast,
+	[L_INT64] = cast,
+	[L_UINT8] = cast,
+	[L_UINT16] = cast,
+	[L_UINT32] = cast,
+	[L_UINT64] = cast,
+	[L_BOOL] = cast,
+	[L_FLOAT] = cast,
+	[L_DOUBLE] = cast,
+	[L_LDOUBLE] = cast,
+	[L_POINTER] = cast,
+	[L_VOID] = cast,
+	['+'] = operator,
+	['%'] = operator,
+	['-'] = operator,
+	['*'] = operator,
+	['/'] = operator,
+	['l'] = operator,
+	['r'] = operator,
+	['&'] = operator,
+	['|'] = operator,
+	['^'] = operator,
+	[':'] = assignment,
+	[';'] = increment,
+	['Y'] = globvar,
+	['A'] = localvar,
+	['K'] = localvar,
+	['T'] = localvar,
+	['G'] = globvar,
+	['P'] = paramvar,
+	['L'] = label,
+	['#'] = immediate,
+	['@'] = unary,
+	['a'] = unary,
+	['<'] = operator,
+	['>'] = operator,
+	[']'] = operator,
+	['['] = operator,
+	['='] = operator,
+	['!'] = unary,
+	['y'] = NULL,
+	['j'] = NULL,
+	['o'] = operator,
+	['_'] = unary,
+	['~'] = unary,
+	[','] = operator,
+	['\177'] = NULL
+};
+
 
 static void
 prnode(Node *np)
@@ -347,58 +403,6 @@ cast(char *token)
 	np->type = *gettype(token+1);
 	push(np);
 }
-
-static void (*optbl[])(char *) = {
-	[L_INT8] = cast,
-	[L_INT16] = cast,
-	[L_INT32] = cast,
-	[L_INT64] = cast,
-	[L_UINT8] = cast,
-	[L_UINT16] = cast,
-	[L_UINT32] = cast,
-	[L_UINT64] = cast,
-	[L_BOOL] = cast,
-	[L_FLOAT] = cast,
-	[L_DOUBLE] = cast,
-	[L_LDOUBLE] = cast,
-	[L_POINTER] = cast,
-	[L_VOID] = cast,
-	['+'] = operator,
-	['%'] = operator,
-	['-'] = operator,
-	['*'] = operator,
-	['/'] = operator,
-	['l'] = operator,
-	['r'] = operator,
-	['&'] = operator,
-	['|'] = operator,
-	['^'] = operator,
-	[':'] = assignment,
-	[';'] = increment,
-	['Y'] = globvar,
-	['A'] = localvar,
-	['K'] = localvar,
-	['T'] = localvar,
-	['G'] = globvar,
-	['P'] = paramvar,
-	['L'] = label,
-	['#'] = immediate,
-	['@'] = unary,
-	['a'] = unary,
-	['<'] = operator,
-	['>'] = operator,
-	[']'] = operator,
-	['['] = operator,
-	['='] = operator,
-	['!'] = unary,
-	['y'] = NULL,
-	['j'] = NULL,
-	['o'] = operator,
-	['_'] = unary,
-	['~'] = unary,
-	[','] = operator,
-	['\177'] = NULL
-};
 
 static void
 expression(char *token)
