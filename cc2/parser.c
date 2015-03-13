@@ -411,7 +411,7 @@ expression(char *token)
 		error(ESYNTAX);
 
 	do {
-		if ((c = token[0]) > 0x1f || (fun = optbl[c]) == NULL)
+		if ((c = token[0]) > 0x7f || (fun = optbl[c]) == NULL)
 			error(ESYNTAX);
 		(*fun)(token);
 	} while (token = strtok(NULL, "\t"));
