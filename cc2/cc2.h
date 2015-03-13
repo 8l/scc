@@ -119,15 +119,22 @@ enum {
 extern Type Funct, l_int8,  l_int16,  l_int32,  l_int64,
                    l_uint8, l_uint16, l_uint32, l_uint64;
 
-/*TODO: separate functions for file */
+/* main.c */
 extern void error(unsigned nerror, ...);
+
+/* cgen.c */
 extern Node *genaddable(Node *np);
 extern void generate(Symbol *fun);
-extern void genstack(Symbol *fun);
 extern void apply(Node *list[], Node *(*fun)(Node *));
+
+/* parser.c */
 extern Symbol *parse(void);
-extern void code(uint8_t op, Node *to, Node *from);
-extern Node *optimize(Node *np);
 extern void prtree(Node *np);
-extern Node *imm(TINT i, Type *tp);
+
+/* code.c */
+extern void code(uint8_t op, Node *to, Node *from);
 extern void writeout(void);
+
+/* optm.c */
+extern Node *optimize(Node *np);
+extern Node *imm(TINT i, Type *tp);
