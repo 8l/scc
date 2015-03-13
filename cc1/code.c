@@ -119,7 +119,7 @@ emitvar(Symbol *sym)
 	else if (sym->isglobal)
 		c = 'G';
 	else if (sym->isregister)
-		c = 'R';
+		c = 'K';
 	else if (sym->isfield)
 		c = 'M';
 	else if (sym->isparameter)
