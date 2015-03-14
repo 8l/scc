@@ -162,6 +162,71 @@ conmute(Node *np)
 }
 
 static void
+add(Node *np, Node *lp, Node *rp)
+{
+	switch (np->type.size) {
+	case 1:
+		if (rp->u.reg == A) {
+			conmute(np);
+			lp = np->left;
+			rp = np->right;
+		} else if (lp->u.reg != A) {
+			/* TODO: Move A to variable */
+			code(PUSH, NULL, lp);
+			code(LDL, regs[A], lp);
+		}
+		code(ADD, regs[A], rp);
+		np->op = REG;
+		np->u.reg = A;
+		break;
+	case 2:
+		if (rp->u.reg == HL || rp->u.reg == IY) {
+			conmute(np);
+			lp = np->left;
+			rp = np->right;
+		} else if (lp->u.reg != HL && lp->u.reg != IY) {
+			/* TODO: Move HL to variable */
+			code(PUSH, NULL, lp);
+			code(LDL, regs[L], lp);
+			code(LDH, regs[H], lp);
+		}
+		code(ADD, lp, rp);
+		np->op = REG;
+		np->u.reg = lp->u.reg;
+		break;
+	case 4:
+	case 8:
+		abort();
+	}
+}
+
+static void
+assign(Node *np, Node *lp, Node *rp)
+{
+	switch (np->type.size) {
+	case 1:
+		switch (lp->op) {
+		case AUTO:
+			code(LDL, rp, lp);
+			break;
+		case REG:
+		case MEM:
+		default:
+			abort();
+		}
+		break;
+	default:
+		abort();
+	}
+}
+
+
+static void (*opnodes[])(Node *, Node *, Node *) = {
+	[OADD] = add,
+	[OASSIG] = assign
+};
+
+static void
 cgen(Node *np, Node *parent)
 {
 	Node *lp, *rp;
@@ -193,63 +258,7 @@ cgen(Node *np, Node *parent)
 		cgen(q, np);
 	}
 
-	switch (np->op) {
-	case OADD:
-		switch (np->type.size) {
-		case 1:
-			if (rp->u.reg == A) {
-				conmute(np);
-				lp = np->left;
-				rp = np->right;
-			} else if (lp->u.reg != A) {
-				/* TODO: Move A to variable */
-				code(PUSH, NULL, lp);
-				code(LDL, regs[A], lp);
-			}
-			code(ADD, regs[A], rp);
-			np->op = REG;
-			np->u.reg = A;
-			break;
-		case 2:
-			if (rp->u.reg == HL || rp->u.reg == IY) {
-				conmute(np);
-				lp = np->left;
-				rp = np->right;
-			} else if (lp->u.reg != HL && lp->u.reg != IY) {
-				/* TODO: Move HL to variable */
-				code(PUSH, NULL, lp);
-				code(LDL, regs[L], lp);
-				code(LDH, regs[H], lp);
-			}
-			code(ADD, lp, rp);
-			np->op = REG;
-			np->u.reg = lp->u.reg;
-			break;
-		case 4:
-		case 8:
-			abort();
-		}
-		break;
-	case OASSIG:
-		switch (np->type.size) {
-		case 1:
-			switch (lp->op) {
-			case AUTO:
-				code(LDL, rp, lp);
-				break;
-			case REG:
-			case MEM:
-			default:
-				abort();
-			}
-			break;
-		default:
-			abort();
-		}
-		break;
-	default:
-		abort();
-	}
+	(*opnodes[np->op])(np, lp, rp);
 }
 
 static Node *
