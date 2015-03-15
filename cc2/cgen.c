@@ -8,7 +8,7 @@
 #include "cc2.h"
 
 
-static bool reguse[NREGS];
+static Node *reguse[NREGS];
 static char upper[] = {[DE] = D, [HL] = H, [BC] = B,  [IY] = IYH};
 static char lower[] = {[DE] = E, [HL] = L, [BC] = C, [IY] = IYL};
 
@@ -88,7 +88,7 @@ static char
 allocreg(Node *np)
 {
 	static char reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
-	static char reg16[] = {BC, HL, DE, IY, 0};
+	static char reg16[] = {BC, DE, IY, 0};
 	char *bp, c;
 
 	switch (np->type.size) {
@@ -96,7 +96,7 @@ allocreg(Node *np)
 		for (bp = reg8; (c = *bp); ++bp) {
 			if (reguse[c])
 				continue;
-			reguse[c] = 1;
+			reguse[c] = np;
 			return c;
 		}
 		/* TODO: Move variable to stack using PUSH/POP */
@@ -107,8 +107,7 @@ allocreg(Node *np)
 
 			if (reguse[u] || reguse[l])
 				continue;
-			reguse[l] = 1;
-			reguse[u];
+			reguse[u] = reguse[l] = np;
 			return c;
 		}
 		/* TODO: Move variable to stack using PUSH/POP */
