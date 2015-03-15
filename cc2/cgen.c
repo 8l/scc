@@ -292,7 +292,7 @@ generate(void)
 
 /*
  * This is strongly influenced by
- * http://plan9.bell-labs.com/sys/doc/compiler.ps
+ * http://plan9.bell-labs.com/sys/doc/compiler.ps (/sys/doc/compiler.ps)
  * calculate addresability as follows
  *     AUTO => 11          value+fp
  *     REGISTER => 13      register
