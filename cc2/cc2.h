@@ -108,7 +108,7 @@ enum nerrors {
 
 
 enum {
-	LDW, LDL, LDH, MOV, ADD, PUSH, POP, RET, NOP
+	LDW, LDL, LDH, MOV, ADD, PUSH, POP, RET, NOP, INC
 };
 
 enum {

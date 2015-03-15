@@ -29,7 +29,8 @@ static void (*instcode[])(void) = {
 	[PUSH] = inst1,
 	[POP] = inst1,
 	[RET] = inst0,
-	[NOP] = inst0
+	[NOP] = inst0,
+	[INC] = inst1
 };
 
 static char *insttext[] = {
@@ -41,7 +42,8 @@ static char *insttext[] = {
 	[PUSH] = "PUSH",
 	[POP] = "POP",
 	[RET] = "RET",
-	[NOP] = "NOP"
+	[NOP] = "NOP",
+	[INC] = "INC"
 };
 
 typedef struct inst Inst;
