@@ -507,8 +507,12 @@ static void
 localdcl(char *token)
 {
 	Symbol *sym = declaration(LOCAL, token[0], token);
-	curfun->u.f.locals += sym->u.v.type.size;
-	sym->u.v.off = 1-curfun->u.f.locals;
+	char sclass = *token;
+
+	if (sclass == 'A' || sclass == 'R') {
+		curfun->u.f.locals += sym->u.v.type.size;
+		sym->u.v.off = 1-curfun->u.f.locals;
+	}
 }
 
 void
