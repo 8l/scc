@@ -122,8 +122,17 @@ moveto(Node *np, uint8_t reg)
 	Symbol *sym;
 
 	switch (np->op) {
-	case AUTO:
 	case CONST:
+		switch (np->type.size) {
+		case 1:
+		case 2:
+			code(LDI, regs[reg], np);
+			break;
+		default:
+			abort();
+		}
+		break;
+	case AUTO:
 		sym = np->u.sym;
 		switch (np->type.size) {
 		case 1:
