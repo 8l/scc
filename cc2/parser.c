@@ -511,7 +511,7 @@ localdcl(char *token)
 
 	if (sclass == 'A' || sclass == 'R') {
 		curfun->u.f.locals += sym->u.v.type.size;
-		sym->u.v.off = 1-curfun->u.f.locals;
+		sym->u.v.off = curfun->u.f.locals;
 	}
 }
 
