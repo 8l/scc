@@ -97,6 +97,9 @@ addr(char op, Node *np, Addr *addr)
 	case AUTO:
 		addr->u.i = np->u.sym->u.v.off;
 		break;
+	case MEM:
+		addr->u.sym = np->u.sym;
+		break;
 	default:
 		abort();
 	}
@@ -127,7 +130,9 @@ writeout(void)
 
 static void
 addr2txt(Addr *a)
-{	
+{
+	Symbol *sym;
+
 	switch (a->kind) {
 	case REG:
 		fputs(regnames[a->u.reg], stdout);
@@ -135,11 +140,17 @@ addr2txt(Addr *a)
 	case CONST:
 		printf("%d", a->u.i);
 		break;
+	case PAR:
 	case AUTO:
 		printf("(IX+%d)", a->u.i);
 		break;
 	case MEM:
-	case PAR:
+		sym = a->u.sym;
+		if (sym->name)
+			printf("(%s)", sym);
+		else
+			printf("(T%u)", sym->id);
+		break;
 	default:
 		abort();
 	}

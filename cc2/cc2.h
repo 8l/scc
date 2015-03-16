@@ -56,6 +56,7 @@ struct symbol {
 	bool public : 1;
 	bool extrn : 1;
 	char type;
+	unsigned short id;
 	union {
 		struct {
 			Type type;

@@ -175,38 +175,47 @@ static Symbol *
 parameter(char *num)
 {
 	static Symbol tbl[NR_FUNPARAM];
+	Symbol *sym;
 	unsigned i = atoi(num);
 
 	if (!curfun)
 		error(ESYNTAX);
 	if (i >= NR_FUNPARAM)
 		error(EPARNUM);
-	return &tbl[i];
+	sym = &tbl[i];
+	sym->id = i;
+	return sym;
 }
 
 static Symbol *
 local(char *num)
 {
 	static Symbol tbl[NR_INT_IDENT];
+	Symbol *sym;
 	unsigned i = atoi(num);
 
 	if (!curfun)
 		error(ESYNTAX);
 	if (i >= NR_INT_IDENT)
 		error(EINTNUM);
-	return &tbl[i];
+	sym = &tbl[i];
+	sym->id = i;
+	return sym;
 }
 
 static Symbol *
 global(char *num)
 {
 	static Symbol tbl[NR_EXT_IDENT];
+	Symbol *sym;
 	unsigned i = atoi(num);
 
 	if (i >= NR_EXT_IDENT)
 		error(EEXTNUM);
 
-	return &tbl[i];
+	sym = &tbl[i];
+	sym->id = i;
+	return sym;
 }
 
 static Node *
@@ -446,8 +455,7 @@ declaration(uint8_t t, char class, char *token)
 	Symbol *sym = symbol(t, token);
 	char *s;
 
-	if (sym->name)
-		free(sym->name);
+	free(sym->name);
 	memset(sym, 0, sizeof(*sym));
 	sym->type = VAR;
 	sym->u.v.sclass = class;
