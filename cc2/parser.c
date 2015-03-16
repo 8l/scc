@@ -508,7 +508,11 @@ localdcl(char *token)
 	char sclass = *token;
 
 	if (sclass == 'A' || sclass == 'R') {
-		curfun->u.f.locals += sym->u.v.type.size;
+		uint8_t size = sym->u.v.type.size;
+		/* stack elements are 2 byte multiple */
+		if (size == 1)
+			++size;
+		curfun->u.f.locals += size;
 		sym->u.v.off = curfun->u.f.locals;
 	}
 }
