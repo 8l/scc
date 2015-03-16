@@ -142,7 +142,7 @@ addr2txt(Addr *a)
 		break;
 	case PAR:
 	case AUTO:
-		printf("(IX+%d)", a->u.i);
+		printf("(IX%+d)", a->u.i);
 		break;
 	case INDEX:
 		fputs("(HL)", stdout);
