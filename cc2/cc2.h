@@ -3,9 +3,6 @@
 #define INTF  2
 
 #define NONE       0
-#define FUN        0
-#define VAR        1
-#define EFUN       2
 #define AUTO      'A'
 #define REG       'R'
 #define MEM       'T'
@@ -54,12 +51,10 @@ typedef struct {
 } Type;
 
 struct symbol {
+	unsigned short id;
 	char *name;
 	bool public : 1;
 	bool extrn : 1;
-	char type;
-	unsigned short id;
-	uint8_t reg;
 	union {
 		struct {
 			Type type;
@@ -83,7 +78,6 @@ struct node {
 	Type type;
 	uint8_t complex;
 	uint8_t addable;
-	uint8_t kind;
 	union {
 		Symbol *sym;
 		/* TODO: Admit inmediate of other type */

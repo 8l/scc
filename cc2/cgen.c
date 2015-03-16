@@ -159,7 +159,6 @@ moveto(Node *np, uint8_t reg)
 		abort();
 	}
 	np->op = REG;
-	sym->reg = np->u.reg = reg;
 }
 
 static void

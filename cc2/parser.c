@@ -92,6 +92,8 @@ static void cast(char *), operator(char *), assignment(char *), increment(char *
             globvar(char *), localvar(char *), paramvar(char *), label(char *),
             immediate(char *), unary(char *);
 
+/*TODO: Remove hardcoded symbols */
+
 static void (*optbl[])(char *) = {
 	[L_INT8] = cast,
 	[L_INT16] = cast,
@@ -143,7 +145,6 @@ static void (*optbl[])(char *) = {
 	[','] = operator,
 	['\177'] = NULL
 };
-
 
 static void
 prnode(Node *np)
@@ -445,7 +446,6 @@ deflabel(char *token)
 	if (!curfun)
 		error(ESYNTAX);
 	sym = local(token);
-	sym->type = LABEL;
 	sym->u.l.addr = listp - listexp;
 }
 
@@ -457,7 +457,6 @@ declaration(uint8_t t, char class, char *token)
 
 	free(sym->name);
 	memset(sym, 0, sizeof(*sym));
-	sym->type = VAR;
 	sym->u.v.sclass = class;
 
 	if ((s = strtok(NULL, "\t")) == NULL)
@@ -489,7 +488,6 @@ globdcl(char *token)
 	if (curfun)
 		error(ESYNTAX);
 
-	sym->type = FUN;
 	curfun = sym;
 	sym->u.f.body = listp = listexp;
 	newp = nodepool;
