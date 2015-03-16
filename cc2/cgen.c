@@ -350,21 +350,27 @@ void
 generate(void)
 {
 	extern char odebug;
-	char frame = curfun->u.f.locals != 0 || odebug;
+	uint8_t i, size = curfun->u.f.locals;
+	char frame =  size != 0 || odebug;
 
 	if (frame) {
-		code(PUSH, NULL, regs[IX]);
-		code(MOV, regs[IX], regs[SP]);
-		code(MOV, regs[HL], imm(-curfun->u.f.locals, &l_int16));
-		code(ADD, regs[HL], regs[SP]);
-		code(MOV, regs[SP], regs[HL]);
+		code(PUSH, NULL, &reg_IX);
+		code(MOV, &reg_IX, &reg_SP);
+		if (size > 6) {
+			code(MOV, &reg_HL, imm(-size, &l_int16));
+			code(ADD, &reg_HL, &reg_SP);
+			code(MOV, &reg_SP, &reg_HL);
+		} else {
+			for (i = size; i != 0; i-= 2)
+				code(PUSH, NULL, &reg_HL);
+		}
 	}
 
 	apply(applycgen);
 
 	if (frame) {
-		code(MOV, regs[SP], regs[IX]);
-		code(POP, regs[IX], NULL);
+		code(MOV, &reg_SP, &reg_IX);
+		code(POP, &reg_IX, NULL);
 		code(RET, NULL, NULL);
 	}
 }
