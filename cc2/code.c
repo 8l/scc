@@ -144,6 +144,9 @@ addr2txt(Addr *a)
 	case AUTO:
 		printf("(IX+%d)", a->u.i);
 		break;
+	case INDEX:
+		fputs("(HL)", stdout);
+		break;
 	case MEM:
 		sym = a->u.sym;
 		if (sym->name)

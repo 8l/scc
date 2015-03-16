@@ -11,6 +11,7 @@
 #define MEM       'T'
 #define PAR       'P'
 #define CONST     '#'
+#define INDEX     'I'
 #define LABEL     'L'
 #define OADD      '+'
 #define OSUB      '-'
