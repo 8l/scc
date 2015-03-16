@@ -11,6 +11,13 @@
 static Node *reguse[NREGS];
 static char upper[] = {[DE] = D, [HL] = H, [BC] = B,  [IY] = IYH};
 static char lower[] = {[DE] = E, [HL] = L, [BC] = C, [IY] = IYL};
+static char pair[] = {
+	[A] = A,
+	[H] = HL, [L] = HL,
+	[B] = BC, [C] = BC,
+	[D] = DE, [E] = DE,
+	[IYL] = IY, [IYH] = IY
+};
 
 Node
 reg_E = {
@@ -162,10 +169,17 @@ move(Node *np)
 }
 
 static void
-push(Node *np)
+push(uint8_t reg)
 {
-	code(PUSH, NULL, np);
-	np->op = PUSHED;
+	Node *np;
+
+	if (reg < NREGS)
+		reg = pair[reg];
+	if ((np = reguse[lower[reg]]) != NULL)
+		np->op = PUSHED;
+	if ((np = reguse[upper[reg]]) != NULL)
+		np->op = PUSHED;
+	code(PUSH, NULL, regs[reg]);
 }
 
 static void
@@ -174,12 +188,12 @@ accum(Node *np)
 	switch (np->type.size) {
 	case 1:
 		if (reguse[A])
-			push(reguse[A]);
+			push(A);
 		moveto(np, A);
 		break;
 	case 2:
 		if (reguse[H] || reguse[L])
-			push(&reg_HL);
+			push(HL);
 		moveto(np, HL);
 		break;
 	case 4:
@@ -192,7 +206,7 @@ static void
 index(Node *np)
 {
 	if (reguse[H] || reguse[L])
-		push(&reg_HL);
+		push(HL);
 	code(LDI, &reg_HL, np);
 	reguse[H] = reguse[L] = np;
 	np->op = INDEX;
