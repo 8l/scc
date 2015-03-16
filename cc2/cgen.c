@@ -117,15 +117,13 @@ allocreg(Node *np)
 }
 
 static void
-move(Node *np)
+moveto(Node *np, uint8_t reg)
 {
 	Symbol *sym;
-	char reg;
-
-	reg = allocreg(np);
 
 	switch (np->op) {
 	case AUTO:
+	case CONST:
 		sym = np->u.sym;
 		switch (np->type.size) {
 		case 1:
@@ -144,9 +142,50 @@ move(Node *np)
 	default:
 		abort();
 	}
-	/* TODO: Update symbol  if necessary */
 	np->op = REG;
-	np->u.reg = reg;
+	sym->reg = np->u.reg = reg;
+}
+
+static void
+move(Node *np)
+{
+	moveto(np, allocreg(np));
+}
+
+static void
+push(Node *np)
+{
+	code(PUSH, NULL, np);
+	np->op = PUSHED;
+}
+
+static void
+accum(Node *np)
+{
+	switch (np->type.size) {
+	case 1:
+		if (reguse[A])
+			push(reguse[A]);
+		moveto(np, A);
+		break;
+	case 2:
+		if (reguse[H] || reguse[L])
+			push(&reg_HL);
+		moveto(np, HL);
+		break;
+	case 4:
+	case 8:
+		abort();
+	}
+}
+
+static void
+index(Node *np)
+{
+	if (reguse[H] || reguse[L])
+		push(&reg_HL);
+	code(MOV, &reg_HL, np);
+	np->op = INDEX;
 }
 
 static void
@@ -161,38 +200,71 @@ conmute(Node *np)
 }
 
 static void
-add(Node *np, Node *lp, Node *rp)
+add(Node *np)
 {
+	Node *lp = np->left, *rp = np->right;
+
+	if (rp->op == REG || lp->op == CONST) {
+		conmute(np);
+		lp = np->left;
+		rp = np->right;
+	}
 	switch (np->type.size) {
 	case 1:
-		if (rp->u.reg == A) {
-			conmute(np);
-			lp = np->left;
-			rp = np->right;
-		} else if (lp->u.reg != A) {
-			/* TODO: Move A to variable */
-			code(PUSH, NULL, lp);
-			code(LDL, regs[A], lp);
+		switch (lp->op) {
+		case PAR:
+		case AUTO:
+			switch (rp->op) {
+			case MEM:
+				index(rp);
+			case PAR:
+			case AUTO:
+			case CONST:
+				accum(lp);
+				break;
+			default:
+				abort();
+			}
+			break;
+		case MEM:
+			if (reguse[A]) {
+				switch (rp->op) {
+				case PAR:
+				case AUTO:
+				case CONST:
+					break;
+				case MEM:
+					index(rp);
+					goto add_A;
+				default:
+					abort();
+				}
+			}
+			accum(lp);
+			break;
+		case REG:
+			if (lp->u.reg != A)
+				moveto(lp, A);
+			switch (rp->op) {
+			case REG:
+			case AUTO:
+			case PAR:
+			case CONST:
+			case MEM:
+				break;
+			default:
+				abort();
+			}		
+			break;			
+		default:
+			abort();
 		}
-		code(ADD, regs[A], rp);
+	add_A:
+		code(ADD, lp, rp);
 		np->op = REG;
 		np->u.reg = A;
 		break;
 	case 2:
-		if (rp->u.reg == HL || rp->u.reg == IY) {
-			conmute(np);
-			lp = np->left;
-			rp = np->right;
-		} else if (lp->u.reg != HL && lp->u.reg != IY) {
-			/* TODO: Move HL to variable */
-			code(PUSH, NULL, lp);
-			code(LDL, regs[L], lp);
-			code(LDH, regs[H], lp);
-		}
-		code(ADD, lp, rp);
-		np->op = REG;
-		np->u.reg = lp->u.reg;
-		break;
 	case 4:
 	case 8:
 		abort();
@@ -200,13 +272,15 @@ add(Node *np, Node *lp, Node *rp)
 }
 
 static void
-assign(Node *np, Node *lp, Node *rp)
+assign(Node *np)
 {
+	Node *lp = np->left, *rp = np->right;
+
 	switch (np->type.size) {
 	case 1:
 		switch (lp->op) {
 		case AUTO:
-			code(LDL, rp, lp);
+			code(LDL, lp, rp);
 			break;
 		case REG:
 		case MEM:
@@ -220,7 +294,7 @@ assign(Node *np, Node *lp, Node *rp)
 }
 
 
-static void (*opnodes[])(Node *, Node *, Node *) = {
+static void (*opnodes[])(Node *) = {
 	[OADD] = add,
 	[OASSIG] = assign
 };
@@ -229,20 +303,15 @@ static void
 cgen(Node *np, Node *parent)
 {
 	Node *lp, *rp;
-	TINT imm;
 
 	if (!np)
 		return;
 
+	if (np->addable >= ADDABLE)
+		return;
+
 	lp = np->left;
 	rp = np->right;
-	if (np->addable >= ADDABLE) {
-		if (parent && parent->op == OASSIG)
-			return;
-		move(np);
-		return;
-	}
-
 	if (!lp) {
 		cgen(rp, np);
 	} else if (!rp) {
@@ -257,7 +326,7 @@ cgen(Node *np, Node *parent)
 		cgen(q, np);
 	}
 
-	(*opnodes[np->op])(np, lp, rp);
+	(*opnodes[np->op])(np);
 }
 
 static Node *

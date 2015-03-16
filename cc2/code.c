@@ -100,6 +100,8 @@ addr(char op, Node *np, Addr *addr)
 	case MEM:
 		addr->u.sym = np->u.sym;
 		break;
+	case INDEX:
+		break;
 	default:
 		abort();
 	}

@@ -11,6 +11,7 @@
 #define MEM       'T'
 #define PAR       'P'
 #define CONST     '#'
+#define PUSHED    'S'
 #define INDEX     'I'
 #define LABEL     'L'
 #define OADD      '+'
@@ -58,6 +59,7 @@ struct symbol {
 	bool extrn : 1;
 	char type;
 	unsigned short id;
+	uint8_t reg;
 	union {
 		struct {
 			Type type;
