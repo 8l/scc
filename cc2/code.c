@@ -133,9 +133,10 @@ writeout(void)
 }
 
 static void
-addr2txt(Addr *a)
+addr2txt(char op, Addr *a)
 {
 	Symbol *sym;
+	char *fmt;
 
 	switch (a->kind) {
 	case REG:
@@ -154,9 +155,9 @@ addr2txt(Addr *a)
 	case MEM:
 		sym = a->u.sym;
 		if (sym->name)
-			printf("(%s)", sym);
+			printf((op == LDI) ? "%s" : "(%s)", sym);
 		else
-			printf("(T%u)", sym->id);
+			printf((op == LDI) ? "T%u" : "(T%u)", sym->id);
 		break;
 	default:
 		abort();
@@ -172,17 +173,21 @@ inst0(void)
 static void
 inst1(void)
 {
-	printf("\t%s\t", insttext[pc->op]);
-	addr2txt((pc->to.kind != NONE) ? &pc->to : &pc->from);
+	char op = pc->op;
+
+	printf("\t%s\t", insttext[op]);
+	addr2txt(op, (pc->to.kind != NONE) ? &pc->to : &pc->from);
 	putchar('\n');
 }
 
 static void
 inst2(void)
 {
-	printf("\t%s\t", insttext[pc->op]);
-	addr2txt(&pc->to);
+	char op = pc->op;
+
+	printf("\t%s\t", insttext[op]);
+	addr2txt(op, &pc->to);
 	putchar(',');
-	addr2txt(&pc->from);
+	addr2txt(op, &pc->from);
 	putchar('\n');
 }

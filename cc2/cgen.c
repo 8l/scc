@@ -193,7 +193,8 @@ index(Node *np)
 {
 	if (reguse[H] || reguse[L])
 		push(&reg_HL);
-	code(MOV, &reg_HL, np);
+	code(LDI, &reg_HL, np);
+	reguse[H] = reguse[L] = np;
 	np->op = INDEX;
 }
 
