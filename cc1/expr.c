@@ -598,8 +598,8 @@ cast(void)
 		}
 		break;
 	default:
-		expect(')');
 		np2 = expr();
+		expect(')');
 		break;
 	}
 
