@@ -1,5 +1,3 @@
-#ifndef SIZES_H
-#define SIZES_H
 
 /*
  * 15 nesting levels of compound statements, iteration control
@@ -85,4 +83,3 @@
  * 32767 bytes in an object (in a hosted environment only)
  */
 #define OBJECTSIZ  32767
-#endif
