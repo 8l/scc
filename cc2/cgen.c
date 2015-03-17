@@ -1,5 +1,4 @@
 
-#include <assert.h>
 #include <stdarg.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -126,31 +125,31 @@ allocreg(Node *np)
 static void
 moveto(Node *np, uint8_t reg)
 {
-	Symbol *sym;
+	Symbol *sym = np->sym;
+	char op = np->op;
 
-	switch (np->op) {
-	case CONST:
-		switch (np->type.size) {
-		case 1:
-		case 2:
+	switch (np->type.size) {
+	case 1:
+		switch (op) {
+		case CONST:
 			code(LDI, regs[reg], np);
+			break;
+		case AUTO:
+			code(LDL, regs[reg], np);
 			break;
 		default:
 			abort();
 		}
 		break;
-	case AUTO:
-		sym = np->sym;
-		switch (np->type.size) {
-		case 1:
+	case 2:
+		switch (op) {
+		case CONST:
 			code(LDL, regs[reg], np);
 			break;
-		case 2:
+		case AUTO:
 			code(LDL, regs[lower[reg]], np);
 			code(LDH, regs[upper[reg]], np);
 			break;
-		case 4:
-		case 8:
 		default:
 			abort();
 		}
