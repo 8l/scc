@@ -25,18 +25,18 @@ static Node *listexp[NR_EXPRESSIONS], **listp;
 static Node nodepool[NR_NODEPOOL], *newp;
 
 
-Type Funct = {
+static Type Funct = {
 	.letter = L_FUNCTION,
 };
 
-Type l_int8 = {
+static Type l_int8 = {
 	.letter = L_INT8,
 	.size = 1,
 	.align = 2,
 	.flags = SIGNF | INTF
 };
 
-Type l_int16 = {
+static Type l_int16 = {
 	.letter = L_INT16,
 	.size = 2,
 	.align = 2,
@@ -44,7 +44,7 @@ Type l_int16 = {
 
 };
 
-Type l_int32 = {
+static Type l_int32 = {
 	.letter = L_INT32,
 	.size = 4,
 	.align = 4,
@@ -52,7 +52,7 @@ Type l_int32 = {
 
 };
 
-Type l_int64 = {
+static Type l_int64 = {
 	.letter = L_INT64,
 	.size = 8,
 	.align = 8,
@@ -60,28 +60,28 @@ Type l_int64 = {
 
 };
 
-Type l_uint8 = {
+static Type l_uint8 = {
 	.letter = L_UINT8,
 	.size = 1,
 	.align = 2,
 	.flags =  INTF
 };
 
-Type l_uint16 = {
+static Type l_uint16 = {
 	.letter = L_UINT16,
 	.size = 2,
 	.align = 2,
 	.flags =  INTF
 };
 
-Type l_uint32 = {
+static Type l_uint32 = {
 	.letter = L_UINT32,
 	.size = 4,
 	.align = 4,
 	.flags =  INTF
 };
 
-Type l_uint64 = {
+static Type l_uint64 = {
 	.letter = L_UINT64,
 	.size = 8,
 	.align = 8,
@@ -227,14 +227,13 @@ newnode(void)
 	return newp++;
 }
 
-
 Node *
-imm(TINT i, Type *tp)
+imm(TINT i)
 {
 	Node *np = newnode();
 
 	np->op = CONST;
-	np->type = *tp;
+	np->type = l_int16;
 	/* TODO: assign the integer to something */
 	np->left = np->right = NULL;
 }
@@ -327,7 +326,8 @@ paramvar(char *token)
 static void
 immediate(char *token)
 {
-	push(imm(atoi(token+2), gettype(token+1)));
+	/* TODO: check type of immediate */
+	push(imm(atoi(token+2)));
 }
 
 static void

@@ -147,4 +147,4 @@ extern void writeout(void);
 
 /* optm.c */
 extern void optimize(void);
-extern Node *imm(TINT i, Type *tp);
+extern Node *imm(TINT i);

@@ -375,7 +375,7 @@ generate(void)
 		code(PUSH, NULL, &reg_IX);
 		code(MOV, &reg_IX, &reg_SP);
 		if (size > 6) {
-			code(MOV, &reg_HL, imm(-size, &l_int16));
+			code(MOV, &reg_HL, imm(-size));
 			code(ADD, &reg_HL, &reg_SP);
 			code(MOV, &reg_SP, &reg_HL);
 		} else {
