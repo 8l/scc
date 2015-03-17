@@ -99,49 +99,55 @@ allocreg(Node *np)
 
 	switch (np->type.size) {
 	case 1:
-		for (bp = reg8; (c = *bp); ++bp) {
-			if (reguse[c])
-				continue;
-			return c;
-		}
+		bp = reg8;
 		break;
 	case 2:
-		for (bp = reg16; (c = *bp); ++bp) {
-			char u = upper[c], l = lower[c];
-
-			if (reguse[u] || reguse[l])
-				continue;
-			return c;
-		}
+		bp = reg16;
 		break;
+	default:
+		abort();
 	}
+	while (c = *bp++) {
+		if (reguse[c])
+			continue;
+		return c;
+	}
+	/* TODO: What to do here? */
 	abort();
 }
 
 static void
 moveto(Node *np, uint8_t reg)
 {
-	Symbol *sym = np->sym;
+	Node *r = regs[reg], *u = reguse[reg];
 	char op = np->op;
+
+	if (u) {
+		Symbol *sym = np->sym;
+		if (op == u->op && sym && sym == u->sym)
+			return;
+		else
+			; /* TODO: Push the value? */
+	}
 
 	switch (np->type.size) {
 	case 1:
 		switch (op) {
-		case CONST:
-			code(LDI, regs[reg], np);
-			break;
 		case AUTO:
-			code(LDL, regs[reg], np);
+			code(LDL, r, np);
+			break;
+		case CONST:
+		case INDEX:
+			code(LDI, r, np);
 			break;
 		default:
 			abort();
 		}
-		reguse[reg] = np;
 		break;
 	case 2:
 		switch (op) {
 		case CONST:
-			code(LDL, regs[reg], np);
+			code(LDL, r, np);
 			break;
 		case AUTO:
 			code(LDL, regs[lower[reg]], np);
@@ -150,11 +156,12 @@ moveto(Node *np, uint8_t reg)
 		default:
 			abort();
 		}
-		reguse[upper[reg]] = reguse[lower[reg]] = np;
+		reguse[upper[reg]] = reguse[lower[reg]] =  np;
 		break;
 	default:
 		abort();
 	}
+	reguse[reg] = np;
 	np->op = REG;
 	np->reg = reg;
 }
@@ -202,11 +209,20 @@ accum(Node *np)
 static void
 index(Node *np)
 {
-	if (reguse[H] || reguse[L])
-		push(HL);
+	Node *u = reguse[HL];
+
+	if (u) {
+		Symbol *sym = np->sym;
+
+		if (u->op == INDEX && sym && sym == u->sym) {
+			np->op = INDEX;
+			return;
+		} else
+			; /* TODO: Push the value? */
+	}
 	code(LDI, &reg_HL, np);
-	reguse[H] = reguse[L] = np;
 	np->op = INDEX;
+	reguse[HL] = reguse[H] = reguse[L] = np;
 }
 
 static void

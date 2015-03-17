@@ -119,7 +119,8 @@ enum {
 
 enum {
 	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
-	SP = NREGS, AF, HL, DE, BC, IX, IY
+	AF = NREGS, HL, DE, BC, IY, NPAIRS,
+	SP = NPAIRS, IX
 };
 
 extern Symbol *curfun;
