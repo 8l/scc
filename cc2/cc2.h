@@ -56,15 +56,13 @@ struct symbol {
 	bool public : 1;
 	bool extrn : 1;
 	union {
+		/* TODO: Admit inmediate of other type */
+		TINT imm;
 		struct {
 			Type type;
 			char sclass;
 			short off;
 		} v;
-		struct {
-			/* TODO: Admit inmediate of other type */
-			TINT imm;
-		} i;
 		struct {
 			short addr;
 		} l;
@@ -123,9 +121,6 @@ enum {
 	A = 1, B, C, D, E, H, L, IYL, IYH, NREGS,
 	SP = NREGS, AF, HL, DE, BC, IX, IY
 };
-
-extern Type Funct, l_int8,  l_int16,  l_int32,  l_int64,
-                   l_uint8, l_uint16, l_uint32, l_uint64;
 
 extern Symbol *curfun;
 

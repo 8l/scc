@@ -159,6 +159,7 @@ moveto(Node *np, uint8_t reg)
 		abort();
 	}
 	np->op = REG;
+	np->reg = reg;
 }
 
 static void
@@ -353,7 +354,6 @@ cgen(Node *np, Node *parent)
 		cgen(p, np);
 		cgen(q, np);
 	}
-
 	(*opnodes[np->op])(np);
 }
 

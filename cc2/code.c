@@ -94,7 +94,7 @@ addr(char op, Node *np, Addr *addr)
 		addr->u.reg = np->reg;
 		break;
 	case CONST:
-		/* TODO: Take the immediate from some place */
+		addr->u.i = np->sym->u.imm;
 		break;
 	case AUTO:
 		addr->u.i = np->sym->u.v.off;
