@@ -1,7 +1,4 @@
 
-#ifndef CC_H_
-#define CC_H_
-
 #ifndef __bool_true_and_false_defined
 #ifdef NBOOL
 typedef unsigned bool;
@@ -11,6 +8,7 @@ typedef unsigned bool;
 #endif
 
 #define TINT short
+#define TLONG long
 
 #define RANK_BOOL    0
 #define RANK_SCHAR   1
@@ -66,4 +64,3 @@ extern void *xcalloc(size_t nmemb, size_t size);
 extern char *xstrdup(const char *s);
 extern void *xrealloc(void *buff, register size_t size);
 
-#endif
