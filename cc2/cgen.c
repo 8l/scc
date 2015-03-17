@@ -1,5 +1,5 @@
 
-#include <stdarg.h>
+#include <assert.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -139,6 +139,9 @@ moveto(Node *np, uint8_t reg)
 		case CONST:
 		case INDEX:
 			code(LDI, r, np);
+			break;
+		case REG:
+			code(MOV, r, np);
 			break;
 		default:
 			abort();
@@ -313,6 +316,7 @@ assign(Node *np)
 {
 	Node *lp = np->left, *rp = np->right;
 
+	assert(rp->op == REG);
 	switch (np->type.size) {
 	case 1:
 		switch (lp->op) {
@@ -320,9 +324,11 @@ assign(Node *np)
 			code(LDL, lp, rp);
 			break;
 		case REG:
+			/* TODO: what happens with the previous register? */
 			code(MOV, lp, rp);
 			break;
 		case MEM:
+			/* TODO: check if the variable is indexed */
 			index(lp);
 			code(LDL, lp, rp);
 			break;
@@ -333,6 +339,8 @@ assign(Node *np)
 	default:
 		abort();
 	}
+	np->op = REG;
+	np->reg = rp->reg;
 }
 
 
