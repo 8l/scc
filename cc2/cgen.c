@@ -102,10 +102,8 @@ allocreg(Node *np)
 		for (bp = reg8; (c = *bp); ++bp) {
 			if (reguse[c])
 				continue;
-			reguse[c] = np;
 			return c;
 		}
-		/* TODO: Move variable to stack using PUSH/POP */
 		break;
 	case 2:
 		for (bp = reg16; (c = *bp); ++bp) {
@@ -113,10 +111,8 @@ allocreg(Node *np)
 
 			if (reguse[u] || reguse[l])
 				continue;
-			reguse[u] = reguse[l] = np;
 			return c;
 		}
-		/* TODO: Move variable to stack using PUSH/POP */
 		break;
 	}
 	abort();
@@ -140,6 +136,7 @@ moveto(Node *np, uint8_t reg)
 		default:
 			abort();
 		}
+		reguse[reg] = np;
 		break;
 	case 2:
 		switch (op) {
@@ -153,6 +150,7 @@ moveto(Node *np, uint8_t reg)
 		default:
 			abort();
 		}
+		reguse[upper[reg]] = reguse[lower[reg]] = np;
 		break;
 	default:
 		abort();
