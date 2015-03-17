@@ -91,16 +91,16 @@ addr(char op, Node *np, Addr *addr)
 {
 	switch (addr->kind = np->op) {
 	case REG:
-		addr->u.reg = np->u.reg;
+		addr->u.reg = np->reg;
 		break;
 	case CONST:
-		addr->u.i = np->u.imm;
+		/* TODO: Take the immediate from some place */
 		break;
 	case AUTO:
-		addr->u.i = np->u.sym->u.v.off;
+		addr->u.i = np->sym->u.v.off;
 		break;
 	case MEM:
-		addr->u.sym = np->u.sym;
+		addr->u.sym = np->sym;
 		break;
 	case INDEX:
 		break;

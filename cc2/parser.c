@@ -235,7 +235,7 @@ imm(TINT i, Type *tp)
 
 	np->op = CONST;
 	np->type = *tp;
-	np->u.imm = i;
+	/* TODO: assign the integer to something */
 	np->left = np->right = NULL;
 }
 
@@ -299,7 +299,7 @@ variable(uint8_t t, char *token)
 	Node *np = newnode();
 	Symbol *sym = symbol(t, token);
 
-	np->u.sym = sym;
+	np->sym = sym;
 	np->op = sym->u.v.sclass;
 	np->type = sym->u.v.type;
 	np->left = np->right = NULL;
@@ -361,7 +361,7 @@ label(char *token)
 
 	np->left = np->right = NULL;
 	np->op = LABEL;
-	np->u.sym = local(token);
+	np->sym = local(token);
 	push(np);
 }
 

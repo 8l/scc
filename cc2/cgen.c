@@ -22,63 +22,63 @@ static char pair[] = {
 Node
 reg_E = {
 	.op = REG,
-	.u.reg = E
+	.reg = E
 },
 reg_D = {
 	.op = REG,
-	.u.reg = D
+	.reg = D
 },
 reg_H = {
 	.op = REG,
-	.u.reg = H
+	.reg = H
 },
 reg_L = {
 	.op = REG,
-	.u.reg = L
+	.reg = L
 },
 reg_C = {
 	.op= REG,
-	.u.reg = C
+	.reg = C
 },
 reg_B = {
 	.op= REG,
-	.u.reg = B
+	.reg = B
 },
 reg_A = {
 	.op= REG,
-	.u.reg = A
+	.reg = A
 },
 reg_IYL = {
 	.op = REG,
-	.u.reg = IYL
+	.reg = IYL
 },
 reg_IYH = {
 	.op = REG,
-	.u.reg = IYH
+	.reg = IYH
 },
 reg_DE = {
 	.op = REG,
-	.u.reg = DE
+	.reg = DE
 },
 reg_HL = {
 	.op = REG,
-	.u.reg = HL
+	.reg = HL
 },
 reg_BC = {
 	.op = REG,
-	.u.reg = BC
+	.reg = BC
 },
 reg_IX = {
 	.op = REG,
-	.u.reg = IX
+	.reg = IX
 },
 reg_IY = {
 	.op = REG,
-	.u.reg = IY
+	.reg = IY
 },
 reg_SP = {
 	.op = REG,
-	.u.reg = SP
+	.reg = SP
 };
 
 Node *regs[] = {
@@ -140,7 +140,7 @@ moveto(Node *np, uint8_t reg)
 		}
 		break;
 	case AUTO:
-		sym = np->u.sym;
+		sym = np->sym;
 		switch (np->type.size) {
 		case 1:
 			code(LDL, regs[reg], np);
@@ -266,7 +266,7 @@ add(Node *np)
 			accum(lp);
 			break;
 		case REG:
-			if (lp->u.reg != A)
+			if (lp->reg != A)
 				moveto(lp, A);
 			switch (rp->op) {
 			case REG:
@@ -285,7 +285,7 @@ add(Node *np)
 	add_A:
 		code(ADD, lp, rp);
 		np->op = REG;
-		np->u.reg = A;
+		np->reg = A;
 		break;
 	case 2:
 	case 4:
@@ -306,7 +306,12 @@ assign(Node *np)
 			code(LDL, lp, rp);
 			break;
 		case REG:
+			code(MOV, lp, rp);
+			break;
 		case MEM:
+			index(lp);
+			code(LDL, lp, rp);
+			break;
 		default:
 			abort();
 		}

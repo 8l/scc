@@ -62,6 +62,10 @@ struct symbol {
 			short off;
 		} v;
 		struct {
+			/* TODO: Admit inmediate of other type */
+			TINT imm;
+		} i;
+		struct {
 			short addr;
 		} l;
 		struct {
@@ -78,12 +82,8 @@ struct node {
 	Type type;
 	uint8_t complex;
 	uint8_t addable;
-	union {
-		Symbol *sym;
-		/* TODO: Admit inmediate of other type */
-		TINT imm;
-		uint8_t reg;
-	} u;
+	uint8_t reg;
+	Symbol *sym;
 	struct node *left, *right;
 };
 
