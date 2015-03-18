@@ -48,25 +48,7 @@ static char *insttext[] = {
 	[INC] = "INC"
 };
 
-typedef struct inst Inst;
-typedef struct addr Addr;
-
-struct addr {
-	char kind;
-	union {
-		uint8_t reg;
-		TINT i;
-		Inst *pc;
-		Symbol *sym;
-	} u;
-};
-
-struct inst {
-	char op;
-	Addr from, to;
-	Inst *next;
-};
-Inst *prog, *pc;
+Inst *pc, *prog;
 
 Inst *
 nextpc(void)
@@ -74,6 +56,8 @@ nextpc(void)
 	Inst *new;
 
 	new = xmalloc(sizeof(*new));
+	new->prev = pc;
+
 	if (!pc)
 		prog = new;
 	else

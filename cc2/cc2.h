@@ -85,6 +85,25 @@ struct node {
 	struct node *left, *right;
 };
 
+typedef struct inst Inst;
+typedef struct addr Addr;
+
+struct addr {
+	char kind;
+	union {
+		uint8_t reg;
+		TINT i;
+		Inst *pc;
+		Symbol *sym;
+	} u;
+};
+
+struct inst {
+	char op;
+	Addr from, to;
+	Inst *next, *prev;
+};
+
 enum nerrors {
 	EINTNUM,       /* too much internal identifiers */
 	EEXTNUM,       /* too much external identifiers */
@@ -100,8 +119,6 @@ enum nerrors {
 	EFERROR,       /* error reading from file:%s*/
 	ENUMERR
 };
-
-
 
 enum {
 	LDW,
@@ -124,6 +141,7 @@ enum {
 };
 
 extern Symbol *curfun;
+extern Inst *prog, *pc;
 
 /* main.c */
 extern void error(unsigned nerror, ...);
