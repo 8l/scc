@@ -8,9 +8,9 @@
 
 
 static Node *reguse[NREGS];
-static char upper[] = {[DE] = D, [HL] = H, [BC] = B,  [IY] = IYH};
-static char lower[] = {[DE] = E, [HL] = L, [BC] = C, [IY] = IYL};
-static char pair[] = {
+static uint8_t upper[] = {[DE] = D, [HL] = H, [BC] = B,  [IY] = IYH};
+static uint8_t lower[] = {[DE] = E, [HL] = L, [BC] = C, [IY] = IYL};
+static uint8_t pair[] = {
 	[A] = A,
 	[H] = HL, [L] = HL,
 	[B] = BC, [C] = BC,
@@ -90,12 +90,12 @@ Node *regs[] = {
 	[IX] = &reg_IX, [IY] = &reg_IY, [SP] = &reg_SP
 };
 
-static char
+static uint8_t
 allocreg(Node *np)
 {
-	static char reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
-	static char reg16[] = {BC, DE, IY, 0};
-	char *bp, c;
+	static uint8_t reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
+	static uint8_t reg16[] = {BC, DE, IY, 0};
+	uint8_t *bp, c;
 
 	switch (np->type.size) {
 	case 1:

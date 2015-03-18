@@ -117,10 +117,9 @@ writeout(void)
 }
 
 static void
-addr2txt(char op, Addr *a)
+addr2txt(uint8_t op, Addr *a)
 {
 	Symbol *sym;
-	char *fmt;
 
 	switch (a->kind) {
 	case REG:
@@ -157,7 +156,7 @@ inst0(void)
 static void
 inst1(void)
 {
-	char op = pc->op;
+	uint8_t op = pc->op;
 
 	printf("\t%s\t", insttext[op]);
 	addr2txt(op, (pc->to.kind != NONE) ? &pc->to : &pc->from);
@@ -167,7 +166,7 @@ inst1(void)
 static void
 inst2(void)
 {
-	char op = pc->op;
+	uint8_t op = pc->op;
 
 	printf("\t%s\t", insttext[op]);
 	addr2txt(op, &pc->to);

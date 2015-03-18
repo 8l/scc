@@ -44,7 +44,7 @@ typedef struct symbol Symbol;
 typedef struct node Node;
 
 typedef struct {
-	short size;
+	unsigned short size;
 	uint8_t align;
 	char letter;
 	uint8_t flags;
@@ -75,8 +75,8 @@ struct symbol {
 };
 
 struct node {
-	char op;
-	char subop;
+	uint8_t op;
+	uint8_t subop;
 	Type type;
 	uint8_t complex;
 	uint8_t addable;
@@ -99,7 +99,7 @@ struct addr {
 };
 
 struct inst {
-	char op;
+	uint8_t op;
 	Addr from, to;
 	Inst *next, *prev;
 };
