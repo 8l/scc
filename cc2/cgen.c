@@ -243,6 +243,7 @@ static void
 add(Node *np)
 {
 	Node *lp = np->left, *rp = np->right;
+	uint8_t i;
 
 	if (rp->op == REG || lp->op == CONST) {
 		conmute(np);
@@ -300,7 +301,17 @@ add(Node *np)
 			abort();
 		}
 	add_A:
+		if (rp->op == CONST) {
+			if  ((i = rp->sym->u.imm) == 0)
+				goto update_A;
+			 if (i < 4) {
+				while (i--)
+					code(INC, lp, NULL);
+				goto update_A;
+			}
+		}
 		code(ADD, lp, rp);
+	update_A:
 		np->op = REG;
 		np->reg = A;
 		break;
