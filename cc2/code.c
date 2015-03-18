@@ -139,7 +139,7 @@ addr2txt(char op, Addr *a)
 	case MEM:
 		sym = a->u.sym;
 		if (sym->name)
-			printf((op == LDI) ? "%s" : "(%s)", sym);
+			printf((op == LDI) ? "%s" : "(%s)", sym->name);
 		else
 			printf((op == LDI) ? "T%u" : "(T%u)", sym->id);
 		break;
