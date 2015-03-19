@@ -50,24 +50,25 @@ static char *insttext[] = {
 
 Inst *pc, *prog;
 
-Inst *
+static void
 nextpc(void)
 {
 	Inst *new;
 
 	new = xmalloc(sizeof(*new));
-	new->prev = pc;
 
-	if (!pc)
+	if (!pc) {
+		new->next = NULL;
 		prog = new;
-	else
+	} else {
+		new->next = pc->next;
 		pc->next = new;
+	}
+
+	new->prev = pc;
+	new->to.kind = NONE;
+	new->from.kind = NONE;
 	pc = new;
-	pc->op = NOP;
-	pc->to.kind = NONE;
-	pc->from.kind = NONE;
-	pc->next = NULL;
-	return pc;
 }
 
 void
@@ -96,14 +97,41 @@ addr(char op, Node *np, Addr *addr)
 void
 code(uint8_t op, Node *to, Node *from)
 {
-	Inst *ip;
 
-	ip = nextpc();
+	nextpc();
 	if (from)
-		addr(op, from, &ip->from);
+		addr(op, from, &pc->from);
 	if (to)
-		addr(op, to, &ip->to);
-	ip->op = op;
+		addr(op, to, &pc->to);
+	pc->op = op;
+}
+
+void
+inscode(uint8_t op, Addr *to, Addr *from)
+{
+	nextpc();
+	if (from)
+		pc->from = *from;
+	if (to)
+		pc->to = *to;
+	pc->op = op;
+}
+
+void
+delcode(void)
+{
+	Inst *prev = pc->prev, *next = pc->next;
+
+	free(pc);
+	if (!prev) {
+		pc = next;
+		prog = NULL;
+	} else {
+		pc = prev;
+		prev->next = next;
+		if (next)
+			next->prev = prev;
+	}
 }
 
 void

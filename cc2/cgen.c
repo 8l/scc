@@ -7,7 +7,7 @@
 #include "cc2.h"
 
 
-static Node *reguse[NREGS];
+static Node *reguse[NPAIRS];
 static uint8_t upper[] = {[DE] = D, [HL] = H, [BC] = B,  [IY] = IYH};
 static uint8_t lower[] = {[DE] = E, [HL] = L, [BC] = C, [IY] = IYL};
 static uint8_t pair[] = {
@@ -301,17 +301,7 @@ add(Node *np)
 			abort();
 		}
 	add_A:
-		if (rp->op == CONST) {
-			if  ((i = rp->sym->u.imm) == 0)
-				goto update_A;
-			 if (i < 4) {
-				while (i--)
-					code(INC, lp, NULL);
-				goto update_A;
-			}
-		}
 		code(ADD, lp, rp);
-	update_A:
 		np->op = REG;
 		np->reg = A;
 		break;

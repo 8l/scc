@@ -1,5 +1,5 @@
 
-OBJS = main.o parser.o cgen.o code.o optm.o
+OBJS = main.o parser.o cgen.o code.o optm.o peep.o
 
 LIBS = -lcc
 

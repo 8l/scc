@@ -157,8 +157,13 @@ extern void prtree(Node *np);
 
 /* code.c */
 extern void code(uint8_t op, Node *to, Node *from);
+extern void inscode(uint8_t op, Addr *to, Addr *from);
 extern void writeout(void);
+extern void delcode(void);
 
 /* optm.c */
 extern void optimize(void);
 extern Node *imm(TINT i);
+
+/* peep.c */
+extern void peephole(void);

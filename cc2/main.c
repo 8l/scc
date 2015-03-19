@@ -47,6 +47,7 @@ main(void)
 		optimize();
 		addable();
 		generate();
+		peephole();
 		writeout();
 	}
 	return 0;
