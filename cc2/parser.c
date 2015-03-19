@@ -287,12 +287,15 @@ gettype(char *type)
 static Symbol *
 symbol(uint8_t t, char *token)
 {
+	Symbol *sym;
 	static Symbol *(*tbl[3])(char *)= {
 		[LOCAL] = local,
 		[GLOBAL] = global,
 		[PARAMETER] = parameter
 	};
-	return (*tbl[t])(token+1);
+	sym = (*tbl[t])(token+1);
+	sym->kind = *token;
+	return sym;
 }
 
 static void

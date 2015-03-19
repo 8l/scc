@@ -53,8 +53,10 @@ typedef struct {
 struct symbol {
 	unsigned short id;
 	char *name;
+	char kind;
 	bool public : 1;
 	bool extrn : 1;
+	bool dirty : 1;
 	union {
 		/* TODO: Admit inmediate of other type */
 		TINT imm;

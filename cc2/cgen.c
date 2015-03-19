@@ -12,10 +12,10 @@ static uint8_t upper[] = {[DE] = D, [HL] = H, [BC] = B,  [IY] = IYH};
 static uint8_t lower[] = {[DE] = E, [HL] = L, [BC] = C, [IY] = IYL};
 static uint8_t pair[] = {
 	[A] = A,
-	[H] = HL, [L] = HL,
-	[B] = BC, [C] = BC,
-	[D] = DE, [E] = DE,
-	[IYL] = IY, [IYH] = IY
+	[H] = HL, [L] = HL, [HL] = HL,
+	[B] = BC, [C] = BC, [BC] = BC,
+	[D] = DE, [E] = DE, [DE] = DE,
+	[IYL] = IY, [IYH] = IY, [IY] = IY
 };
 
 Node
@@ -117,6 +117,41 @@ allocreg(Node *np)
 }
 
 static void
+spill(uint8_t reg)
+{
+	Node *np, *r;
+	Symbol *sym;
+	uint8_t p, h, l;
+
+	if ((np = reguse[reg]) == NULL)
+		return;
+	if ((sym = np->sym) == NULL)
+		goto freereg;
+	if (!sym->dirty)
+		goto freereg;
+
+	r = regs[reg];
+	switch (np->type.size) {
+	case 1:
+		code(LDL, np, r);
+		break;
+	default:
+		abort();
+	}
+	sym->dirty = 0;
+
+freereg:
+	reguse[reg] = NULL;
+	p = pair[reg];
+	l = lower[p];
+	h = upper[p];
+	if (reg >= NREGS)
+		reguse[l] = reguse[h] = NULL;
+	else if (!reguse[l] && !reguse[h])
+		reguse[p] = NULL;
+}
+
+static void
 moveto(Node *np, uint8_t reg)
 {
 	Node *r = regs[reg], *u = reguse[reg];
@@ -127,7 +162,7 @@ moveto(Node *np, uint8_t reg)
 		if (op == u->op && sym && sym == u->sym)
 			return;
 		else
-			; /* TODO: Push the value? */
+			spill(reg);
 	}
 
 	switch (np->type.size) {
@@ -164,7 +199,7 @@ moveto(Node *np, uint8_t reg)
 	default:
 		abort();
 	}
-	reguse[reg] = np;
+	reguse[pair[reg]] = reguse[reg] = np;
 	np->op = REG;
 	np->reg = reg;
 }
@@ -176,31 +211,17 @@ move(Node *np)
 }
 
 static void
-push(uint8_t reg)
-{
-	Node *np;
-
-	if (reg < NREGS)
-		reg = pair[reg];
-	if ((np = reguse[lower[reg]]) != NULL)
-		np->op = PUSHED;
-	if ((np = reguse[upper[reg]]) != NULL)
-		np->op = PUSHED;
-	code(PUSH, NULL, regs[reg]);
-}
-
-static void
 accum(Node *np)
 {
+	Symbol *sym;
+
 	switch (np->type.size) {
 	case 1:
-		if (reguse[A])
-			push(A);
+		spill(A);
 		moveto(np, A);
 		break;
 	case 2:
-		if (reguse[H] || reguse[L])
-			push(HL);
+		spill(HL);
 		moveto(np, HL);
 		break;
 	case 4:
@@ -214,14 +235,13 @@ index(Node *np)
 {
 	Node *u = reguse[HL];
 
-	if (u) {
-		Symbol *sym = np->sym;
-
-		if (u->op == INDEX && sym && sym == u->sym) {
+	if (u && u->sym) {
+		if (u->op == INDEX && np->sym == u->sym) {
 			np->op = INDEX;
 			return;
-		} else
-			; /* TODO: Push the value? */
+		} else {
+			spill(HL);
+		}
 	}
 	code(LDI, &reg_HL, np);
 	np->op = INDEX;
@@ -295,7 +315,7 @@ add(Node *np)
 				break;
 			default:
 				abort();
-			}		
+			}
 			break;			
 		default:
 			abort();
@@ -316,6 +336,7 @@ static void
 assign(Node *np)
 {
 	Node *lp = np->left, *rp = np->right;
+	Symbol *sym = lp->sym;
 
 	assert(rp->op == REG);
 	switch (np->type.size) {
@@ -340,6 +361,9 @@ assign(Node *np)
 	default:
 		abort();
 	}
+
+	if (sym)
+		sym->dirty = 0;
 	np->op = REG;
 	np->reg = rp->reg;
 }
