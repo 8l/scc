@@ -133,7 +133,8 @@ enum {
 	POP,
 	RET,
 	NOP,
-	INC
+	INC,
+	SUB
 };
 
 enum {
