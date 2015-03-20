@@ -411,7 +411,7 @@ void
 generate(void)
 {
 	extern char odebug;
-	uint8_t i, size = curfun->u.f.locals;
+	uint8_t size = curfun->u.f.locals;
 	char frame =  size != 0 || odebug;
 
 	if (frame) {
@@ -422,7 +422,7 @@ generate(void)
 			code(ADD, &regs[HL], &regs[SP]);
 			code(MOV, &regs[SP], &regs[HL]);
 		} else {
-			for (i = size; i != 0; i-= 2)
+			for (; size != 0; size-= 2)
 				code(PUSH, NULL, &regs[HL]);
 		}
 	}
