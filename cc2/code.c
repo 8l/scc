@@ -32,7 +32,8 @@ static void (*instcode[])(void) = {
 	[RET] = inst0,
 	[NOP] = inst0,
 	[INC] = inst1,
-	[SUB] = inst2
+	[SUB] = inst2,
+	[DEC] = inst1
 };
 
 static char *insttext[] = {
@@ -47,7 +48,8 @@ static char *insttext[] = {
 	[RET] = "RET",
 	[NOP] = "NOP",
 	[INC] = "INC",
-	[SUB] = "SUB"
+	[SUB] = "SUB",
+	[DEC] = "DEC"
 };
 
 Inst *pc, *prog;

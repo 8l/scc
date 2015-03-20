@@ -10,19 +10,22 @@ peephole(void)
 {
 	Addr to, from;
 	TINT i;
+	uint8_t op;
 
 	for (pc = prog; pc; pc = pc->next) {
 		to = pc->to;
 		from = pc->from;
 
 		switch (pc->op) {
+		case SUB:
 		case ADD:
 			if (from.kind == CONST) {
 				if ((i = from.u.i) == 0 || i < 4) {
 					delcode();
+					op = (pc->op == ADD) ? INC : DEC;
 
 					while (i--)
-						inscode(INC, &to, NULL);
+						inscode(op, &to, NULL);
 				}
 			/* TODO: More optimizations (ex: -1) */
 			}

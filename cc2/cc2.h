@@ -134,7 +134,8 @@ enum {
 	RET,
 	NOP,
 	INC,
-	SUB
+	SUB,
+	DEC
 };
 
 enum {
