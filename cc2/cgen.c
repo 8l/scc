@@ -86,20 +86,22 @@ allocreg(uint8_t size)
 {
 	static uint8_t reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
 	static uint8_t reg16[] = {BC, DE, IY, 0};
-	uint8_t *bp, c;
+	Node *np;
+	uint8_t *ary, *bp, c;
 
 	switch (size) {
 	case 1:
-		bp = reg8;
+		ary = reg8;
 		break;
 	case 2:
-		bp = reg16;
+		ary = reg16;
 		break;
 	default:
 		abort();
 	}
-	while (c = *bp++) {
-		if (reguse[c])
+	for (bp = ary; c = *bp; ++bp) {
+		np = reguse[c];
+		if (np && !np->used)
 			continue;
 		return c;
 	}
@@ -299,6 +301,7 @@ add(Node *np)
 	add1:
 		move(rp, np);
 		code((np->op == OADD) ? ADD : SUB, lp, rp);
+		lp->used = rp->used = 1;
 		np->op = REG;
 		np->reg = A;
 		reguse[A] = np;
@@ -315,7 +318,6 @@ assign(Node *np)
 	Symbol *sym = lp->sym;
 
 	assert(rp->op == REG);
-	/* TODO: what happens with the previous register? */
 	switch (np->type.size) {
 	case 1:
 		switch (lp->op) {
@@ -337,6 +339,7 @@ assign(Node *np)
 		abort();
 	}
 
+	lp->used = 1;
 	np->op = REG;
 	np->reg = rp->reg;
 }

@@ -81,6 +81,7 @@ struct node {
 	uint8_t addable;
 	uint8_t reg;
 	Symbol *sym;
+	bool used : 1;
 	struct node *left, *right;
 };
 
