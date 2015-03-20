@@ -359,10 +359,16 @@ assign(Node *np)
 	np->reg = rp->reg;
 }
 
+static void
+ret(Node *np)
+{
+}
+
 static void (*opnodes[])(Node *) = {
 	[OADD] = add,
 	[OSUB] = add,
-	[OASSIG] = assign
+	[OASSIG] = assign,
+	[ORET] = ret
 };
 
 static void

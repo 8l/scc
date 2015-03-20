@@ -90,7 +90,7 @@ static Type l_uint64 = {
 
 static void cast(char *), operator(char *), assignment(char *), increment(char *),
             globvar(char *), localvar(char *), paramvar(char *), label(char *),
-            immediate(char *), unary(char *);
+            immediate(char *), unary(char *), oreturn(char *);
 
 /*TODO: Remove hardcoded symbols */
 
@@ -137,7 +137,7 @@ static void (*optbl[])(char *) = {
 	['['] = operator,
 	['='] = operator,
 	['!'] = unary,
-	['y'] = NULL,
+	['y'] = oreturn,
 	['j'] = NULL,
 	['o'] = operator,
 	['_'] = unary,
@@ -421,6 +421,20 @@ cast(char *token)
 }
 
 static void
+expr(char *token)
+{
+	Node *np;
+	void (*fun)(char *);
+	unsigned c;
+
+	do {
+		if ((c = token[0]) > 0x7f || (fun = optbl[c]) == NULL)
+			error(ESYNTAX);
+		(*fun)(token);
+	} while (token = strtok(NULL, "\t"));
+}
+
+static void
 expression(char *token)
 {
 	Node *np;
@@ -430,11 +444,7 @@ expression(char *token)
 	if (!curfun)
 		error(ESYNTAX);
 
-	do {
-		if ((c = token[0]) > 0x7f || (fun = optbl[c]) == NULL)
-			error(ESYNTAX);
-		(*fun)(token);
-	} while (token = strtok(NULL, "\t"));
+	expr(token);
 
 	np = pop();
 	if (stackp != stack)
@@ -442,6 +452,23 @@ expression(char *token)
 	if (listp == &listexp[NR_EXPRESSIONS])
 		error(EEXPROV);
 	*listp++ = np;
+}
+
+static void
+oreturn(char *token)
+{
+	Node *np = newnode();
+
+	np->op = token[0];
+
+	if (token = strtok(NULL, "\t")) {
+		expr(token);
+		np -> left = pop();
+	} else {
+		np->left = NULL;
+	}
+	np->right = NULL;
+	push(np);
 }
 
 static void

@@ -36,6 +36,7 @@
 #define ONEG      '_'
 #define OCPL      '~'
 #define OCOMMA    ','
+#define ORET      'y'
 
 #define ADDABLE 10
 
