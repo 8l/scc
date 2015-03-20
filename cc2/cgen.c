@@ -399,30 +399,24 @@ applycgen(Node *np)
 void
 generate(void)
 {
-	extern char odebug;
 	uint8_t size = curfun->u.f.locals;
-	char frame =  size != 0 || odebug;
 
-	if (frame) {
-		code(PUSH, NULL, &regs[IX]);
-		code(MOV, &regs[IX], &regs[SP]);
-		if (size > 6) {
-			code(MOV, &regs[HL], imm(-size));
-			code(ADD, &regs[HL], &regs[SP]);
-			code(MOV, &regs[SP], &regs[HL]);
-		} else {
-			for (; size != 0; size-= 2)
-				code(PUSH, NULL, &regs[HL]);
-		}
+	code(PUSH, NULL, &regs[IX]);
+	code(MOV, &regs[IX], &regs[SP]);
+	if (size > 6) {
+		code(MOV, &regs[HL], imm(-size));
+		code(ADD, &regs[HL], &regs[SP]);
+		code(MOV, &regs[SP], &regs[HL]);
+	} else {
+		for (; size != 0; size-= 2)
+			code(PUSH, NULL, &regs[HL]);
 	}
 
 	apply(applycgen);
 
-	if (frame) {
-		code(MOV, &regs[SP], &regs[IX]);
-		code(POP, &regs[IX], NULL);
-		code(RET, NULL, NULL);
-	}
+	code(MOV, &regs[SP], &regs[IX]);
+	code(POP, &regs[IX], NULL);
+	code(RET, NULL, NULL);
 }
 
 /*
