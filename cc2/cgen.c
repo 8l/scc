@@ -107,31 +107,35 @@ allocreg(Node *np)
 	abort();
 }
 
+static void moveto(Node *np, uint8_t reg);
+
 static void
 spill(uint8_t reg)
 {
 	Node *np, *r;
 	Symbol *sym;
-	uint8_t p, h, l;
+	uint8_t p, h, l, new;
 
 	if ((np = reguse[reg]) == NULL)
 		return;
-	if ((sym = np->sym) == NULL)
-		goto freereg;
-	if (!sym->dirty)
-		goto freereg;
-
+	sym = np->sym;
 	r = &regs[reg];
+
 	switch (np->type.size) {
 	case 1:
-		code(LDL, np, r);
+		if (sym) {
+			code(LDL, np, r);
+			np->op = sym->kind;
+			sym->dirty = 0;
+		} else {
+			new = allocreg(np);
+			moveto(np, new);
+		}
 		break;
 	default:
 		abort();
 	}
-	sym->dirty = 0;
 
-freereg:
 	reguse[reg] = NULL;
 	p = pair[reg];
 	l = lower[p];
@@ -159,6 +163,7 @@ moveto(Node *np, uint8_t reg)
 	switch (np->type.size) {
 	case 1:
 		switch (op) {
+		case MEM:
 		case AUTO:
 			code(LDL, r, np);
 			break;
@@ -196,23 +201,15 @@ moveto(Node *np, uint8_t reg)
 }
 
 static void
-move(Node *np)
-{
-	moveto(np, allocreg(np));
-}
-
-static void
 accum(Node *np)
 {
 	Symbol *sym;
 
 	switch (np->type.size) {
 	case 1:
-		spill(A);
 		moveto(np, A);
 		break;
 	case 2:
-		spill(HL);
 		moveto(np, HL);
 		break;
 	case 4:
@@ -225,6 +222,7 @@ static void
 index(Node *np)
 {
 	Node *u = reguse[HL];
+	Symbol *sym;
 
 	if (u && u->sym) {
 		if (u->op == INDEX && np->sym == u->sym) {
@@ -235,8 +233,36 @@ index(Node *np)
 		}
 	}
 	code(LDI, &regs[HL], np);
+	if (sym = np->sym)
+		sym->index = 1;
 	np->op = INDEX;
 	reguse[HL] = reguse[H] = reguse[L] = np;
+}
+
+static void
+move(Node *np, Node *parent)
+{
+	assert(np->type.size == 1);
+	switch (parent->op) {
+	case OADD:
+	case OSUB:
+		switch (np->op) {
+		case PAR:
+		case AUTO:
+		case CONST:
+		case INDEX:
+		case REG:
+			return;
+		case MEM:
+			index(np);
+			break;
+		default:
+			abort();
+		}
+		break;
+	default:
+		abort();
+	}
 }
 
 static void
@@ -253,72 +279,32 @@ conmute(Node *np)
 static void
 add(Node *np)
 {
-	Node *lp = np->left, *rp = np->right;
-	uint8_t i;
+	Node *lp = np->left, *rp = np->right, *a;
 
-	if (rp->op == REG || lp->op == CONST) {
-		conmute(np);
-		lp = np->left;
-		rp = np->right;
-	}
 	switch (np->type.size) {
 	case 1:
-		switch (lp->op) {
-		case PAR:
-		case AUTO:
-			switch (rp->op) {
-			case MEM:
-				index(rp);
-			case PAR:
-			case AUTO:
-			case CONST:
-				accum(lp);
-				break;
-			default:
-				abort();
-			}
-			break;
-		case MEM:
-			if (reguse[A]) {
-				switch (rp->op) {
-				case PAR:
-				case AUTO:
-				case CONST:
-					break;
-				case MEM:
-					index(rp);
-					goto add_A;
-				default:
-					abort();
-				}
-			}
-			accum(lp);
-			break;
-		case REG:
-			if (lp->reg != A)
-				moveto(lp, A);
-			switch (rp->op) {
-			case REG:
-			case AUTO:
-			case PAR:
-			case CONST:
-			case MEM:
-				break;
-			default:
-				abort();
-			}
-			break;			
-		default:
-			abort();
+		a = reguse[A];
+		if (a == lp)
+			goto add1;
+		if (a == rp)
+			goto conmute1;
+		if (lp->op == CONST) {
+			accum(rp);
+			goto conmute1;
 		}
-	add_A:
+		accum(lp);
+		goto add1;
+	conmute1:
+		conmute(np);
+		lp = np->left, rp = np->right;
+	add1:
+		move(rp, np);
 		code((np->op == OADD) ? ADD : SUB, lp, rp);
 		np->op = REG;
 		np->reg = A;
+		reguse[A] = np;
 		break;
-	case 2:
-	case 4:
-	case 8:
+	default:
 		abort();
 	}
 }
@@ -330,15 +316,18 @@ assign(Node *np)
 	Symbol *sym = lp->sym;
 
 	assert(rp->op == REG);
+	/* TODO: what happens with the previous register? */
 	switch (np->type.size) {
 	case 1:
 		switch (lp->op) {
 		case MEM:
+			if (sym && sym->index)
+				lp->op = INDEX;
+		case INDEX:
 		case AUTO:
 			code(LDL, lp, rp);
 			break;
 		case REG:
-			/* TODO: what happens with the previous register? */
 			code(MOV, lp, rp);
 			break;
 		default:

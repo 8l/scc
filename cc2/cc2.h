@@ -8,7 +8,6 @@
 #define MEM       'T'
 #define PAR       'P'
 #define CONST     '#'
-#define PUSHED    'S'
 #define INDEX     'I'
 #define LABEL     'L'
 #define OADD      '+'
@@ -58,6 +57,7 @@ struct symbol {
 	bool public : 1;
 	bool extrn : 1;
 	bool dirty : 1;
+	bool index : 1;
 	union {
 		/* TODO: Admit inmediate of other type */
 		TINT imm;
