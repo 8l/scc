@@ -126,7 +126,6 @@ spill(uint8_t reg)
 		if (sym) {
 			code(LDL, np, r);
 			np->op = sym->kind;
-			sym->dirty = 0;
 		} else {
 			new = allocreg(1);
 			moveto(np, new);
@@ -338,8 +337,6 @@ assign(Node *np)
 		abort();
 	}
 
-	if (sym)
-		sym->dirty = 0;
 	np->op = REG;
 	np->reg = rp->reg;
 }

@@ -56,7 +56,6 @@ struct symbol {
 	char kind;
 	bool public : 1;
 	bool extrn : 1;
-	bool dirty : 1;
 	bool index : 1;
 	union {
 		/* TODO: Admit inmediate of other type */
