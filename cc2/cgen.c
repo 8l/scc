@@ -260,7 +260,7 @@ conmute(Node *np)
 }
 
 static void
-add(Node *np, uint8_t op)
+add(Node *np)
 {
 	Node *lp = np->left, *rp = np->right;
 	uint8_t i;
@@ -321,7 +321,7 @@ add(Node *np, uint8_t op)
 			abort();
 		}
 	add_A:
-		code((op == OADD) ? ADD : SUB, lp, rp);
+		code((np->op == OADD) ? ADD : SUB, lp, rp);
 		np->op = REG;
 		np->reg = A;
 		break;
@@ -333,7 +333,7 @@ add(Node *np, uint8_t op)
 }
 
 static void
-assign(Node *np, uint8_t op)
+assign(Node *np)
 {
 	Node *lp = np->left, *rp = np->right;
 	Symbol *sym = lp->sym;
@@ -368,7 +368,7 @@ assign(Node *np, uint8_t op)
 	np->reg = rp->reg;
 }
 
-static void (*opnodes[])(Node *, uint8_t) = {
+static void (*opnodes[])(Node *) = {
 	[OADD] = add,
 	[OSUB] = add,
 	[OASSIG] = assign
@@ -378,7 +378,6 @@ static void
 cgen(Node *np, Node *parent)
 {
 	Node *lp, *rp;
-	uint8_t op;
 
 	if (!np)
 		return;
@@ -401,8 +400,7 @@ cgen(Node *np, Node *parent)
 		cgen(p, np);
 		cgen(q, np);
 	}
-	op = np->op;
-	(*opnodes[op])(np, op);
+	(*opnodes[np->op])(np);
 }
 
 static Node *
