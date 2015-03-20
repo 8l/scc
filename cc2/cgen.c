@@ -81,16 +81,17 @@ Node regs[] = {
 	}
 };
 
-/* TODO: Remove reg8 and reg16 arrays */
+static void moveto(Node *np, uint8_t reg);
+
 static uint8_t
-allocreg(uint8_t size)
+allocreg(Node *np)
 {
 	static uint8_t reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
 	static uint8_t reg16[] = {BC, DE, IY, 0};
-	Node *np;
+	Node *r;
 	uint8_t *ary, *bp, c;
 
-	switch (size) {
+	switch (np->type.size) {
 	case 1:
 		ary = reg8;
 		break;
@@ -101,23 +102,21 @@ allocreg(uint8_t size)
 		abort();
 	}
 	for (bp = ary; c = *bp; ++bp) {
-		np = reguse[c];
+		r = reguse[c];
 		if (np && !np->used)
 			continue;
-		return c;
+		moveto(np, c);
 	}
 	/* TODO: What to do here? */
 	abort();
 }
-
-static void moveto(Node *np, uint8_t reg);
 
 static void
 spill(uint8_t reg)
 {
 	Node *np, *r;
 	Symbol *sym;
-	uint8_t p, h, l, new;
+	uint8_t p, h, l;
 
 	if ((np = reguse[reg]) == NULL)
 		return;
@@ -130,8 +129,7 @@ spill(uint8_t reg)
 			code(LDL, np, r);
 			np->op = sym->kind;
 		} else {
-			new = allocreg(1);
-			moveto(np, new);
+			allocreg(np);
 		}
 		break;
 	default:
@@ -247,7 +245,7 @@ move(Node *np, Node *parent)
 	assert(np->type.size == 1);
 	switch (parent->op) {
 	case OASSIG:
-		moveto(np, allocreg(1));
+		allocreg(np);
 		break;
 	case OADD:
 	case OSUB:
