@@ -452,7 +452,6 @@ deflabel(char *token)
 	if (!curfun)
 		error(ESYNTAX);
 	sym = local(token);
-	sym->u.l.addr = listp - listexp;
 }
 
 static Symbol *

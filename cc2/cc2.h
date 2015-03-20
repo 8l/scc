@@ -66,9 +66,6 @@ struct symbol {
 			short off;
 		} v;
 		struct {
-			short addr;
-		} l;
-		struct {
 			short locals;
 			short params;
 			Node **body;
