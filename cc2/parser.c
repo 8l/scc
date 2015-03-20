@@ -235,7 +235,7 @@ imm(TINT i)
 	np->op = CONST;
 	np->type = l_int16;
 	/* FIX: memory leak */
-	np->sym = xmalloc(sizeof(Symbol *));
+	np->sym = xmalloc(sizeof(Symbol));
 	np->sym->u.imm = i;
 	np->left = np->right = NULL;
 	return np;
