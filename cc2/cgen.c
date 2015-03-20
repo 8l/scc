@@ -333,17 +333,13 @@ assign(Node *np)
 	switch (np->type.size) {
 	case 1:
 		switch (lp->op) {
+		case MEM:
 		case AUTO:
 			code(LDL, lp, rp);
 			break;
 		case REG:
 			/* TODO: what happens with the previous register? */
 			code(MOV, lp, rp);
-			break;
-		case MEM:
-			/* TODO: check if the variable is indexed */
-			index(lp);
-			code(LDL, lp, rp);
 			break;
 		default:
 			abort();
