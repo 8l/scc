@@ -81,6 +81,7 @@ Node regs[] = {
 	}
 };
 
+/* TODO: Remove reg8 and reg16 arrays */
 static uint8_t
 allocreg(uint8_t size)
 {
@@ -245,6 +246,9 @@ move(Node *np, Node *parent)
 {
 	assert(np->type.size == 1);
 	switch (parent->op) {
+	case OASSIG:
+		moveto(np, allocreg(1));
+		break;
 	case OADD:
 	case OSUB:
 		switch (np->op) {
@@ -317,15 +321,17 @@ assign(Node *np)
 	Node *lp = np->left, *rp = np->right;
 	Symbol *sym = lp->sym;
 
-	assert(rp->op == REG);
 	switch (np->type.size) {
 	case 1:
 		switch (lp->op) {
 		case MEM:
 			if (sym && sym->index)
 				lp->op = INDEX;
+			/* PASSTROUGH */
 		case INDEX:
 		case AUTO:
+			if (rp->op != REG)
+				move(rp, np);
 			code(LDL, lp, rp);
 			break;
 		case REG:
