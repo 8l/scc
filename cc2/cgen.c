@@ -106,7 +106,7 @@ allocreg(Node *np)
 	}
 	for (bp = ary; c = *bp; ++bp) {
 		r = reguse[c];
-		if (np && !np->used)
+		if (r && !r->used)
 			continue;
 		moveto(np, c);
 	}
