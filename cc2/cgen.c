@@ -215,8 +215,7 @@ accum(Node *np)
 	case 2:
 		moveto(np, HL);
 		break;
-	case 4:
-	case 8:
+	default:
 		abort();
 	}
 }

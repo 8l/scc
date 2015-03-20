@@ -457,13 +457,15 @@ expression(char *token)
 static void
 oreturn(char *token)
 {
-	Node *np = newnode();
+	Node *np = newnode(), *lp;
 
 	np->op = token[0];
 
 	if (token = strtok(NULL, "\t")) {
 		expr(token);
-		np -> left = pop();
+		lp = pop();
+		np ->left = lp;
+		np->type = lp->type;
 	} else {
 		np->left = NULL;
 	}
