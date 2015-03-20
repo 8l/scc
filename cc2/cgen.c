@@ -18,76 +18,67 @@ static uint8_t pair[] = {
 	[IYL] = IY, [IYH] = IY, [IY] = IY
 };
 
-Node
-reg_E = {
-	.op = REG,
-	.reg = E
-},
-reg_D = {
-	.op = REG,
-	.reg = D
-},
-reg_H = {
-	.op = REG,
-	.reg = H
-},
-reg_L = {
-	.op = REG,
-	.reg = L
-},
-reg_C = {
-	.op= REG,
-	.reg = C
-},
-reg_B = {
-	.op= REG,
-	.reg = B
-},
-reg_A = {
-	.op= REG,
-	.reg = A
-},
-reg_IYL = {
-	.op = REG,
-	.reg = IYL
-},
-reg_IYH = {
-	.op = REG,
-	.reg = IYH
-},
-reg_DE = {
-	.op = REG,
-	.reg = DE
-},
-reg_HL = {
-	.op = REG,
-	.reg = HL
-},
-reg_BC = {
-	.op = REG,
-	.reg = BC
-},
-reg_IX = {
-	.op = REG,
-	.reg = IX
-},
-reg_IY = {
-	.op = REG,
-	.reg = IY
-},
-reg_SP = {
-	.op = REG,
-	.reg = SP
-};
-
-Node *regs[] = {
-	[A] = &reg_A,
-	[B] = &reg_B, [C] = &reg_C,
-	[D] = &reg_D, [E] = &reg_E,
-	[H] = &reg_H, [L] = &reg_L,
-	[IYL] = &reg_IYL, [IYH] = &reg_IYH,
-	[HL] = &reg_HL, [DE] = &reg_DE, [BC]= &reg_BC,
-	[IX] = &reg_IX, [IY] = &reg_IY, [SP] = &reg_SP
+Node regs[] = {
+	[E] =  {
+		.op = REG,
+		.reg = E
+	},
+	[D] = {
+		.op = REG,
+		.reg = D
+	},
+	[H] = {
+		.op = REG,
+		.reg = H
+	},
+	[L] = {
+		.op = REG,
+		.reg = L
+	},
+	[C] = {
+		.op= REG,
+		.reg = C
+	},
+	[B] = {
+		.op= REG,
+		.reg = B
+	},
+	[A] = {
+		.op= REG,
+		.reg = A
+	},
+	[IYL] = {
+		.op = REG,
+		.reg = IYL
+	},
+	[IYH] = {
+		.op = REG,
+		.reg = IYH
+	},
+	[DE] = {
+		.op = REG,
+		.reg = DE
+	},
+	[HL] = {
+		.op = REG,
+		.reg = HL
+	},
+	[BC] = {
+		.op = REG,
+		.reg = BC
+	},
+	[IX] = {
+		.op = REG,
+		.reg = IX
+	},
+	[IY] = {
+		.op = REG,
+		.reg = IY
+	},
+	[SP] = {
+		.op = REG,
+		.reg = SP
+	}
 };
 
 static uint8_t
@@ -130,7 +121,7 @@ spill(uint8_t reg)
 	if (!sym->dirty)
 		goto freereg;
 
-	r = regs[reg];
+	r = &regs[reg];
 	switch (np->type.size) {
 	case 1:
 		code(LDL, np, r);
@@ -154,7 +145,7 @@ freereg:
 static void
 moveto(Node *np, uint8_t reg)
 {
-	Node *r = regs[reg], *u = reguse[reg];
+	Node *r = &regs[reg], *u = reguse[reg];
 	char op = np->op;
 
 	if (u) {
@@ -188,8 +179,8 @@ moveto(Node *np, uint8_t reg)
 			code(LDL, r, np);
 			break;
 		case AUTO:
-			code(LDL, regs[lower[reg]], np);
-			code(LDH, regs[upper[reg]], np);
+			code(LDL, &regs[lower[reg]], np);
+			code(LDH, &regs[upper[reg]], np);
 			break;
 		default:
 			abort();
@@ -243,7 +234,7 @@ index(Node *np)
 			spill(HL);
 		}
 	}
-	code(LDI, &reg_HL, np);
+	code(LDI, &regs[HL], np);
 	np->op = INDEX;
 	reguse[HL] = reguse[H] = reguse[L] = np;
 }
@@ -418,23 +409,23 @@ generate(void)
 	char frame =  size != 0 || odebug;
 
 	if (frame) {
-		code(PUSH, NULL, &reg_IX);
-		code(MOV, &reg_IX, &reg_SP);
+		code(PUSH, NULL, &regs[IX]);
+		code(MOV, &regs[IX], &regs[SP]);
 		if (size > 6) {
-			code(MOV, &reg_HL, imm(-size));
-			code(ADD, &reg_HL, &reg_SP);
-			code(MOV, &reg_SP, &reg_HL);
+			code(MOV, &regs[HL], imm(-size));
+			code(ADD, &regs[HL], &regs[SP]);
+			code(MOV, &regs[SP], &regs[HL]);
 		} else {
 			for (i = size; i != 0; i-= 2)
-				code(PUSH, NULL, &reg_HL);
+				code(PUSH, NULL, &regs[HL]);
 		}
 	}
 
 	apply(applycgen);
 
 	if (frame) {
-		code(MOV, &reg_SP, &reg_IX);
-		code(POP, &reg_IX, NULL);
+		code(MOV, &regs[SP], &regs[IX]);
+		code(POP, &regs[IX], NULL);
 		code(RET, NULL, NULL);
 	}
 }
