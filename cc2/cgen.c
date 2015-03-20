@@ -6,6 +6,9 @@
 #include "../inc/cc.h"
 #include "cc2.h"
 
+static Symbol retlabel = {
+	.kind = LABEL
+};
 
 static Node *reguse[NPAIRS];
 static uint8_t upper[] = {[DE] = D, [HL] = H, [BC] = B,  [IY] = IYH};
@@ -18,7 +21,7 @@ static uint8_t pair[] = {
 	[IYL] = IY, [IYH] = IY, [IY] = IY
 };
 
-Node regs[] = {
+static Node regs[] = {
 	[E] =  {
 		.op = REG,
 		.reg = E
@@ -351,6 +354,14 @@ assign(Node *np)
 static void
 ret(Node *np)
 {
+	static Node retnode = {
+		.op = LABEL,
+		.sym = &retlabel
+	};
+
+	if (np->left)
+		accum(np->left);
+	code(JP, &retnode, NULL);
 }
 
 static void (*opnodes[])(Node *) = {
@@ -400,6 +411,9 @@ void
 generate(void)
 {
 	uint8_t size = curfun->u.f.locals;
+	static short id = 1000;
+
+	retlabel.id = id++;
 
 	code(PUSH, NULL, &regs[IX]);
 	code(MOV, &regs[IX], &regs[SP]);
@@ -415,6 +429,8 @@ generate(void)
 	apply(applycgen);
 
 	code(MOV, &regs[SP], &regs[IX]);
+	retlabel.u.pc = pc;
+	pc->label = &retlabel;
 	code(POP, &regs[IX], NULL);
 	code(RET, NULL, NULL);
 }

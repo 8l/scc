@@ -33,7 +33,8 @@ static void (*instcode[])(void) = {
 	[NOP] = inst0,
 	[INC] = inst1,
 	[SUB] = inst2,
-	[DEC] = inst1
+	[DEC] = inst1,
+	[JP] = inst1
 };
 
 static char *insttext[] = {
@@ -49,7 +50,8 @@ static char *insttext[] = {
 	[NOP] = "NOP",
 	[INC] = "INC",
 	[SUB] = "SUB",
-	[DEC] = "DEC"
+	[DEC] = "DEC",
+	[JP] = "JP"
 };
 
 Inst *pc, *prog;
@@ -88,6 +90,7 @@ addr(char op, Node *np, Addr *addr)
 	case AUTO:
 		addr->u.i = np->sym->u.v.off;
 		break;
+	case LABEL:
 	case MEM:
 		addr->u.sym = np->sym;
 		break;
@@ -144,8 +147,11 @@ writeout(void)
 	if (!prog)
 		return;
 
-	for (pc = prog; pc; pc = pc->next)
+	for (pc = prog; pc; pc = pc->next) {
+		if (pc->label)
+			printf("L%d:", pc->label->id);
 		(*instcode[pc->op])();
+	}
 }
 
 static void
@@ -163,6 +169,10 @@ addr2txt(uint8_t op, Addr *a)
 	case PAR:
 	case AUTO:
 		printf("(IX%+d)", a->u.i);
+		break;
+	case LABEL:
+		sym = a->u.sym;
+		printf("L%d", sym->id);
 		break;
 	case INDEX:
 		fputs("(HL)", stdout);

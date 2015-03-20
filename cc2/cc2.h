@@ -42,13 +42,16 @@
 
 typedef struct symbol Symbol;
 typedef struct node Node;
+typedef struct inst Inst;
+typedef struct addr Addr;
+typedef struct type Type;
 
-typedef struct {
+struct type {
 	unsigned short size;
 	uint8_t align;
 	char letter;
 	uint8_t flags;
-} Type;
+};
 
 struct symbol {
 	unsigned short id;
@@ -65,6 +68,7 @@ struct symbol {
 			char sclass;
 			short off;
 		} v;
+		Inst *pc;
 		struct {
 			short locals;
 			short params;
@@ -85,15 +89,12 @@ struct node {
 	struct node *left, *right;
 };
 
-typedef struct inst Inst;
-typedef struct addr Addr;
 
 struct addr {
 	char kind;
 	union {
 		uint8_t reg;
 		TINT i;
-		Inst *pc;
 		Symbol *sym;
 	} u;
 };
@@ -101,6 +102,7 @@ struct addr {
 struct inst {
 	uint8_t op;
 	Addr from, to;
+	Symbol *label;
 	Inst *next, *prev;
 };
 
@@ -133,7 +135,8 @@ enum {
 	NOP,
 	INC,
 	SUB,
-	DEC
+	DEC,
+	JP
 };
 
 enum {
