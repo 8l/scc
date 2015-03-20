@@ -82,13 +82,13 @@ Node regs[] = {
 };
 
 static uint8_t
-allocreg(Node *np)
+allocreg(uint8_t size)
 {
 	static uint8_t reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
 	static uint8_t reg16[] = {BC, DE, IY, 0};
 	uint8_t *bp, c;
 
-	switch (np->type.size) {
+	switch (size) {
 	case 1:
 		bp = reg8;
 		break;
@@ -128,7 +128,7 @@ spill(uint8_t reg)
 			np->op = sym->kind;
 			sym->dirty = 0;
 		} else {
-			new = allocreg(np);
+			new = allocreg(1);
 			moveto(np, new);
 		}
 		break;
