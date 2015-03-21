@@ -410,7 +410,7 @@ static void (*opnodes[])(Node *) = {
 };
 
 static void
-cgen(Node *np, Node *parent)
+cgen(Node *np)
 {
 	Node *lp, *rp;
 
@@ -423,17 +423,17 @@ cgen(Node *np, Node *parent)
 	lp = np->left;
 	rp = np->right;
 	if (!lp) {
-		cgen(rp, np);
+		cgen(rp);
 	} else if (!rp) {
-		cgen(lp, np);
+		cgen(lp);
 	} else {
 		Node *p, *q;
 		if (lp->complex > rp->complex)
 			p = lp, q = rp;
 		else
 			p = rp, q = lp;
-		cgen(p, np);
-		cgen(q, np);
+		cgen(p);
+		cgen(q);
 	}
 	(*opnodes[np->op])(np);
 }
@@ -459,7 +459,7 @@ generate(void)
 	}
 
 	for (stmt = curfun->u.f.body; np = *stmt; ++stmt)
-		cgen(np, NULL);
+		cgen(np);
 
 	code(MOV, &regs[SP], &regs[IX]);
 	retlabel.u.pc = pc;
