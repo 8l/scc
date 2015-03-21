@@ -333,6 +333,7 @@ assign(Node *np)
 		case AUTO:
 			if (rp->op != REG)
 				move(rp, np);
+			lp->reg = rp->reg;
 			code(LDL, lp, rp);
 			break;
 		case REG:
@@ -346,10 +347,10 @@ assign(Node *np)
 		abort();
 	}
 
-	lp->used = 1;
 	np->op = REG;
-	np->reg = rp->reg;
-	np->sym = lp->sym;
+	np->reg = lp->reg;
+	np->sym = rp->sym = lp->sym;
+	np->used = rp->used = lp->used = 1;
 }
 
 static void
