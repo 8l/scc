@@ -34,7 +34,10 @@ static void (*instcode[])(void) = {
 	[INC] = inst1,
 	[SUB] = inst2,
 	[DEC] = inst1,
-	[JP] = inst1
+	[JP] = inst1,
+	[AND] = inst2,
+	[OR] = inst2,
+	[XOR] = inst2
 };
 
 static char *insttext[] = {
@@ -51,7 +54,10 @@ static char *insttext[] = {
 	[INC] = "INC",
 	[SUB] = "SUB",
 	[DEC] = "DEC",
-	[JP] = "JP"
+	[JP] = "JP",
+	[AND] = "AND",
+	[OR] = "OR",
+	[XOR] = "XOR"
 };
 
 Inst *pc, *prog;

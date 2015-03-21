@@ -252,6 +252,9 @@ move(Node *np, Node *parent)
 		break;
 	case OADD:
 	case OSUB:
+	case OBAND:
+	case OBOR:
+	case OBXOR:
 		switch (np->op) {
 		case PAR:
 		case AUTO:
@@ -286,12 +289,13 @@ static void
 add(Node *np)
 {
 	Node *lp = np->left, *rp = np->right, *a;
+	uint8_t op;
 
 	switch (np->type.size) {
 	case 1:
 		a = reguse[A];
 		if (a == lp)
-			goto add1;
+			goto update_a;
 		if (a == rp)
 			goto conmute1;
 		if (lp->op == CONST) {
@@ -299,13 +303,32 @@ add(Node *np)
 			goto conmute1;
 		}
 		accum(lp);
-		goto add1;
+		goto update_a;
 	conmute1:
 		conmute(np);
 		lp = np->left, rp = np->right;
-	add1:
+	update_a:
 		move(rp, np);
-		code((np->op == OADD) ? ADD : SUB, lp, rp);
+		switch (np->op) {
+		case OADD:
+			op = ADD;
+			break;
+		case OSUB:
+			op = SUB;
+			break;
+		case OBAND:
+			op = AND;
+			break;
+		case OBOR:
+			op = OR;
+			break;
+		case OBXOR:
+			op = XOR;
+			break;
+		default:
+			abort();
+		}
+		code(op, lp, rp);
 		lp->used = rp->used = 1;
 		np->op = REG;
 		np->reg = A;
@@ -380,7 +403,10 @@ static void (*opnodes[])(Node *) = {
 	[REG] = nop,
 	[AUTO] = nop,
 	[CONST] = nop,
-	[PAR] = nop
+	[PAR] = nop,
+	[OBOR] = add,
+	[OBAND] = add,
+	[OBXOR] = add
 };
 
 static void

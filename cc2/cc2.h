@@ -136,7 +136,10 @@ enum {
 	INC,
 	SUB,
 	DEC,
-	JP
+	JP,
+	AND,
+	OR,
+	XOR
 };
 
 enum {
