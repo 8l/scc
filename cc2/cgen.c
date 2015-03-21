@@ -433,15 +433,31 @@ cpl(Node *np)
 			abort();
 		}
 		code(op, lp, NULL);
-		if ((np->op = lp->op) == REG) {
-			np->reg = lp->reg;
-			reguse[A] = np;
-		}
-		np->sym = lp->sym;
 		lp->used = 1;
+		np->sym = lp->sym;
+		np->reg = lp->reg;
+		np->op = REG;
+		reguse[A] = np;
 		break;
 	default:
 		abort();
+	}
+}
+
+static void
+cast(Node *np)
+{
+	Node *lp = np->left;
+	uint8_t reg;
+
+	if (lp->type.size != np->type.size)
+		abort();
+	lp->used = 1;
+	np->sym = lp->sym;
+	if ((np->op = lp->op) == REG) {
+		reg = lp->reg;
+		np->reg = reg;
+		reguse[pair[reg]] = reguse[reg] = np;
 	}
 }
 
@@ -459,7 +475,8 @@ static void (*opnodes[])(Node *) = {
 	[OBAND] = add,
 	[OBXOR] = add,
 	[OCPL] = cpl,
-	[ONEG] = cpl
+	[ONEG] = cpl,
+	[OCAST] = cast
 };
 
 static void
