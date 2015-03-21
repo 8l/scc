@@ -30,6 +30,10 @@ peephole(void)
 			/* TODO: More optimizations (ex: -1) */
 			}
 			break;
+		case JP:
+			if (to.u.sym->u.pc == pc->next)
+				delcode();
+			break;
 		}
 	}
 }
