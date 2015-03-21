@@ -86,7 +86,7 @@ static Node regs[] = {
 
 static void moveto(Node *np, uint8_t reg);
 
-static uint8_t
+static void
 allocreg(Node *np)
 {
 	static uint8_t reg8[] = {A, B, C, D, E, H, L, IYL, IY, 0};
@@ -106,9 +106,10 @@ allocreg(Node *np)
 	}
 	for (bp = ary; c = *bp; ++bp) {
 		r = reguse[c];
-		if (r && !r->used)
-			continue;
-		moveto(np, c);
+		if (!r || r->used) {
+			moveto(np, c);
+			return;
+		}
 	}
 	/* TODO: What to do here? */
 	abort();
@@ -363,11 +364,21 @@ ret(Node *np)
 	code(JP, &retnode, NULL);
 }
 
+static void
+nop(Node *np)
+{
+}
+
 static void (*opnodes[])(Node *) = {
 	[OADD] = add,
 	[OSUB] = add,
 	[OASSIG] = assign,
-	[ORET] = ret
+	[ORET] = ret,
+	[MEM] = nop,
+	[REG] = nop,
+	[AUTO] = nop,
+	[CONST] = nop,
+	[PAR] = nop
 };
 
 static void
@@ -399,18 +410,12 @@ cgen(Node *np, Node *parent)
 	(*opnodes[np->op])(np);
 }
 
-static Node *
-applycgen(Node *np)
-{
-	cgen(np, NULL);
-	return NULL;
-}
-
 void
 generate(void)
 {
 	uint8_t size = curfun->u.f.locals;
 	static short id = 1000;
+	Node **stmt, *np;
 
 	retlabel.id = id++;
 
@@ -425,7 +430,8 @@ generate(void)
 			code(PUSH, NULL, &regs[HL]);
 	}
 
-	apply(applycgen);
+	for (stmt = curfun->u.f.body; np = *stmt; ++stmt)
+		cgen(np, NULL);
 
 	code(MOV, &regs[SP], &regs[IX]);
 	retlabel.u.pc = pc;
