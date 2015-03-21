@@ -158,9 +158,9 @@ moveto(Node *np, uint8_t reg)
 
 	if (u) {
 		Symbol *sym = np->sym;
-		if (op == u->op && sym && sym == u->sym)
+		if (sym && sym == u->sym)
 			return;
-		else
+		else if (!np->used)
 			spill(reg);
 	}
 
@@ -349,6 +349,7 @@ assign(Node *np)
 	lp->used = 1;
 	np->op = REG;
 	np->reg = rp->reg;
+	np->sym = lp->sym;
 }
 
 static void
