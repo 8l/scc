@@ -250,6 +250,24 @@ move(Node *np, Node *parent)
 	case OASSIG:
 		allocreg(np);
 		break;
+	case ONEG:
+	case OCPL:
+		switch (np->op) {
+		case REG:
+			if (np->reg == A)
+				break;
+			/* PASSTHROUGH */
+		case PAR:
+		case AUTO:
+		case CONST:
+		case MEM:
+		case INDEX:
+			accum(np);
+			break;
+		default:
+			abort();
+		}
+		break;
 	case OADD:
 	case OSUB:
 	case OBAND:
@@ -394,6 +412,39 @@ nop(Node *np)
 {
 }
 
+static void
+cpl(Node *np)
+{
+
+	Node *lp = np->left;
+	uint8_t op;
+
+	switch (np->type.size) {
+	case 1:
+		move(lp, np);
+		switch (np->op) {
+		case OCPL:
+			op = CPL;
+			break;
+		case ONEG:
+			op = NEG;
+			break;
+		default:
+			abort();
+		}
+		code(op, lp, NULL);
+		if ((np->op = lp->op) == REG) {
+			np->reg = lp->reg;
+			reguse[A] = np;
+		}
+		np->sym = lp->sym;
+		lp->used = 1;
+		break;
+	default:
+		abort();
+	}
+}
+
 static void (*opnodes[])(Node *) = {
 	[OADD] = add,
 	[OSUB] = add,
@@ -406,7 +457,9 @@ static void (*opnodes[])(Node *) = {
 	[PAR] = nop,
 	[OBOR] = add,
 	[OBAND] = add,
-	[OBXOR] = add
+	[OBXOR] = add,
+	[OCPL] = cpl,
+	[ONEG] = cpl
 };
 
 static void

@@ -139,7 +139,9 @@ enum {
 	JP,
 	AND,
 	OR,
-	XOR
+	XOR,
+	CPL,
+	NEG
 };
 
 enum {
