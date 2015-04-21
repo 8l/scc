@@ -1,13 +1,17 @@
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "../inc/cc.h"
 
+uint8_t failure;
+
 void
 die(const char *fmt, ...)
 {
+	failure = 1;
 	va_list va;
 	va_start(va, fmt);
 	fprintf(stderr, fmt, va);

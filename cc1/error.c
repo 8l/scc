@@ -1,27 +1,32 @@
 
+#include <setjmp.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
-#include <stdio.h>
 
 #include "../inc/cc.h"
 #include "cc1.h"
 
-extern unsigned linenum;
-extern unsigned columnum;
-extern const char *filename;
-
 static void
-warn_helper(signed char flag, const char *fmt, va_list va)
+warn_helper(int8_t flag, const char *fmt, va_list va)
 {
+	extern unsigned linenum;
+	extern unsigned columnum;
+	extern const char *filename;
+	extern uint8_t failure;
+	extern jmp_buf recover;
+
 	if (!flag)
 		return;
 	fprintf(stderr, "%s:%s:%u: ",
-		(!flag) ? "warning" : "error", filename, linenum);
+		(flag < 0) ? "warning" : "error", filename, linenum);
 	vfprintf(stderr, fmt, va);
 	putc('\n', stderr);
-	if (flag < 0)
-		exit(EXIT_FAILURE); /* TODO: uhmmmm */
+	if (flag < 0) {
+		failure = 1;
+		longjmp(recover, 1);
+	}
 }
 
 void

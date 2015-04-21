@@ -1,5 +1,6 @@
 
 #include <inttypes.h>
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,16 +13,16 @@ extern void init_keywords(void),
 	open_file(const char *file),  init_expr(void);
 
 uint8_t npromote, warnings;
+jmp_buf recover;
 
-static uint8_t noerror;
 static char *output;
 
 static void
 clean(void)
 {
-	if (noerror)
-		return;
-	if (output)
+	extern uint8_t failure;
+
+	if (failure && output)
 		remove(output);
 }
 
@@ -38,6 +39,7 @@ main(int argc, char *argv[])
 	char c, *input, *cp;
 
 	atexit(clean);
+
 repeat:
 	--argc, ++argv;
 	if (*argv && argv[0][0] == '-' && argv[0][1] != '-') {
@@ -69,15 +71,16 @@ repeat:
 	init_keywords();
 	init_expr();
 	open_file(input);
+
+	setjmp(recover);
 	next();
 
 	while (yytoken != EOFTOK)
 		extdecl();
 
-	if (ferror(stdin) || ferror(stdout)) {
-		die("error reading/writing from input/output:%s",
-		    strerror(errno));
-	}
-	noerror = 1;
+	if (fclose(stdin))
+		die("error reading from input:%s", strerror(errno));
+	if (fclose(stdout))
+		die("error writing in output:%s", strerror(errno));
 	return 0;
 }
