@@ -69,8 +69,10 @@ repeat:
 	init_keywords();
 	init_expr();
 	open_file(input);
-	for (next(); yytoken != EOFTOK; extdecl());
-		/* nothing */;
+	next();
+
+	while (yytoken != EOFTOK)
+		extdecl();
 
 	if (ferror(stdin) || ferror(stdout)) {
 		die("error reading/writing from input/output:%s",
