@@ -8,23 +8,11 @@
 #define BTYPE(np) ((np)->type->op)
 #define TYPE(tp) node(OTYP, (tp), NULL, NULL)
 
-static Symbol *zero, *one;
+extern Symbol *zero, *one;
 
 Node *expr(void);
 
 /* TODO: Change np1 and np2 to left and right (or l, r) */
-
-void
-init_expr(void)
-{
-	static Symbol dummy0, dummy1;
-
-	dummy0.type = dummy1.type = inttype;
-	dummy0.u.i = 0;
-	dummy1.u.i = 1;
-	zero = &dummy0;
-	one = &dummy1;
-}
 
 static Node *
 promote(Node *np)

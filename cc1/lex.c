@@ -390,7 +390,7 @@ ahead(void)
 }
 
 void
-open_file(const char *file)
+lexfile(const char *file)
 {
 	if (yyin != NULL)
 		fclose(yyin);

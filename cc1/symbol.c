@@ -105,7 +105,7 @@ install(char *s, uint8_t ns)
 }
 
 void
-init_keywords(void)
+ikeywords(void)
 {
 	static struct {
 		char *str;

@@ -129,6 +129,11 @@ Type *voidtype = &types[0], *pvoidtype = &types[1],
 	*floattype = &types[14], *doubletype = &types[15],
 	*ldoubletype = &types[16];
 
+static Symbol dummy0 = {.u.i = 0, .type = &types[9]},
+              dummy1 = {.u.i = 1, .type = &types[9]};
+Symbol *zero = &dummy0, *one = &dummy1;
+
+
 Type *
 ctype(int8_t type, int8_t sign, int8_t size)
 {

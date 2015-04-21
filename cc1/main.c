@@ -9,8 +9,7 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-extern void init_keywords(void),
-	open_file(const char *file),  init_expr(void);
+extern void ikeywords(void), lexfile(char *file);
 
 uint8_t npromote, warnings;
 jmp_buf recover;
@@ -36,13 +35,14 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	char c, *input, *cp;
+	char c, *cp;
 
 	atexit(clean);
 
-repeat:
-	--argc, ++argv;
-	if (*argv && argv[0][0] == '-' && argv[0][1] != '-') {
+	for (;;) {
+		--argc, ++argv;
+		if (!*argv || argv[0][0] != '-' || argv[0][1] == '-')
+			break;
 		for (cp = &argv[0][1]; (c = *cp); cp++) {
 			switch (c) {
 			case 'w':
@@ -58,19 +58,15 @@ repeat:
 				usage();
 			}
 		}
-		goto repeat;
 	}
 
-	if (output) {
-		if (!freopen(output, "w", stdout))
-			die("error opening output:%s", strerror(errno));
-	}
-	input = *argv;
+	if (output && !freopen(output, "w", stdout))
+		die("error opening output:%s", strerror(errno));
 	if (argc > 1)
 		usage();
-	init_keywords();
-	init_expr();
-	open_file(input);
+
+	ikeywords();
+	lexfile(*argv);
 
 	setjmp(recover);
 	next();
