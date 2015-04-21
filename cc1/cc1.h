@@ -1,7 +1,7 @@
 
 
-extern void error(const char *fmt, ...);
-extern void warn(const char *fmt, ...);
+extern void error(char *fmt, ...);
+extern void warn(char *fmt, ...);
 extern void unexpected(void);
 
 /* definitions of types */
