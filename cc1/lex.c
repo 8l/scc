@@ -374,8 +374,10 @@ next(void)
 void
 expect(uint8_t tok)
 {
-	if (yytoken != tok)
-		unexpected();
+	if (yytoken != tok) {
+		softerror("unexpecetd '%s'", yytext);
+		yytoken = tok;
+	}
 	next();
 }
 

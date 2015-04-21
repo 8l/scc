@@ -44,13 +44,22 @@ error(char *fmt, ...)
 	va_start(va, fmt);
 	warn_helper(-1, fmt, va);
 	va_end(va);
-
 	failure = 1;
 	longjmp(recover, 1);
 }
 
 void
-unexpected(void)
+softerror(char *fmt, ...)
 {
+	va_list va;
+	va_start(va, fmt);
+	warn_helper(-1, fmt, va);
+	va_end(va);
+	failure = 1;
+}
+
+void
+unexpected(void)
+{	
 	error("unexpected '%s'", yytext);
 }

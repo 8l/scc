@@ -3,7 +3,7 @@
 extern void error(char *fmt, ...);
 extern void warn(char *fmt, ...);
 extern void unexpected(void);
-
+extern void softerror(char *fmt, ...);
 /* definitions of types */
 
 #define CTX_OUTER 0
