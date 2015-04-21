@@ -156,11 +156,11 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(';');
 	if (!np) {
 		if (tp != voidtype)
-			warn(1, "function returning non void returns no value");
+			warn("function returning non void returns no value");
 		tp = voidtype;
 	} else if (np->type != tp) {
 		if (tp == voidtype)
-			warn(1, "function returning void returns a value");
+			warn("function returning void returns a value");
 		else if ((np = convert(np, tp, 0)) == NULL)
 			error("incorrect type in return");
 	}

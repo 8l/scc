@@ -125,7 +125,7 @@ repeat:
 			goto repeat;
 		break;
 	default:
-		warn(1, "unknown escape sequence");
+		warn("unknown escape sequence");
 		return s;
 	}
 

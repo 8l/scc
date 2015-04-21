@@ -25,11 +25,13 @@ warn_helper(signed char flag, const char *fmt, va_list va)
 }
 
 void
-warn(signed char flag, const char *fmt, ...)
+warn(const char *fmt, ...)
 {
+	extern uint8_t warnings;
+
 	va_list va;
 	va_start(va, fmt);
-	warn_helper(flag, fmt, va);
+	warn_helper(warnings, fmt, va);
 	va_end(va);
 }
 

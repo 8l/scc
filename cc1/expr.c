@@ -31,8 +31,9 @@ promote(Node *np)
 {
 	Type *tp;
 	uint8_t r;
+	extern uint8_t npromote;
 
-	if (options.npromote)
+	if (npromote)
 		return np;
 	tp = np->type;
 	r = tp->n.rank;
@@ -243,8 +244,7 @@ pcompare(char op, Node *np1, Node *np2)
 		break;
 	case PTR:
 		if (np1->type != np2->type)
-			warn(options.pcompare,
-			     "comparision between different pointer types");
+			warn("comparision between different pointer types");
 		break;
 	default:
 		error("incompatibles type in comparision");

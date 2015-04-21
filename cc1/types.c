@@ -155,8 +155,7 @@ ctype(int8_t type, int8_t sign, int8_t size)
 		return booltype;
 	case 0:
 		if (!sign && !size) {
-			warn(options.implicit,
-			     "type defaults to 'int' in declaration");
+			warn("type defaults to 'int' in declaration");
 		}
 		/* fallthrough */
 	case INT:

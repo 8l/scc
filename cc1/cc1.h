@@ -1,17 +1,7 @@
 
 
-struct user_opt {
-	unsigned char implicit;
-	unsigned char mixdcls;
-	unsigned char npromote;
-	unsigned char useless;
-	unsigned char charsign;
-	unsigned char pcompare;
-};
-
-extern struct user_opt options;
 extern void error(const char *fmt, ...);
-extern void warn(signed char flag, const char *fmt, ...);
+extern void warn(const char *fmt, ...);
 extern void unexpected(void);
 
 /* definitions of types */

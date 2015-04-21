@@ -8,7 +8,7 @@
 extern void init_keywords(void),
 	open_file(const char *file),  init_expr(void);
 
-struct user_opt options;
+uint8_t npromote, warnings;
 
 int
 main(int argc, char *argv[])
