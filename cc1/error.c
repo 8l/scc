@@ -39,10 +39,13 @@ warn(char *fmt, ...)
 	va_end(va);
 }
 
-void
+bool
 setsafe(uint8_t type)
 {
 	safe = type;
+	if (setjmp(recover))
+		return 0;
+	return 1;
 }
 
 void

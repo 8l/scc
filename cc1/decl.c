@@ -1,6 +1,5 @@
 
 #include <inttypes.h>
-#include <setjmp.h>
 #include <string.h>
 
 #include "../inc/sizes.h"
@@ -493,10 +492,8 @@ extdecl(void)
 	int8_t sclass;
 	Symbol *sym;
 	extern Symbol *curfun;
-	extern jmp_buf recover;
 
-	setsafe(END_DECL);
-	if (setjmp(recover))
+	if (!setsafe(END_DECL))
 		return;
 
 	switch (yytoken) {
