@@ -48,23 +48,26 @@ setsafe(uint8_t type)
 void
 error(char *fmt, ...)
 {
+	int c;
 	va_list va;
+
 	va_start(va, fmt);
 	warn_helper(-1, fmt, va);
 	va_end(va);
 	failure = 1;
 
-	for (;; next()) {
+	c = yytoken;
+	do {
 		switch (safe) {
 		case END_DECL:
-			if (yytoken == ';')
+			if (c == ';')
 				goto jump;
 			break;
 		}
-	}
+	} while ((c = getchar()) != EOF);
 
 jump:
-	next();
+	yytoken = c;
 	longjmp(recover, 1);
 }
 
