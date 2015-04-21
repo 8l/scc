@@ -68,7 +68,6 @@ main(int argc, char *argv[])
 	ikeywords();
 	lexfile(*argv);
 
-	setjmp(recover);
 	next();
 
 	while (yytoken != EOFTOK)

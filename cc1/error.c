@@ -11,6 +11,8 @@
 extern uint8_t failure;
 extern jmp_buf recover;
 
+static uint8_t safe;
+
 static void
 warn_helper(int8_t flag, char *fmt, va_list va)
 {
@@ -38,6 +40,12 @@ warn(char *fmt, ...)
 }
 
 void
+setsafe(uint8_t type)
+{
+	safe = type;
+}
+
+void
 error(char *fmt, ...)
 {
 	va_list va;
@@ -45,6 +53,18 @@ error(char *fmt, ...)
 	warn_helper(-1, fmt, va);
 	va_end(va);
 	failure = 1;
+
+	for (;; next()) {
+		switch (safe) {
+		case END_DECL:
+			if (yytoken == ';')
+				goto jump;
+			break;
+		}
+	}
+
+jump:
+	next();
 	longjmp(recover, 1);
 }
 

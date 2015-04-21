@@ -4,6 +4,12 @@ extern void error(char *fmt, ...);
 extern void warn(char *fmt, ...);
 extern void unexpected(void);
 extern void softerror(char *fmt, ...);
+extern void setsafe(uint8_t type);
+
+enum {
+	END_DECL
+};
+
 /* definitions of types */
 
 #define CTX_OUTER 0
