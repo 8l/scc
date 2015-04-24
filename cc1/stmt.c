@@ -1,6 +1,7 @@
 
 #include <stddef.h>
 #include <inttypes.h>
+#include <setjmp.h>
 #include <stdio.h>
 
 #include "../inc/cc.h"
@@ -60,10 +61,16 @@ stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static Node *
 condition(void)
 {
+	extern jmp_buf recover;
+	extern Symbol *zero;
 	Node *np;
 
 	expect('(');
-	np = iszero(expr());
+	setsafe(END_COND);
+	if (!setjmp(recover))
+		np = iszero(expr());
+	else
+		np = symbol(zero);
 	expect(')');
 	return np;
 }
@@ -311,10 +318,13 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
+	extern jmp_buf recover;
 	pushctx();
 	expect('{');
 
 	for (;;) {
+		setsafe(END_COMP);
+		setjmp(recover);
 		switch (yytoken) {
 		case '}':
 			goto end_compound;
@@ -369,4 +379,3 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 	(*fun)(lbreak, lcont, lswitch);
 }
-

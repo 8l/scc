@@ -1,5 +1,6 @@
 
 #include <inttypes.h>
+#include <setjmp.h>
 #include <string.h>
 
 #include "../inc/sizes.h"
@@ -427,12 +428,17 @@ decl(void)
 	Type *tp;
 	Symbol *sym;
 	int8_t sclass, isfun;
+	extern jmp_buf recover;
 
+	setsafe(END_DECL);
+	setjmp(recover);
 	tp = specifier(&sclass);
 	if (accept(';'))
 		return;
 
 	do {
+		setsafe(END_LDECL);
+		setjmp(recover);
 		sym = declarator(tp, ID_EXPECTED, NS_IDEN);
 		isfun = sym->type->op == FTN;
 
@@ -492,9 +498,10 @@ extdecl(void)
 	int8_t sclass;
 	Symbol *sym;
 	extern Symbol *curfun;
+	extern jmp_buf recover;
 
-	if (!setsafe(END_DECL))
-		return;
+	setsafe(END_DECL);
+	setjmp(recover);
 
 	switch (yytoken) {
 	case IDEN: case TYPE: case TYPEIDEN: case SCLASS: case TQUALIFIER:
@@ -502,6 +509,8 @@ extdecl(void)
 		if (accept(';'))
 			return;
 		do {
+			setsafe(END_LDECL);
+			setjmp(recover);
 			sym = declarator(base, ID_EXPECTED, NS_IDEN);
 			tp = sym->type;
 			sym->isstatic = 1;

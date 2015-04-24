@@ -4,10 +4,13 @@ extern void error(char *fmt, ...);
 extern void warn(char *fmt, ...);
 extern void unexpected(void);
 extern void softerror(char *fmt, ...);
-extern bool setsafe(uint8_t type);
+extern void setsafe(uint8_t type);
 
 enum {
-	END_DECL
+	END_DECL,
+	END_LDECL,
+	END_COMP,
+	END_COND
 };
 
 /* definitions of types */

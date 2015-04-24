@@ -9,7 +9,7 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-static FILE *yyin;
+FILE *yyin;
 uint8_t lex_ns = NS_IDEN;
 const char *filename;
 unsigned linenum;
@@ -374,11 +374,10 @@ next(void)
 void
 expect(uint8_t tok)
 {
-	if (yytoken != tok) {
-		softerror("unexpecetd '%s'", yytext);
-		yytoken = tok;
-	}
-	next();
+	if (yytoken != tok)
+		softerror("expected '%c' before '%s'", tok, yytext);
+	else
+		next();
 }
 
 uint8_t
@@ -406,4 +405,3 @@ lexfile(const char *file)
 	}
 	linenum = 1;
 }
-

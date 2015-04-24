@@ -39,13 +39,10 @@ warn(char *fmt, ...)
 	va_end(va);
 }
 
-bool
+void
 setsafe(uint8_t type)
 {
 	safe = type;
-	if (setjmp(recover))
-		return 0;
-	return 1;
 }
 
 void
@@ -53,6 +50,7 @@ error(char *fmt, ...)
 {
 	int c;
 	va_list va;
+	extern FILE *yyin;
 
 	va_start(va, fmt);
 	warn_helper(-1, fmt, va);
@@ -62,12 +60,24 @@ error(char *fmt, ...)
 	c = yytoken;
 	do {
 		switch (safe) {
+		case END_COMP:
+			if (c == '}')
+				goto jump;
+			goto semicolon;
+		case END_COND:
+			if (c == ')')
+				goto jump;
+			break;
+		case END_LDECL:
+			if (c == ',')
+				goto jump;
 		case END_DECL:
+		semicolon:
 			if (c == ';')
 				goto jump;
 			break;
 		}
-	} while ((c = getchar()) != EOF);
+	} while ((c = getc(yyin)) != EOF);
 
 jump:
 	yytoken = c;
