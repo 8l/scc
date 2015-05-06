@@ -106,8 +106,6 @@ void (*opcode[])(uint8_t, void *) = {
 void
 freetree(Node *np)
 {
-	Node **p;
-
 	if (!np)
 		return;
 	freetree(np->left);
