@@ -7,18 +7,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-struct scase {
-	Symbol *label;
-	Node *expr;
-	struct scase *next;
-};
-
-struct caselist {
-	short nr;
-	Symbol *deflabel;
-	struct scase *head;
-};
-
 Symbol *curfun;
 
 extern Node *convert(Node *np, Type *tp1, char iscast);
@@ -249,7 +237,7 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emit(OJUMP, lcond);
 	stmt(lbreak, lcont, &lcase);
 	emit(OLABEL, lcond);
-	emitswitch(lcase.nr);
+	emit(OSWITCH, &lcase);
 	emit(OEXPR, cond);
 	for (p = lcase.head; p; p = next) {
 		emit(OCASE, p->label);

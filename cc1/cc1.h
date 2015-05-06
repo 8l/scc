@@ -28,6 +28,8 @@ enum {
 
 typedef struct ctype Type;
 typedef struct symbol Symbol;
+typedef struct caselist Caselist;
+typedef struct node Node;
 
 struct ctype {
 	uint8_t op;           /* type builder operator */
@@ -79,7 +81,17 @@ extern Symbol
 
 extern void pushctx(void), popctx(void);
 
-typedef struct caselist Caselist;
+struct scase {
+	Symbol *label;
+	Node *expr;
+	struct scase *next;
+};
+
+struct caselist {
+	short nr;
+	Symbol *deflabel;
+	struct scase *head;
+};
 
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
@@ -136,7 +148,7 @@ extern uint8_t yytoken;
 extern uint8_t next(void);
 extern void expect(uint8_t tok);
 
-typedef struct node {
+struct node {
 	uint8_t op;
 	Type *type;
 	Symbol *sym;
@@ -144,7 +156,7 @@ typedef struct node {
 	bool symbol: 1;
 	bool constant : 1;
 	struct node *left, *right;
-} Node;
+};
 
 enum {
 	OPTR = 1, OADD, OSIZE, OMUL, OSUB,
@@ -155,7 +167,7 @@ enum {
 	OCOMMA, OCAST, OSYM, OASK, OFIELD, OTYP,
 	OLABEL, ODEFAULT, OCASE, OSTRUCT, OJUMP, OBRANCH,
 	OEXPR, OEFUN, OESTRUCT, OELOOP, OBLOOP, OPRINT,
-	OFUN, ORET, ODECL,
+	OFUN, ORET, ODECL, OSWITCH,
 	/* TODO: This order is important, but must be changed */
 	OAND, OOR,
 	/*
@@ -165,11 +177,7 @@ enum {
 	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT
 };
 
-/*TODO: clean these declarations */
-extern void
-	emit(uint8_t, void *),
-	emitswitch(short);
-
+extern void emit(uint8_t, void *);
 extern Node *node(uint8_t op, Type *tp, Node *left, Node *rigth);
 extern Node *symbol(Symbol *sym);
 extern void freetree(Node *np);

@@ -13,7 +13,8 @@ static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
             emitsymid(uint8_t, void *), emittext(uint8_t, void *),
             emitprint(uint8_t, void *), emitfun(uint8_t, void *),
-            emitret(uint8_t, void *), emitdcl(uint8_t, void *);
+            emitret(uint8_t, void *), emitdcl(uint8_t, void *),
+            emitswitch(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -121,7 +122,8 @@ void (*opcode[])(uint8_t, void *) = {
 	[OPRINT] = emitprint,
 	[OFUN] = emitfun,
 	[ORET] = emitret,
-	[ODECL] = emitdcl
+	[ODECL] = emitdcl,
+	[OSWITCH] = emitswitch
 };
 
 void
@@ -303,10 +305,12 @@ emitsymid(uint8_t op, void *arg)
 	printf(optxt[op], sym->id);
 }
 
-void
-emitswitch(short nr)
+static void
+emitswitch(uint8_t op, void *arg)
 {
-	printf("\teI\t#%0x", nr);
+	Caselist *lcase = arg;
+
+	printf("\teI\t#%0x", lcase->nr);
 }
 
 void
