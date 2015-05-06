@@ -288,28 +288,28 @@ emiteloop(void)
 }
 
 void
-emitjump(Symbol *sym, Node *np)
+emitjump(Symbol *sym)
+{
+	printf("\tj\tL%d\n", sym->id);
+}
+
+void
+emitbranch(Symbol *sym)
 {
 	printf("\tj\tL%d", sym->id);
-	if (!np)
-		putchar('\n');
-	else
-		emitexp(np);
 }
 
 void
-emitswitch(short nr, Node *np)
+emitswitch(short nr)
 {
 	printf("\teI\t#%0x", nr);
-	emitexp(np);
 }
 
 void
-emitcase(Symbol *sym, Node *np)
+emitcase(Symbol *sym)
 {
 	fputs("\tw\t", stdout);
 	printf("L%d", sym->id);
-	emitexp(np);
 }
 
 void

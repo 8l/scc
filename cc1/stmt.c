@@ -87,12 +87,13 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(WHILE);
 	np = condition();
-	emitjump(cond, NULL);
+	emitjump(cond);
 	emitbloop();
 	emitlabel(begin);
 	stmt(end, begin, lswitch);
 	emitlabel(cond);
-	emitjump(begin, np);
+	emitbranch(begin);
+	emitexp(np);
 	emiteloop();
 	emitlabel(end);
 	freetree(np);
@@ -118,13 +119,14 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(')');
 
 	emitexp(einit);
-	emitjump(cond, NULL);
+	emitjump(cond);
 	emitbloop();
 	emitlabel(begin);
 	stmt(end, begin, lswitch);
 	emitexp(einc);
 	emitlabel(cond);
-	emitjump(begin, econd);
+	emitbranch(begin);
+	emitexp(econd);
 	emiteloop();
 	emitlabel(end);
 	freetree(einit);
@@ -146,7 +148,8 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	stmt(end, begin, lswitch);
 	expect(WHILE);
 	np = condition();
-	emitjump(begin, np);
+	emitbranch(begin);
+	emitexp(np);
 	emiteloop();
 	emitlabel(end);
 	freetree(np);
@@ -182,7 +185,7 @@ Break(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(BREAK);
 	if (!lbreak)
 		error("break statement not within loop or switch");
-	emitjump(lbreak, NULL);
+	emitjump(lbreak);
 	expect(';');
 }
 
@@ -209,7 +212,7 @@ Continue(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(CONTINUE);
 	if (!lcont)
 		error("continue statement not within loop");
-	emitjump(lcont, NULL);
+	emitjump(lcont);
 	expect(';');
 }
 
@@ -220,7 +223,7 @@ Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	if (yytoken != IDEN)
 		unexpected();
-	emitjump(label(yytext, 0), NULL);
+	emitjump(label(yytext, 0));
 	next();
 	expect(';');
 }
@@ -243,12 +246,14 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	lbreak = install("", NS_LABEL);
 	lcond = install("", NS_LABEL);
-	emitjump(lcond, NULL);
+	emitjump(lcond);
 	stmt(lbreak, lcont, &lcase);
 	emitlabel(lcond);
-	emitswitch(lcase.nr, cond);
+	emitswitch(lcase.nr);
+	emitexp(cond);
 	for (p = lcase.head; p; p = next) {
-		emitcase(p->label, p->expr);
+		emitcase(p->label);
+		emitexp(p->expr);
 		next = p->next;
 		freetree(p->expr);
 		free(p);
@@ -301,11 +306,12 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(IF);
 	np = condition();
 	NEGATE(np, 1);
-	emitjump(lelse, np);
+	emitbranch(lelse);
+	emitexp(np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
 		end = install("", NS_LABEL);
-		emitjump(end, NULL);
+		emitjump(end);
 		emitlabel(lelse);
 		stmt(lbreak, lcont, lswitch);
 		emitlabel(end);

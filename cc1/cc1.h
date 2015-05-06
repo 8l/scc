@@ -166,9 +166,10 @@ enum {
 extern void
 	emitdcl(Symbol *), emitefun(void),
 	emitexp(Node *),
-	emitprint(Node *), emitlabel(Symbol *), emitjump(Symbol *, Node *),
+	emitprint(Node *), emitlabel(Symbol *), emitjump(Symbol *),
+	emitbranch(Symbol *sym),
 	emitbloop(void), emiteloop(void),
-	emitswitch(short, Node *), emitcase(Symbol *, Node *),
+	emitswitch(short), emitcase(Symbol *),
 	emitret(Type *tp),
 	emitfun(Symbol *sym),
 	emitdefault(Symbol *),
