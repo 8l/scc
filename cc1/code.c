@@ -13,7 +13,7 @@ static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
             emitsymid(uint8_t, void *), emittext(uint8_t, void *),
             emitprint(uint8_t, void *), emitfun(uint8_t, void *),
-            emitret(uint8_t, void *);
+            emitret(uint8_t, void *), emitdcl(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -120,7 +120,8 @@ void (*opcode[])(uint8_t, void *) = {
 	[OBLOOP] = emittext,
 	[OPRINT] = emitprint,
 	[OFUN] = emitfun,
-	[ORET] = emitret
+	[ORET] = emitret,
+	[ODECL] = emitdcl
 };
 
 void
@@ -201,9 +202,11 @@ emittype(Type *tp)
 	putchar(tp->letter);
 }
 
-void
-emitdcl(Symbol *sym)
+static void
+emitdcl(uint8_t op, void *arg)
 {
+	Symbol *sym = arg;
+
 	emitvar(sym);
 	putchar('\t');
 	emittype(sym->type);

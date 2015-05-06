@@ -82,7 +82,7 @@ fundcl(struct dcldata *dp)
 			error("parameter name omitted");
 		sp = syms;
 		for (i = 0; i < n; ++i)
-			emitdcl(*sp++);
+			emit(ODECL, *sp++);
 	}
 
 	return queue(dp, FTN, n, tp);
@@ -346,7 +346,7 @@ structdcl(void)
 			if (bp == &buff[NR_MAXSTRUCTS])
 				error("too much fields in struct/union");
 			*bp++ = sym->type;
-			emitdcl(sym);
+			emit(ODECL, sym);
 		} while (accept(','));
 		expect(';');
 	}
@@ -467,7 +467,7 @@ decl(void)
 		}
 		if (accept('='))
 			initializer(sym);
-		emitdcl(sym);
+		emit(ODECL, sym);
 	} while (accept(','));
 
 	expect(';');
@@ -533,7 +533,7 @@ extdecl(void)
 			if (tp->op != FTN) {
 				if (accept('='))
 					initializer(sym);
-				emitdcl(sym);
+				emit(ODECL, sym);
 			} else if (yytoken == '{') {
 				curfun = sym;
 				emit(OFUN, sym);
