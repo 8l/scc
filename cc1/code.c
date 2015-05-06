@@ -61,10 +61,10 @@ void (*opcode[])(void *) = {
 	[OADD] = emitbin,
 	[OSUB] = emitbin,
 	[OMUL] = emitbin,
-	[OINC] = emitunary,
-	[ODEC] =  emitunary,
+	[OINC] = emitbin,
+	[ODEC] =  emitbin,
 	[OSIZE] = emitsizeof,
-	[OPTR] = emitunary,
+	[OPTR] = emitbin,
 	[OMOD] = emitbin,
 	[ODIV] = emitbin,
 	[OSHL] = emitbin,
@@ -74,7 +74,7 @@ void (*opcode[])(void *) = {
 	[OGE] = emitbin,
 	[OLE] =  emitbin,
 	[OEQ] = emitbin,
-	[ONE] = emitunary,
+	[ONE] = emitbin,
 	[OBAND] = emitbin,
 	[OBXOR]  = emitbin,
 	[OBOR] = emitbin,
@@ -89,9 +89,9 @@ void (*opcode[])(void *) = {
 	[OA_AND] = emitbin,
 	[OA_XOR] = emitbin,
 	[OA_OR] = emitbin,
-	[OADDR] = emitunary,
-	[ONEG] = emitunary,
-	[OCPL] = emitunary,
+	[OADDR] = emitbin,
+	[ONEG] = emitbin,
+	[OCPL] = emitbin,
 	[OAND] = emitbin,
 	[OOR] = emitbin,
 	[OCOMMA] = emitbin,
@@ -189,26 +189,16 @@ emitcast(void *arg)
 }
 
 void
-emitunary(void *arg)
-{
-	Node *lp, *np = arg;
-	char letter;
-
-	letter = np->type->letter;
-	lp = np->left;
-	(*opcode[lp->op])(lp);
-	printf("\t%s%c", optxt[np->op], letter);
-}
-
-void
 emitbin(void *arg)
 {
 	Node *lp, *rp, *np = arg;
 
 	lp = np->left;
 	rp = np->rigth;
-	(*opcode[lp->op])(lp);
-	(*opcode[rp->op])(rp);
+	if (lp)
+		(*opcode[lp->op])(lp);
+	if (rp)
+		(*opcode[rp->op])(rp);
 	printf("\t%s%c", optxt[np->op], np->type->letter);
 }
 
