@@ -190,7 +190,7 @@ emitconst(Node *np)
 	}
 }
 
-void
+static void
 emitsym(uint8_t op, void *arg)
 {
 	Node *np = arg;
@@ -215,7 +215,7 @@ emitdcl(uint8_t op, void *arg)
 	putchar('\n');
 }
 
-void
+static void
 emitcast(uint8_t op, void *arg)
 {
 	Node *np = arg, *lp = np->left;
@@ -224,7 +224,7 @@ emitcast(uint8_t op, void *arg)
 	printf("\t%c%c", lp->type->letter, np->type->letter);
 }
 
-void
+static void
 emitbin(uint8_t op, void *arg)
 {
 	Node *np = arg;
@@ -234,7 +234,7 @@ emitbin(uint8_t op, void *arg)
 	printf("\t%s%c", optxt[op], np->type->letter);
 }
 
-void
+static void
 emitternary(uint8_t op, void *arg)
 {
 	Node *cond, *ifyes, *ifno, *np = arg;
@@ -248,7 +248,7 @@ emitternary(uint8_t op, void *arg)
 	printf("\t?%c", np->type->letter);
 }
 
-void
+static void
 emitsizeof(uint8_t op, void *arg)
 {
 	Node *np = arg;
