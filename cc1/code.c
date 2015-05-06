@@ -7,9 +7,10 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-static void emitbin(void *), emitunary(void *), emitternary(void *),
-     emitcast(void *), emitsym(void *), emitfield(void *),
-     emitsizeof(void *);
+static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
+            emitternary(uint8_t, void *), emitcast(uint8_t, void *),
+            emitsym(uint8_t, void *), emitfield(uint8_t, void *),
+            emitsizeof(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -57,7 +58,7 @@ char *optxt[] = {
 	[OBRANCH] = "\tj\tL%d",
 };
 
-void (*opcode[])(void *) = {
+void (*opcode[])(uint8_t, void *) = {
 	[OADD] = emitbin,
 	[OSUB] = emitbin,
 	[OMUL] = emitbin,
@@ -114,6 +115,14 @@ freetree(Node *np)
 }
 
 static void
+emitnode(Node *np)
+{
+	if (np)
+		(*opcode[np->op])(np->op, np);
+}
+
+void
+static void
 emitvar(Symbol *sym)
 {
 	char c;
@@ -157,7 +166,7 @@ emitestruct(void)
 }
 
 void
-emitsym(void *arg)
+emitsym(uint8_t op, void *arg)
 {
 	Node *np = arg;
 	putchar('\t');
@@ -180,44 +189,40 @@ emitdcl(Symbol *sym)
 }
 
 void
-emitcast(void *arg)
+emitcast(uint8_t op, void *arg)
 {
 	Node *np = arg, *lp = np->left;
 
-	(*opcode[lp->op])(lp);
+	emitnode(lp);
 	printf("\t%c%c", lp->type->letter, np->type->letter);
 }
 
 void
-emitbin(void *arg)
+emitbin(uint8_t op, void *arg)
 {
-	Node *lp, *rp, *np = arg;
+	Node *np = arg;
 
-	lp = np->left;
-	rp = np->rigth;
-	if (lp)
-		(*opcode[lp->op])(lp);
-	if (rp)
-		(*opcode[rp->op])(rp);
-	printf("\t%s%c", optxt[np->op], np->type->letter);
+	emitnode(np->left);
+	emitnode(np->rigth);
+	printf("\t%s%c", optxt[op], np->type->letter);
 }
 
 void
-emitternary(void *arg)
+emitternary(uint8_t op, void *arg)
 {
 	Node *cond, *ifyes, *ifno, *np = arg;
 
 	cond = np->left;
 	ifyes = np->rigth->left;
 	ifno = np->rigth->rigth;
-	(*opcode[cond->op])(cond);
-	(*opcode[ifyes->op])(ifyes);
-	(*opcode[ifno->op])(ifno);
+	emitnode(cond);
+	emitnode(ifyes);
+	emitnode(ifno);
 	printf("\t?%c", np->type->letter);
 }
 
 void
-emitsizeof(void *arg)
+emitsizeof(uint8_t op, void *arg)
 {
 	Node *np = arg;
 	printf("\t#%c", np->left->type->letter);
@@ -226,15 +231,14 @@ emitsizeof(void *arg)
 void
 emitexp(Node *np)
 {
-	if (np)
-		(*opcode[np->op])(np);
+	emitnode(np);
 	putchar('\n');
 }
 
 void
 emitprint(Node *np)
 {
-	(*opcode[np->op])(np);
+	emitnode(np);
 	printf("\tk%c\n", np->type->letter);
 	fflush(stdout);
 }
@@ -284,11 +288,11 @@ emitswitch(short nr)
 }
 
 void
-emitfield(void *arg)
+emitfield(uint8_t op, void *arg)
 {
-	Node *np = arg, *lp = np->left;
+	Node *np = arg;
 
-	(*opcode[lp->op])(lp);
+	emitnode(np->left);
 	putchar('\t');
 	emitvar(np->sym);
 }
