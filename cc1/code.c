@@ -11,7 +11,8 @@ static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitternary(uint8_t, void *), emitcast(uint8_t, void *),
             emitsym(uint8_t, void *), emitfield(uint8_t, void *),
             emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
-            emitsymid(uint8_t, void *), emittext(uint8_t, void *);
+            emitsymid(uint8_t, void *), emittext(uint8_t, void *),
+            emitprint(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -115,7 +116,8 @@ void (*opcode[])(uint8_t, void *) = {
 	[OEFUN] = emittext,
 	[OESTRUCT] = emittext,
 	[OELOOP] = emittext,
-	[OBLOOP] = emittext
+	[OBLOOP] = emittext,
+	[OPRINT] = emitprint
 };
 
 void
@@ -254,9 +256,11 @@ emitexp(uint8_t op, void *arg)
 	putchar('\n');
 }
 
-void
-emitprint(Node *np)
+static void
+emitprint(uint8_t op, void *arg)
 {
+	Node *np = arg;
+
 	emitnode(np);
 	printf("\tk%c\n", np->type->letter);
 	fflush(stdout);

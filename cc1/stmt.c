@@ -379,7 +379,7 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case '@':
 		next();
 		np = expr();
-		emitprint(np);
+		emit(OPRINT, np);
 		freetree(np);
 		return;
 	}
