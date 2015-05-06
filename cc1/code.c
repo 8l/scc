@@ -10,7 +10,7 @@
 static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitternary(uint8_t, void *), emitcast(uint8_t, void *),
             emitsym(uint8_t, void *), emitfield(uint8_t, void *),
-            emitsizeof(uint8_t, void *);
+            emitsizeof(uint8_t, void *), emitexp(uint8_t op, void *arg);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -99,7 +99,8 @@ void (*opcode[])(uint8_t, void *) = {
 	[OCAST] = emitcast,
 	[OSYM] = emitsym,
 	[OASK] = emitternary,
-	[OFIELD]= emitfield
+	[OFIELD]= emitfield,
+	[OEXPR] = emitexp
 };
 
 void
@@ -122,6 +123,15 @@ emitnode(Node *np)
 }
 
 void
+emit(uint8_t op, void *arg)
+{
+	extern uint8_t failure;
+
+	if (failure)
+		return;
+	(*opcode[op])(op, arg);
+}
+
 static void
 emitvar(Symbol *sym)
 {
@@ -228,9 +238,11 @@ emitsizeof(uint8_t op, void *arg)
 	printf("\t#%c", np->left->type->letter);
 }
 
-void
-emitexp(Node *np)
+static void
+emitexp(uint8_t op, void *arg)
 {
+	Node *np = arg;
+
 	emitnode(np);
 	putchar('\n');
 }

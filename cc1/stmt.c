@@ -51,7 +51,7 @@ stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	if (yytoken != ';') {
 		np = expr();
-		emitexp(np);
+		emit(OEXPR, np);
 	}
 
 	expect(';');
@@ -93,7 +93,7 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	stmt(end, begin, lswitch);
 	emitsymid(OLABEL, cond);
 	emitsymid(OBRANCH, begin);
-	emitexp(np);
+	emit(OEXPR, np);
 	emiteloop();
 	emitsymid(OLABEL, end);
 	freetree(np);
@@ -118,15 +118,15 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	einc = (yytoken != ')') ? expr() : NULL;
 	expect(')');
 
-	emitexp(einit);
+	emit(OEXPR, einit);
 	emitsymid(OJUMP, cond);
 	emitbloop();
 	emitsymid(OLABEL, begin);
 	stmt(end, begin, lswitch);
-	emitexp(einc);
+	emit(OEXPR, einc);
 	emitsymid(OLABEL, cond);
 	emitsymid(OBRANCH, begin);
-	emitexp(econd);
+	emit(OEXPR, econd);
 	emiteloop();
 	emitsymid(OLABEL, end);
 	freetree(einit);
@@ -149,7 +149,7 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(WHILE);
 	np = condition();
 	emitsymid(OBRANCH, begin);
-	emitexp(np);
+	emit(OEXPR, np);
 	emiteloop();
 	emitsymid(OLABEL, end);
 	freetree(np);
@@ -175,7 +175,7 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 			error("incorrect type in return");
 	}
 	emitret(tp);
-	emitexp(np);
+	emit(OEXPR, np);
 	freetree(np);
 }
 
@@ -250,10 +250,10 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	stmt(lbreak, lcont, &lcase);
 	emitsymid(OLABEL, lcond);
 	emitswitch(lcase.nr);
-	emitexp(cond);
+	emit(OEXPR, cond);
 	for (p = lcase.head; p; p = next) {
 		emitsymid(OCASE, p->label);
-		emitexp(p->expr);
+		emit(OEXPR, p->expr);
 		next = p->next;
 		freetree(p->expr);
 		free(p);
@@ -307,7 +307,7 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	np = condition();
 	NEGATE(np, 1);
 	emitsymid(OBRANCH, lelse);
-	emitexp(np);
+	emit(OEXPR, np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
 		end = install("", NS_LABEL);
