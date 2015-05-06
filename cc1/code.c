@@ -48,7 +48,13 @@ char *optxt[] = {
 	[OCPL] = "~",
 	[OAND] = "y",
 	[OOR] = "o",
-	[OCOMMA] = ","
+	[OCOMMA] = ",",
+	[OLABEL] = "L%d\n",
+	[ODEFAULT] = "\tf\tL%d\n",
+	[OCASE] = "\tw\tL%d",
+	[OSTRUCT] = "S%d\t(\n",
+	[OJUMP] = "\tj\tL%d\n",
+	[OBRANCH] = "\tj\tL%d",
 };
 
 void (*opcode[])(void *) = {
@@ -142,12 +148,6 @@ emitconst(Node *np)
 		for (bp = sym->u.s; c = *bp; ++bp)
 			printf("%02x", (unsigned) c);
 	}
-}
-
-void
-emitstruct(Symbol *sym)
-{
-	printf("S%d\t(\n", sym->id);
 }
 
 void
@@ -270,12 +270,6 @@ emitret(Type *tp)
 }
 
 void
-emitlabel(Symbol *sym)
-{
-	printf("L%d\n", sym->id);
-}
-
-void
 emitbloop(void)
 {
 	puts("\td");
@@ -288,35 +282,15 @@ emiteloop(void)
 }
 
 void
-emitjump(Symbol *sym)
+emitsymid(uint8_t op, Symbol *sym)
 {
-	printf("\tj\tL%d\n", sym->id);
-}
-
-void
-emitbranch(Symbol *sym)
-{
-	printf("\tj\tL%d", sym->id);
+	printf(optxt[op], sym->id);
 }
 
 void
 emitswitch(short nr)
 {
 	printf("\teI\t#%0x", nr);
-}
-
-void
-emitcase(Symbol *sym)
-{
-	fputs("\tw\t", stdout);
-	printf("L%d", sym->id);
-}
-
-void
-emitdefault(Symbol *sym)
-{
-	fputs("\tf\t", stdout);
-	emitlabel(sym);
 }
 
 void
