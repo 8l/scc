@@ -110,7 +110,7 @@ freetree(Node *np)
 	if (!np)
 		return;
 	freetree(np->left);
-	freetree(np->rigth);
+	freetree(np->right);
 	free(np);
 }
 
@@ -203,7 +203,7 @@ emitbin(uint8_t op, void *arg)
 	Node *np = arg;
 
 	emitnode(np->left);
-	emitnode(np->rigth);
+	emitnode(np->right);
 	printf("\t%s%c", optxt[op], np->type->letter);
 }
 
@@ -213,8 +213,8 @@ emitternary(uint8_t op, void *arg)
 	Node *cond, *ifyes, *ifno, *np = arg;
 
 	cond = np->left;
-	ifyes = np->rigth->left;
-	ifno = np->rigth->rigth;
+	ifyes = np->right->left;
+	ifno = np->right->right;
 	emitnode(cond);
 	emitnode(ifyes);
 	emitnode(ifno);
@@ -298,7 +298,7 @@ emitfield(uint8_t op, void *arg)
 }
 
 Node *
-node(uint8_t op, Type *tp, Node *left, Node *rigth)
+node(uint8_t op, Type *tp, Node *left, Node *right)
 {
 	Node *np;
 
@@ -308,7 +308,7 @@ node(uint8_t op, Type *tp, Node *left, Node *rigth)
 	np->sym = NULL;
 	np->constant = np->symbol = np->lvalue = 0;
 	np->left = left;
-	np->rigth = rigth;
+	np->right = right;
 	return np;
 }
 

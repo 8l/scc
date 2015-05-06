@@ -143,7 +143,7 @@ typedef struct node {
 	bool lvalue : 1;
 	bool symbol: 1;
 	bool constant : 1;
-	struct node *left, *rigth;
+	struct node *left, *right;
 } Node;
 
 enum {
