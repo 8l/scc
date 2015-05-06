@@ -7,9 +7,9 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-static void emitbin(Node *), emitunary(Node *), emitternary(Node *),
-     emitcast(Node *), emitsym(Node *), emitfield(Node *),
-     emitsizeof(Node *);
+static void emitbin(void *), emitunary(void *), emitternary(void *),
+     emitcast(void *), emitsym(void *), emitfield(void *),
+     emitsizeof(void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -51,7 +51,7 @@ char *optxt[] = {
 	[OCOMMA] = ","
 };
 
-void (*opcode[])(Node *) = {
+void (*opcode[])(void *) = {
 	[OADD] = emitbin,
 	[OSUB] = emitbin,
 	[OMUL] = emitbin,
@@ -157,8 +157,9 @@ emitestruct(void)
 }
 
 void
-emitsym(Node *np)
+emitsym(void *arg)
 {
+	Node *np = arg;
 	putchar('\t');
 	(np->constant) ? emitconst(np) : emitvar(np->sym);
 }
@@ -179,18 +180,18 @@ emitdcl(Symbol *sym)
 }
 
 void
-emitcast(Node *np)
+emitcast(void *arg)
 {
-	Node *lp = np->left;
+	Node *np = arg, *lp = np->left;
 
 	(*opcode[lp->op])(lp);
 	printf("\t%c%c", lp->type->letter, np->type->letter);
 }
 
 void
-emitunary(Node *np)
+emitunary(void *arg)
 {
-	Node *lp;
+	Node *lp, *np = arg;
 	char letter;
 
 	letter = np->type->letter;
@@ -200,9 +201,9 @@ emitunary(Node *np)
 }
 
 void
-emitbin(Node *np)
+emitbin(void *arg)
 {
-	Node *lp, *rp;
+	Node *lp, *rp, *np = arg;
 
 	lp = np->left;
 	rp = np->rigth;
@@ -212,9 +213,9 @@ emitbin(Node *np)
 }
 
 void
-emitternary(Node *np)
+emitternary(void *arg)
 {
-	Node *cond, *ifyes, *ifno;
+	Node *cond, *ifyes, *ifno, *np = arg;
 
 	cond = np->left;
 	ifyes = np->rigth->left;
@@ -226,8 +227,9 @@ emitternary(Node *np)
 }
 
 void
-emitsizeof(Node *np)
+emitsizeof(void *arg)
 {
+	Node *np = arg;
 	printf("\t#%c", np->left->type->letter);
 }
 
@@ -318,9 +320,9 @@ emitdefault(Symbol *sym)
 }
 
 void
-emitfield(Node *np)
+emitfield(void *arg)
 {
-	Node *lp = np->left;
+	Node *np = arg, *lp = np->left;
 
 	(*opcode[lp->op])(lp);
 	putchar('\t');
