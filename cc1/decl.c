@@ -536,7 +536,7 @@ extdecl(void)
 				emitdcl(sym);
 			} else if (yytoken == '{') {
 				curfun = sym;
-				emitfun(sym);
+				emit(OFUN, sym);
 				compound(NULL, NULL, NULL);
 				emit(OEFUN, NULL);
 				popctx();

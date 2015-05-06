@@ -12,7 +12,7 @@ static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitsym(uint8_t, void *), emitfield(uint8_t, void *),
             emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
             emitsymid(uint8_t, void *), emittext(uint8_t, void *),
-            emitprint(uint8_t, void *);
+            emitprint(uint8_t, void *), emitfun(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -117,7 +117,8 @@ void (*opcode[])(uint8_t, void *) = {
 	[OESTRUCT] = emittext,
 	[OELOOP] = emittext,
 	[OBLOOP] = emittext,
-	[OPRINT] = emitprint
+	[OPRINT] = emitprint,
+	[OFUN] = emitfun
 };
 
 void
@@ -266,9 +267,11 @@ emitprint(uint8_t op, void *arg)
 	fflush(stdout);
 }
 
-void
-emitfun(Symbol *sym)
+static void
+emitfun(uint8_t op, void *arg)
 {
+	Symbol *sym = arg;
+
 	printf("%c%d\tF\t%s\t{\n",
 	       sym->isglobal ? 'G' : 'Y', sym->id, sym->name);
 }
