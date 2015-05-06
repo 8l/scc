@@ -169,7 +169,6 @@ extern void
 	emitdcl(Symbol *), emitefun(void),
 	emit(uint8_t, void *),
 	emitprint(Node *),
-	emitsymid(uint8_t op, Symbol *sym),
 	emitbloop(void), emiteloop(void),
 	emitswitch(short),
 	emitret(Type *tp),

@@ -10,7 +10,8 @@
 static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitternary(uint8_t, void *), emitcast(uint8_t, void *),
             emitsym(uint8_t, void *), emitfield(uint8_t, void *),
-            emitsizeof(uint8_t, void *), emitexp(uint8_t op, void *arg);
+            emitsizeof(uint8_t, void *), emitexp(uint8_t op, void *arg),
+            emitsymid(uint8_t op, void *arg);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -100,7 +101,13 @@ void (*opcode[])(uint8_t, void *) = {
 	[OSYM] = emitsym,
 	[OASK] = emitternary,
 	[OFIELD]= emitfield,
-	[OEXPR] = emitexp
+	[OEXPR] = emitexp,
+	[OLABEL] = emitsymid,
+	[ODEFAULT] = emitsymid,
+	[OCASE] = emitsymid,
+	[OSTRUCT] = emitsymid,
+	[OJUMP] = emitsymid,
+	[OBRANCH] = emitsymid,
 };
 
 void
@@ -285,9 +292,10 @@ emiteloop(void)
 	puts("\tb");
 }
 
-void
-emitsymid(uint8_t op, Symbol *sym)
+static void
+emitsymid(uint8_t op, void *arg)
 {
+	Symbol *sym = arg;
 	printf(optxt[op], sym->id);
 }
 

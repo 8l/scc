@@ -87,15 +87,15 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(WHILE);
 	np = condition();
-	emitsymid(OJUMP, cond);
+	emit(OJUMP, cond);
 	emitbloop();
-	emitsymid(OLABEL, begin);
+	emit(OLABEL, begin);
 	stmt(end, begin, lswitch);
-	emitsymid(OLABEL, cond);
-	emitsymid(OBRANCH, begin);
+	emit(OLABEL, cond);
+	emit(OBRANCH, begin);
 	emit(OEXPR, np);
 	emiteloop();
-	emitsymid(OLABEL, end);
+	emit(OLABEL, end);
 	freetree(np);
 }
 
@@ -119,16 +119,16 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(')');
 
 	emit(OEXPR, einit);
-	emitsymid(OJUMP, cond);
+	emit(OJUMP, cond);
 	emitbloop();
-	emitsymid(OLABEL, begin);
+	emit(OLABEL, begin);
 	stmt(end, begin, lswitch);
 	emit(OEXPR, einc);
-	emitsymid(OLABEL, cond);
-	emitsymid(OBRANCH, begin);
+	emit(OLABEL, cond);
+	emit(OBRANCH, begin);
 	emit(OEXPR, econd);
 	emiteloop();
-	emitsymid(OLABEL, end);
+	emit(OLABEL, end);
 	freetree(einit);
 	freetree(econd);
 	freetree(einc);
@@ -144,14 +144,14 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	end = install("", NS_LABEL);
 	expect(DO);
 	emitbloop();
-	emitsymid(OLABEL, begin);
+	emit(OLABEL, begin);
 	stmt(end, begin, lswitch);
 	expect(WHILE);
 	np = condition();
-	emitsymid(OBRANCH, begin);
+	emit(OBRANCH, begin);
 	emit(OEXPR, np);
 	emiteloop();
-	emitsymid(OLABEL, end);
+	emit(OLABEL, end);
 	freetree(np);
 }
 
@@ -185,7 +185,7 @@ Break(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(BREAK);
 	if (!lbreak)
 		error("break statement not within loop or switch");
-	emitsymid(OJUMP, lbreak);
+	emit(OJUMP, lbreak);
 	expect(';');
 }
 
@@ -196,7 +196,7 @@ Label(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	switch (yytoken) {
 	case IDEN: case TYPEIDEN:
-		emitsymid(OLABEL, label(yytext, 1));
+		emit(OLABEL, label(yytext, 1));
 		next();
 		expect(':');
 		stmt(lbreak, lcont, lswitch);
@@ -212,7 +212,7 @@ Continue(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(CONTINUE);
 	if (!lcont)
 		error("continue statement not within loop");
-	emitsymid(OJUMP, lcont);
+	emit(OJUMP, lcont);
 	expect(';');
 }
 
@@ -223,7 +223,7 @@ Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	if (yytoken != IDEN)
 		unexpected();
-	emitsymid(OJUMP, label(yytext, 0));
+	emit(OJUMP, label(yytext, 0));
 	next();
 	expect(';');
 }
@@ -246,21 +246,21 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	lbreak = install("", NS_LABEL);
 	lcond = install("", NS_LABEL);
-	emitsymid(OJUMP, lcond);
+	emit(OJUMP, lcond);
 	stmt(lbreak, lcont, &lcase);
-	emitsymid(OLABEL, lcond);
+	emit(OLABEL, lcond);
 	emitswitch(lcase.nr);
 	emit(OEXPR, cond);
 	for (p = lcase.head; p; p = next) {
-		emitsymid(OCASE, p->label);
+		emit(OCASE, p->label);
 		emit(OEXPR, p->expr);
 		next = p->next;
 		freetree(p->expr);
 		free(p);
 	}
 	if (lcase.deflabel)
-		emitsymid(ODEFAULT, lcase.deflabel);
-	emitsymid(OLABEL, lbreak);
+		emit(ODEFAULT, lcase.deflabel);
+	emit(OLABEL, lbreak);
 	freetree(cond);
 }
 
@@ -280,7 +280,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	pcase = xmalloc(sizeof(*pcase));
 	pcase->expr = np;
 	pcase->next = lswitch->head;
-	emitsymid(OLABEL, pcase->label = install("", NS_LABEL));
+	emit(OLABEL, pcase->label = install("", NS_LABEL));
 	lswitch->head = pcase;
 	++lswitch->nr;
 }
@@ -292,7 +292,7 @@ Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(DEFAULT);
 	expect(':');
-	emitsymid(OLABEL, ldefault);
+	emit(OLABEL, ldefault);
 	lswitch->deflabel = ldefault;
 }
 
@@ -306,17 +306,17 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(IF);
 	np = condition();
 	NEGATE(np, 1);
-	emitsymid(OBRANCH, lelse);
+	emit(OBRANCH, lelse);
 	emit(OEXPR, np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
 		end = install("", NS_LABEL);
-		emitsymid(OJUMP, end);
-		emitsymid(OLABEL, lelse);
+		emit(OJUMP, end);
+		emit(OLABEL, lelse);
 		stmt(lbreak, lcont, lswitch);
-		emitsymid(OLABEL, end);
+		emit(OLABEL, end);
 	} else {
-		emitsymid(OLABEL, lelse);
+		emit(OLABEL, lelse);
 	}
 	freetree(np);
 }

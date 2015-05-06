@@ -315,7 +315,7 @@ structdcl(void)
 	if (tagtype->defined)
 		error("redefinition of struct/union '%s'", yytext);
 	tagtype->defined = 1;
-	emitsymid(OSTRUCT, tagsym);
+	emit(OSTRUCT, tagsym);
 
 	while (!accept('}')) {
 		Type *base, *tp;
