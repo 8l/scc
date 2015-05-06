@@ -50,7 +50,6 @@ error(char *fmt, ...)
 {
 	int c;
 	va_list va;
-	extern FILE *yyin;
 
 	va_start(va, fmt);
 	warn_helper(-1, fmt, va);
@@ -77,7 +76,7 @@ error(char *fmt, ...)
 				goto jump;
 			break;
 		}
-	} while ((c = getc(yyin)) != EOF);
+	} while ((c = getchar()) != EOF);
 
 jump:
 	yytoken = c;

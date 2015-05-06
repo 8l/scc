@@ -9,7 +9,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-FILE *yyin;
 uint8_t lex_ns = NS_IDEN;
 const char *filename;
 unsigned linenum;
@@ -28,7 +27,7 @@ integer(char *s, char base)
 
 	size = sign = 0;
 type:
-	switch (ch = toupper(getc(yyin))) {
+	switch (ch = toupper(getchar())) {
 	case 'L':
 		if (size == LONG + LONG)
 			goto wrong_type;
@@ -39,7 +38,7 @@ type:
 			goto wrong_type;
 		goto type;
 	default:
-		ungetc(ch, yyin);
+		ungetc(ch, stdin);
 		tp = ctype(INT, sign, size);
 		break;
 	wrong_type:
@@ -61,20 +60,20 @@ number(void)
 	char ch, *bp;
 	static char base;
 
-	if ((ch = getc(yyin)) == '0') {
-		if (toupper(ch = getc(yyin)) == 'X') {
+	if ((ch = getchar()) == '0') {
+		if (toupper(ch = getchar()) == 'X') {
 			base = 16;
 		} else {
 			base = 8;
-			ungetc(ch, yyin);
+			ungetc(ch, stdin);
 		}
 	} else {
 		base = 10;
-		ungetc(ch, yyin);
+		ungetc(ch, stdin);
 	}
 
 	for (bp = yytext ; bp < &yytext[IDENTSIZ]; *bp++ = ch) {
-		ch = getc(yyin);
+		ch = getchar();
 		switch (base) {
 		case 8:
 			if (ch >= '7')
@@ -95,7 +94,7 @@ end:
 	if (bp == &yytext[IDENTSIZ])
 		error("identifier too long %s", yytext);
 	*bp = '\0';
-	ungetc(ch, yyin);
+	ungetc(ch, stdin);
 	return integer(yytext, base);
 }
 
@@ -105,7 +104,7 @@ escape(char *s)
 	char c;
 
 repeat:
-	switch (getc(yyin)) {
+	switch (getchar()) {
 	case '\\': c = '\''; break;
 	case 'a': c = '\a'; break;
 	case 'f': c = '\f'; break;
@@ -121,7 +120,7 @@ repeat:
 	case 'u': /* TODO: */
 	case '\n':
 		 ++linenum;
-		if ((c = getc(yyin)) == '\\')
+		if ((c = getchar()) == '\\')
 			goto repeat;
 		break;
 	default:
@@ -139,11 +138,11 @@ character(void)
 	static char c;
 	Symbol *sym;
 
-	getc(yyin);   /* discard the initial ' */
-	c = getc(yyin);
+	getchar();   /* discard the initial ' */
+	c = getchar();
 	if (c == '\\')
 		escape(&c);
-	if (getc(yyin) != '\'')
+	if (getchar() != '\'')
 		error("invalid character constant");
 	sym = install("", NS_IDEN);
 	sym->u.i = c;
@@ -160,10 +159,10 @@ string(void)
 	int c;
 	static Symbol *sym;
 
-	getc(yyin); /* discard the initial " */
+	getchar(); /* discard the initial " */
 
 	for (bp = buf; bp < &buf[STRINGSIZ]; ) {
-		switch (c = getc(yyin)) {
+		switch (c = getchar()) {
 		case EOF:
 			error("found EOF while parsing");
 		case '"':
@@ -195,13 +194,13 @@ iden(void)
 	Symbol *sym;
 
 	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = c) {
-		if (!isalnum(c = getc(yyin)) && c != '_')
+		if (!isalnum(c = getchar()) && c != '_')
 			break;
 	}
 	if (bp == &yytext[IDENTSIZ])
 		error("identifier too long %s", yytext);
 	*bp = '\0';
-	ungetc(c, yyin);
+	ungetc(c, stdin);
 
 	sym = yylval.sym = lookup(yytext, lex_ns);
 	if (!sym || sym->token == IDEN)
@@ -213,21 +212,21 @@ iden(void)
 static uint8_t
 follow(int expect, int ifyes, int ifno)
 {
-	int c = getc(yyin);
+	int c = getchar();
 
 	if (c == expect) {
 		yytext[1] = c;
 		yytext[2] = 0;
 		return ifyes;
 	}
-	ungetc(c, yyin);
+	ungetc(c, stdin);
 	return ifno;
 }
 
 static uint8_t
 minus(void)
 {
-	int c = getc(yyin);
+	int c = getchar();
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -237,7 +236,7 @@ minus(void)
 	case '=': return SUB_EQ;
 	default:
 		yytext[1] = '\0';
-		ungetc(c, yyin);
+		ungetc(c, stdin);
 		return '-';
 	}
 }
@@ -245,7 +244,7 @@ minus(void)
 static uint8_t
 plus(void)
 {
-	int c = getc(yyin);
+	int c = getchar();
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -254,7 +253,7 @@ plus(void)
 	case '=': return ADD_EQ;
 	default:
 		yytext[1] = '\0';
-		ungetc(c, yyin);
+		ungetc(c, stdin);
 		return '+';
 	}
 }
@@ -262,7 +261,7 @@ plus(void)
 static uint8_t
 relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 {
-	int c = getc(yyin);
+	int c = getchar();
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -271,7 +270,7 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 		return equal;
 	if (c == op)
 		return follow('=', assig, shift);
-	ungetc(c, yyin);
+	ungetc(c, stdin);
 	yytext[1] = '\0';
 	return op;
 }
@@ -279,7 +278,7 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 static uint8_t
 logic(uint8_t op, uint8_t equal, uint8_t logic)
 {
-	int c = getc(yyin);
+	int c = getchar();
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -288,7 +287,7 @@ logic(uint8_t op, uint8_t equal, uint8_t logic)
 		return equal;
 	if (c == op)
 		return logic;
-	ungetc(c, yyin);
+	ungetc(c, stdin);
 	yytext[1] = '\0';
 	return op;
 }
@@ -298,10 +297,10 @@ dot(void)
 {
 	int c;
 
-	if ((c = getc(yyin)) != '.') {
-		ungetc(c, yyin);
+	if ((c = getchar()) != '.') {
+		ungetc(c, stdin);
 		return '.';
-	} else if ((c = getc(yyin)) != '.') {
+	} else if ((c = getchar()) != '.') {
 		error("incorrect token '%s'", yytext);
 	} else {
 		yytext[2] = yytext[1] = '.';
@@ -313,7 +312,7 @@ dot(void)
 static uint8_t
 operator(void)
 {
-	uint8_t c = getc(yyin);
+	uint8_t c = getchar();
 
 	yytext[0] = c;
 	yytext[1] = '\0';
@@ -340,7 +339,7 @@ skipspaces(void)
 
 	int c;
 
-	while (isspace(c = getc(yyin))) {
+	while (isspace(c = getchar())) {
 		if (c == '\n')
 			++linenum;
 	}
@@ -352,7 +351,7 @@ next(void)
 {
 	int c;
 
-	ungetc(c = skipspaces(), yyin);
+	ungetc(c = skipspaces(), stdin);
 
 	if (isalpha(c) || c == '_') {
 		yytoken = iden();
@@ -385,7 +384,7 @@ ahead(void)
 {
 	int c;
 	
-	ungetc(c = skipspaces(), yyin);
+	ungetc(c = skipspaces(), stdin);
 
 	return c;
 }
@@ -393,13 +392,11 @@ ahead(void)
 void
 lexfile(const char *file)
 {
-	if (yyin != NULL)
-		fclose(yyin);
+
 	if (file == NULL) {
-		yyin = stdin;
 		filename = "(stdin)";
 	} else {
-		if ((yyin = fopen(file, "r")) == NULL)
+		if (!freopen(file, "r", stdin))
 			die("file '%s' not found", file);
 		filename = file;
 	}
