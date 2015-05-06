@@ -12,7 +12,8 @@ static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitsym(uint8_t, void *), emitfield(uint8_t, void *),
             emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
             emitsymid(uint8_t, void *), emittext(uint8_t, void *),
-            emitprint(uint8_t, void *), emitfun(uint8_t, void *);
+            emitprint(uint8_t, void *), emitfun(uint8_t, void *),
+            emitret(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -118,7 +119,8 @@ void (*opcode[])(uint8_t, void *) = {
 	[OELOOP] = emittext,
 	[OBLOOP] = emittext,
 	[OPRINT] = emitprint,
-	[OFUN] = emitfun
+	[OFUN] = emitfun,
+	[ORET] = emitret
 };
 
 void
@@ -276,9 +278,11 @@ emitfun(uint8_t op, void *arg)
 	       sym->isglobal ? 'G' : 'Y', sym->id, sym->name);
 }
 
-void
-emitret(Type *tp)
+static void
+emitret(uint8_t op, void *arg)
 {
+	Type *tp = arg;
+
 	fputs("\ty", stdout);
 	emittype(tp);
 }
