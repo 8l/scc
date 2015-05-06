@@ -351,7 +351,7 @@ structdcl(void)
 		expect(';');
 	}
 
-	emitestruct();
+	emit(OESTRUCT, NULL);
 	if ((n = bp - buff) != 0) {
 		siz = sizeof(Type *) * n;
 		tagtype->n.elem = n;
@@ -538,7 +538,7 @@ extdecl(void)
 				curfun = sym;
 				emitfun(sym);
 				compound(NULL, NULL, NULL);
-				emitefun();
+				emit(OEFUN, NULL);
 				popctx();
 				return;
 			}

@@ -10,8 +10,8 @@
 static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
             emitternary(uint8_t, void *), emitcast(uint8_t, void *),
             emitsym(uint8_t, void *), emitfield(uint8_t, void *),
-            emitsizeof(uint8_t, void *), emitexp(uint8_t op, void *arg),
-            emitsymid(uint8_t op, void *arg);
+            emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
+            emitsymid(uint8_t, void *), emittext(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -57,6 +57,10 @@ char *optxt[] = {
 	[OSTRUCT] = "S%d\t(\n",
 	[OJUMP] = "\tj\tL%d\n",
 	[OBRANCH] = "\tj\tL%d",
+	[OEFUN] = "}",
+	[OESTRUCT] = ")",
+	[OELOOP] = "\tb",
+	[OBLOOP] = "\td"
 };
 
 void (*opcode[])(uint8_t, void *) = {
@@ -108,6 +112,10 @@ void (*opcode[])(uint8_t, void *) = {
 	[OSTRUCT] = emitsymid,
 	[OJUMP] = emitsymid,
 	[OBRANCH] = emitsymid,
+	[OEFUN] = emittext,
+	[OESTRUCT] = emittext,
+	[OELOOP] = emittext,
+	[OBLOOP] = emittext
 };
 
 void
@@ -172,12 +180,6 @@ emitconst(Node *np)
 		for (bp = sym->u.s; c = *bp; ++bp)
 			printf("%02x", (unsigned) c);
 	}
-}
-
-void
-emitestruct(void)
-{
-	puts(")");
 }
 
 void
@@ -268,28 +270,16 @@ emitfun(Symbol *sym)
 }
 
 void
-emitefun(void)
-{
-	puts("}");
-}
-
-void
 emitret(Type *tp)
 {
 	fputs("\ty", stdout);
 	emittype(tp);
 }
 
-void
-emitbloop(void)
+static void
+emittext(uint8_t op, void *arg)
 {
-	puts("\td");
-}
-
-void
-emiteloop(void)
-{
-	puts("\tb");
+	puts(optxt[op]);
 }
 
 static void

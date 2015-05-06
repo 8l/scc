@@ -88,13 +88,13 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(WHILE);
 	np = condition();
 	emit(OJUMP, cond);
-	emitbloop();
+	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
 	stmt(end, begin, lswitch);
 	emit(OLABEL, cond);
 	emit(OBRANCH, begin);
 	emit(OEXPR, np);
-	emiteloop();
+	emit(OELOOP, NULL);
 	emit(OLABEL, end);
 	freetree(np);
 }
@@ -120,14 +120,14 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	emit(OEXPR, einit);
 	emit(OJUMP, cond);
-	emitbloop();
+	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
 	stmt(end, begin, lswitch);
 	emit(OEXPR, einc);
 	emit(OLABEL, cond);
 	emit(OBRANCH, begin);
 	emit(OEXPR, econd);
-	emiteloop();
+	emit(OELOOP, NULL);
 	emit(OLABEL, end);
 	freetree(einit);
 	freetree(econd);
@@ -143,14 +143,14 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	begin = install("", NS_LABEL);
 	end = install("", NS_LABEL);
 	expect(DO);
-	emitbloop();
+	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
 	stmt(end, begin, lswitch);
 	expect(WHILE);
 	np = condition();
 	emit(OBRANCH, begin);
 	emit(OEXPR, np);
-	emiteloop();
+	emit(OELOOP, NULL);
 	emit(OLABEL, end);
 	freetree(np);
 }

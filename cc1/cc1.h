@@ -154,7 +154,7 @@ enum {
 	OA_AND, OA_XOR, OA_OR, OADDR,ONEG, OCPL, OEXC,
 	OCOMMA, OCAST, OSYM, OASK, OFIELD, OTYP,
 	OLABEL, ODEFAULT, OCASE, OSTRUCT, OJUMP, OBRANCH,
-	OEXPR,
+	OEXPR, OEFUN, OESTRUCT, OELOOP, OBLOOP,
 	/* TODO: This order is important, but must be changed */
 	OAND, OOR,
 	/*
@@ -166,14 +166,12 @@ enum {
 
 /*TODO: clean these declarations */
 extern void
-	emitdcl(Symbol *), emitefun(void),
+	emitdcl(Symbol *),
 	emit(uint8_t, void *),
 	emitprint(Node *),
-	emitbloop(void), emiteloop(void),
 	emitswitch(short),
 	emitret(Type *tp),
-	emitfun(Symbol *sym),
-	emitestruct(void);
+	emitfun(Symbol *sym);
 
 extern Node *node(uint8_t op, Type *tp, Node *left, Node *rigth);
 extern Node *symbol(Symbol *sym);
