@@ -13,8 +13,6 @@ extern Symbol *zero, *one;
 
 Node *expr(void);
 
-/* TODO: Change np1 and np2 to left and right (or l, r) */
-
 static Node *
 promote(Node *np)
 {
@@ -77,14 +75,14 @@ eval(Node *np)
 }
 
 static Node *
-integerop(char op, Node *np1, Node *np2)
+integerop(char op, Node *lp, Node *rp)
 {
-	np1 = eval(np1);
-	np2 = eval(np2);
-	if (BTYPE(np1) != INT || BTYPE(np2) != INT)
+	lp = eval(lp);
+	rp = eval(rp);
+	if (BTYPE(lp) != INT || BTYPE(rp) != INT)
 		error("operator requires integer operands");
-	typeconv(&np1, &np2);
-	return node(op, np1->type, np1, np2);
+	typeconv(&lp, &rp);
+	return node(op, lp->type, lp, rp);
 }
 
 static Node *
@@ -92,7 +90,8 @@ numericaluop(char op, Node *np)
 {
 	np = eval(np);
 	switch (BTYPE(np)) {
-	case INT: case FLOAT:
+	case INT:
+	case FLOAT:
 		if (op == OADD)
 			return np;
 		return node(op, np->type, np, NULL);
@@ -165,112 +164,116 @@ convert(Node *np, Type *tp, char iscast)
 }
 
 static Node *
-parithmetic(char op, Node *np1, Node *np2)
+parithmetic(char op, Node *lp, Node *rp)
 {
 	Type *tp;
 	Node *size;
 
-	tp = np1->type;
+	tp = lp->type;
 	size = node(OSIZE, inttype, TYPE(tp->type), NULL);
-	if (BTYPE(np2) == ARY)
-		np2 = decay(np2);
+	if (BTYPE(rp) == ARY)
+		rp = decay(rp);
 
-	if (op == OSUB && BTYPE(np2) == PTR) {
-		if (tp != np2->type)
+	if (op == OSUB && BTYPE(rp) == PTR) {
+		if (tp != rp->type)
 			goto incorrect;
-		np1 = node(OSUB, inttype, np1, np2);
-		return node(ODIV, inttype, np1, size);
+		lp = node(OSUB, inttype, lp, rp);
+		return node(ODIV, inttype, lp, size);
 	}
-	if (BTYPE(np2) != INT)
+	if (BTYPE(rp) != INT)
 		goto incorrect;
-	np2 = node(OCAST, tp, promote(np2), NULL);
-	np2 = node(OMUL, tp, np2, size);
-	return node(op, tp, np1, np2);
+	rp = node(OCAST, tp, promote(rp), NULL);
+	rp = node(OMUL, tp, rp, size);
+	return node(op, tp, lp, rp);
 
 incorrect:
 	error("incorrect arithmetic operands");
 }
 
 static Node *
-arithmetic(char op, Node *np1, Node *np2)
+arithmetic(char op, Node *lp, Node *rp)
 {
-	np1 = eval(np1);
-	np2 = eval(np2);
-	switch (BTYPE(np1)) {
-	case INT: case FLOAT:
-		switch (BTYPE(np2)) {
-		case INT: case FLOAT:
-			typeconv(&np1, &np2);
+	lp = eval(lp);
+	rp = eval(rp);
+	switch (BTYPE(lp)) {
+	case INT:
+	case FLOAT:
+		switch (BTYPE(rp)) {
+		case INT:
+		case FLOAT:
+			typeconv(&lp, &rp);
 			break;
 		case ARY:
-			np2 = decay(np2);
+			rp = decay(rp);
 		case PTR:
 			if (op == OADD || op == OSUB)
-				return parithmetic(op, np2, np1);
+				return parithmetic(op, rp, lp);
 		default:
 			goto incorrect;
 		}
 		break;
 	case ARY:
-		np1 = decay(np1);
+		lp = decay(lp);
 	case PTR:
-		return parithmetic(op, np1, np2);
+		return parithmetic(op, lp, rp);
 	default:
 	incorrect:
 		error("incorrect arithmetic operands");
 	}
 
-	return node(op, np1->type, np1, np2);
+	return node(op, lp->type, lp, rp);
 }
 
 static Node *
-pcompare(char op, Node *np1, Node *np2)
+pcompare(char op, Node *lp, Node *rp)
 {
-	switch (BTYPE(np2)) {
+	switch (BTYPE(rp)) {
 	case INT:
-		if (np2->symbol && np2->sym->u.i == 0)
-			np2 = node(OCAST, pvoidtype, np2, NULL);
+		if (rp->symbol && rp->sym->u.i == 0)
+			rp = node(OCAST, pvoidtype, rp, NULL);
 		break;
 	case PTR:
-		if (np1->type != np2->type)
+		if (lp->type != rp->type)
 			warn("comparision between different pointer types");
 		break;
 	default:
 		error("incompatibles type in comparision");
 	}
 
-	return node(op, np1->type, np1, np2);
+	return node(op, lp->type, lp, rp);
 }
 
 static Node *
-compare(char op, Node *np1, Node *np2)
+compare(char op, Node *lp, Node *rp)
 {
-	np1 = eval(np1);
-	np2 = eval(np2);
-	switch (BTYPE(np1)) {
+	lp = eval(lp);
+	rp = eval(rp);
+	switch (BTYPE(lp)) {
 	case INT: case FLOAT:
-		switch (BTYPE(np1)) {
-		case INT: case FLOAT:
-			typeconv(&np1, &np2);
+		switch (BTYPE(lp)) {
+		case INT:
+		case FLOAT:
+			typeconv(&lp, &rp);
 			break;
-		case ARY: case FTN:
-			np2 = decay(np2);
+		case ARY:
+		case FTN:
+			rp = decay(rp);
 		case PTR:
-			return pcompare(op, np2, np1);
+			return pcompare(op, rp, lp);
 		default:
 			goto nocompat;
 		}
 		break;
 	case ARY: case FTN:
-		np1 = decay(np1);
+		lp = decay(lp);
 	case PTR:
-		return pcompare(op, np1, np2);
+		return pcompare(op, lp, rp);
 	default:
 	nocompat:
 		error("incompatibles type in comparision");
 	}
 
-	return node(op, inttype, np1, np2);
+	return node(op, inttype, lp, rp);
 }
 
 Node *
@@ -319,11 +322,11 @@ exp2cond(Node *np, char neg)
 }
 
 static Node *
-logic(char op, Node *np1, Node *np2)
+logic(char op, Node *lp, Node *rp)
 {
-	np1 = exp2cond(np1, 0);
-	np2 = exp2cond(np2, 0);
-	return node(op, inttype, np1, np2);
+	lp = exp2cond(lp, 0);
+	rp = exp2cond(rp, 0);
+	return node(op, inttype, lp, rp);
 }
 
 static Node *
@@ -349,19 +352,19 @@ field(Node *np)
 }
 
 static Node *
-array(Node *np1, Node *np2)
+array(Node *lp, Node *rp)
 {
 	Type *tp;
 
-	if (BTYPE(np1) != INT && BTYPE(np2) != INT)
+	if (BTYPE(lp) != INT && BTYPE(rp) != INT)
 		error("array subscript is not an integer");
-	np1 = arithmetic(OADD, np1, np2);
-	tp = np1->type;
+	lp = arithmetic(OADD, lp, rp);
+	tp = lp->type;
 	if (tp->op != PTR)
 		error("subscripted value is neither array nor pointer nor vector");
-	np1 =  node(OPTR, tp->type, np1, NULL);
-	np1->lvalue = 1;
-	return np1;
+	lp =  node(OPTR, tp->type, lp, NULL);
+	lp->lvalue = 1;
+	return lp;
 }
 
 Node *
@@ -373,17 +376,18 @@ iszero(Node *np)
 }
 
 static Node *
-assignop(char op, Node *np1, Node *np2)
+assignop(char op, Node *lp, Node *rp)
 {
-	switch (np2->type->op) {
-	case FTN: case ARY:
-		np2 = decay(np2);
+	switch (rp->type->op) {
+	case FTN:
+	case ARY:
+		rp = decay(rp);
 		/* PASSTHROUGH */
 	default:
-		if ((np2 = convert(np2, np1->type, 0)) == NULL)
+		if ((rp = convert(rp, lp->type, 0)) == NULL)
 			error("incompatible types when assigning");
 	}
-	return node(op, np1->type, np1, np2);
+	return node(op, lp->type, lp, rp);
 }
 
 static Node *
@@ -400,7 +404,8 @@ incdec(Node *np, char op)
 			error("invalid use of indefined type");
 		inc = node(OSIZE, inttype, TYPE(tp->type), NULL);
 		break;
-	case INT: case FLOAT:
+	case INT:
+	case FLOAT:
 		inc = symbol(one);
 		break;
 	default:
@@ -438,9 +443,12 @@ static Node *
 negation(char op, Node *np)
 {
 	switch (BTYPE(np)) {
-	case FTN: case ARY:
+	case FTN:
+	case ARY:
 		np = decay(np);
-	case INT: case FLOAT: case PTR:
+	case INT:
+	case FLOAT:
+	case PTR:
 		return exp2cond(np, 1);
 	default:
 		error("invalid argument of unary '!'");
@@ -503,31 +511,31 @@ arguments(Node *np)
 static Node *
 postfix(void)
 {
-	Node *np1, *np2;
+	Node *lp, *rp;
 
-	np1 = primary();
+	lp = primary();
 	for (;;) {
 		switch (yytoken) {
 		case '[':
 			next();
-			np2 = expr();
-			np1 = array(np1, np2);
+			rp = expr();
+			lp = array(lp, rp);
 			expect(']');
 			break;
 		case DEC: case INC:
-			np1 = incdec(np1, (yytoken == INC) ? OINC : ODEC);
+			lp = incdec(lp, (yytoken == INC) ? OINC : ODEC);
 			next();
 			break;
 		case INDIR:
-			np1 = content(OPTR, np1);
+			lp = content(OPTR, lp);
 		case '.':
-			np1 = field(np1);
+			lp = field(lp);
 			break;
 		case '(':
-			np1 = arguments(np1);
+			lp = arguments(lp);
 			break;
 		default:
-			return np1;
+			return lp;
 		}
 	}
 }
@@ -553,7 +561,8 @@ sizeexp(void)
 
 	expect('(');
 	switch (yytoken) {
-	case TYPE: case TYPEIDEN:
+	case TYPE:
+	case TYPEIDEN:
 		tp = typename();
 		break;
 	default:
@@ -598,14 +607,15 @@ unary(void)
 static Node *
 cast(void)
 {
-	Node *np1, *np2;
+	Node *lp, *rp;
 	Type *tp;
 
 	if (!accept('('))
 		return unary();
 
 	switch (yytoken) {
-	case TQUALIFIER: case TYPE:
+	case TQUALIFIER:
+	case TYPE:
 		tp = typename();
 		switch (tp->op) {
 		case ARY:
@@ -614,20 +624,20 @@ cast(void)
 			error("cast specify a function type");
 		default:
 			expect(')');
-			if ((np1 = eval(cast())) == NULL)
+			if ((lp = eval(cast())) == NULL)
 				unexpected();
-			if ((np2 = convert(np1,  tp, 1)) == NULL)
+			if ((rp = convert(lp,  tp, 1)) == NULL)
 				error("bad type convertion requested");
-			np2->lvalue = np1->lvalue;
+			rp->lvalue = lp->lvalue;
 		}
 		break;
 	default:
-		np2 = expr();
+		rp = expr();
 		expect(')');
 		break;
 	}
 
-	return np2;
+	return rp;
 }
 
 static Node *
@@ -829,13 +839,13 @@ assign(void)
 Node *
 expr(void)
 {
-	Node *np1, *np2;
+	Node *lp, *rp;
 
-	np1 = assign();
+	lp = assign();
 	while (accept(',')) {
-		np2 = assign();
-		np1 = node(OCOMMA, np2->type, np1, np2);
+		rp = assign();
+		lp = node(OCOMMA, rp->type, lp, rp);
 	}
 
-	return np1;
+	return lp;
 }
