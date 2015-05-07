@@ -64,6 +64,13 @@ fileline(void)
 	return input->nline;
 }
 
+static void
+newline(void)
+{
+	if (++input->nline == 0)
+		die("input file too long");
+}
+
 static uint8_t
 integer(char *s, char base)
 {
@@ -181,7 +188,7 @@ repeat:
 			warn("character constant out of range");
 		break;
 	case '\n':
-		 ++input->nline;
+		newline();
 		if ((c = getchar()) == '\\')
 			goto repeat;
 		break;
@@ -403,7 +410,7 @@ skipspaces(void)
 
 	while (isspace(c = getchar())) {
 		if (c == '\n')
-			++input->nline;
+			newline();
 	}
 	return c;
 }
