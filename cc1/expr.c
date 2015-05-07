@@ -72,7 +72,7 @@ eval(Node *np)
 		return NULL;
 	if (np->op != OAND && np->op != OOR)
 		return np;
-	p = node(0, inttype, symbol(one), symbol(zero));
+	p = node(OCOLON, inttype, symbol(one), symbol(zero));
 	return node(OASK, inttype, np, p);
 }
 
@@ -791,7 +791,7 @@ ternary(void)
 		expect(':');
 		ifno = promote(ternary());
 		typeconv(&ifyes, &ifno);
-		np = node(0, ifyes->type, ifyes, ifno);
+		np = node(OCOLON, ifyes->type, ifyes, ifno);
 		cond = node(OASK, np->type, cond, np);
 	}
 	return cond;

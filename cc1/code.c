@@ -8,13 +8,12 @@
 #include "cc1.h"
 
 static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
-            emitternary(uint8_t, void *), emitcast(uint8_t, void *),
+            emitcast(uint8_t, void *), emitswitch(uint8_t, void *),
             emitsym(uint8_t, void *), emitfield(uint8_t, void *),
             emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
             emitsymid(uint8_t, void *), emittext(uint8_t, void *),
             emitprint(uint8_t, void *), emitfun(uint8_t, void *),
-            emitret(uint8_t, void *), emitdcl(uint8_t, void *),
-            emitswitch(uint8_t, void *);
+            emitret(uint8_t, void *), emitdcl(uint8_t, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -53,6 +52,7 @@ char *optxt[] = {
 	[OCPL] = "~",
 	[OAND] = "y",
 	[OOR] = "o",
+	[OASK] = "?",
 	[OCOMMA] = ",",
 	[OLABEL] = "L%d\n",
 	[ODEFAULT] = "\tf\tL%d\n",
@@ -106,7 +106,8 @@ void (*opcode[])(uint8_t, void *) = {
 	[OCOMMA] = emitbin,
 	[OCAST] = emitcast,
 	[OSYM] = emitsym,
-	[OASK] = emitternary,
+	[OASK] = emitbin,
+	[OCOLON] = emitbin,
 	[OFIELD]= emitfield,
 	[OEXPR] = emitexp,
 	[OLABEL] = emitsymid,
@@ -228,24 +229,12 @@ static void
 emitbin(uint8_t op, void *arg)
 {
 	Node *np = arg;
+	char *s;
 
 	emitnode(np->left);
 	emitnode(np->right);
-	printf("\t%s%c", optxt[op], np->type->letter);
-}
-
-static void
-emitternary(uint8_t op, void *arg)
-{
-	Node *cond, *ifyes, *ifno, *np = arg;
-
-	cond = np->left;
-	ifyes = np->right->left;
-	ifno = np->right->right;
-	emitnode(cond);
-	emitnode(ifyes);
-	emitnode(ifno);
-	printf("\t?%c", np->type->letter);
+	if ((s = optxt[op]) != NULL)
+		printf("\t%s%c", s, np->type->letter);
 }
 
 static void

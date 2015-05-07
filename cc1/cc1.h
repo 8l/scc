@@ -173,7 +173,7 @@ enum tokens {
 
 /* operations */
 enum {
-	OPTR = 1,
+	OPTR,
 	OADD,
 	OSIZE,
 	OMUL,
@@ -205,6 +205,7 @@ enum {
 	OCAST,
 	OSYM,
 	OASK,
+	OCOLON,
 	OFIELD,
 	OTYP,
 	OLABEL,
@@ -286,5 +287,3 @@ extern Type *voidtype, *pvoidtype, *booltype,
             *longtype,    *ulongtype,
             *ullongtype,  *llongtype,
             *floattype,   *doubletype,  *ldoubletype;
-
-/* TODO: remove node(0 calls */
