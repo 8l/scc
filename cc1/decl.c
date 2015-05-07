@@ -501,7 +501,8 @@ extdecl(void)
 	extern jmp_buf recover;
 
 	setsafe(END_DECL);
-	setjmp(recover);
+	if (setjmp(recover))
+		return;
 
 	switch (yytoken) {
 	case IDEN: case TYPE: case TYPEIDEN: case SCLASS: case TQUALIFIER:

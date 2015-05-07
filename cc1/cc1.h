@@ -265,6 +265,7 @@ extern void discard(void);
 extern char *filename(void);
 extern unsigned short fileline(void);
 extern void addinput(char *fname);
+extern void delinput(void);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */

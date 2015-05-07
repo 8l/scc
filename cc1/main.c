@@ -66,15 +66,12 @@ main(int argc, char *argv[])
 		usage();
 
 	ikeywords();
+
 	addinput(*argv);
-
-	next();
-
 	while (yytoken != EOFTOK)
 		extdecl();
+	delinput();
 
-	if (fclose(stdin))
-		die("error reading from input:%s", strerror(errno));
 	if (fclose(stdout))
 		die("error writing in output:%s", strerror(errno));
 	return 0;

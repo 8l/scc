@@ -15,6 +15,7 @@ typedef struct input Input;
 struct input {
 	char *fname;
 	unsigned short nline;
+	FILE *fp;
 	struct input *next;
 };
 
@@ -34,28 +35,46 @@ addinput(char *fname)
 
 	ip = xmalloc(sizeof(Input));
 	ip->next = input;
+
 	if (fname) {
-		if (!freopen(fname, "r", stdin))
-			die("file '%s' not found", fname);	
+		if ((ip->fp = fopen(fname, "r")) == NULL)
+			die("file '%s' not found", fname);
 		ip->fname = xstrdup(fname);
-		ip->nline = 1;
+	} else if (!input) {
+		ip->fp = stdin;
+		ip->fname = "(stdin)";
 	} else {
-		ip->fname = NULL;
-		ip->nline = (input) ? input->nline : 1;
+		ip->fname = input->fname;
+		ip->fp = NULL;
+		ip->nline = input->nline;
+		return;
 	}
+
+	ip->nline = 1;
 	input = ip;
+	next();
+}
+
+void
+delinput(void)
+{
+	Input *ip = input;
+	FILE *fp = ip->fp;
+
+	if (fp) {
+		if (fclose(fp))
+			die("error reading from input file '%s'", ip->fname);
+		if (strcmp("(stdin)", input->fname))
+			free(ip->fname);
+	}
+	input = ip->next;
+	free(ip);
 }
 
 char *
 filename(void)
 {
-	Input *ip;
-
-	for (ip = input; ip; ip = ip->next) {
-		if (ip->fname)
-			return ip->fname;
-	}
-	return "(stdin)";
+	return input->fname;
 }
 
 unsigned short
@@ -81,7 +100,7 @@ integer(char *s, char base)
 
 	size = sign = 0;
 type:
-	switch (ch = toupper(getchar())) {
+	switch (ch = toupper(getc(input->fp))) {
 	case 'L':
 		if (size == LLONG)
 			goto wrong_type;
@@ -92,7 +111,7 @@ type:
 			goto wrong_type;
 		goto type;
 	default:
-		ungetc(ch, stdin);
+		ungetc(ch, input->fp);
 		tp = ctype(INT, sign, size);
 		break;
 	wrong_type:
@@ -114,7 +133,7 @@ digits(uint8_t base)
 	char ch, *bp;
 
 	for (bp = yytext ; bp < &yytext[IDENTSIZ]; *bp++ = ch) {
-		ch = getchar();
+		ch = getc(input->fp);
 		switch (base) {
 		case 8:
 			if (ch >= '7')
@@ -134,7 +153,7 @@ end:
 	if (bp == &yytext[IDENTSIZ])
 		error("number too long %s", yytext);
 	*bp = '\0';
-	ungetc(ch, stdin);
+	ungetc(ch, input->fp);
 	return yytext;
 }
 
@@ -144,16 +163,16 @@ number(void)
 	char ch;
 	static char base;
 
-	if ((ch = getchar()) == '0') {
-		if (toupper(ch = getchar()) == 'X') {
+	if ((ch = getc(input->fp)) == '0') {
+		if (toupper(ch = getc(input->fp)) == 'X') {
 			base = 16;
 		} else {
 			base = 8;
-			ungetc(ch, stdin);
+			ungetc(ch, input->fp);
 		}
 	} else {
 		base = 10;
-		ungetc(ch, stdin);
+		ungetc(ch, input->fp);
 	}
 
 	return integer(digits(base), base);
@@ -166,7 +185,7 @@ escape(char *s)
 	int c;
 
 repeat:
-	switch (getchar()) {
+	switch (getc(input->fp)) {
 	case '\\': c = '\''; break;
 	case 'a':  c = '\a'; break;
 	case 'f':  c = '\f'; break;
@@ -189,7 +208,7 @@ repeat:
 		break;
 	case '\n':
 		newline();
-		if ((c = getchar()) == '\\')
+		if ((c = getc(input->fp)) == '\\')
 			goto repeat;
 		break;
 	default:
@@ -207,11 +226,11 @@ character(void)
 	static char c;
 	Symbol *sym;
 
-	getchar();   /* discard the initial ' */
-	c = getchar();
+	getc(input->fp);   /* discard the initial ' */
+	c = getc(input->fp);
 	if (c == '\\')
 		escape(&c);
-	if (getchar() != '\'')
+	if (getc(input->fp) != '\'')
 		error("invalid character constant");
 	sym = install("", NS_IDEN);
 	sym->u.i = c;
@@ -228,10 +247,10 @@ string(void)
 	int c;
 	static Symbol *sym;
 
-	getchar(); /* discard the initial " */
+	getc(input->fp); /* discard the initial " */
 
 	for (bp = buf; bp < &buf[STRINGSIZ]; ) {
-		switch (c = getchar()) {
+		switch (c = getc(input->fp)) {
 		case EOF:
 			error("found EOF while parsing");
 		case '"':
@@ -263,13 +282,13 @@ iden(void)
 	Symbol *sym;
 
 	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = c) {
-		if (!isalnum(c = getchar()) && c != '_')
+		if (!isalnum(c = getc(input->fp)) && c != '_')
 			break;
 	}
 	if (bp == &yytext[IDENTSIZ])
 		error("identifier too long %s", yytext);
 	*bp = '\0';
-	ungetc(c, stdin);
+	ungetc(c, input->fp);
 
 	sym = yylval.sym = lookup(yytext, lex_ns);
 	if (!sym || sym->token == IDEN)
@@ -281,21 +300,21 @@ iden(void)
 static uint8_t
 follow(int expect, int ifyes, int ifno)
 {
-	int c = getchar();
+	int c = getc(input->fp);
 
 	if (c == expect) {
 		yytext[1] = c;
 		yytext[2] = 0;
 		return ifyes;
 	}
-	ungetc(c, stdin);
+	ungetc(c, input->fp);
 	return ifno;
 }
 
 static uint8_t
 minus(void)
 {
-	int c = getchar();
+	int c = getc(input->fp);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -305,7 +324,7 @@ minus(void)
 	case '=': return SUB_EQ;
 	default:
 		yytext[1] = '\0';
-		ungetc(c, stdin);
+		ungetc(c, input->fp);
 		return '-';
 	}
 }
@@ -313,7 +332,7 @@ minus(void)
 static uint8_t
 plus(void)
 {
-	int c = getchar();
+	int c = getc(input->fp);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -322,7 +341,7 @@ plus(void)
 	case '=': return ADD_EQ;
 	default:
 		yytext[1] = '\0';
-		ungetc(c, stdin);
+		ungetc(c, input->fp);
 		return '+';
 	}
 }
@@ -330,7 +349,7 @@ plus(void)
 static uint8_t
 relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 {
-	int c = getchar();
+	int c = getc(input->fp);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -339,7 +358,7 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 		return equal;
 	if (c == op)
 		return follow('=', assig, shift);
-	ungetc(c, stdin);
+	ungetc(c, input->fp);
 	yytext[1] = '\0';
 	return op;
 }
@@ -347,7 +366,7 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 static uint8_t
 logic(uint8_t op, uint8_t equal, uint8_t logic)
 {
-	int c = getchar();
+	int c = getc(input->fp);
 
 	yytext[1] = c;
 	yytext[2] = '\0';
@@ -356,7 +375,7 @@ logic(uint8_t op, uint8_t equal, uint8_t logic)
 		return equal;
 	if (c == op)
 		return logic;
-	ungetc(c, stdin);
+	ungetc(c, input->fp);
 	yytext[1] = '\0';
 	return op;
 }
@@ -366,10 +385,10 @@ dot(void)
 {
 	int c;
 
-	if ((c = getchar()) != '.') {
-		ungetc(c, stdin);
+	if ((c = getc(input->fp)) != '.') {
+		ungetc(c, input->fp);
 		return '.';
-	} else if ((c = getchar()) != '.') {
+	} else if ((c = getc(input->fp)) != '.') {
 		error("incorrect token '%s'", yytext);
 	} else {
 		yytext[2] = yytext[1] = '.';
@@ -381,7 +400,7 @@ dot(void)
 static uint8_t
 operator(void)
 {
-	uint8_t c = getchar();
+	uint8_t c = getc(input->fp);
 
 	yytext[0] = c;
 	yytext[1] = '\0';
@@ -408,7 +427,7 @@ skipspaces(void)
 
 	int c;
 
-	while (isspace(c = getchar())) {
+	while (isspace(c = getc(input->fp))) {
 		if (c == '\n')
 			newline();
 	}
@@ -420,7 +439,7 @@ next(void)
 {
 	int c;
 
-	ungetc(c = skipspaces(), stdin);
+	ungetc(c = skipspaces(), input->fp);
 
 	if (isalpha(c) || c == '_') {
 		yytoken = iden();
@@ -457,7 +476,7 @@ ahead(void)
 {
 	int c;
 	
-	ungetc(c = skipspaces(), stdin);
+	ungetc(c = skipspaces(), input->fp);
 
 	return c;
 }
@@ -494,8 +513,9 @@ discard(void)
 				goto jump;
 			break;
 		}
-	} while ((c = getchar()) != EOF);
+	} while ((c = getc(input->fp)) != EOF);
 
+	c = EOFTOK;
 jump:
 	yytoken = c;
 	longjmp(recover, 1);
