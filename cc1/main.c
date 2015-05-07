@@ -66,7 +66,7 @@ main(int argc, char *argv[])
 		usage();
 
 	ikeywords();
-	lexfile(*argv);
+	addinput(*argv);
 
 	next();
 

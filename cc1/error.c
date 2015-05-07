@@ -12,14 +12,10 @@ extern uint8_t failure;
 static void
 warn_helper(int8_t flag, char *fmt, va_list va)
 {
-	extern unsigned linenum;
-	extern unsigned columnum;
-	extern const char *filename;
-
 	if (!flag)
 		return;
 	fprintf(stderr, "%s:%s:%u: ",
-		(flag < 0) ? "error" : "warning", filename, linenum);
+		(flag < 0) ? "error" : "warning", filename(), fileline());
 	vfprintf(stderr, fmt, va);
 	putc('\n', stderr);
 }

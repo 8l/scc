@@ -10,15 +10,59 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
+typedef struct input Input;
+
+struct input {
+	char *fname;
+	unsigned short nline;
+	struct input *next;
+};
+
 uint8_t lex_ns = NS_IDEN;
-const char *filename;
-unsigned linenum;
 
 uint8_t yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
 static uint8_t safe;
 
+static Input *input;
+
+void
+addinput(char *fname)
+{
+	Input *ip;
+
+	ip = xmalloc(sizeof(Input));
+	ip->next = input;
+	if (fname) {
+		if (!freopen(fname, "r", stdin))
+			die("file '%s' not found", fname);	
+		ip->fname = xstrdup(fname);
+		ip->nline = 1;
+	} else {
+		ip->fname = NULL;
+		ip->nline = (input) ? input->nline : 1;
+	}
+	input = ip;
+}
+
+char *
+filename(void)
+{
+	Input *ip;
+
+	for (ip = input; ip; ip = ip->next) {
+		if (ip->fname)
+			return ip->fname;
+	}
+	return "(stdin)";
+}
+
+unsigned short
+fileline(void)
+{
+	return input->nline;
+}
 
 static uint8_t
 integer(char *s, char base)
@@ -137,7 +181,7 @@ repeat:
 			warn("character constant out of range");
 		break;
 	case '\n':
-		 ++linenum;
+		 ++input->nline;
 		if ((c = getchar()) == '\\')
 			goto repeat;
 		break;
@@ -359,7 +403,7 @@ skipspaces(void)
 
 	while (isspace(c = getchar())) {
 		if (c == '\n')
-			++linenum;
+			++input->nline;
 	}
 	return c;
 }
@@ -409,20 +453,6 @@ ahead(void)
 	ungetc(c = skipspaces(), stdin);
 
 	return c;
-}
-
-void
-lexfile(const char *file)
-{
-
-	if (file == NULL) {
-		filename = "(stdin)";
-	} else {
-		if (!freopen(file, "r", stdin))
-			die("file '%s' not found", file);
-		filename = file;
-	}
-	linenum = 1;
 }
 
 void
