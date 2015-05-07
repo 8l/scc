@@ -1,5 +1,4 @@
 
-#include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +8,6 @@
 #include "cc1.h"
 
 extern uint8_t failure;
-extern jmp_buf recover;
-
-static uint8_t safe;
 
 static void
 warn_helper(int8_t flag, char *fmt, va_list va)
@@ -40,47 +36,15 @@ warn(char *fmt, ...)
 }
 
 void
-setsafe(uint8_t type)
-{
-	safe = type;
-}
-
-void
 error(char *fmt, ...)
 {
-	int c;
 	va_list va;
 
 	va_start(va, fmt);
 	warn_helper(-1, fmt, va);
 	va_end(va);
 	failure = 1;
-
-	c = yytoken;
-	do {
-		switch (safe) {
-		case END_COMP:
-			if (c == '}')
-				goto jump;
-			goto semicolon;
-		case END_COND:
-			if (c == ')')
-				goto jump;
-			break;
-		case END_LDECL:
-			if (c == ',')
-				goto jump;
-		case END_DECL:
-		semicolon:
-			if (c == ';')
-				goto jump;
-			break;
-		}
-	} while ((c = getchar()) != EOF);
-
-jump:
-	yytoken = c;
-	longjmp(recover, 1);
+	discard();
 }
 
 void

@@ -261,6 +261,7 @@ extern void extdecl(void), decl(void);
 extern uint8_t ahead(void);
 extern uint8_t next(void);
 extern void expect(uint8_t tok);
+extern void discard(void);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */

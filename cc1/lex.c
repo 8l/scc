@@ -1,5 +1,6 @@
 
 #include <inttypes.h>
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,8 @@ unsigned linenum;
 uint8_t yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
+static uint8_t safe;
+
 
 static uint8_t
 integer(char *s, char base)
@@ -420,4 +423,43 @@ lexfile(const char *file)
 		filename = file;
 	}
 	linenum = 1;
+}
+
+void
+setsafe(uint8_t type)
+{
+	safe = type;
+}
+
+void
+discard(void)
+{
+	extern jmp_buf recover;
+	int c;
+
+	c = yytoken;
+	do {
+		switch (safe) {
+		case END_COMP:
+			if (c == '}')
+				goto jump;
+			goto semicolon;
+		case END_COND:
+			if (c == ')')
+				goto jump;
+			break;
+		case END_LDECL:
+			if (c == ',')
+				goto jump;
+		case END_DECL:
+		semicolon:
+			if (c == ';')
+				goto jump;
+			break;
+		}
+	} while ((c = getchar()) != EOF);
+
+jump:
+	yytoken = c;
+	longjmp(recover, 1);
 }
