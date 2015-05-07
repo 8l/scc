@@ -54,23 +54,10 @@ type:
 	return CONSTANT;
 }
 
-static uint8_t
-number(void)
+static char *
+digits(uint8_t base)
 {
 	char ch, *bp;
-	static char base;
-
-	if ((ch = getchar()) == '0') {
-		if (toupper(ch = getchar()) == 'X') {
-			base = 16;
-		} else {
-			base = 8;
-			ungetc(ch, stdin);
-		}
-	} else {
-		base = 10;
-		ungetc(ch, stdin);
-	}
 
 	for (bp = yytext ; bp < &yytext[IDENTSIZ]; *bp++ = ch) {
 		ch = getchar();
@@ -89,35 +76,63 @@ number(void)
 			break;
 		}
 	}
-
 end:
 	if (bp == &yytext[IDENTSIZ])
-		error("identifier too long %s", yytext);
+		error("number too long %s", yytext);
 	*bp = '\0';
 	ungetc(ch, stdin);
-	return integer(yytext, base);
+	return yytext;
+}
+
+static uint8_t
+number(void)
+{
+	char ch;
+	static char base;
+
+	if ((ch = getchar()) == '0') {
+		if (toupper(ch = getchar()) == 'X') {
+			base = 16;
+		} else {
+			base = 8;
+			ungetc(ch, stdin);
+		}
+	} else {
+		base = 10;
+		ungetc(ch, stdin);
+	}
+
+	return integer(digits(base), base);
 }
 
 static char *
 escape(char *s)
 {
-	char c;
+	uint8_t base;
+	int c;
 
 repeat:
 	switch (getchar()) {
 	case '\\': c = '\''; break;
-	case 'a': c = '\a'; break;
-	case 'f': c = '\f'; break;
-	case 'n': c = '\n'; break;
-	case 'r': c = '\r'; break;
-	case 't': c = '\t'; break;
-	case 'v': c = '\v'; break;
+	case 'a':  c = '\a'; break;
+	case 'f':  c = '\f'; break;
+	case 'n':  c = '\n'; break;
+	case 'r':  c = '\r'; break;
+	case 't':  c = '\t'; break;
+	case 'v':  c = '\v'; break;
 	case '\'': c = '\\'; break;
-	case '"': c ='"'; break;
-	case '?': c = '?'; break;
-	case 'x': /* TODO: */
-	case '0': /* TODO: */
+	case '"':  c ='"';   break;
+	case '?':  c = '?';  break;
 	case 'u': /* TODO: */
+	case 'x':
+		base = 16;
+		goto number;
+	case '0':
+		base = 8;
+	number:
+		if ((c = atoi(digits(base))) > 255)
+			warn("character constant out of range");
+		break;
 	case '\n':
 		 ++linenum;
 		if ((c = getchar()) == '\\')
