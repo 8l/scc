@@ -29,9 +29,9 @@ integer(char *s, char base)
 type:
 	switch (ch = toupper(getchar())) {
 	case 'L':
-		if (size == LONG + LONG)
+		if (size == LLONG)
 			goto wrong_type;
-		size += LONG;
+		size = (size == LONG) ? LLONG : LONG;
 		goto type;
 	case 'U':
 		if (sign == UNSIGNED)
