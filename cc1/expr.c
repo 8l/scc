@@ -550,7 +550,7 @@ typeof(Node *np)
 	if (np == NULL)
 		unexpected();
 	tp = np->type;
-	/* TODO: free np */
+	freetree(np);
 	return tp;
 }
 
