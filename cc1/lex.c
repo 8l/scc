@@ -181,9 +181,9 @@ end_string:
 	*bp = '\0';
 	sym = install("", NS_IDEN);
 	sym->u.s = xstrdup(buf);
-	sym->type = mktype(chartype, PTR, 0, NULL);
+	sym->type = mktype(chartype, ARY, (bp - buf) + 1, NULL);
 	yylval.sym = sym;
-	return STRING;
+	return CONSTANT;
 }
 
 static uint8_t

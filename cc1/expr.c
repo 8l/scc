@@ -457,7 +457,8 @@ primary(void)
 	Symbol *sym;
 
 	switch (yytoken) {
-	case STRING: case CONSTANT: case IDEN:
+	case CONSTANT:
+	case IDEN:
 		if ((sym = yylval.sym) == NULL)
 			error("'%s' undeclared", yytext);
 		np = symbol(yylval.sym);

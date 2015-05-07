@@ -130,7 +130,6 @@ enum tokens {
 	SHL_EQ,
 	SHR_EQ,
 	ELLIPSIS,
-	STRING, /* TODO: remove this */
 	CASE,
 	DEFAULT,
 	IF,
