@@ -56,9 +56,10 @@ condition(void)
 	expect('(');
 	setsafe(END_COND);
 	if (!setjmp(recover))
-		np = iszero(expr());
+		np = expr();
 	else
 		np = symbol(zero);
+	np = iszero(np);
 	expect(')');
 	return np;
 }
