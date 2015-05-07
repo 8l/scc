@@ -1,5 +1,6 @@
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../inc/cc.h"
@@ -69,7 +70,7 @@ eval(Node *np)
 
 	if (!np)
 		return NULL;
-	if (!ISNODELOG(np))
+	if (np->op != OAND && np->op != OOR)
 		return np;
 	p = node(0, inttype, symbol(one), symbol(zero));
 	return node(OASK, inttype, np, p);
@@ -272,14 +273,48 @@ compare(char op, Node *np1, Node *np2)
 	return node(op, inttype, np1, np2);
 }
 
+Node *
+negate(Node *np)
+{
+	uint8_t op;
+
+	switch (np->op) {
+	case OAND: op = OOR;  break;
+	case OOR:  op = OAND; break;
+	case OEQ:  op = ONE;  break;
+	case ONE:  op = OEQ;  break;
+	case OLT:  op = OGE;  break;
+	case OGE:  op = OLT;  break;
+	case OLE:  op = OGT;  break;
+	case OGT:  op = OLE;  break;
+	default:
+		abort();
+	}
+	np->op = op;
+	return np;
+}
+
+static bool
+isnodecmp(Node *np)
+{
+	switch (np->op) {
+	case OEQ:
+	case ONE:
+	case OLT:
+	case OGE:
+	case OLE:
+	case OGT:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 static Node *
 exp2cond(Node *np, char neg)
 {
-	if (ISNODECMP(np)) {
-		NEGATE(np, neg);
-		return np;
-	}
-
+	if (isnodecmp(np))
+		return (neg) ? negate(np) : np;
 	return compare(ONE ^ neg, np, symbol(zero));
 }
 
@@ -332,7 +367,7 @@ array(Node *np1, Node *np2)
 Node *
 iszero(Node *np)
 {
-	if (ISNODECMP(np))
+	if (isnodecmp(np))
 		return np;
 	return compare(ONE, np, symbol(zero));
 }

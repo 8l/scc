@@ -293,9 +293,8 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	lelse = install("", NS_LABEL);
 	expect(IF);
 	np = condition();
-	NEGATE(np, 1);
 	emit(OBRANCH, lelse);
-	emit(OEXPR, np);
+	emit(OEXPR, negate(np));
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
 		end = install("", NS_LABEL);

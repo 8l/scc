@@ -223,13 +223,14 @@ enum {
 	ORET,
 	ODECL,
 	OSWITCH,
-	/* TODO: This order is important, but must be changed */
-	OAND, OOR,
-	/*
-	  * Complementary relational operators only differ in less
-	 * significant bit
-	 */
-	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT
+	OAND,
+	OOR,
+	OEQ,
+	ONE,
+	OLT,
+	OGE,
+	OLE,
+	OGT
 };
 
 /* error.c */
@@ -269,7 +270,7 @@ extern Node *symbol(Symbol *sym);
 extern void freetree(Node *np);
 
 /* expr.c */
-extern Node *expr(void);
+extern Node *expr(void), *negate(Node *np);
 
 /*
  * Definition of global variables
@@ -286,7 +287,4 @@ extern Type *voidtype, *pvoidtype, *booltype,
             *ullongtype,  *llongtype,
             *floattype,   *doubletype,  *ldoubletype;
 
-/* TODO: remove this ugly macros */
-#define NEGATE(n, v) ((n)->op ^= (v))
-#define ISNODECMP(n) ((n)->op >= OEQ)
-#define ISNODELOG(n) ((n)->op >= OAND)
+/* TODO: remove node(0 calls */
