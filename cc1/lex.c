@@ -370,6 +370,7 @@ next(void)
 	return yytoken;
 }
 
+/* TODO: Remove calls to expect without a character */
 void
 expect(uint8_t tok)
 {

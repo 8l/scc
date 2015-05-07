@@ -1,52 +1,26 @@
 
 
-extern void error(char *fmt, ...);
-extern void warn(char *fmt, ...);
-extern void unexpected(void);
-extern void softerror(char *fmt, ...);
-extern void setsafe(uint8_t type);
-
-enum {
-	END_DECL,
-	END_LDECL,
-	END_COMP,
-	END_COND
-};
-
-/* definitions of types */
-
-#define CTX_OUTER 0
-#define CTX_FUNC  1
-
-enum {
-	NS_IDEN = 0,
-	NS_TAG,
-	NS_LABEL,
-	NS_STRUCTS,
-	NR_NAMESPACES
-};
-
-typedef struct ctype Type;
+/*
+ * Definition of structures
+ */
+typedef struct type Type;
 typedef struct symbol Symbol;
 typedef struct caselist Caselist;
 typedef struct node Node;
 
-struct ctype {
+struct type {
 	uint8_t op;           /* type builder operator */
 	uint8_t ns;
 	char letter;          /* letter of the type */
-	bool defined;       /* type defined (is not a forward reference) */
-	struct ctype *type;   /* base type */
-	struct ctype *next;   /* next element in the hash */
-	Type **pars;         /* type parameters */
+	bool defined;         /* type defined (is not a forward reference) */
+	Type *type;           /* base type */
+	Type *next;           /* next element in the hash */
+	Type **pars;          /* type parameters */
 	union {
 		unsigned char rank;  /* convertion rank */
 		short elem;          /* number of type parameters */
 	} n;
 };
-
-
-/* definition of symbols */
 
 struct symbol {
 	char *name;
@@ -71,15 +45,15 @@ struct symbol {
 	struct symbol *hash;
 };
 
-extern bool eqtype(Type *tp1, Type *tp2);
-extern Type *ctype(int8_t type, int8_t sign, int8_t size),
-	*mktype(Type *tp, uint8_t op, short nelem, void *data);
-
-extern Symbol
-	*lookup(char *s, unsigned char ns),
-	*install(char *s, unsigned char ns);
-
-extern void pushctx(void), popctx(void);
+struct node {
+	uint8_t op;
+	Type *type;
+	Symbol *sym;
+	bool lvalue : 1;
+	bool symbol: 1;
+	bool constant : 1;
+	struct node *left, *right;
+};
 
 struct scase {
 	Symbol *label;
@@ -93,81 +67,162 @@ struct caselist {
 	struct scase *head;
 };
 
-extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
-
-extern Type *typename(void);
-
-extern Type *voidtype, *pvoidtype, *booltype,
-	*uchartype,   *chartype,
-	*uinttype,    *inttype,
-	*ushortype,   *shortype,
-	*longtype,    *ulongtype,
-	*ullongtype,  *llongtype,
-	*floattype,   *doubletype,  *ldoubletype;
-
-enum {
-	FTN = 1, ENUM, TYPEIDEN, VOID, FLOAT, INT, BOOL,
-	STRUCT, UNION, PTR, ARY, CHAR, DOUBLE, SHORT,
-	LONG, COMPLEX, UNSIGNED, SIGNED
-};
-
-#define CONST         (1<<0)
-#define VOLATILE      (1<<1)
-#define RESTRICT      (1<<2)
-
-#define TYPEDEF       1
-#define EXTERN        2
-#define STATIC        3
-#define AUTO          4
-#define REGISTER      5
-
-#define accept(t) ((yytoken == (t)) ? next() : 0)
-extern uint8_t ahead(void);
-
-enum tokens {
-	TQUALIFIER = 128, TYPE, IDEN, SCLASS,
-	CONSTANT, SIZEOF,
-	INDIR, INC, DEC, SHL, SHR,
-	LE, GE, EQ, NE, AND, OR,
-	MUL_EQ, DIV_EQ, MOD_EQ, ADD_EQ, SUB_EQ, AND_EQ,
-	XOR_EQ, OR_EQ, SHL_EQ, SHR_EQ,
-	ELLIPSIS, STRING,
-	CASE, DEFAULT, IF, ELSE, SWITCH, WHILE, DO, FOR, GOTO,
-	CONTINUE, BREAK, RETURN, EOFTOK, NOTOK
-};
-
 struct yystype {
 	Symbol *sym;
 	uint8_t token;
 };
 
-extern struct yystype yylval;
-extern char yytext[];
-extern uint8_t yytoken;
+/*
+ * Definition of enumerations
+ */
 
-extern uint8_t next(void);
-extern void expect(uint8_t tok);
-
-struct node {
-	uint8_t op;
-	Type *type;
-	Symbol *sym;
-	bool lvalue : 1;
-	bool symbol: 1;
-	bool constant : 1;
-	struct node *left, *right;
+/* recovery points */
+enum {
+	END_DECL,
+	END_LDECL,
+	END_COMP,
+	END_COND
 };
 
+/* type constructors */
 enum {
-	OPTR = 1, OADD, OSIZE, OMUL, OSUB,
-	OINC, ODEC, ODIV, OMOD, OSHL, OSHR,
-	OBAND, OBXOR, OBOR, OASSIGN, OA_MUL, OA_DIV,
-	OA_MOD, OA_ADD, OA_SUB, OA_SHL, OA_SHR,
-	OA_AND, OA_XOR, OA_OR, OADDR,ONEG, OCPL, OEXC,
-	OCOMMA, OCAST, OSYM, OASK, OFIELD, OTYP,
-	OLABEL, ODEFAULT, OCASE, OSTRUCT, OJUMP, OBRANCH,
-	OEXPR, OEFUN, OESTRUCT, OELOOP, OBLOOP, OPRINT,
-	OFUN, ORET, ODECL, OSWITCH,
+	FTN = 1,
+	PTR,
+	ARY,
+};
+
+/* namespaces */
+enum {
+	NS_IDEN,
+	NS_TAG,
+	NS_LABEL,
+	NS_STRUCTS,
+	NR_NAMESPACES
+};
+
+/* input tokens */
+enum tokens {
+	TQUALIFIER = 128,
+	TYPE,
+	IDEN,
+	SCLASS,
+	CONSTANT,
+	SIZEOF,
+	INDIR,
+	INC,
+	DEC,
+	SHL,
+	SHR,
+	LE,
+	GE,
+	EQ,
+	NE,
+	AND,
+	OR,
+	MUL_EQ,
+	DIV_EQ,
+	MOD_EQ,
+	ADD_EQ,
+	SUB_EQ,
+	AND_EQ,
+	XOR_EQ,
+	OR_EQ,
+	SHL_EQ,
+	SHR_EQ,
+	ELLIPSIS,
+	STRING, /* TODO: remove this */
+	CASE,
+	DEFAULT,
+	IF,
+	ELSE,
+	SWITCH,
+	WHILE,
+	DO,
+	FOR,
+	GOTO,
+	VOID,
+	FLOAT,
+	INT,
+	BOOL,
+	STRUCT,
+	UNION,
+	CHAR,
+	DOUBLE,
+	SHORT,
+	LONG,
+	LLONG,
+	COMPLEX,
+	CONST,
+	VOLATILE,
+	RESTRICT,
+	TYPEDEF,
+	EXTERN,
+	STATIC,
+	AUTO,
+	REGISTER,
+	ENUM,
+	TYPEIDEN,
+	UNSIGNED,
+	SIGNED,
+	CONTINUE,
+	BREAK,
+	RETURN,
+	EOFTOK,
+	NOTOK
+};
+
+/* operations */
+enum {
+	OPTR = 1,
+	OADD,
+	OSIZE,
+	OMUL,
+	OSUB,
+	OINC,
+	ODEC,
+	ODIV,
+	OMOD,
+	OSHL,
+	OSHR,
+	OBAND,
+	OBXOR,
+	OBOR,
+	OASSIGN,
+	OA_MUL,
+	OA_DIV,
+	OA_MOD,
+	OA_ADD,
+	OA_SUB,
+	OA_SHL,
+	OA_SHR,
+	OA_AND,
+	OA_XOR,
+	OA_OR,
+	OADDR,ONEG,
+	OCPL,
+	OEXC,
+	OCOMMA,
+	OCAST,
+	OSYM,
+	OASK,
+	OFIELD,
+	OTYP,
+	OLABEL,
+	ODEFAULT,
+	OCASE,
+	OSTRUCT,
+	OJUMP,
+	OBRANCH,
+	OEXPR,
+	OEFUN,
+	OESTRUCT,
+	OELOOP,
+	OBLOOP,
+	OPRINT,
+	OFUN,
+	ORET,
+	ODECL,
+	OSWITCH,
 	/* TODO: This order is important, but must be changed */
 	OAND, OOR,
 	/*
@@ -177,14 +232,61 @@ enum {
 	OEQ = 0x40, ONE, OLT, OGE, OLE, OGT
 };
 
+/* error.c */
+extern void error(char *fmt, ...);
+extern void warn(char *fmt, ...);
+extern void unexpected(void);
+extern void softerror(char *fmt, ...);
+extern void setsafe(uint8_t type);
+
+/* type.c */
+extern bool eqtype(Type *tp1, Type *tp2);
+extern Type *ctype(uint8_t type, uint8_t sign, uint8_t size);
+extern Type *mktype(Type *tp, uint8_t op, short nelem, void *data);
+
+/* symbol.c */
+extern Symbol *lookup(char *s, unsigned char ns);
+extern Symbol *install(char *s, unsigned char ns);
+extern void pushctx(void), popctx(void);
+
+/* stmt.c */
+extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
+
+/* decl.c */
+extern Type *typename(void);
+extern void extdecl(void), decl(void);
+
+/* lex.c */
+extern uint8_t ahead(void);
+extern uint8_t next(void);
+extern void expect(uint8_t tok);
+#define accept(t) ((yytoken == (t)) ? next() : 0)
+
+/* code.c */
 extern void emit(uint8_t, void *);
 extern Node *node(uint8_t op, Type *tp, Node *left, Node *rigth);
 extern Node *symbol(Symbol *sym);
 extern void freetree(Node *np);
 
+/* expr.c */
+extern Node *expr(void);
+
+/*
+ * Definition of global variables
+ */
+extern struct yystype yylval;
+extern char yytext[];
+extern uint8_t yytoken;
+
+extern Type *voidtype, *pvoidtype, *booltype,	
+            *uchartype,   *chartype,
+            *uinttype,    *inttype,
+            *ushortype,   *shortype,
+            *longtype,    *ulongtype,
+            *ullongtype,  *llongtype,
+            *floattype,   *doubletype,  *ldoubletype;
+
+/* TODO: remove this ugly macros */
 #define NEGATE(n, v) ((n)->op ^= (v))
 #define ISNODECMP(n) ((n)->op >= OEQ)
 #define ISNODELOG(n) ((n)->op >= OAND)
-
-extern Node *expr(void);
-extern void extdecl(void), decl(void);

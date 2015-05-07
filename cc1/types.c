@@ -135,7 +135,7 @@ Symbol *zero = &dummy0, *one = &dummy1;
 
 
 Type *
-ctype(int8_t type, int8_t sign, int8_t size)
+ctype(uint8_t type, uint8_t sign, uint8_t size)
 {
 	switch (type) {
 	case CHAR:
@@ -171,17 +171,17 @@ ctype(int8_t type, int8_t sign, int8_t size)
 			return (sign == UNSIGNED) ? ushortype  : shortype;
 		case LONG:
 			return (sign == UNSIGNED) ? ulongtype  : longtype;
-		case LONG+LONG:
+		case LLONG:
 			return (sign == UNSIGNED) ? ullongtype : llongtype;
 		}
 		break;
 	case DOUBLE:
-		if (size == LONG+LONG)
+		if (size == LLONG)
 			goto invalid_type;
 		size += LONG;
 		goto floating;
 	case FLOAT:
-		if (size == LONG+LONG)
+		if (size == LLONG)
 			goto invalid_type;
 	floating:
 		if (sign)
@@ -191,7 +191,7 @@ ctype(int8_t type, int8_t sign, int8_t size)
 			return floattype;
 		case LONG:
 			return doubletype;
-		case LONG+LONG:
+		case LLONG:
 			return ldoubletype;
 		}
 		break;

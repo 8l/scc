@@ -215,7 +215,7 @@ specifier(int8_t *sclass)
 				p = &sign; break;
 			case LONG:
 				if (size == LONG) {
-					size = LONG+LONG;
+					size = LLONG;
 					break;
 				}
 			case SHORT:
@@ -397,7 +397,7 @@ static Symbol *
 parameter(void)
 {
 	Symbol *sym;
-	int8_t sclass;
+	uint8_t sclass;
 	Type *tp;
 
 	if ((tp = specifier(&sclass)) == voidtype)
@@ -427,7 +427,7 @@ decl(void)
 {
 	Type *tp;
 	Symbol *sym;
-	int8_t sclass, isfun;
+	uint8_t sclass, isfun;
 	extern jmp_buf recover;
 
 	setsafe(END_DECL);
@@ -495,7 +495,7 @@ void
 extdecl(void)
 {
 	Type *base, *tp;
-	int8_t sclass;
+	uint8_t sclass;
 	Symbol *sym;
 	extern Symbol *curfun;
 	extern jmp_buf recover;
