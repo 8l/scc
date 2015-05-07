@@ -385,14 +385,17 @@ next(void)
 	return yytoken;
 }
 
-/* TODO: Remove calls to expect without a character */
 void
 expect(uint8_t tok)
 {
-	if (yytoken != tok)
-		softerror("expected '%c' before '%s'", tok, yytext);
-	else
+	if (yytoken != tok) {
+		if (isgraph(tok))
+			softerror("expected '%c' before '%s'", tok, yytext);
+		else
+			softerror("unexpected '%s'", yytext);
+	} else {
 		next();
+	}
 }
 
 uint8_t
