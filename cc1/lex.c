@@ -211,8 +211,8 @@ static int
 readline(void)
 {
 	char *bp, *ptr;
-	uint8_t n;
-	int c;
+	uint8_t n, eol, block;
+	int back, c;
 	FILE *fp;
 
 repeat:
@@ -232,19 +232,55 @@ repeat:
 		goto repeat;
 	}
 	ungetc(c, fp);
+	back = eol = block = 0;
 
-	for (bp = ptr; (c = getc(fp)) != EOF && c != '\n'; ) {
-		if (c == '\\') {
+	for (bp = ptr; (c = getc(fp)) != EOF; ) {
+		switch (c) {
+		case '\\':
 			if ((c = getc(fp)) == '\n')
 				continue;
-			ungetc(c, fp);
+			back = c;
 			c = '\\';
+			break;
+		case '/':
+			if ((c = getc(fp)) == '/')
+				eol = 1;
+			else if (c == '*')
+				block = 1;
+			else
+				back = c;
+			c = '/';
+			break;
+		case '\n':
+			if (eol)
+				c = ' ';
+			else if (!block)
+				goto end_line;
+			break;
+		case '*':
+			if (block) {
+				if ((c = getc(fp)) == '/') {
+					block = 0;
+					c = ' ';
+				} else {
+					back = c;
+					c = '*';
+				}
+			}
+			break;
+		}
+		if (eol || block)
+			continue;
+		if (back) {
+			ungetc(back, fp);
+			back = 0;
 		}
 		if (bp == &ptr[INPUTSIZ])
 			die("line %d too big in file '%s'",
 			    input->nline, input->fname);
 		*bp++ =  c;
 	}
+end_line:
 	*bp = ' ';
 	input->cnt = bp - ptr;
 	input->ptr = ptr;
