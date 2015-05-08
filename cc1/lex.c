@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <inttypes.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -10,14 +11,14 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-#define INPUTSIZ 128
+#define INPUTSIZ 120
 
 typedef struct input Input;
 
 struct input {
 	char *fname;
 	unsigned short nline;
-	int8_t cnt;
+	int cnt;
 	FILE *fp;
 	char *line, *ptr;
 	struct input *next;
@@ -35,32 +36,35 @@ static uint8_t safe;
 
 static Input *input;
 
-void
+bool
 addinput(char *fname)
 {
-	Input *ip, *oip = input;
+	Input *ip;
+	FILE *fp;
+	unsigned short nline = 1;
+
+	if (fname) {
+		if ((fp = fopen(fname, "r")) == NULL)
+			return 0;
+		fname = xstrdup(fname);
+	} else if (!input) {
+		fp = stdin;
+		fname = "(stdin)";
+	} else {
+		fname = input->fname;
+		nline = input->nline;
+		fp = NULL;
+	}
 
 	ip = xmalloc(sizeof(Input));
+	ip->fname = fname;
 	ip->next = input;
 	ip->line = NULL;
 	ip->cnt = 0;
-	ip->nline = 1;
+	ip->nline = nline;
+	ip->fp = fp;
 	input = ip;
-
-	if (fname) {
-		if ((ip->fp = fopen(fname, "r")) == NULL)
-			die("file '%s' not found", fname);
-		ip->fname = xstrdup(fname);
-		next();
-	} else if (!oip) {
-		ip->fp = stdin;
-		ip->fname = "(stdin)";
-		next();
-	} else {
-		ip->fname = oip->fname;
-		ip->fp = NULL;
-		ip->nline = input->nline;
-	}
+	return 1;
 }
 
 void
@@ -99,14 +103,122 @@ newline(void)
 		die("input file '%s' too long", input->fname);
 }
 
+/* TODO: preprocessor error must not rise recover */
+static void
+preprocessor(void)
+{
+	char str[IDENTSIZ+1], *p, *q;
+	unsigned short cnt, n;
+	Symbol *sym;
+
+	p = input->ptr;
+	q = &p[input->cnt-1];
+	while (q > p && isspace(*q))
+		++q;
+	while (isspace(*p))
+		++p;
+	for (q = p; isalpha(*q); ++q)
+		/* nothing */;
+	if ((n = q - p) > IDENTSIZ)
+		goto bad_directive;
+	strncpy(str, p, n);
+	str[n] = '\0';
+
+	/* discard this line for the lexer */
+	input->cnt = 0;
+	if ((sym = lookup(str, NS_CPP)) == NULL)
+		goto bad_directive;
+	(*sym->u.fun)(q);
+	return;
+
+bad_directive:
+	error("incorrect preprocessor directive");
+}
+
+void
+include(char *s)
+{
+	char fname[FILENAME_MAX], delim, c, *p;
+	size_t len;
+
+	while (isspace(*s))
+		++s;
+	if ((c = *s++) == '>')
+		delim = '>';
+	else if (c == '"')
+		delim = '"';
+	else
+		goto bad_include;
+
+	for (p = s; (c = *p) && c != delim; ++p)
+		/* nothing */;
+	if (c == '\0')
+		goto bad_include;
+
+	len = p - s;
+	if (delim == '"') {
+		if (len >= FILENAME_MAX)
+			goto too_long;
+		strncpy(fname, s, len);
+		fname[len] = '\0';
+		if (!addinput(fname))
+			goto not_found;
+		return;
+	}
+	abort();
+
+	return;
+
+not_found:
+	error("included file '%s' not found", fname);
+too_long:
+	error("file name in include too long");
+bad_include:
+	error("#include expects \"FILENAME\" or <FILENAME>");
+}
+
+void
+define(char *str)
+{
+	
+}
+
+void
+undef(char *str)
+{
+	fprintf(stderr, "Esto en un undef\n");
+}
+
+void
+ifdef(char *str)
+{
+	fprintf(stderr, "Esto en un ifdef\n");
+}
+
+void
+ifndef(char *str)
+{
+	fprintf(stderr, "Esto en un ifndef\n");
+}
+
+void
+endif(char *str)
+{
+	fprintf(stderr, "Esto en un endif\n");
+}
+
 static int
 readline(void)
 {
 	char *bp, *ptr;
 	uint8_t n;
 	int c;
-	FILE *fp = input->fp;
+	FILE *fp;
 
+repeat:
+	if (!input)
+		return EOF;
+	fp = input->fp;
 	if (!input->line)
 		input->line = xmalloc(INPUTSIZ);
 	ptr = input->line;
@@ -115,8 +227,10 @@ readline(void)
 		if (c == '\n')
 			newline();
 	}
-	if (c == EOF)
-		return EOF;
+	if (c == EOF) {
+		delinput();
+		goto repeat;
+	}
 	ungetc(c, fp);
 
 	for (bp = ptr; (c = getc(fp)) != EOF && c != '\n'; ) {
@@ -134,12 +248,22 @@ readline(void)
 	*bp = ' ';
 	input->cnt = bp - ptr;
 	input->ptr = ptr;
-	return *input->ptr++;
+
+	if ((c = *input->ptr++) == '#') {
+		*bp = '\0';
+		preprocessor();
+		goto repeat;
+	}
+	return c;
 }
 
 static int
 backchar(int c)
 {
+	if (!input) {
+		assert(c == EOF);
+		return c;
+	}
 	++input->cnt;
 	return *--input->ptr = c;
 }

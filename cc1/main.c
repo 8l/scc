@@ -67,12 +67,10 @@ main(int argc, char *argv[])
 
 	ikeywords();
 
-	addinput(*argv);
-	while (yytoken != EOFTOK)
-		extdecl();
-	delinput();
+	if (!addinput(*argv))
+		die("error opening input file '%s'", *argv);
+	for (next(); yytoken != EOFTOK; extdecl())
+		/* nothing */;
 
-	if (fclose(stdout))
-		die("error writing in output:%s", strerror(errno));
 	return 0;
 }

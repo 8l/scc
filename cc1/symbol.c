@@ -107,10 +107,13 @@ install(char *s, uint8_t ns)
 void
 ikeywords(void)
 {
-	static struct {
+	extern void include(char *), define(char *), undef(char *);
+	extern void ifdef(char *),  ifndef(char *), endif(char *);
+	static struct words {
 		char *str;
 		uint8_t token, value;
-	} *bp, buff[] = {
+		void (*fun)(char *);
+	} ccwords[] = {
 		{"auto", SCLASS, AUTO},
 		{"break", BREAK, BREAK},
 		{"_Bool", TYPE, BOOL},
@@ -146,13 +149,36 @@ ikeywords(void)
 		{"volatile", TQUALIFIER, VOLATILE},
 		{"while", WHILE, WHILE},
 		{NULL, 0, 0},
+	}, cppwords[] = {
+		{"include", 0, 0, include},
+		{"define", 0, 0, define},
+		{"undef", 0, 0, undef},
+		{"ifdef", 0, 0, ifdef},
+		{"ifndef", 0, 0, ifndef},
+		{"endif", 0, 0, endif},
+		{NULL, 0, 0}
 	};
+	static struct wordlist {
+		struct words *words;
+		uint8_t ns;
+	} wordlist [] = {
+		{ccwords, NS_IDEN},
+		{cppwords, NS_CPP},
+		{NULL, 0}
+	};
+	struct wordlist *lp;
+	struct words *bp;
 	Symbol *sym;
 
-	for (bp = buff; bp->str; ++bp) {
-		sym = install(bp->str, NS_IDEN);
-		sym->token = bp->token;
-		sym->u.token = bp->value;
+	for (lp = wordlist; lp->words; ++lp) {
+		for (bp = lp->words; bp->str; ++bp) {
+			sym = install(bp->str, lp->ns);
+			sym->token = bp->token;
+			if (bp->fun)
+				sym->u.fun = bp->fun;
+			else
+				sym->u.token = bp->value;
+		}
 	}
 	globalcnt = 0;
 }
