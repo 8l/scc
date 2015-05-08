@@ -32,8 +32,7 @@ uint8_t lex_ns = NS_IDEN;
 uint8_t yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
-static uint8_t safe;
-
+static uint8_t safe, comment, commentline;
 static Input *input;
 
 bool
@@ -208,11 +207,27 @@ endif(char *str)
 }
 
 static int
+readchar(void)
+{
+	int c;
+	FILE *fp = input->fp;
+
+repeat:
+	if ((c = getc(fp)) == '\\') {
+		if ((c = getc(fp)) == '\n')
+			goto repeat;
+		ungetc(c, fp);
+		c = '\\';
+	}
+	return c;
+}
+
+static int
 readline(void)
 {
 	char *bp, *ptr;
-	uint8_t n, eol, block;
-	int back, c;
+	uint8_t n;
+	int c;
 	FILE *fp;
 
 repeat:
@@ -221,7 +236,7 @@ repeat:
 	fp = input->fp;
 	if (!input->line)
 		input->line = xmalloc(INPUTSIZ);
-	ptr = input->line;
+	bp = ptr = input->ptr = input->line;
 
 	while ((c = getc(fp)) != EOF && isspace(c)) {
 		if (c == '\n')
@@ -232,58 +247,46 @@ repeat:
 		goto repeat;
 	}
 	ungetc(c, fp);
-	back = eol = block = 0;
 
-	for (bp = ptr; (c = getc(fp)) != EOF; ) {
-		switch (c) {
-		case '\\':
-			if ((c = getc(fp)) == '\n')
+	for (;;) {
+		c = readchar();
+	nextchar:
+		if (c == EOF)
+			break;
+		if (comment) {
+			if (c != '*')
 				continue;
-			back = c;
-			c = '\\';
-			break;
-		case '/':
-			if ((c = getc(fp)) == '/')
-				eol = 1;
-			else if (c == '*')
-				block = 1;
-			else
-				back = c;
-			c = '/';
-			break;
-		case '\n':
-			if (eol)
-				c = ' ';
-			else if (!block)
-				goto end_line;
-			break;
-		case '*':
-			if (block) {
-				if ((c = getc(fp)) == '/') {
-					block = 0;
-					c = ' ';
-				} else {
-					back = c;
-					c = '*';
-				}
-			}
-			break;
+			if ((c = readchar()) != '/')
+				goto nextchar;
+			comment = 0;
+			c = ' ';
+		} else if (commentline) {
+			if (c != '\n')
+				continue;
+			commentline = 0;
+			c = ' ';
 		}
-		if (eol || block)
-			continue;
-		if (back) {
-			ungetc(back, fp);
-			back = 0;
-		}
-		if (bp == &ptr[INPUTSIZ])
+		if (c == '\n')
+			break;
+		if (bp == &ptr[INPUTSIZ-1])
 			die("line %d too big in file '%s'",
 			    input->nline, input->fname);
-		*bp++ =  c;
+		if (c == '/') {
+			if ((c = readchar()) == '*') {
+				comment = 1;
+				continue;
+			} else if (c == '/') {
+				commentline = 1;
+				continue;
+			}
+			*bp++ = '/';
+			goto nextchar;
+		}
+		*bp++ = c;
 	}
-end_line:
+
 	*bp = ' ';
 	input->cnt = bp - ptr;
-	input->ptr = ptr;
 
 	if ((c = *input->ptr++) == '#') {
 		*bp = '\0';
