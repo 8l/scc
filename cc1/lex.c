@@ -518,10 +518,10 @@ ahead(void)
 	int c;
 
 repeat:
-	if (!input)
+	if (!fill())
 		return EOFTOK;
 	while (isspace(c = *input->begin))
-		;
+		++input->begin;
 	if (c == '\0') {
 		fill();
 		goto repeat;
