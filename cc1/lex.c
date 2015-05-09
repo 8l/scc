@@ -367,10 +367,10 @@ string(void)
 static uint8_t
 iden(void)
 {
-	char c, *p;
+	char *p;
 	Symbol *sym;
 
-	for (p = input->p; isalpha(*p); ++p)
+	for (p = input->p; isalnum(*p) || *p == '_'; ++p)
 		/* nothing */;
 	input->p = p;
 	tok2str();
