@@ -7,7 +7,10 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
+#define MAXERRNUM 10
+
 extern uint8_t failure;
+static uint8_t nerrors;
 
 static void
 warn_helper(int8_t flag, char *fmt, va_list va)
@@ -18,6 +21,10 @@ warn_helper(int8_t flag, char *fmt, va_list va)
 		(flag < 0) ? "error" : "warning", filename(), fileline());
 	vfprintf(stderr, fmt, va);
 	putc('\n', stderr);
+	if (flag < 0 && nerrors++ == MAXERRNUM) {
+		fputs("too many errors\n", stderr);
+		exit(-1);
+	}
 }
 
 void
