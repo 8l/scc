@@ -431,7 +431,8 @@ decl(void)
 	extern jmp_buf recover;
 
 	setsafe(END_DECL);
-	setjmp(recover);
+	if (setjmp(recover))
+		return;
 	tp = specifier(&sclass);
 	if (accept(';'))
 		return;
