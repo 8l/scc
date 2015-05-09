@@ -57,6 +57,13 @@ pragma(char *s)
 	return s;
 }
 
+static char *
+usererr(char *s)
+{
+	fprintf(stderr, "%s:%u:error: #error %s\n", filename(), fileline(), s);
+	exit(-1);
+}
+
 char *
 preprocessor(char *p)
 {
@@ -65,11 +72,13 @@ preprocessor(char *p)
 	static char **bp, *cmds[] = {
 		"include",
 		"pragma",
+		"error",
 		NULL
 	};
 	static char *(*funs[])(char *) = {
 		include,
-		pragma
+		pragma,
+		usererr
 	};
 
 	while (isspace(*p))
