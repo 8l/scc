@@ -49,6 +49,14 @@ bad_include:
 	error("#include expects \"FILENAME\" or <FILENAME>");
 }
 
+static char *
+pragma(char *s)
+{
+	while (*s)
+		++s;
+	return s;
+}
+
 char *
 preprocessor(char *p)
 {
@@ -56,10 +64,12 @@ preprocessor(char *p)
 	unsigned short n;
 	static char **bp, *cmds[] = {
 		"include",
+		"pragma",
 		NULL
 	};
 	static char *(*funs[])(char *) = {
-		include
+		include,
+		pragma
 	};
 
 	while (isspace(*p))
