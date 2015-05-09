@@ -313,6 +313,7 @@ void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	extern jmp_buf recover;
+
 	pushctx();
 	expect('{');
 

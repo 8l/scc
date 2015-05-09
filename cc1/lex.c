@@ -479,7 +479,7 @@ next(void)
 	char c;
 
 	if (!fill())
-		return EOFTOK;
+		return yytoken = EOFTOK;
 
 	while (isspace(*input->begin))
 		++input->begin;
