@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -18,21 +19,17 @@ typedef struct input Input;
 struct input {
 	char *fname;
 	unsigned short nline;
-	int cnt;
 	FILE *fp;
-	char *line, *ptr;
+	char *line, *begin, *p;
 	struct input *next;
 };
-
-#define nextchar() ((--input->cnt >= 0) ? \
-                       (unsigned char) *input->ptr++ : readline())
 
 uint8_t lex_ns = NS_IDEN;
 
 uint8_t yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
-static uint8_t safe, comment, commentline;
+static uint8_t safe;
 static Input *input;
 
 bool
@@ -59,7 +56,6 @@ addinput(char *fname)
 	ip->fname = fname;
 	ip->next = input;
 	ip->line = NULL;
-	ip->cnt = 0;
 	ip->nline = nline;
 	ip->fp = fp;
 	input = ip;
@@ -95,53 +91,13 @@ fileline(void)
 	return input->nline;
 }
 
-static void
-newline(void)
-{
-	if (++input->nline == 0)
-		die("input file '%s' too long", input->fname);
-}
-
 /* TODO: preprocessor error must not rise recover */
-static void
-preprocessor(void)
-{
-	char str[IDENTSIZ+1], *p, *q;
-	unsigned short cnt, n;
-	Symbol *sym;
-
-	p = input->ptr;
-	q = &p[input->cnt-1];
-	while (q > p && isspace(*q))
-		++q;
-	while (isspace(*p))
-		++p;
-	for (q = p; isalpha(*q); ++q)
-		/* nothing */;
-	if ((n = q - p) > IDENTSIZ)
-		goto bad_directive;
-	strncpy(str, p, n);
-	str[n] = '\0';
-
-	/* discard this line for the lexer */
-	input->cnt = 0;
-	if ((sym = lookup(str, NS_CPP)) == NULL)
-		goto bad_directive;
-	(*sym->u.fun)(q);
-	return;
-
-bad_directive:
-	error("incorrect preprocessor directive");
-}
-
-void
+char *
 include(char *s)
 {
 	char fname[FILENAME_MAX], delim, c, *p;
 	size_t len;
 
-	while (isspace(*s))
-		++s;
 	if ((c = *s++) == '>')
 		delim = '>';
 	else if (c == '"')
@@ -162,11 +118,11 @@ include(char *s)
 		fname[len] = '\0';
 		if (!addinput(fname))
 			goto not_found;
-		return;
+	} else {
+		abort();
 	}
-	abort();
 
-	return;
+	return p+1;
 
 not_found:
 	error("included file '%s' not found", fname);
@@ -176,34 +132,41 @@ bad_include:
 	error("#include expects \"FILENAME\" or <FILENAME>");
 }
 
-void
-define(char *str)
+static char *
+preprocessor(char *p)
 {
-	
-}
+	char str[IDENTSIZ+1], *q;
+	unsigned short n;
+	static char **bp, *cmds[] = {
+		"include",
+		NULL
+	};
+	static char *(*funs[])(char *) = {
+		include
+	};
 
-void
-undef(char *str)
-{
-	fprintf(stderr, "Esto en un undef\n");
-}
-
-void
-ifdef(char *str)
-{
-	fprintf(stderr, "Esto en un ifdef\n");
-}
-
-void
-ifndef(char *str)
-{
-	fprintf(stderr, "Esto en un ifndef\n");
-}
-
-void
-endif(char *str)
-{
-	fprintf(stderr, "Esto en un endif\n");
+	while (isspace(*p))
+		++p;
+	if (*p != '#')
+		return p;
+	for (++p; isspace(*p); ++p)
+		/* nothing */;
+	for (q = p; isalpha(*q); ++q)
+		/* nothing */;
+	n = q - p;
+	while (isspace(*q))
+		++q;
+	for (bp = cmds; *bp; ++bp) {
+		if (strncmp(*bp, p, n))
+			continue;
+		q = (*funs[bp - cmds])(q);
+		while (isspace(*q++))
+			/* nothing */;
+		if (*q != '\0')
+			error("trailing characters after preprocessor directive");
+		return NULL;
+	}
+	error("incorrect preprocessor directive");
 }
 
 static int
@@ -222,31 +185,15 @@ repeat:
 	return c;
 }
 
-static int
+static void
 readline(void)
 {
-	char *bp, *ptr;
-	uint8_t n;
+	static int comment, commentline;
+	char *bp, *lim;
 	int c;
-	FILE *fp;
 
-repeat:
-	if (!input)
-		return EOF;
-	fp = input->fp;
-	if (!input->line)
-		input->line = xmalloc(INPUTSIZ);
-	bp = ptr = input->ptr = input->line;
-
-	while ((c = getc(fp)) != EOF && isspace(c)) {
-		if (c == '\n')
-			newline();
-	}
-	if (c == EOF) {
-		delinput();
-		goto repeat;
-	}
-	ungetc(c, fp);
+	bp = input->line;
+	lim = bp + INPUTSIZ-1;
 
 	for (;;) {
 		c = readchar();
@@ -268,7 +215,7 @@ repeat:
 		}
 		if (c == '\n')
 			break;
-		if (bp == &ptr[INPUTSIZ-1])
+		if (bp == lim)
 			die("line %d too big in file '%s'",
 			    input->nline, input->fname);
 		if (c == '/') {
@@ -284,60 +231,88 @@ repeat:
 		}
 		*bp++ = c;
 	}
-
-	*bp = ' ';
-	input->cnt = bp - ptr;
-
-	if ((c = *input->ptr++) == '#') {
-		*bp = '\0';
-		preprocessor();
-		goto repeat;
-	}
-	return c;
+	ungetc(c, input->fp);
+	*bp = '\0';
 }
 
-static int
-backchar(int c)
+static bool
+fill(void)
 {
-	if (!input) {
-		assert(c == EOF);
-		return c;
+	int c;
+	char *p;
+	FILE *fp;
+
+repeat:
+	if (!input)
+		return 0;
+	if (input->begin && *input->begin != '\0')
+		return 1;
+
+	fp = input->fp;
+	if (!input->line)
+		input->line = xmalloc(INPUTSIZ);
+
+	while ((c = getc(fp)) != EOF && (c == '\n')) {
+		if (++input->nline == 0)
+			die("input file '%s' too long", input->fname);
 	}
-	++input->cnt;
-	return *--input->ptr = c;
+	if (c == EOF) {
+		delinput();
+		goto repeat;
+	}
+	ungetc(c, fp);
+	readline();
+	if ((p = preprocessor(input->line)) == NULL)
+		goto repeat;
+	input->begin = input->p = p;
+	return 1;
+}
+
+static void
+tok2str(void)
+{
+	size_t len;
+
+	if ((len = input->p - input->begin) > IDENTSIZ)
+		error("token too big");
+	strncpy(yytext, input->begin, len);
+	yytext[len] = '\0';
+	fprintf(stderr ,"%s\n", yytext);
+	input->begin = input->p;
 }
 
 static uint8_t
 integer(char *s, char base)
 {
-	static Type *tp;
-	static Symbol *sym;
-	static char ch, size, sign;
-	static long v;
+	Type *tp;
+	Symbol *sym;
+	uint8_t size, sign;
+	long v;
 
-	size = sign = 0;
-type:
-	switch (ch = toupper(nextchar())) {
-	case 'L':
-		if (size == LLONG)
-			goto wrong_type;
-		size = (size == LONG) ? LLONG : LONG;
-		goto type;
-	case 'U':
-		if (sign == UNSIGNED)
-			goto wrong_type;
-		goto type;
-	default:
-		backchar(ch);
-		tp = ctype(INT, sign, size);
-		break;
-	wrong_type:
-		error("invalid suffix in integer constant");
+	for (size = sign = 0; ; ++input->p) {
+		switch (toupper(*input->p)) {
+		case 'L':
+			if (size == LLONG)
+				goto wrong_type;
+			size = (size == LONG) ? LLONG : LONG;
+			continue;
+		case 'U':
+			if (sign == UNSIGNED)
+				goto wrong_type;
+			sign = UNSIGNED;
+			continue;
+		default:
+			goto convert;
+		wrong_type:
+			error("invalid suffix in integer constant");
+		}
 	}
 
+convert:
+	tp = ctype(INT, sign, size);
 	sym = install("", NS_IDEN);
 	sym->type = tp;
-	v = strtol(yytext, NULL, base);
+	v = strtol(s, NULL, base);
 	if (tp == inttype)
 		sym->u.i = v;
 	yylval.sym = sym;
@@ -347,30 +322,27 @@ type:
 static char *
 digits(uint8_t base)
 {
-	char ch, *bp;
+	char c, *p;
 
-	for (bp = yytext ; bp < &yytext[IDENTSIZ]; *bp++ = ch) {
-		ch = nextchar();
+	for (p = input->p; c = *p; ++p) {
 		switch (base) {
 		case 8:
-			if (ch >= '7')
+			if (c > '7' || c < '0')
 				goto end;
-			/* passthru */
+			break;
 		case 10:
-			if (!isdigit(ch))
+			if (!isdigit(c))
 				goto end;
 			break;
 		case 16:
-			if (!isxdigit(ch))
+			if (!isxdigit(c))
 				goto end;
 			break;
 		}
 	}
 end:
-	if (bp == &yytext[IDENTSIZ])
-		error("number too long %s", yytext);
-	*bp = '\0';
-	backchar(ch);
+	input->p = p;
+	tok2str();
 	return yytext;
 }
 
@@ -378,63 +350,51 @@ static uint8_t
 number(void)
 {
 	int ch;
-	static char base;
+	char base;
 
-	if ((ch = nextchar()) == '0') {
-		if (toupper(ch = nextchar()) == 'X') {
+	if (*input->p != '0') {
+		base = 10;
+	} else {
+		if (toupper(*++input->p) == 'X') {
+			++input->p;
 			base = 16;
 		} else {
 			base = 8;
-			backchar(ch);
 		}
-	} else {
-		base = 10;
-		backchar(ch);
 	}
 
 	return integer(digits(base), base);
 }
 
-static char *
-escape(char *s)
+static char
+escape(void)
 {
-	uint8_t base;
-	int c;
+	int c, base;
 
-repeat:
-	switch (nextchar()) {
-	case '\\': c = '\''; break;
-	case 'a':  c = '\a'; break;
-	case 'f':  c = '\f'; break;
-	case 'n':  c = '\n'; break;
-	case 'r':  c = '\r'; break;
-	case 't':  c = '\t'; break;
-	case 'v':  c = '\v'; break;
-	case '\'': c = '\\'; break;
-	case '"':  c ='"';   break;
-	case '?':  c = '?';  break;
-	case 'u': /* TODO: */
-	case 'x':
-		base = 16;
-		goto number;
-	case '0':
-		base = 8;
-	number:
-		if ((c = atoi(digits(base))) > 255)
-			warn("character constant out of range");
-		break;
-	case '\n':
-		newline();
-		if ((c = nextchar()) == '\\')
-			goto repeat;
-		break;
+	++input->p;
+	switch (*input->p++) {
+	case '\\': return '\\';
+	case 'a':  return '\a';
+	case 'f':  return '\f';
+	case 'n':  return '\n';
+	case 'r':  return '\r';
+	case 't':  return '\t';
+	case 'v':  return '\v';
+	case '\'': return '\\';
+	case '"':  return'"';
+	case '?':  return '?';
+	case 'u':  base = 10; break;
+	case 'x':  base = 16; break;
+	case '0':  base = 8; break;
 	default:
 		warn("unknown escape sequence");
-		return s;
+		return ' ';
 	}
-
-	*s = c;
-	return ++s;
+	errno = 0;
+	c = strtoul(input->p, &input->p, base);
+	if (errno || c > 255)
+		warn("character constant out of range");
+	return c;
 }
 
 static uint8_t
@@ -443,12 +403,12 @@ character(void)
 	static char c;
 	Symbol *sym;
 
-	nextchar();   /* discard the initial ' */
-	c = nextchar();
-	if (c == '\\')
-		escape(&c);
-	if (nextchar() != '\'')
+	if ((c = *++input->p) == '\\')
+		c = escape();
+	if (*input->p != '\'')
 		error("invalid character constant");
+	++input->p;
+
 	sym = install("", NS_IDEN);
 	sym->u.i = c;
 	sym->type = inttype;
@@ -460,29 +420,20 @@ static uint8_t
 string(void)
 {
 	static char buf[STRINGSIZ+1];
-	char *bp;
-	int c;
-	static Symbol *sym;
+	Symbol *sym;
+	char *bp = buf, c;
 
-	nextchar(); /* discard the initial " */
-
-	for (bp = buf; bp < &buf[STRINGSIZ]; ) {
-		switch (c = nextchar()) {
-		case EOF:
-			error("found EOF while parsing");
-		case '"':
-			goto end_string;
-		case '\\':
-			bp = escape(bp);
+	assert(STRINGSIZ <= INPUTSIZ);
+	for (++input->p; (c = *input->p) != '\0'; ++input->p) {
+		if (c == '"')
 			break;
-		default:
-			*bp++ = c;
-		}
+		if (c == '\\')
+			c = escape();
+		*bp++ = c;
 	}
 
-end_string:
-	if (bp == &buf[IDENTSIZ])
-		error("string too long");
+	if (c == '\0')
+		error("missing terminating '\"' character");
 	*bp = '\0';
 	sym = install("", NS_IDEN);
 	sym->u.s = xstrdup(buf);
@@ -494,19 +445,13 @@ end_string:
 static uint8_t
 iden(void)
 {
-	char *bp;
-	int c;
+	char c, *p;
 	Symbol *sym;
 
-	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = c) {
-		if (!isalnum(c = nextchar()) && c != '_')
-			break;
-	}
-	if (bp == &yytext[IDENTSIZ])
-		error("identifier too long %s", yytext);
-	*bp = '\0';
-	backchar(c);
-
+	for (p = input->p; isalpha(*p); ++p)
+		/* nothing */;
+	input->p = p;
+	tok2str();
 	sym = yylval.sym = lookup(yytext, lex_ns);
 	if (!sym || sym->token == IDEN)
 		return IDEN;
@@ -517,146 +462,106 @@ iden(void)
 static uint8_t
 follow(int expect, int ifyes, int ifno)
 {
-	int c = nextchar();
-
-	if (c == expect) {
-		yytext[1] = c;
-		yytext[2] = 0;
+	if (*input->p++)
 		return ifyes;
-	}
-	backchar(c);
+	--input->p;
 	return ifno;
 }
 
 static uint8_t
 minus(void)
 {
-	int c = nextchar();
-
-	yytext[1] = c;
-	yytext[2] = '\0';
-	switch (c) {
+	switch (*input->p++) {
 	case '-': return DEC;
 	case '>': return INDIR;
 	case '=': return SUB_EQ;
-	default:
-		yytext[1] = '\0';
-		backchar(c);
-		return '-';
+	default: --input->p; return '-';
 	}
 }
 
 static uint8_t
 plus(void)
 {
-	int c = nextchar();
-
-	yytext[1] = c;
-	yytext[2] = '\0';
-	switch (c) {
+	switch (*input->p++) {
 	case '+': return INC;
 	case '=': return ADD_EQ;
-	default:
-		yytext[1] = '\0';
-		backchar(c);
-		return '+';
+	default: --input->p; return '+';
 	}
 }
 
 static uint8_t
 relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 {
-	int c = nextchar();
+	char c;
 
-	yytext[1] = c;
-	yytext[2] = '\0';
-
-	if (c == '=')
+	if ((c = *input->p++) == '=')
 		return equal;
 	if (c == op)
 		return follow('=', assig, shift);
-	backchar(c);
-	yytext[1] = '\0';
+	--input->p;
 	return op;
 }
 
 static uint8_t
 logic(uint8_t op, uint8_t equal, uint8_t logic)
 {
-	int c = nextchar();
+	char c;
 
-	yytext[1] = c;
-	yytext[2] = '\0';
-
-	if (c == '=')
+	if ((c = *input->p++) == equal)
 		return equal;
 	if (c == op)
 		return logic;
-	backchar(c);
-	yytext[1] = '\0';
+	--input->p;
 	return op;
 }
 
 static uint8_t
 dot(void)
 {
-	int c;
+	char c;
 
-	if ((c = nextchar()) != '.') {
-		backchar(c);
+	if (c = *input->p != '.')
 		return '.';
-	} else if ((c = nextchar()) != '.') {
-		error("incorrect token '%s'", yytext);
-	} else {
-		yytext[2] = yytext[1] = '.';
-		yytext[3] = '\0';
-		return ELLIPSIS;
-	}
+	if ((c = *++input->p) != '.')
+		error("incorrect token '..'");
+	++input->p;
+	return ELLIPSIS;
 }
 
 static uint8_t
 operator(void)
 {
-	uint8_t c = nextchar();
+	uint8_t t;
 
-	yytext[0] = c;
-	yytext[1] = '\0';
-	switch (c) {
-	case '<': return relational('<', LE, SHL, SHL_EQ);
-	case '>': return relational('>', GE, SHR, SHR_EQ);
-	case '&': return logic('&', AND_EQ, AND);
-	case '|': return logic('|', OR_EQ, OR);
-	case '=': return follow('=', EQ, '=');
-	case '^': return follow('=', XOR_EQ, '^');
-	case '*': return follow('=', MUL_EQ, '*');
-	case '/': return follow('=', DIV_EQ, '/');
-	case '!': return follow('=', NE, '!');
-	case '-': return minus();
-	case '+': return plus();
-	case '.': return dot();
-	default: return c;
+	switch (t = *input->p++) {
+	case '<': t = relational('<', LE, SHL, SHL_EQ); break;
+	case '>': t = relational('>', GE, SHR, SHR_EQ); break;
+	case '&': t = logic('&', AND_EQ, AND); break;
+	case '|': t = logic('|', OR_EQ, OR); break;
+	case '=': t = follow('=', EQ, '='); break;
+	case '^': t = follow('=', XOR_EQ, '^'); break;
+	case '*': t = follow('=', MUL_EQ, '*'); break;
+	case '/': t = follow('=', DIV_EQ, '/'); break;
+	case '!': t = follow('=', NE, '!'); break;
+	case '-': t = minus(); break;
+	case '+': t = plus(); break;
+	case '.': t = dot(); break;
 	}
-}
-
-static int
-skipspaces(void)
-{
-
-	int c;
-
-	while (isspace(c = nextchar())) {
-		if (c == '\n')
-			newline();
-	}
-	return c;
+	tok2str();
+	return t;
 }
 
 uint8_t
 next(void)
 {
-	int c;
+	char c;
 
-	backchar(c = skipspaces());
+	if (!fill())
+		return EOFTOK;
+
+	while (isspace(*input->begin))
+		++input->begin;
+	c = *(input->p = input->begin);
 
 	if (isalpha(c) || c == '_') {
 		yytoken = iden();
@@ -666,9 +571,6 @@ next(void)
 		yytoken = string();
 	} else if (c == '\'') {
 		yytoken = character();
-	} else if (c == EOF) {
-		strcpy(yytext, "EOF");
-		yytoken = EOFTOK;
 	} else {
 		yytoken = operator();
 	}
@@ -693,8 +595,15 @@ ahead(void)
 {
 	int c;
 
-	backchar(c = skipspaces());
-
+repeat:
+	if (!input)
+		return EOFTOK;
+	while (isspace(c = *input->begin))
+		;
+	if (c == '\0') {
+		fill();
+		goto repeat;
+	}
 	return c;
 }
 
@@ -708,10 +617,9 @@ void
 discard(void)
 {
 	extern jmp_buf recover;
-	int c;
+	char c;
 
-	c = yytoken;
-	do {
+	for (c = yytoken; ; c = *input->p++) {
 		switch (safe) {
 		case END_COMP:
 			if (c == '}')
@@ -730,7 +638,11 @@ discard(void)
 				goto jump;
 			break;
 		}
-	} while ((c = nextchar()) != EOF);
+		if (*input->p == '\0')
+			fill();
+		if (!input)
+			break;
+	}
 
 	c = EOFTOK;
 jump:

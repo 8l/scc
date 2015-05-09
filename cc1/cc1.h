@@ -40,7 +40,6 @@ struct symbol {
 		int i;
 		char *s;
 		uint8_t token;
-		void (*fun)(char *);
 	} u;
 	struct symbol *next;
 	struct symbol *hash;
