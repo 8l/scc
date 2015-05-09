@@ -278,6 +278,9 @@ extern void freetree(Node *np);
 /* expr.c */
 extern Node *expr(void), *negate(Node *np);
 
+/* cpp.c */
+extern char *preprocessor(char *s);
+
 /*
  * Definition of global variables
  */

@@ -1,6 +1,6 @@
 
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
-	code.o stmt.o
+	code.o stmt.o cpp.o
 
 LIBS = -lcc
 
