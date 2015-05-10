@@ -29,6 +29,7 @@ uint8_t lex_ns = NS_IDEN;
 uint8_t yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
+unsigned short yylen;
 static uint8_t safe;
 static Input *input;
 
@@ -206,12 +207,10 @@ repeat:
 static void
 tok2str(void)
 {
-	size_t len;
-
-	if ((len = input->p - input->begin) > IDENTSIZ)
+	if ((yylen = input->p - input->begin) > IDENTSIZ)
 		error("token too big");
-	strncpy(yytext, input->begin, len);
-	yytext[len] = '\0';
+	strncpy(yytext, input->begin, yylen);
+	yytext[yylen] = '\0';
 	fprintf(stderr ,"%s\n", yytext);
 	input->begin = input->p;
 }
