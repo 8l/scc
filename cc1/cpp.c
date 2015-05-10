@@ -5,10 +5,41 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../inc/sizes.h"
 #include "../inc/cc.h"
 #include "cc1.h"
 
 /* TODO: preprocessor error must not rise recover */
+static char *
+define(char *s)
+{
+	char *t, name[IDENTSIZ+1];
+	size_t len;
+	Symbol *sym;
+
+	if (!isalnum(*s) && *s != '_')
+		goto bad_define;
+	for (t = s; isalnum(*t) || *t == '_'; ++t)
+		/* nothing */;
+	if ((len = t - s) > IDENTSIZ)
+		goto too_long;
+	strncpy(name, s, len);
+	name[len] = '\0';
+	sym = install(name, NS_CPP);
+
+	while (isspace(*t))
+		++t;
+	for (s = t + strlen(t); isspace(*--s); *s = '\0')
+		/* nothing */;
+	sym->u.s = xstrdup(t);
+	return s+1;
+
+too_long:
+	error("macro identifier too long");
+bad_define:
+	error("macro names must be identifiers");
+}
+
 static char *
 include(char *s)
 {
@@ -103,6 +134,7 @@ preprocessor(char *p)
 	char *q;
 	unsigned short n;
 	static char **bp, *cmds[] = {
+		"define",
 		"include",
 		"line",
 		"pragma",
@@ -110,6 +142,7 @@ preprocessor(char *p)
 		NULL
 	};
 	static char *(*funs[])(char *) = {
+		define,
 		include,
 		line,
 		pragma,
