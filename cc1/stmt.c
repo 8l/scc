@@ -43,7 +43,6 @@ stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 
 	expect(';');
-	freetree(np);
 }
 
 static Node *
@@ -85,7 +84,6 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emit(OEXPR, np);
 	emit(OELOOP, NULL);
 	emit(OLABEL, end);
-	freetree(np);
 }
 
 static void
@@ -118,9 +116,6 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emit(OEXPR, econd);
 	emit(OELOOP, NULL);
 	emit(OLABEL, end);
-	freetree(einit);
-	freetree(econd);
-	freetree(einc);
 }
 
 static void
@@ -141,7 +136,6 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emit(OEXPR, np);
 	emit(OELOOP, NULL);
 	emit(OLABEL, end);
-	freetree(np);
 }
 
 static void
@@ -165,7 +159,6 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 	emit(ORET, tp);
 	emit(OEXPR, np);
-	freetree(np);
 }
 
 static void
@@ -244,13 +237,11 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		emit(OCASE, p->label);
 		emit(OEXPR, p->expr);
 		next = p->next;
-		freetree(p->expr);
 		free(p);
 	}
 	if (lcase.deflabel)
 		emit(ODEFAULT, lcase.deflabel);
 	emit(OLABEL, lbreak);
-	freetree(cond);
 }
 
 static void
@@ -306,7 +297,6 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	} else {
 		emit(OLABEL, lelse);
 	}
-	freetree(np);
 }
 
 void
@@ -369,7 +359,6 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		next();
 		np = expr();
 		emit(OPRINT, np);
-		freetree(np);
 		return;
 	}
 	(*fun)(lbreak, lcont, lswitch);

@@ -251,6 +251,7 @@ emitexp(uint8_t op, void *arg)
 
 	emitnode(np);
 	putchar('\n');
+	freetree(np);
 }
 
 static void
@@ -261,6 +262,7 @@ emitprint(uint8_t op, void *arg)
 	emitnode(np);
 	printf("\tk%c\n", np->type->letter);
 	fflush(stdout);
+	freetree(np);
 }
 
 static void
