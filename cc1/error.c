@@ -18,7 +18,7 @@ warn_helper(int8_t flag, char *fmt, va_list va)
 	if (!flag)
 		return;
 	fprintf(stderr, "%s:%s:%u: ",
-		(flag < 0) ? "error" : "warning", filename(), fileline());
+		(flag < 0) ? "error" : "warning", getfname(), getfline());
 	vfprintf(stderr, fmt, va);
 	putc('\n', stderr);
 	if (flag < 0 && nerrors++ == MAXERRNUM) {

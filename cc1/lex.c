@@ -45,7 +45,7 @@ addinput(char *fname)
 		fname = xstrdup(fname);
 	} else if (!input) {
 		fp = stdin;
-		fname = "(stdin)";
+		fname = xstrdup("<stdin>");
 	} else {
 		fname = input->fname;
 		nline = input->nline;
@@ -79,14 +79,27 @@ delinput(void)
 	free(ip);
 }
 
+void
+setfname(char *name)
+{
+	free(input->fname);
+	input->fname = xstrdup(name);
+}
+
 char *
-filename(void)
+getfname(void)
 {
 	return input->fname;
 }
 
+void
+setfline(unsigned short line)
+{
+	input->nline = line;
+}
+
 unsigned short
-fileline(void)
+getfline(void)
 {
 	return input->nline;
 }

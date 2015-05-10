@@ -9,7 +9,7 @@
 #include "cc1.h"
 
 /* TODO: preprocessor error must not rise recover */
-char *
+static char *
 include(char *s)
 {
 	char fname[FILENAME_MAX], delim, c, *p;
@@ -50,6 +50,39 @@ bad_include:
 }
 
 static char *
+line(char *s)
+{
+	char *p, *q;
+
+	for (p = s; isdigit(*p); ++p)
+		/* nothing */;
+	switch (*p) {
+	case ' ':
+	case '\t':
+		while (isspace(*p))
+			++p;
+		if (*p != '"')
+			goto bad_line;
+		for (q = p+1; *q && *q != '"'; ++q)
+			/* nothing */;
+		if (*q == '\0')
+			goto bad_line;
+		*q = '\0';
+		setfname(p);
+		p = q+1;
+		/* passthrough */
+	case '\0':
+		setfline(atoi(s)-1);
+		return p;
+	default:
+		goto bad_line;
+	}
+
+bad_line:
+	error("incorrect #line directive");
+}
+
+static char *
 pragma(char *s)
 {
 	while (*s)
@@ -60,7 +93,7 @@ pragma(char *s)
 static char *
 usererr(char *s)
 {
-	fprintf(stderr, "%s:%u:error: #error %s\n", filename(), fileline(), s);
+	fprintf(stderr, "%s:%u:error: #error %s\n", getfname(), getfline(), s);
 	exit(-1);
 }
 
@@ -71,12 +104,14 @@ preprocessor(char *p)
 	unsigned short n;
 	static char **bp, *cmds[] = {
 		"include",
+		"line",
 		"pragma",
 		"error",
 		NULL
 	};
 	static char *(*funs[])(char *) = {
 		include,
+		line,
 		pragma,
 		usererr
 	};
