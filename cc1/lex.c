@@ -396,7 +396,7 @@ iden(void)
 static uint8_t
 follow(int expect, int ifyes, int ifno)
 {
-	if (*input->p++)
+	if (*input->p++ == expect)
 		return ifyes;
 	--input->p;
 	return ifno;
