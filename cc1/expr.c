@@ -18,10 +18,7 @@ promote(Node *np)
 {
 	Type *tp;
 	uint8_t r;
-	extern uint8_t npromote;
 
-	if (npromote)
-		return np;
 	tp = np->type;
 	r = tp->n.rank;
 	if  (r > RANK_UINT || tp == inttype || tp == uinttype)

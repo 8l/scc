@@ -11,7 +11,7 @@
 
 extern void ikeywords(void), lexfile(char *file);
 
-uint8_t npromote, warnings;
+uint8_t warnings;
 jmp_buf recover;
 
 static char *output;
