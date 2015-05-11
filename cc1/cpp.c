@@ -160,7 +160,9 @@ preprocessor(char *p)
 	n = q - p;
 	while (isspace(*q))
 		++q;
-	for (bp = cmds; bp->name && strncmp(bp->name, p, n); ++bp) {
+	for (bp = cmds; bp->name; ++bp) {
+		if (strncmp(bp->name, p, n))
+			continue;
 		q = (*bp->fun)(q);
 		while (isspace(*q++))
 			/* nothing */;
@@ -170,4 +172,3 @@ preprocessor(char *p)
 	}
 	error("incorrect preprocessor directive");
 }
-
