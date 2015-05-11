@@ -85,6 +85,8 @@ line(char *s)
 {
 	char *p, *q;
 
+	if (!isdigit(*p))
+		goto bad_line;
 	for (p = s; isdigit(*p); ++p)
 		/* nothing */;
 	switch (*p) {
@@ -106,11 +108,13 @@ line(char *s)
 		setfline(atoi(s)-1);
 		return p;
 	default:
-		goto bad_line;
+		goto bad_file;
 	}
 
+bad_file:
+	error("second parameter of #line is not a valid filename");
 bad_line:
-	error("incorrect #line directive");
+	error("first parameter of #line is not a positive integer");
 }
 
 static char *
