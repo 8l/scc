@@ -1,5 +1,4 @@
 
-#include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <setjmp.h>
@@ -353,21 +352,36 @@ character(void)
 static uint8_t
 string(void)
 {
-	static char buf[STRINGSIZ+1];
+	char buf[STRINGSIZ+1];
 	Symbol *sym;
 	char *bp = buf, c;
 
-	assert(STRINGSIZ <= INPUTSIZ);
-	for (++input->p; (c = *input->p) != '\0'; ++input->p) {
-		if (c == '"')
-			break;
+repeat:
+	for (++input->p; (c = *input->p) != '\0' && c != '"'; ++input->p) {
 		if (c == '\\')
 			c = escape();
+		if (bp == &buf[STRINGSIZ])
+			error("string too long");
 		*bp++ = c;
 	}
 
 	if (c == '\0')
 		error("missing terminating '\"' character");
+	++input->p;
+
+	for (;;) {
+		if (isspace((c = *input->p))) {
+			++input->p;
+		} else if (c == '\0') {
+			input->begin = input->p;
+			fill();
+		} else if (c == '"') {
+			goto repeat;
+		} else {
+			break;
+		}
+	}
+
 	*bp = '\0';
 	sym = install("", NS_IDEN);
 	sym->u.s = xstrdup(buf);
