@@ -137,20 +137,16 @@ preprocessor(char *p)
 {
 	char *q;
 	unsigned short n;
-	static char **bp, *cmds[] = {
-		"define",
-		"include",
-		"line",
-		"pragma",
-		"error",
-		NULL
-	};
-	static char *(*funs[])(char *) = {
-		define,
-		include,
-		line,
-		pragma,
-		usererr
+	static struct {
+		char *name;
+		char *(*fun)(char *);
+	} *bp, cmds[] =  {
+		"define", define,
+		"include", include,
+		"line", line,
+		"pragma", pragma,
+		"error", usererr,
+		NULL, NULL
 	};
 
 	while (isspace(*p))
@@ -164,10 +160,8 @@ preprocessor(char *p)
 	n = q - p;
 	while (isspace(*q))
 		++q;
-	for (bp = cmds; *bp; ++bp) {
-		if (strncmp(*bp, p, n))
-			continue;
-		q = (*funs[bp - cmds])(q);
+	for (bp = cmds; bp->name && strncmp(bp->name, p, n); ++bp) {
+		q = (*bp->fun)(q);
 		while (isspace(*q++))
 			/* nothing */;
 		if (*q != '\0')
