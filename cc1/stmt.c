@@ -57,7 +57,7 @@ condition(void)
 	if (!setjmp(recover))
 		np = expr();
 	else
-		np = symbol(zero);
+		np = constnode(zero);
 	np = iszero(np);
 	expect(')');
 	return np;

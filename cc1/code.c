@@ -330,7 +330,20 @@ node(uint8_t op, Type *tp, Node *left, Node *right)
 }
 
 Node *
-symbol(Symbol *sym)
+varnode(Symbol *sym)
+{
+	Node *np;
+
+	np = node(OSYM, sym->type, NULL, NULL);
+	np->lvalue = 1;
+	np->constant = 0;
+	np->symbol = 1;
+	np->sym = sym;
+	return np;
+}
+
+Node *
+constnode(Symbol *sym)
 {
 	Node *np;
 

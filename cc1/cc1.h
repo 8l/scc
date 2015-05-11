@@ -274,7 +274,8 @@ extern void delinput(void);
 /* code.c */
 extern void emit(uint8_t, void *);
 extern Node *node(uint8_t op, Type *tp, Node *left, Node *rigth);
-extern Node *symbol(Symbol *sym);
+extern Node *varnode(Symbol *sym);
+extern Node *constnode(Symbol *sym);
 extern void freetree(Node *np);
 
 /* expr.c */

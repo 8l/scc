@@ -67,7 +67,7 @@ eval(Node *np)
 		return NULL;
 	if (np->op != OAND && np->op != OOR)
 		return np;
-	p = node(OCOLON, inttype, symbol(one), symbol(zero));
+	p = node(OCOLON, inttype, constnode(one), constnode(zero));
 	return node(OASK, inttype, np, p);
 }
 
@@ -315,7 +315,7 @@ exp2cond(Node *np, char neg)
 {
 	if (isnodecmp(np))
 		return (neg) ? negate(np) : np;
-	return compare(ONE ^ neg, np, symbol(zero));
+	return compare(ONE ^ neg, np, constnode(zero));
 }
 
 static Node *
@@ -342,7 +342,7 @@ field(Node *np)
 			error("incorrect field in struct/union");
 		lex_ns = NS_IDEN;
 		next();
-		return node(OFIELD, sym->type, symbol(sym), np);
+		return node(OFIELD, sym->type, varnode(sym), np);
 	default:
 		error("struct or union expected");
 	}
@@ -369,7 +369,7 @@ iszero(Node *np)
 {
 	if (isnodecmp(np))
 		return np;
-	return compare(ONE, np, symbol(zero));
+	return compare(ONE, np, constnode(zero));
 }
 
 static Node *
@@ -403,7 +403,7 @@ incdec(Node *np, char op)
 		break;
 	case INT:
 	case FLOAT:
-		inc = symbol(one);
+		inc = constnode(one);
 		break;
 	default:
 		error("incorrect type in arithmetic operation");
@@ -459,18 +459,19 @@ static Node *
 primary(void)
 {
 	Node *np;
-	Symbol *sym;
 
 	switch (yytoken) {
 	case CONSTANT:
+		np = constnode(yylval.sym);
+		next();
+		break;
 	case IDEN:
-		if ((sym = yylval.sym) == NULL)
+		if (yylval.sym == NULL) {
+			yylval.sym = install(yytext, NS_IDEN);
+			yylval.sym->type = inttype;
 			error("'%s' undeclared", yytext);
-		np = symbol(yylval.sym);
-		if (yytoken == IDEN) {
-			np->lvalue = 1;
-			np->constant = 0;
 		}
+		np = varnode(yylval.sym);
 		next();
 		break;
 	case '(':
