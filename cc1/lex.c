@@ -553,7 +553,8 @@ discard(void)
 	extern jmp_buf recover;
 	char c;
 
-	for (c = yytoken; ; c = *input->p++) {
+	input->begin = input->p;
+	for (c = yytoken; ; c = *input->begin++) {
 		switch (safe) {
 		case END_COMP:
 			if (c == '}')
@@ -572,13 +573,9 @@ discard(void)
 				goto jump;
 			break;
 		}
-		if (*input->p == '\0')
-			fill();
-		if (!input)
-			break;
+		if (!fill())
+			exit(-1);
 	}
-
-	c = EOFTOK;
 jump:
 	yytoken = c;
 	longjmp(recover, 1);
