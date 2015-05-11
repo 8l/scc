@@ -10,6 +10,133 @@
 #include "cc1.h"
 
 /* TODO: preprocessor error must not rise recover */
+
+/*
+ * Parse an argument list (par0, par1, ...) and creates
+ * an array with pointers to all the arguments in the
+ * list
+ */
+static char *
+parseargs(char *s, char *args[NR_MACROARG], int *nargs)
+{
+	unsigned n ;
+	size_t len;
+	char **bp, *endp, c;
+
+	if (*s != '(') {
+		*nargs = -1;
+		return s;
+	}
+	if (*++s == ')') {
+		*nargs = 0;
+		return s+1;
+	}
+
+
+	for (bp = args, n = 1; n <= NR_MACROARG; ++bp, ++n) {
+		while (isspace(*s))
+			++s;
+		if (!isalnum(*s) && *s != '_')
+			error("macro arguments must be identifiers");
+		for (endp = s; isalnum(*endp) || *endp == '_'; ++endp)
+			/* nothing */;
+		if ((len = endp - s) > IDENTSIZ)
+			error("macro argument too long");
+		*bp = s;
+		for (s = endp; isspace(*s); ++s)
+			*s = '\0';
+		c = *s;
+		*s++ = '\0';
+		if (c == ')')
+			break;
+		if (c == ',')
+			continue;
+		else
+			error("macro parameters must be comma-separated");
+	}
+	if (n > NR_MACROARG)
+		error("too much parameters in macro");
+	*nargs = n;
+	return s;
+}
+/*
+ * Copy a define string, and substitute formal arguments of the
+ * macro into strings in the form @XX, where XX is the position
+ * of the argument in the argument list.
+ */
+static char *
+copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
+{
+	unsigned ncopy, n;
+	size_t len;
+	char arroba[5], *par, *endp, **bp;
+
+	while (*s && bufsiz > 0) {
+		if (!isalnum(*s) && *s != '_') {
+			--bufsiz;
+			*buff++ = *s++;
+			continue;
+		}
+		/*
+		 * found an identifier, is it one of the macro arguments?
+		 */
+		for (endp = s+1; isalnum(*endp) || *endp == '_'; ++endp)
+			/* nothing */;
+		len = endp - s;
+		for (bp =args, n = 0; n < nargs; ++bp, n++) {
+			if (strncmp(s, *bp, len))
+				continue;
+			sprintf(arroba, "@%02d", n);
+			break;
+		}
+		if (n == nargs)
+			par = s, ncopy = len;
+		else
+			par = arroba, ncopy = 3;
+
+		if ((bufsiz -= ncopy) < 0)
+			goto too_long;
+		memcpy(buff, par, ncopy);
+		buff += ncopy;
+		s = endp;
+	}
+
+	if (*s == '\0') {
+		*buff = '\0';
+		return s;
+	}
+
+too_long:
+	error("macro definition too long");
+}
+
+static char *
+mkdefine(char *s, Symbol *sym)
+{
+	int nargs;
+	char *args[NR_MACROARG], buff[LINESIZ+1];
+	char type;
+
+	s = parseargs(s, args, &nargs);
+	if (nargs == -1) {
+		type = 'N';
+		++nargs;
+	} else {
+		type = 'P';
+	}
+
+	sprintf(buff, "%c%02d", type, nargs);
+
+	while (isspace(*s))
+		++s;
+
+	if (*s != '\0')
+		s = copydefine(s, args, buff+3, LINESIZ-3, nargs);
+	sym->u.s = xstrdup(buff);
+
+	return s;
+}
+
 static char *
 define(char *s)
 {
@@ -27,12 +154,11 @@ define(char *s)
 	name[len] = '\0';
 	sym = install(name, NS_CPP);
 
-	while (isspace(*t))
-		++t;
-	for (s = t + strlen(t); isspace(*--s); *s = '\0')
+	for (s = t; isspace(*s); ++s)
 		/* nothing */;
-	sym->u.s = xstrdup(t);
-	return s+1;
+	for (t = s + strlen(s); isspace(*--t); *t = '\0')
+		/* nothing */;
+	return mkdefine(s, sym);
 
 too_long:
 	error("macro identifier too long");
