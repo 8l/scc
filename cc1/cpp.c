@@ -69,7 +69,7 @@ copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 {
 	unsigned ncopy, n;
 	size_t len;
-	char arroba[5], *par, *endp, **bp;
+	char arroba[6], *par, *endp, **bp;
 
 	while (*s && bufsiz > 0) {
 		if (!isalnum(*s) && *s != '_') {
@@ -86,13 +86,13 @@ copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 		for (bp =args, n = 0; n < nargs; ++bp, n++) {
 			if (strncmp(s, *bp, len))
 				continue;
-			sprintf(arroba, "@%02d", n);
+			sprintf(arroba, "@%02d@", n);
 			break;
 		}
 		if (n == nargs)
 			par = s, ncopy = len;
 		else
-			par = arroba, ncopy = 3;
+			par = arroba, ncopy = 4;
 
 		if ((bufsiz -= ncopy) < 0)
 			goto too_long;
