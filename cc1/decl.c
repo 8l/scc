@@ -153,6 +153,7 @@ declarator(Type *tp, int8_t flags, uint8_t ns)
 	struct dcldata *bp;
 	Symbol *sym;
 
+	/* TODO: Change this code. The memset is a very bad idea */
 	memset(data, 0, sizeof(data));
 	data[NR_DECLARATORS].op = 255;
 	for (bp = declarator0(data, ns)-1; bp >= data; --bp) {
@@ -511,8 +512,9 @@ extdecl(void)
 		if (accept(';'))
 			return;
 		do {
-			setsafe(END_LDECL);
-			setjmp(recover);
+			/* FIX: we cannot put a setjmp here because
+			   base was already assigned, and we were having
+			   problems with EOF */
 			sym = declarator(base, ID_EXPECTED, NS_IDEN);
 			tp = sym->type;
 			sym->isstatic = 1;

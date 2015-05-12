@@ -12,6 +12,7 @@ uint8_t curctx;
 static short localcnt;
 static short globalcnt;
 
+/* TODO: unify all the hashes in only one hash */
 static struct symtab {
 	Symbol *head;
 	Symbol *htab[NR_SYM_HASH];

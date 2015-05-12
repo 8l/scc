@@ -234,6 +234,7 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 	tbl = &typetab[t];
 	for (bp = *tbl; bp; bp = bp->next) {
 		if (eqtype(bp, &type)) {
+			/* FIXME: data can be a pointer to static data */
 			free(data);
 			return bp;
 		}

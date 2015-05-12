@@ -39,6 +39,9 @@ addinput(char *fname)
 	FILE *fp;
 	unsigned short nline = 1;
 
+	/* TODO: Add a field in input to see easier which is the case
+	   where we are */
+
 	if (fname) {
 		if ((fp = fopen(fname, "r")) == NULL)
 			return 0;
@@ -543,6 +546,7 @@ ahead(void)
 {
 	int c;
 
+	/* FIX: It will break all the error messages */
 repeat:
 	if (!fill())
 		return EOFTOK;
