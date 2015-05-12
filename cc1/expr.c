@@ -108,7 +108,12 @@ integeruop(char op, Node *np)
 static Node *
 decay(Node *np)
 {
-	return node(OADDR, mktype(np->type, PTR, 0, NULL), np, NULL);
+	Type *tp = tp->type;
+
+	if (tp->op == ARY)
+		tp = tp->type;
+
+	return node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
 }
 
 /*
