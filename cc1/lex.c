@@ -373,10 +373,10 @@ repeat:
 	++input->p;
 
 	for (;;) {
+		input->begin = input->p;
 		if (isspace((c = *input->p))) {
 			++input->p;
 		} else if (c == '\0') {
-			input->begin = input->p;
 			fill();
 		} else if (c == '"') {
 			goto repeat;
