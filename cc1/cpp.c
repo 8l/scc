@@ -273,9 +273,12 @@ preprocessor(char *p)
 		return p;
 	for (++p; isspace(*p); ++p)
 		/* nothing */;
+	if (*p == '\0')
+		return NULL;
 	for (q = p; isalpha(*q); ++q)
 		/* nothing */;
-	n = q - p;
+	if ((n = q - p) == 0)
+		goto incorrect;
 	while (isspace(*q))
 		++q;
 	for (bp = cmds; bp->name; ++bp) {
@@ -288,5 +291,6 @@ preprocessor(char *p)
 			error("trailing characters after preprocessor directive");
 		return NULL;
 	}
+incorrect:
 	error("incorrect preprocessor directive");
 }
