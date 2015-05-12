@@ -207,7 +207,6 @@ enum {
 	OASK,
 	OCOLON,
 	OFIELD,
-	OTYP,
 	OLABEL,
 	ODEFAULT,
 	OCASE,
@@ -276,6 +275,7 @@ extern void emit(uint8_t, void *);
 extern Node *node(uint8_t op, Type *tp, Node *left, Node *rigth);
 extern Node *varnode(Symbol *sym);
 extern Node *constnode(Symbol *sym);
+extern Node *sizeofnode(Type *tp);
 extern void freetree(Node *np);
 
 /* expr.c */

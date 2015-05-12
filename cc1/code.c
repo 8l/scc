@@ -353,3 +353,12 @@ constnode(Symbol *sym)
 	np->sym = sym;
 	return np;
 }
+
+Node *
+sizeofnode(Type *tp)
+{
+	Node *np;
+
+	np = node(0, tp, NULL, NULL);
+	return node(OSIZE, inttype, np, NULL);
+}

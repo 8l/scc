@@ -7,7 +7,6 @@
 #include "cc1.h"
 
 #define BTYPE(np) ((np)->type->op)
-#define TYPE(tp) node(OTYP, (tp), NULL, NULL)
 
 extern Symbol *zero, *one;
 
@@ -167,7 +166,7 @@ parithmetic(char op, Node *lp, Node *rp)
 	Node *size;
 
 	tp = lp->type;
-	size = node(OSIZE, inttype, TYPE(tp->type), NULL);
+	size = sizeofnode(tp->type);
 	if (BTYPE(rp) == ARY)
 		rp = decay(rp);
 
@@ -399,7 +398,7 @@ incdec(Node *np, char op)
 	case PTR:
 		if (!tp->defined)
 			error("invalid use of indefined type");
-		inc = node(OSIZE, inttype, TYPE(tp->type), NULL);
+		inc = sizeofnode(tp->type);
 		break;
 	case INT:
 	case FLOAT:
@@ -584,7 +583,7 @@ unary(void)
 	case SIZEOF:
 		next();
 		tp = (yytoken == '(') ? sizeexp() : typeof(unary());
-		return node(OSIZE, inttype, TYPE(tp), NULL);
+		return sizeofnode(tp);
 	case INC: case DEC:
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
