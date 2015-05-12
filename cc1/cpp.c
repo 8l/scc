@@ -115,17 +115,9 @@ mkdefine(char *s, Symbol *sym)
 {
 	int nargs;
 	char *args[NR_MACROARG], buff[LINESIZ+1];
-	char type;
 
 	s = parseargs(s, args, &nargs);
-	if (nargs == -1) {
-		type = 'N';
-		++nargs;
-	} else {
-		type = 'P';
-	}
-
-	sprintf(buff, "%c%02d", type, nargs);
+	sprintf(buff, "%02d#", nargs);
 
 	while (isspace(*s))
 		++s;
