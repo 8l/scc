@@ -72,9 +72,9 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *np;
 
-	begin = install("", NS_LABEL);
-	end = install("", NS_LABEL);
-	cond = install("", NS_LABEL);
+	begin = install(NULL, NS_LABEL);
+	end = install(NULL, NS_LABEL);
+	cond = install(NULL, NS_LABEL);
 
 	expect(WHILE);
 	np = condition();
@@ -95,9 +95,9 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *econd, *einc, *einit;
 
-	begin = install("", NS_LABEL);
-	end = install("", NS_LABEL);
-	cond = install("", NS_LABEL);
+	begin = install(NULL, NS_LABEL);
+	end = install(NULL, NS_LABEL);
+	cond = install(NULL, NS_LABEL);
 
 	expect(FOR);
 	expect('(');
@@ -127,8 +127,8 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *end;
 	Node *np;
 
-	begin = install("", NS_LABEL);
-	end = install("", NS_LABEL);
+	begin = install(NULL, NS_LABEL);
+	end = install(NULL, NS_LABEL);
 	expect(DO);
 	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
@@ -229,8 +229,8 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		error("incorrect type in switch statement");
 	expect (')');
 
-	lbreak = install("", NS_LABEL);
-	lcond = install("", NS_LABEL);
+	lbreak = install(NULL, NS_LABEL);
+	lcond = install(NULL, NS_LABEL);
 	emit(OJUMP, lcond);
 	stmt(lbreak, lcont, &lcase);
 	emit(OLABEL, lcond);
@@ -263,7 +263,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	pcase = xmalloc(sizeof(*pcase));
 	pcase->expr = np;
 	pcase->next = lswitch->head;
-	emit(OLABEL, pcase->label = install("", NS_LABEL));
+	emit(OLABEL, pcase->label = install(NULL, NS_LABEL));
 	lswitch->head = pcase;
 	++lswitch->nr;
 }
@@ -271,7 +271,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *ldefault = install("", NS_LABEL);
+	Symbol *ldefault = install(NULL, NS_LABEL);
 
 	expect(DEFAULT);
 	expect(':');
@@ -285,14 +285,14 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *end, *lelse;
 	Node *np;
 
-	lelse = install("", NS_LABEL);
+	lelse = install(NULL, NS_LABEL);
 	expect(IF);
 	np = condition();
 	emit(OBRANCH, lelse);
 	emit(OEXPR, negate(np));
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
-		end = install("", NS_LABEL);
+		end = install(NULL, NS_LABEL);
 		emit(OJUMP, end);
 		emit(OLABEL, lelse);
 		stmt(lbreak, lcont, lswitch);

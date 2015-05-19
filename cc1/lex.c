@@ -246,7 +246,7 @@ integer(char *s, char base)
 
 convert:
 	tp = ctype(INT, sign, size);
-	sym = install("", NS_IDEN);
+	sym = install(NULL, NS_IDEN);
 	sym->type = tp;
 	v = strtol(s, NULL, base);
 	if (tp == inttype)
@@ -345,7 +345,7 @@ character(void)
 		error("invalid character constant");
 	++input->p;
 
-	sym = install("", NS_IDEN);
+	sym = install(NULL, NS_IDEN);
 	sym->u.i = c;
 	sym->type = inttype;
 	yylval.sym = sym;
@@ -386,7 +386,7 @@ repeat:
 	}
 
 	*bp = '\0';
-	sym = install("", NS_IDEN);
+	sym = install(NULL, NS_IDEN);
 	sym->u.s = xstrdup(buf);
 	sym->type = mktype(chartype, ARY, (bp - buf) + 1, NULL);
 	yylval.sym = sym;

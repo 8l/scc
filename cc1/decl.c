@@ -115,7 +115,7 @@ directdcl(struct dcldata *dp, uint8_t ns)
 		if (yytoken == IDEN || yytoken == TYPEIDEN)
 			sym = newiden(ns);
 		else
-			sym = install("", ns);
+			sym = install(NULL, ns);
 		dp = queue(dp, IDEN, 0, sym);
 	}
 
@@ -281,7 +281,7 @@ newtag(uint8_t tag)
 		next();
 		break;
 	default:
-		sym = install("", NS_TAG);
+		sym = install(NULL, NS_TAG);
 		break;
 	}
 	if (!sym->type) {

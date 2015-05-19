@@ -60,6 +60,25 @@ popctx(void)
 }
 
 Symbol *
+newsym(uint8_t ns)
+{
+	Symbol *sym;
+
+	sym = malloc(sizeof(*sym));
+	sym->ns = ns;
+	sym->id = (curctx) ? ++localcnt : ++globalcnt;
+	sym->ctx = curctx;
+	sym->token = IDEN;
+	sym->flags = 0;
+	sym->name = NULL;
+	sym->type = NULL;
+	sym->hash = NULL;
+	sym->next = head;
+	head = sym;
+	return sym;
+}
+
+Symbol *
 lookup(char *s, uint8_t ns)
 {
 	Symbol *sym;
@@ -77,19 +96,16 @@ install(char *s, uint8_t ns)
 {
 	Symbol *sym, **t;
 
-	sym = xcalloc(1, sizeof(*sym));
-	sym->name = xstrdup(s);
-	sym->ctx = curctx;
-	sym->token = IDEN;
-	sym->id = (curctx) ? ++localcnt : ++globalcnt;
+	sym = newsym(ns);
 	sym->flags |= ISDEFINED;
-	sym->ns = ns;
-	sym->next = head;
-	head = sym;
 
-	t = &htab[hash(s)];
-	sym->hash = *t;
-	return *t = sym;
+	if (s) {
+		sym->name = xstrdup(s);
+		t = &htab[hash(s)];
+		sym->hash = *t;
+		*t = sym;
+	}
+	return sym;
 }
 
 void
