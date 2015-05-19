@@ -45,7 +45,7 @@ popctx(void)
 			hp->next = sym;
 			hp = sym;
 			continue;
-		else if (sym->ns == NS_LABEL && !(sym->flags & ISDEFINED)) {
+		} else if (sym->ns == NS_LABEL && !(sym->flags & ISDEFINED)) {
 			/* FIXME: don't recover in this point */
 			error("label '%s' is not defined", sym->name);
 		} else if (sym->ns == NS_TAG) {
