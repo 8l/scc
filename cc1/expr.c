@@ -108,7 +108,7 @@ integeruop(char op, Node *np)
 static Node *
 decay(Node *np)
 {
-	Type *tp = tp->type;
+	Type *tp = np->type;
 
 	if (tp->op == ARY)
 		tp = tp->type;
