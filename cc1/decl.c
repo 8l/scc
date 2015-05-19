@@ -254,7 +254,7 @@ invalid_type:
 static struct node *
 initializer(Symbol *sym)
 {
-	if (!sym->isdefined)
+	if (!(sym->flags & ISEXTERN))
 		error("'%s' initialized and declared extern", sym->name);
 
 	if (accept('{')) {
@@ -340,7 +340,7 @@ structdcl(void)
 
 		do {
 			sym = declarator(base, ID_EXPECTED, tagtype->ns);
-			sym->isfield = 1;
+			sym->flags |= ISFIELD;
 			tp = sym->type;
 			if (tp->op == FTN)
 				error("invalid type in struct/union");
@@ -404,7 +404,7 @@ parameter(void)
 	if ((tp = specifier(&sclass)) == voidtype)
 		return NULL;
 	sym = declarator(tp, ID_ACCEPTED, NS_IDEN);
-	sym->isparameter = 1;
+	sym->flags |= ISPARAM;
 	tp = sym->type;
 	if (tp->op == FTN)
 		error("incorrect function type for a function parameter");
@@ -412,10 +412,10 @@ parameter(void)
 		tp = mktype(tp->type, PTR, 0, NULL);
 	switch (sclass) {
 	case REGISTER:
-		sym->isregister = 1;
+		sym->flags |= ISREGISTER;
 		break;
 	case 0:
-		sym->isauto = 1;
+		sym->flags |= ISAUTO;
 		break;
 	default:
 		error("bad storage class in function parameter");
@@ -449,13 +449,13 @@ decl(void)
 			sym->token = TYPEIDEN;
 			continue;
 		case STATIC:
-			sym->isstatic = 1;
+			sym->flags |= ISSTATIC;
 			break;
 		case EXTERN:
-			sym->isdefined = 0;
+			sym->flags |= ISEXTERN;
 			break;
 		case REGISTER:
-			sym->isregister = 1;
+			sym->flags = ISREGISTER;
 			if (isfun)
 				goto bad_function;
 			break;
@@ -464,7 +464,7 @@ decl(void)
 				goto bad_function;
 			/* passtrough */
 		default:
-			sym->isauto = 1;
+			sym->flags |= ISAUTO;
 			break;
 		}
 		if (accept('='))
@@ -517,17 +517,17 @@ extdecl(void)
 			   problems with EOF */
 			sym = declarator(base, ID_EXPECTED, NS_IDEN);
 			tp = sym->type;
-			sym->isstatic = 1;
-			sym->isglobal= 1;
+			sym->flags |= ISSTATIC;
+			sym->flags |= ISGLOBAL;
 
 			switch (sclass) {
 			case REGISTER: case AUTO:
 				error("incorrect storage class for file-scope declaration");
 			case STATIC:
-				sym->isglobal = 0;
+				sym->flags |= ISSTATIC;
 				break;
 			case EXTERN:
-				sym->isdefined = 0;
+				sym->flags |= ISEXTERN;
 				break;
 			case TYPEDEF:
 				sym->token = TYPEIDEN;

@@ -29,13 +29,7 @@ struct symbol {
 	uint8_t ctx;
 	uint8_t ns;
 	uint8_t token;
-	bool isglobal : 1;
-	bool isstatic : 1;
-	bool isauto : 1;
-	bool isregister : 1;
-	bool isdefined : 1;
-	bool isfield : 1;
-	bool isparameter : 1;
+	char flags;
 	union {
 		int i;
 		char *s;
@@ -99,6 +93,18 @@ enum {
 	NS_CPP,
 	NS_STRUCTS,
 	NR_NAMESPACES
+};
+
+/* symbol flags */
+enum {
+	ISGLOBAL   =  1,
+	ISSTATIC   =  2,
+	ISAUTO     =  4,
+	ISREGISTER =  8,
+	ISDEFINED  = 16,
+	ISFIELD    = 32,
+	ISPARAM    = 64,
+	ISEXTERN   =128
 };
 
 /* input tokens */

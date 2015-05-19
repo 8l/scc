@@ -38,7 +38,7 @@ freesyms(uint8_t ns)
 	for (sym = tbl->head; sym; sym = next) {
 		if (sym->ctx <= curctx)
 			break;
-		if (ns == NS_LABEL && !sym->isdefined)
+		if (ns == NS_LABEL && !(sym->flags & ISDEFINED))
 			error("label '%s' is not defined", sym->name);
 		if (ns == NS_TAG)
 			sym->type->defined = 0;
@@ -94,7 +94,7 @@ install(char *s, uint8_t ns)
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->id = (curctx) ? ++localcnt : ++globalcnt;
-	sym->isdefined = 1;
+	sym->flags |= ISDEFINED;
 	sym->ns = ns;
 	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
 	sym->next = tbl->head;

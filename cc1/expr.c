@@ -420,7 +420,7 @@ address(char op, Node *np)
 {
 	if (!np->lvalue)
 		error("lvalue required in unary expression");
-	if (np->symbol && np->sym->isregister)
+	if (np->symbol && (np->sym->flags & ISREGISTER))
 		error("address of register variable '%s' requested", yytext);
 	return node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
 }

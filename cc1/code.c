@@ -159,17 +159,15 @@ emitvar(Symbol *sym)
 {
 	char c;
 
-	if (sym->isstatic && !sym->isglobal)
-		c = 'T';
-	else if (sym->isstatic && sym->isglobal)
-		c = 'Y';
-	else if (sym->isglobal)
+	if (sym->flags & ISSTATIC)
+		c = (sym->flags & ISGLOBAL) ? 'Y' : 'T';
+	else if (sym->flags & ISGLOBAL)
 		c = 'G';
-	else if (sym->isregister)
+	else if (sym->flags & ISREGISTER)
 		c = 'K';
-	else if (sym->isfield)
+	else if (sym->flags & ISFIELD)
 		c = 'M';
-	else if (sym->isparameter)
+	else if (sym->flags & ISPARAM)
 		c = 'P';
 	else
 		c = 'A';
@@ -271,7 +269,7 @@ emitfun(uint8_t op, void *arg)
 	Symbol *sym = arg;
 
 	printf("%c%d\tF\t%s\t{\n",
-	       sym->isglobal ? 'G' : 'Y', sym->id, sym->name);
+	       sym->flags & ISGLOBAL ? 'G' : 'Y', sym->id, sym->name);
 }
 
 static void
