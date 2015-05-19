@@ -91,8 +91,7 @@ enum {
 	NS_TAG,
 	NS_LABEL,
 	NS_CPP,
-	NS_STRUCTS,
-	NR_NAMESPACES
+	NS_STRUCTS
 };
 
 /* symbol flags */

@@ -12,11 +12,8 @@ uint8_t curctx;
 static short localcnt;
 static short globalcnt;
 
-/* TODO: unify all the hashes in only one hash */
-static struct symtab {
-	Symbol *head;
-	Symbol *htab[NR_SYM_HASH];
-} symtab [NR_NAMESPACES];
+static Symbol *head;
+static Symbol *htab[NR_SYM_HASH];
 
 static inline uint8_t
 hash(const char *s)
@@ -28,27 +25,6 @@ hash(const char *s)
 	return h & NR_SYM_HASH - 1;
 }
 
-static void
-freesyms(uint8_t ns)
-{
-	static struct symtab *tbl;
-	Symbol *sym, *next;
-
-	tbl = &symtab[ns];
-	for (sym = tbl->head; sym; sym = next) {
-		if (sym->ctx <= curctx)
-			break;
-		if (ns == NS_LABEL && !(sym->flags & ISDEFINED))
-			error("label '%s' is not defined", sym->name);
-		if (ns == NS_TAG)
-			sym->type->defined = 0;
-		tbl->htab[hash(sym->name)] = sym->hash;
-		next = tbl->head = sym->next;
-		free(sym->name);
-		free(sym);
-	}
-}
-
 void
 pushctx(void)
 {
@@ -58,24 +34,37 @@ pushctx(void)
 void
 popctx(void)
 {
-	--curctx;
-	freesyms(NS_IDEN);
-	freesyms(NS_TAG);
-	freesyms(NS_STRUCTS);
-	if (curctx == 0) {
+	Symbol *next, dummy = {.next = NULL}, *hp = &dummy, *sym;
+
+	if (--curctx == 0)
 		localcnt = 0;
-		freesyms(NS_LABEL);
+
+	for (sym = head; sym && sym->ctx > curctx; sym = next) {
+		next = sym->next;
+		if  (sym->ns == NS_LABEL && curctx != 0) {
+			hp->next = sym;
+			hp = sym;
+			continue;
+		else if (sym->ns == NS_LABEL && !(sym->flags & ISDEFINED)) {
+			/* FIXME: don't recover in this point */
+			error("label '%s' is not defined", sym->name);
+		} else if (sym->ns == NS_TAG) {
+			sym->type->defined = 0;
+		}
+		htab[hash(sym->name)] = sym->hash;
+		free(sym->name);
+		free(sym);
 	}
+	hp->next = sym;
+	head = dummy.next;
 }
 
 Symbol *
 lookup(char *s, uint8_t ns)
 {
-	struct symtab *tbl;
 	Symbol *sym;
 
-	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
-	for (sym = tbl->htab[hash(s)]; sym; sym = sym->hash) {
+	for (sym = htab[hash(s)]; sym; sym = sym->hash) {
 		if (!strcmp(sym->name, s) && sym->ns == ns)
 			return sym;
 	}
@@ -87,7 +76,6 @@ Symbol *
 install(char *s, uint8_t ns)
 {
 	Symbol *sym, **t;
-	struct symtab *tbl;
 
 	sym = xcalloc(1, sizeof(*sym));
 	sym->name = xstrdup(s);
@@ -96,11 +84,10 @@ install(char *s, uint8_t ns)
 	sym->id = (curctx) ? ++localcnt : ++globalcnt;
 	sym->flags |= ISDEFINED;
 	sym->ns = ns;
-	tbl = &symtab[(ns > NS_STRUCTS) ? NS_STRUCTS : ns];
-	sym->next = tbl->head;
-	tbl->head = sym;
+	sym->next = head;
+	head = sym;
 
-	t = &tbl->htab[hash(s)];
+	t = &htab[hash(s)];
 	sym->hash = *t;
 	return *t = sym;
 }
