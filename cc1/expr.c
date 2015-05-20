@@ -333,18 +333,16 @@ logic(char op, Node *lp, Node *rp)
 static Node *
 field(Node *np)
 {
-	extern uint8_t lex_ns;
 	Symbol *sym;
 
 	switch (BTYPE(np)) {
 	case STRUCT: case UNION:
-		lex_ns = np->type->ns;
+		setnamespace(np->type->ns);
 		next();
 		if (yytoken != IDEN)
 			unexpected();
 		if ((sym = yylval.sym) == NULL)
 			error("incorrect field in struct/union");
-		lex_ns = NS_IDEN;
 		next();
 		return node(OFIELD, sym->type, varnode(sym), np);
 	default:
@@ -470,9 +468,9 @@ primary(void)
 		next();
 		break;
 	case IDEN:
-		if (yylval.sym == NULL) {
-			yylval.sym = install(yytext, NS_IDEN);
+		if (!(yylval.sym->flags & ISDEFINED)) {
 			yylval.sym->type = inttype;
+			yylval.sym->flags |= ISDEFINED;
 			error("'%s' undeclared", yytext);
 		}
 		np = varnode(yylval.sym);

@@ -23,7 +23,7 @@ struct input {
 	struct input *next;
 };
 
-uint8_t lex_ns = NS_IDEN;
+static uint8_t lex_ns = NS_IDEN;
 
 uint8_t yytoken;
 struct yystype yylval;
@@ -246,7 +246,7 @@ integer(char *s, char base)
 
 convert:
 	tp = ctype(INT, sign, size);
-	sym = install(NULL, NS_IDEN);
+	sym = newsym(NS_IDEN);
 	sym->type = tp;
 	v = strtol(s, NULL, base);
 	if (tp == inttype)
@@ -345,7 +345,7 @@ character(void)
 		error("invalid character constant");
 	++input->p;
 
-	sym = install(NULL, NS_IDEN);
+	sym = newsym(NS_IDEN);
 	sym->u.i = c;
 	sym->type = inttype;
 	yylval.sym = sym;
@@ -386,7 +386,7 @@ repeat:
 	}
 
 	*bp = '\0';
-	sym = install(NULL, NS_IDEN);
+	sym = newsym(NS_IDEN);
 	sym->u.s = xstrdup(buf);
 	sym->type = mktype(chartype, ARY, (bp - buf) + 1, NULL);
 	yylval.sym = sym;
@@ -403,8 +403,8 @@ iden(void)
 		/* nothing */;
 	input->p = p;
 	tok2str();
-	sym = yylval.sym = lookup(yytext, lex_ns);
-	if (!sym || sym->token == IDEN)
+	sym = yylval.sym = lookup(lex_ns);
+	if (sym->token == IDEN)
 		return IDEN;
 	yylval.token = sym->u.token;
 	return sym->token;
@@ -502,6 +502,13 @@ operator(void)
 	return t;
 }
 
+/* TODO: Ensure that lex_ns is NS_IDEN after a recovery */
+void
+setnamespace(uint8_t ns)
+{
+	lex_ns = ns;
+}
+
 uint8_t
 next(void)
 {
@@ -525,6 +532,7 @@ next(void)
 	} else {
 		yytoken = operator();
 	}
+	lex_ns = NS_IDEN;
 	return yytoken;
 }
 

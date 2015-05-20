@@ -132,7 +132,8 @@ mkdefine(char *s, Symbol *sym)
 static char *
 define(char *s)
 {
-	char *t, name[IDENTSIZ+1];
+	extern char yytext[];
+	char *t;
 	size_t len;
 	Symbol *sym;
 
@@ -142,9 +143,15 @@ define(char *s)
 		/* nothing */;
 	if ((len = t - s) > IDENTSIZ)
 		goto too_long;
-	strncpy(name, s, len);
-	name[len] = '\0';
-	sym = install(name, NS_CPP);
+	strncpy(yytext, s, len);
+	yytext[len] = '\0';
+	sym = lookup(NS_CPP);
+	if ((sym->flags & ISDEFINED) && sym->ns == NS_CPP) {
+		warn("'%s' redefined", yytext);
+		free(sym->u.s);
+	}
+	sym->flags |= ISDEFINED;
+	sym->ns = NS_CPP;
 
 	for (s = t; isspace(*s); ++s)
 		/* nothing */;

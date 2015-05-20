@@ -91,6 +91,7 @@ enum {
 	NS_TAG,
 	NS_LABEL,
 	NS_CPP,
+	NS_KEYWORD,
 	NS_STRUCTS
 };
 
@@ -251,8 +252,9 @@ extern Type *ctype(uint8_t type, uint8_t sign, uint8_t size);
 extern Type *mktype(Type *tp, uint8_t op, short nelem, void *data);
 
 /* symbol.c */
-extern Symbol *lookup(char *s, unsigned char ns);
-extern Symbol *install(char *s, unsigned char ns);
+extern Symbol *lookup(uint8_t ns);
+extern Symbol *install(uint8_t ns);
+extern Symbol *newsym(uint8_t ns);
 extern void pushctx(void), popctx(void);
 
 /* stmt.c */
@@ -273,6 +275,7 @@ extern void setfname(char *name);
 extern void setfline(unsigned short line);
 extern bool addinput(char *fname);
 extern void delinput(void);
+extern void setnamespace(uint8_t ns);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */

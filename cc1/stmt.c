@@ -13,28 +13,6 @@ extern Node *convert(Node *np, Type *tp1, char iscast);
 extern Node *iszero(Node *np), *eval(Node *np);
 static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
-static Symbol *
-label(char *s, char define)
-{
-	Symbol *sym;
-
-	if ((sym = lookup(s, NS_LABEL)) != NULL) {
-		if (define) {
-			if (sym->flags & ISDEFINED)
-				error("label '%s' already defined", s);
-			sym->flags |= ISDEFINED;
-		}
-		return sym;
-	}
-
-	sym = install(s, NS_LABEL);
-	if (define)
-		sym->flags |= ISDEFINED;
-	else
-		sym->flags &= ~ISDEFINED;
-	return sym;
-}
-
 static void
 stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -72,9 +50,9 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *np;
 
-	begin = install(NULL, NS_LABEL);
-	end = install(NULL, NS_LABEL);
-	cond = install(NULL, NS_LABEL);
+	begin = newsym(NS_LABEL);
+	end = newsym(NS_LABEL);
+	cond = newsym(NS_LABEL);
 
 	expect(WHILE);
 	np = condition();
@@ -95,9 +73,9 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *econd, *einc, *einit;
 
-	begin = install(NULL, NS_LABEL);
-	end = install(NULL, NS_LABEL);
-	cond = install(NULL, NS_LABEL);
+	begin = newsym(NS_LABEL);
+	end = newsym(NS_LABEL);
+	cond = newsym(NS_LABEL);
 
 	expect(FOR);
 	expect('(');
@@ -127,8 +105,8 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *end;
 	Node *np;
 
-	begin = install(NULL, NS_LABEL);
-	end = install(NULL, NS_LABEL);
+	begin = newsym(NS_LABEL);
+	end = newsym(NS_LABEL);
 	expect(DO);
 	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
@@ -179,9 +157,24 @@ static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 static void
 Label(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
+	Symbol *sym;
+
 	switch (yytoken) {
-	case IDEN: case TYPEIDEN:
-		emit(OLABEL, label(yytext, 1));
+	case IDEN:
+	case TYPEIDEN:
+		/*
+		 * We cannot call to insert() because the call to lookup in
+	     * lex.c was done in NS_IDEN namespace, and it is impossibe
+		 * to fix this point, because an identifier at the beginning
+		 * of a statement may be part of an expression or part of a
+		 * label. This double call to lookup() is going to generate
+		 * an undefined symbol that is not going to be used ever.
+		 */
+		sym = lookup(NS_LABEL);
+		if (sym->flags & ISDEFINED)
+			error("label '%s' already defined", yytoken);
+		sym->flags |= ISDEFINED;
+		emit(OLABEL, sym);
 		next();
 		expect(':');
 		stmt(lbreak, lcont, lswitch);
@@ -204,11 +197,11 @@ Continue(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	expect(GOTO);
-
+	setnamespace(NS_LABEL);
+	next();
 	if (yytoken != IDEN)
 		unexpected();
-	emit(OJUMP, label(yytext, 0));
+	emit(OJUMP, yylval.sym);
 	next();
 	expect(';');
 }
@@ -229,8 +222,8 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		error("incorrect type in switch statement");
 	expect (')');
 
-	lbreak = install(NULL, NS_LABEL);
-	lcond = install(NULL, NS_LABEL);
+	lbreak = newsym(NS_LABEL);
+	lcond = newsym(NS_LABEL);
 	emit(OJUMP, lcond);
 	stmt(lbreak, lcont, &lcase);
 	emit(OLABEL, lcond);
@@ -263,7 +256,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	pcase = xmalloc(sizeof(*pcase));
 	pcase->expr = np;
 	pcase->next = lswitch->head;
-	emit(OLABEL, pcase->label = install(NULL, NS_LABEL));
+	emit(OLABEL, pcase->label = newsym(NS_LABEL));
 	lswitch->head = pcase;
 	++lswitch->nr;
 }
@@ -271,7 +264,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *ldefault = install(NULL, NS_LABEL);
+	Symbol *ldefault = newsym(NS_LABEL);
 
 	expect(DEFAULT);
 	expect(':');
@@ -285,14 +278,14 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *end, *lelse;
 	Node *np;
 
-	lelse = install(NULL, NS_LABEL);
+	lelse = newsym(NS_LABEL);
 	expect(IF);
 	np = condition();
 	emit(OBRANCH, lelse);
 	emit(OEXPR, negate(np));
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
-		end = install(NULL, NS_LABEL);
+		end = newsym(NS_LABEL);
 		emit(OJUMP, end);
 		emit(OLABEL, lelse);
 		stmt(lbreak, lcont, lswitch);
@@ -355,7 +348,8 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case CASE:     fun = Case;     break;
 	case DEFAULT:  fun = Default;  break;
 	default:       fun = stmtexp;  break;
-	case TYPEIDEN: case IDEN:
+	case TYPEIDEN:
+	case IDEN:
 		fun = (ahead() == ':') ? Label : stmtexp;
 		break;
 	case '@':

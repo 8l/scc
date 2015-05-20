@@ -69,7 +69,7 @@ newsym(uint8_t ns)
 	sym->id = (curctx) ? ++localcnt : ++globalcnt;
 	sym->ctx = curctx;
 	sym->token = IDEN;
-	sym->flags = 0;
+	sym->flags = ISDEFINED;
 	sym->name = NULL;
 	sym->type = NULL;
 	sym->hash = NULL;
@@ -79,32 +79,58 @@ newsym(uint8_t ns)
 }
 
 Symbol *
-lookup(char *s, uint8_t ns)
+lookup(uint8_t ns)
 {
-	Symbol *sym;
+	Symbol *sym, **h;
+	uint8_t sns;
+	char *t, c;
 
-	for (sym = htab[hash(s)]; sym; sym = sym->hash) {
-		if (!strcmp(sym->name, s) && sym->ns == ns)
+	h = &htab[hash(yytext)];
+	c = *yytext;
+	for (sym = *h; sym; sym = sym->hash) {
+		t = sym->name;
+		if (*t != c || strcmp(t, yytext))
+			continue;
+		sns = sym->ns;
+		if (sns == NS_KEYWORD || sns == NS_CPP)
 			return sym;
+		if (sns != ns)
+			continue;
+		return sym;
 	}
 
-	return NULL;
+	sym = newsym(ns);
+	sym->name = xstrdup(yytext);
+	sym->flags &= ~ISDEFINED;
+	sym->hash = *h;
+	*h = sym;
+	return sym;
 }
 
 Symbol *
-install(char *s, uint8_t ns)
+install(uint8_t ns)
 {
-	Symbol *sym, **t;
-
-	sym = newsym(ns);
-	sym->flags |= ISDEFINED;
-
-	if (s) {
-		sym->name = xstrdup(s);
-		t = &htab[hash(s)];
-		sym->hash = *t;
-		*t = sym;
+	Symbol *sym, **h;
+	/*
+	 * install() is always called after a call to lookup(), so
+	 * yylval.sym always points to a symbol with yytext name.
+	 * if the symbol is an undefined symbol and in the same
+	 * context, then it was generated in the previous lookup()
+	 * call. If the symbol is defined and in the same context
+	 * then there is a redefinition
+	 */
+	if (yylval.sym->ctx == curctx) {
+		if (yylval.sym->flags & ISDEFINED)
+			return NULL;
+		yylval.sym->flags |= ISDEFINED;
+		return yylval.sym;
 	}
+
+	h = &htab[hash(yytext)];
+	sym = newsym(ns);
+	sym->name = xstrdup(yytext);
+	sym->hash = *h;
+	*h = sym;
 	return sym;
 }
 
@@ -154,7 +180,8 @@ ikeywords(void)
 	Symbol *sym;
 
 	for (bp = buff; bp->str; ++bp) {
-		sym = install(bp->str, NS_IDEN);
+		strcpy(yytext, bp->str);
+		sym = lookup(NS_KEYWORD);
 		sym->token = bp->token;
 		sym->u.token = bp->value;
 	}

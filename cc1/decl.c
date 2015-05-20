@@ -88,19 +88,6 @@ fundcl(struct dcldata *dp)
 	return queue(dp, FTN, n, tp);
 }
 
-static Symbol *
-newiden(uint8_t ns)
-{
-	Symbol *sym;
-	extern uint8_t curctx;
-
-	if (yylval.sym && yylval.sym->ctx == curctx && yylval.sym->ns == ns)
-		error("redeclaration of '%s'", yytext);
-	sym = install(yytext, ns);
-	next();
-	return sym;
-}
-
 static struct dcldata *declarator0(struct dcldata *dp, uint8_t ns);
 
 static struct dcldata *
@@ -112,10 +99,13 @@ directdcl(struct dcldata *dp, uint8_t ns)
 		dp = declarator0(dp, ns);
 		expect(')');
 	} else {
-		if (yytoken == IDEN || yytoken == TYPEIDEN)
-			sym = newiden(ns);
-		else
-			sym = install(NULL, ns);
+		if (yytoken == IDEN || yytoken == TYPEIDEN) {
+			if ((sym = install(ns)) == NULL)
+				error("redeclaration of '%s'", yytext);
+			next();
+		} else {
+			sym = newsym(ns);
+		}
 		dp = queue(dp, IDEN, 0, sym);
 	}
 
@@ -269,19 +259,22 @@ initializer(Symbol *sym)
 }
 
 static Symbol *
-newtag(uint8_t tag)
+newtag(void)
 {
 	Symbol *sym;
+	uint8_t tag = yylval.token;
 	static uint8_t ns = NS_STRUCTS;
 
+	setnamespace(NS_TAG);
+	next();
 	switch (yytoken) {
-	case IDEN: case TYPEIDEN:
-		if ((sym = lookup(yytext, NS_TAG)) == NULL)
-			sym = install(yytext, NS_TAG);
+	case IDEN:
+	case TYPEIDEN:
+		sym = yylval.sym;
 		next();
 		break;
 	default:
-		sym = install(NULL, NS_TAG);
+		sym = newsym(NS_TAG);
 		break;
 	}
 	if (!sym->type) {
@@ -290,7 +283,8 @@ newtag(uint8_t tag)
 		sym->type = mktype(NULL, tag, 0, NULL);
 		sym->type->ns = ns++;
 	}
-	
+
+	sym->flags |= ISDEFINED;
 	if (sym->type->op != tag)
 		error("'%s' defined as wrong kind of tag", yytext);
 	return sym;
@@ -303,12 +297,10 @@ structdcl(void)
 {
 	Type *tagtype, *buff[NR_MAXSTRUCTS], **bp = &buff[0];
 	Symbol *tagsym, *sym;
-	uint8_t tag, n;
+	uint8_t n;
 	size_t siz;
 
-	tag = yylval.token;
-	next();
-	tagsym = newtag(tag);
+	tagsym = newtag();
 	tagtype = tagsym->type;
 	if (!accept('{'))
 		return tagtype;
@@ -368,8 +360,7 @@ enumdcl(void)
 	Symbol *sym;
 	int val = 0;
 
-	next();
-	tp = newtag(ENUM)->type;
+	tp = newtag()->type;
 
 	if (yytoken == ';')
 		return tp;
@@ -381,7 +372,9 @@ enumdcl(void)
 	while (yytoken != '}') {
 		if (yytoken != IDEN)
 			unexpected();
-		sym = newiden(NS_IDEN);
+		if ((sym = install(NS_IDEN)) == NULL)
+			error("duplicated member '%s'", yytext);
+		next();
 		sym->type = inttype;
 		if (accept('='))
 			initializer(sym);
