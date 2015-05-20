@@ -21,7 +21,7 @@ parseargs(char *s, char *args[NR_MACROARG], int *nargs)
 {
 	unsigned n ;
 	size_t len;
-	char **bp, *endp, c;
+	char *endp, c;
 
 	if (*s != '(') {
 		*nargs = -1;
@@ -33,7 +33,7 @@ parseargs(char *s, char *args[NR_MACROARG], int *nargs)
 	}
 
 
-	for (bp = args, n = 1; n <= NR_MACROARG; ++bp, ++n) {
+	for (n = 1; n <= NR_MACROARG; ++n) {
 		while (isspace(*s))
 			++s;
 		if (!isalnum(*s) && *s != '_')
@@ -42,7 +42,7 @@ parseargs(char *s, char *args[NR_MACROARG], int *nargs)
 			/* nothing */;
 		if ((len = endp - s) > IDENTSIZ)
 			error("macro argument too long");
-		*bp = s;
+		*args++ = s;
 		for (s = endp; isspace(*s); ++s)
 			*s = '\0';
 		c = *s;
