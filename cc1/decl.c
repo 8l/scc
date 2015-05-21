@@ -16,18 +16,23 @@
 struct dcldata {
 	unsigned char op;
 	unsigned short nelem;
+	unsigned ndcl;
 	void *data;
 };
 
 static struct dcldata *
 queue(struct dcldata *dp, unsigned op, short nelem, void *data)
 {
-	if (dp->op == 255)
+	unsigned n;
+
+	if ((n = dp->ndcl) == NR_DECLARATORS)
 		error("too much declarators");
 	dp->op = op;
 	dp->nelem = nelem;
 	dp->data = data;
-	return dp + 1;
+	++dp;
+	dp->ndcl = n+1;
+	return dp;
 }
 
 static struct dcldata *
@@ -139,14 +144,13 @@ declarator0(struct dcldata *dp, unsigned ns)
 static Symbol *
 declarator(Type *tp, int flags, unsigned ns)
 {
-	struct dcldata data[NR_DECLARATORS+2];
+	struct dcldata data[NR_DECLARATORS+1];
 	struct dcldata *bp;
 	Symbol *sym;
 
-	/* TODO: Change this code. The memset is a very bad idea */
-	memset(data, 0, sizeof(data));
-	data[NR_DECLARATORS].op = 255;
-	for (bp = declarator0(data, ns)-1; bp >= data; --bp) {
+	data[0].ndcl = 0;
+	for (bp = declarator0(data, ns); bp > data; ) {
+		--bp;
 		if (bp->op != IDEN) {
 			tp = mktype(tp, bp->op, bp->nelem, bp->data);
 		} else {
