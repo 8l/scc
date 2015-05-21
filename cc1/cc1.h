@@ -9,16 +9,16 @@ typedef struct caselist Caselist;
 typedef struct node Node;
 
 struct type {
-	uint8_t op;           /* type builder operator */
-	uint8_t ns;
-	char letter;          /* letter of the type */
-	bool defined;         /* type defined (is not a forward reference) */
-	Type *type;           /* base type */
-	Type *next;           /* next element in the hash */
-	Type **pars;          /* type parameters */
+	unsigned char op;           /* type builder operator */
+	unsigned char ns;
+	char letter;                /* letter of the type */
+	bool defined;               /* type defined */
+	Type *type;                 /* base type */
+	Type *next;                 /* next element in the hash */
+	Type **pars;                /* type parameters */
 	union {
-		unsigned char rank;  /* convertion rank */
-		short elem;          /* number of type parameters */
+		unsigned char rank;     /* convertion rank */
+		short elem;             /* number of type parameters */
 	} n;
 };
 
@@ -26,21 +26,21 @@ struct symbol {
 	char *name;
 	Type *type;
 	short id;
-	uint8_t ctx;
-	uint8_t ns;
-	uint8_t token;
+	unsigned char ctx;
+	unsigned char ns;
+	unsigned char token;
 	char flags;
 	union {
 		int i;
 		char *s;
-		uint8_t token;
+		unsigned char token;
 	} u;
 	struct symbol *next;
 	struct symbol *hash;
 };
 
 struct node {
-	uint8_t op;
+	unsigned char op;
 	Type *type;
 	Symbol *sym;
 	bool lvalue : 1;
@@ -63,7 +63,7 @@ struct caselist {
 
 struct yystype {
 	Symbol *sym;
-	uint8_t token;
+	unsigned char token;
 };
 
 /*
@@ -173,8 +173,7 @@ enum tokens {
 	CONTINUE,
 	BREAK,
 	RETURN,
-	EOFTOK,
-	NOTOK
+	EOFTOK
 };
 
 /* operations */
@@ -244,17 +243,16 @@ extern void error(char *fmt, ...);
 extern void warn(char *fmt, ...);
 extern void unexpected(void);
 extern void softerror(char *fmt, ...);
-extern void setsafe(uint8_t type);
 
-/* type.c */
+/* types.c */
 extern bool eqtype(Type *tp1, Type *tp2);
-extern Type *ctype(uint8_t type, uint8_t sign, uint8_t size);
-extern Type *mktype(Type *tp, uint8_t op, short nelem, void *data);
+extern Type *ctype(unsigned type, unsigned sign, unsigned size);
+extern Type *mktype(Type *tp, unsigned op, short nelem, void *data);
 
 /* symbol.c */
-extern Symbol *lookup(uint8_t ns);
-extern Symbol *install(uint8_t ns);
-extern Symbol *newsym(uint8_t ns);
+extern Symbol *lookup(unsigned ns);
+extern Symbol *install(unsigned ns);
+extern Symbol *newsym(unsigned ns);
 extern void pushctx(void), popctx(void);
 
 /* stmt.c */
@@ -265,9 +263,9 @@ extern Type *typename(void);
 extern void extdecl(void), decl(void);
 
 /* lex.c */
-extern uint8_t ahead(void);
-extern uint8_t next(void);
-extern void expect(uint8_t tok);
+extern char ahead(void);
+extern unsigned next(void);
+extern void expect(unsigned tok);
 extern void discard(void);
 extern char *getfname(void);
 extern unsigned short getfline(void);
@@ -275,12 +273,13 @@ extern void setfname(char *name);
 extern void setfline(unsigned short line);
 extern bool addinput(char *fname);
 extern void delinput(void);
-extern void setnamespace(uint8_t ns);
+extern void setnamespace(int ns);
+extern void setsafe(int type);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */
-extern void emit(uint8_t, void *);
-extern Node *node(uint8_t op, Type *tp, Node *left, Node *rigth);
+extern void emit(unsigned, void *);
+extern Node *node(unsigned op, Type *tp, Node *left, Node *rigth);
 extern Node *varnode(Symbol *sym);
 extern Node *constnode(Symbol *sym);
 extern Node *sizeofnode(Type *tp);
@@ -297,7 +296,7 @@ extern char *preprocessor(char *s);
  */
 extern struct yystype yylval;
 extern char yytext[];
-extern uint8_t yytoken;
+extern unsigned yytoken;
 
 extern Type *voidtype, *pvoidtype, *booltype,	
             *uchartype,   *chartype,

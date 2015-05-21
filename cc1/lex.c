@@ -23,13 +23,13 @@ struct input {
 	struct input *next;
 };
 
-static uint8_t lex_ns = NS_IDEN;
+static unsigned lex_ns = NS_IDEN;
 
-uint8_t yytoken;
+unsigned yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
 unsigned short yylen;
-static uint8_t safe;
+static int safe;
 static Input *input;
 
 bool
@@ -217,12 +217,12 @@ tok2str(void)
 	input->begin = input->p;
 }
 
-static uint8_t
+static unsigned
 integer(char *s, char base)
 {
 	Type *tp;
 	Symbol *sym;
-	uint8_t size, sign;
+	unsigned size, sign;
 	long v;
 
 	for (size = sign = 0; ; ++input->p) {
@@ -256,7 +256,7 @@ convert:
 }
 
 static char *
-digits(uint8_t base)
+digits(unsigned base)
 {
 	char c, *p;
 
@@ -282,10 +282,9 @@ end:
 	return yytext;
 }
 
-static uint8_t
+static unsigned
 number(void)
 {
-	int ch;
 	char base;
 
 	if (*input->p != '0') {
@@ -333,7 +332,7 @@ escape(void)
 	return c;
 }
 
-static uint8_t
+static unsigned
 character(void)
 {
 	static char c;
@@ -352,7 +351,7 @@ character(void)
 	return CONSTANT;
 }
 
-static uint8_t
+static unsigned
 string(void)
 {
 	char buf[STRINGSIZ+1];
@@ -393,24 +392,22 @@ repeat:
 	return CONSTANT;
 }
 
-static uint8_t
+static unsigned
 iden(void)
 {
 	char *p;
-	Symbol *sym;
 
 	for (p = input->p; isalnum(*p) || *p == '_'; ++p)
 		/* nothing */;
 	input->p = p;
 	tok2str();
-	sym = yylval.sym = lookup(lex_ns);
-	if (sym->token == IDEN)
-		return IDEN;
-	yylval.token = sym->u.token;
-	return sym->token;
+	yylval.sym = lookup(lex_ns);
+	if (yylval.sym->token != IDEN)
+		yylval.token = yylval.sym->u.token;
+	return yylval.sym->token;
 }
 
-static uint8_t
+static unsigned
 follow(int expect, int ifyes, int ifno)
 {
 	if (*input->p++ == expect)
@@ -419,7 +416,7 @@ follow(int expect, int ifyes, int ifno)
 	return ifno;
 }
 
-static uint8_t
+static unsigned
 minus(void)
 {
 	switch (*input->p++) {
@@ -430,7 +427,7 @@ minus(void)
 	}
 }
 
-static uint8_t
+static unsigned
 plus(void)
 {
 	switch (*input->p++) {
@@ -440,8 +437,8 @@ plus(void)
 	}
 }
 
-static uint8_t
-relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
+static unsigned
+relational(int op, int equal, int shift, int assig)
 {
 	char c;
 
@@ -453,8 +450,8 @@ relational(uint8_t op, uint8_t equal, uint8_t shift, uint8_t assig)
 	return op;
 }
 
-static uint8_t
-logic(uint8_t op, uint8_t equal, uint8_t logic)
+static unsigned
+logic(int op, int equal, int logic)
 {
 	char c;
 
@@ -466,7 +463,7 @@ logic(uint8_t op, uint8_t equal, uint8_t logic)
 	return op;
 }
 
-static uint8_t
+static unsigned
 dot(void)
 {
 	char c;
@@ -479,10 +476,10 @@ dot(void)
 	return ELLIPSIS;
 }
 
-static uint8_t
+static unsigned
 operator(void)
 {
-	uint8_t t;
+	unsigned t;
 
 	switch (t = *input->p++) {
 	case '<': t = relational('<', LE, SHL, SHL_EQ); break;
@@ -504,12 +501,12 @@ operator(void)
 
 /* TODO: Ensure that lex_ns is NS_IDEN after a recovery */
 void
-setnamespace(uint8_t ns)
+setnamespace(int ns)
 {
 	lex_ns = ns;
 }
 
-uint8_t
+unsigned
 next(void)
 {
 	char c;
@@ -537,7 +534,7 @@ next(void)
 }
 
 void
-expect(uint8_t tok)
+expect(unsigned tok)
 {
 	if (yytoken != tok) {
 		if (isgraph(tok))
@@ -549,7 +546,7 @@ expect(uint8_t tok)
 	}
 }
 
-uint8_t
+char
 ahead(void)
 {
 	int c;
@@ -568,7 +565,7 @@ repeat:
 }
 
 void
-setsafe(uint8_t type)
+setsafe(int type)
 {
 	safe = type;
 }

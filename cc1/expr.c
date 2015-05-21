@@ -16,7 +16,7 @@ static Node *
 promote(Node *np)
 {
 	Type *tp;
-	uint8_t r;
+	unsigned r;
 
 	tp = np->type;
 	r = tp->n.rank;
@@ -31,7 +31,7 @@ typeconv(Node **p1, Node **p2)
 {
 	Type *tp1, *tp2;
 	Node *np1, *np2;
-	int8_t n;
+	int n;
 
 	np1 = promote(*p1);
 	np2 = promote(*p2);
@@ -280,7 +280,7 @@ compare(char op, Node *lp, Node *rp)
 Node *
 negate(Node *np)
 {
-	uint8_t op;
+	unsigned op;
 
 	switch (np->op) {
 	case OAND: op = OOR;  break;

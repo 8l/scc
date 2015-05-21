@@ -4,21 +4,22 @@
 #include <string.h>
 
 #include "../inc/cc.h"
+#include "../inc/sizes.h"
 #include "cc1.h"
 
 #define NR_SYM_HASH 32
 
-uint8_t curctx;
+static unsigned curctx;
 static short localcnt;
 static short globalcnt;
 
 static Symbol *head;
 static Symbol *htab[NR_SYM_HASH];
 
-static inline uint8_t
+static inline unsigned
 hash(const char *s)
 {
-	uint8_t h, ch;
+	unsigned h, ch;
 
 	for (h = 0; ch = *s++; h += ch)
 		/* nothing */;
@@ -28,7 +29,8 @@ hash(const char *s)
 void
 pushctx(void)
 {
-	++curctx;
+	if (++curctx == NR_BLOCK)
+		error("too much nested blocks");
 }
 
 void
@@ -60,7 +62,7 @@ popctx(void)
 }
 
 Symbol *
-newsym(uint8_t ns)
+newsym(unsigned ns)
 {
 	Symbol *sym;
 
@@ -79,10 +81,10 @@ newsym(uint8_t ns)
 }
 
 Symbol *
-lookup(uint8_t ns)
+lookup(unsigned ns)
 {
 	Symbol *sym, **h;
-	uint8_t sns;
+	unsigned sns;
 	char *t, c;
 
 	h = &htab[hash(yytext)];
@@ -108,7 +110,7 @@ lookup(uint8_t ns)
 }
 
 Symbol *
-install(uint8_t ns)
+install(unsigned ns)
 {
 	Symbol *sym, **h;
 	/*
@@ -139,7 +141,7 @@ ikeywords(void)
 {
 	static struct {
 		char *str;
-		uint8_t token, value;
+		unsigned char token, value;
 	} *bp, buff[] = {
 		{"auto", SCLASS, AUTO},
 		{"break", BREAK, BREAK},

@@ -6,7 +6,7 @@
 
 #include "../inc/cc.h"
 
-uint8_t failure;
+int failure;
 
 void
 die(const char *fmt, ...)

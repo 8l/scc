@@ -210,7 +210,7 @@ line(char *s)
 {
 	char *p, *q;
 
-	if (!isdigit(*p))
+	if (!isdigit(*s))
 		goto bad_line;
 	for (p = s; isdigit(*p); ++p)
 		/* nothing */;

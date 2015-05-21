@@ -14,13 +14,13 @@
 /* TODO: check identifiers in enum declaration */
 
 struct dcldata {
-	uint8_t op;
+	unsigned char op;
 	unsigned short nelem;
 	void *data;
 };
 
 static struct dcldata *
-queue(struct dcldata *dp, uint8_t op, short nelem, void *data)
+queue(struct dcldata *dp, unsigned op, short nelem, void *data)
 {
 	if (dp->op == 255)
 		error("too much declarators");
@@ -44,7 +44,7 @@ static struct dcldata *
 fundcl(struct dcldata *dp)
 {
 	size_t siz;
-	uint8_t n, i, noname;
+	unsigned n, i, noname;
 	Type *pars[NR_FUNPARAM], **tp = pars;
 	Symbol *syms[NR_FUNPARAM], **sp = syms, *sym;
 
@@ -88,10 +88,10 @@ fundcl(struct dcldata *dp)
 	return queue(dp, FTN, n, tp);
 }
 
-static struct dcldata *declarator0(struct dcldata *dp, uint8_t ns);
+static struct dcldata *declarator0(struct dcldata *dp, unsigned ns);
 
 static struct dcldata *
-directdcl(struct dcldata *dp, uint8_t ns)
+directdcl(struct dcldata *dp, unsigned ns)
 {
 	Symbol *sym;
 
@@ -119,9 +119,9 @@ directdcl(struct dcldata *dp, uint8_t ns)
 }
 
 static struct dcldata*
-declarator0(struct dcldata *dp, uint8_t ns)
+declarator0(struct dcldata *dp, unsigned ns)
 {
-	uint8_t  n;
+	unsigned  n;
 
 	for (n = 0; accept('*'); ++n) {
 		while (accept(TQUALIFIER))
@@ -137,7 +137,7 @@ declarator0(struct dcldata *dp, uint8_t ns)
 }
 
 static Symbol *
-declarator(Type *tp, int8_t flags, uint8_t ns)
+declarator(Type *tp, int flags, unsigned ns)
 {
 	struct dcldata data[NR_DECLARATORS+2];
 	struct dcldata *bp;
@@ -169,19 +169,21 @@ declarator(Type *tp, int8_t flags, uint8_t ns)
 static Type *structdcl(void), *enumdcl(void);
 
 static Type *
-specifier(int8_t *sclass)
+specifier(unsigned *sclass)
 {
 	Type *tp = NULL;
-	int8_t qlf, sign, type, cls, size, t;
+	unsigned qlf, sign, type, cls, size;
 
 	qlf = sign = type = cls = size = 0;
 
 	for (;;) {
-		int8_t *p;
+		unsigned *p;
 		Type *(*dcl)(void) = NULL;
 
 		switch (yytoken) {
-		case SCLASS: p = &cls; break;
+		case SCLASS:
+			p = &cls;
+			break;
 		case TQUALIFIER:
 			if ((qlf |= yylval.token) & RESTRICT)
 				goto invalid_type;
@@ -196,13 +198,22 @@ specifier(int8_t *sclass)
 		case TYPE:
 			switch (yylval.token) {
 			case ENUM:
-				dcl = enumdcl; p = &type; break;
-			case STRUCT: case UNION:
-				dcl = structdcl; p = &type; break;
-			case VOID:   case BOOL:  case CHAR:
-			case INT:    case FLOAT: case DOUBLE:
+				dcl = enumdcl;
 				p = &type; break;
-			case SIGNED: case UNSIGNED:
+			case STRUCT:
+			case UNION:
+				dcl = structdcl;
+				p = &type; break;
+			case VOID:
+			case BOOL:
+			case CHAR:
+			case INT:
+			case FLOAT:
+			case DOUBLE:
+				p = &type;
+				break;
+			case SIGNED:
+			case UNSIGNED:
 				p = &sign; break;
 			case LONG:
 				if (size == LONG) {
@@ -210,7 +221,8 @@ specifier(int8_t *sclass)
 					break;
 				}
 			case SHORT:
-				p = &size; break;
+				p = &size;
+				break;
 			}
 			break;
 		default:
@@ -262,8 +274,8 @@ static Symbol *
 newtag(void)
 {
 	Symbol *sym;
-	uint8_t tag = yylval.token;
-	static uint8_t ns = NS_STRUCTS;
+	unsigned tag = yylval.token;
+	static unsigned ns = NS_STRUCTS;
 
 	setnamespace(NS_TAG);
 	next();
@@ -297,7 +309,7 @@ structdcl(void)
 {
 	Type *tagtype, *buff[NR_MAXSTRUCTS], **bp = &buff[0];
 	Symbol *tagsym, *sym;
-	uint8_t n;
+	unsigned n;
 	size_t siz;
 
 	tagsym = newtag();
@@ -391,7 +403,7 @@ static Symbol *
 parameter(void)
 {
 	Symbol *sym;
-	uint8_t sclass;
+	unsigned sclass;
 	Type *tp;
 
 	if ((tp = specifier(&sclass)) == voidtype)
@@ -421,7 +433,7 @@ decl(void)
 {
 	Type *tp;
 	Symbol *sym;
-	uint8_t sclass, isfun;
+	unsigned sclass, isfun;
 	extern jmp_buf recover;
 
 	setsafe(END_DECL);
@@ -475,7 +487,7 @@ bad_function:
 Type *
 typename(void)
 {
-	int8_t sclass;
+	unsigned sclass;
 	Type *tp;
 	Symbol *sym;
 
@@ -490,7 +502,7 @@ void
 extdecl(void)
 {
 	Type *base, *tp;
-	uint8_t sclass;
+	unsigned sclass;
 	Symbol *sym;
 	extern Symbol *curfun;
 	extern jmp_buf recover;

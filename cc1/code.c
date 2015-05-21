@@ -7,13 +7,13 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-static void emitbin(uint8_t, void *), emitunary(uint8_t, void *),
-            emitcast(uint8_t, void *), emitswitch(uint8_t, void *),
-            emitsym(uint8_t, void *), emitfield(uint8_t, void *),
-            emitsizeof(uint8_t, void *), emitexp(uint8_t, void *),
-            emitsymid(uint8_t, void *), emittext(uint8_t, void *),
-            emitprint(uint8_t, void *), emitfun(uint8_t, void *),
-            emitret(uint8_t, void *), emitdcl(uint8_t, void *);
+static void emitbin(unsigned, void *),
+            emitcast(unsigned, void *), emitswitch(unsigned, void *),
+            emitsym(unsigned, void *), emitfield(unsigned, void *),
+            emitsizeof(unsigned, void *), emitexp(unsigned, void *),
+            emitsymid(unsigned, void *), emittext(unsigned, void *),
+            emitprint(unsigned, void *), emitfun(unsigned, void *),
+            emitret(unsigned, void *), emitdcl(unsigned, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -66,7 +66,7 @@ char *optxt[] = {
 	[OBLOOP] = "\td"
 };
 
-void (*opcode[])(uint8_t, void *) = {
+void (*opcode[])(unsigned, void *) = {
 	[OADD] = emitbin,
 	[OSUB] = emitbin,
 	[OMUL] = emitbin,
@@ -145,9 +145,9 @@ emitnode(Node *np)
 }
 
 void
-emit(uint8_t op, void *arg)
+emit(unsigned op, void *arg)
 {
-	extern uint8_t failure;
+	extern int failure;
 
 	if (failure)
 		return;
@@ -190,7 +190,7 @@ emitconst(Node *np)
 }
 
 static void
-emitsym(uint8_t op, void *arg)
+emitsym(unsigned op, void *arg)
 {
 	Node *np = arg;
 	putchar('\t');
@@ -204,7 +204,7 @@ emittype(Type *tp)
 }
 
 static void
-emitdcl(uint8_t op, void *arg)
+emitdcl(unsigned op, void *arg)
 {
 	Symbol *sym = arg;
 
@@ -215,7 +215,7 @@ emitdcl(uint8_t op, void *arg)
 }
 
 static void
-emitcast(uint8_t op, void *arg)
+emitcast(unsigned op, void *arg)
 {
 	Node *np = arg, *lp = np->left;
 
@@ -224,7 +224,7 @@ emitcast(uint8_t op, void *arg)
 }
 
 static void
-emitbin(uint8_t op, void *arg)
+emitbin(unsigned op, void *arg)
 {
 	Node *np = arg;
 	char *s;
@@ -236,14 +236,14 @@ emitbin(uint8_t op, void *arg)
 }
 
 static void
-emitsizeof(uint8_t op, void *arg)
+emitsizeof(unsigned op, void *arg)
 {
 	Node *np = arg;
 	printf("\t#%c", np->left->type->letter);
 }
 
 static void
-emitexp(uint8_t op, void *arg)
+emitexp(unsigned op, void *arg)
 {
 	Node *np = arg;
 
@@ -253,7 +253,7 @@ emitexp(uint8_t op, void *arg)
 }
 
 static void
-emitprint(uint8_t op, void *arg)
+emitprint(unsigned op, void *arg)
 {
 	Node *np = arg;
 
@@ -264,7 +264,7 @@ emitprint(uint8_t op, void *arg)
 }
 
 static void
-emitfun(uint8_t op, void *arg)
+emitfun(unsigned op, void *arg)
 {
 	Symbol *sym = arg;
 
@@ -273,7 +273,7 @@ emitfun(uint8_t op, void *arg)
 }
 
 static void
-emitret(uint8_t op, void *arg)
+emitret(unsigned op, void *arg)
 {
 	Type *tp = arg;
 
@@ -282,20 +282,20 @@ emitret(uint8_t op, void *arg)
 }
 
 static void
-emittext(uint8_t op, void *arg)
+emittext(unsigned op, void *arg)
 {
 	puts(optxt[op]);
 }
 
 static void
-emitsymid(uint8_t op, void *arg)
+emitsymid(unsigned op, void *arg)
 {
 	Symbol *sym = arg;
 	printf(optxt[op], sym->id);
 }
 
 static void
-emitswitch(uint8_t op, void *arg)
+emitswitch(unsigned op, void *arg)
 {
 	Caselist *lcase = arg;
 
@@ -303,7 +303,7 @@ emitswitch(uint8_t op, void *arg)
 }
 
 void
-emitfield(uint8_t op, void *arg)
+emitfield(unsigned op, void *arg)
 {
 	Node *np = arg;
 
@@ -313,7 +313,7 @@ emitfield(uint8_t op, void *arg)
 }
 
 Node *
-node(uint8_t op, Type *tp, Node *left, Node *right)
+node(unsigned op, Type *tp, Node *left, Node *right)
 {
 	Node *np;
 

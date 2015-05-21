@@ -9,11 +9,11 @@
 
 #define MAXERRNUM 10
 
-extern uint8_t failure;
-static uint8_t nerrors;
+extern int failure;
+static unsigned nerrors;
 
 static void
-warn_helper(int8_t flag, char *fmt, va_list va)
+warn_helper(int flag, char *fmt, va_list va)
 {
 	if (!flag)
 		return;
@@ -30,7 +30,7 @@ warn_helper(int8_t flag, char *fmt, va_list va)
 void
 warn(char *fmt, ...)
 {
-	extern uint8_t warnings;
+	extern int warnings;
 
 	va_list va;
 	va_start(va, fmt);

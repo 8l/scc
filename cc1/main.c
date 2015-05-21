@@ -11,7 +11,7 @@
 
 extern void ikeywords(void), lexfile(char *file);
 
-uint8_t warnings;
+int warnings;
 jmp_buf recover;
 
 static char *output;
@@ -19,7 +19,7 @@ static char *output;
 static void
 clean(void)
 {
-	extern uint8_t failure;
+	extern int failure;
 
 	if (failure && output)
 		remove(output);

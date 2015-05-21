@@ -135,7 +135,7 @@ Symbol *zero = &dummy0, *one = &dummy1;
 
 
 Type *
-ctype(uint8_t type, uint8_t sign, uint8_t size)
+ctype(unsigned type, unsigned sign, unsigned size)
 {
 	switch (type) {
 	case CHAR:
@@ -204,10 +204,11 @@ invalid_type:
 }
 
 Type *
-mktype(Type *tp, uint8_t op, short nelem, void *data)
+mktype(Type *tp, unsigned op, short nelem, void *data)
 {
-	static Type *typetab[NR_TYPE_HASH], **tbl, type;
-	static uint8_t t;
+	static Type *typetab[NR_TYPE_HASH];
+	Type **tbl, type;
+	unsigned t;
 	Type *bp;
 	static char letters[] = {
 		[PTR] = L_POINTER,   [ARY] = L_ARRAY,
@@ -230,7 +231,7 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 	else
 		type.defined = 1;
 
-	t = (op ^ (uint8_t) ((unsigned short) tp >> 3)) & NR_TYPE_HASH-1;
+	t = (op ^ (char) ((unsigned short) tp >> 3)) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
 	for (bp = *tbl; bp; bp = bp->next) {
 		if (eqtype(bp, &type)) {
@@ -249,7 +250,7 @@ mktype(Type *tp, uint8_t op, short nelem, void *data)
 bool
 eqtype(Type *tp1, Type *tp2)
 {
-	uint8_t n;
+	unsigned n;
 	Type **p1, **p2;
 
 	if (tp1 == tp2)
