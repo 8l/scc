@@ -65,7 +65,7 @@ addinput(char *fname)
 	return 1;
 }
 
-void
+static void
 delinput(void)
 {
 	Input *ip = input;
@@ -74,6 +74,8 @@ delinput(void)
 	if (fp) {
 		if (fclose(fp))
 			die("error reading from input file '%s'", ip->fname);
+		if (!ip->next)
+			return;
 		if (ip->fp != stdin)
 			free(ip->fname);
 	}
