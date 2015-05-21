@@ -23,14 +23,15 @@ struct input {
 	struct input *next;
 };
 
-static unsigned lex_ns = NS_IDEN;
-
 unsigned yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
 unsigned short yylen;
+
+static unsigned lex_ns = NS_IDEN;
 static int safe;
 static Input *input;
+static int eof;
 
 bool
 addinput(char *fname)
@@ -71,13 +72,14 @@ delinput(void)
 	Input *ip = input;
 	FILE *fp = ip->fp;
 
+	if (!ip->next)
+		eof = 1;
 	if (fp) {
 		if (fclose(fp))
 			die("error reading from input file '%s'", ip->fname);
-		if (!ip->next)
+		if (eof)
 			return;
-		if (ip->fp != stdin)
-			free(ip->fname);
+		free(ip->fname);
 	}
 	input = ip->next;
 	free(ip->line);
@@ -113,22 +115,30 @@ static int
 readchar(void)
 {
 	int c;
-	FILE *fp = input->fp;
-
+	FILE *fp;
+	
 repeat:
+	while (feof(input->fp) && !eof)
+		delinput();
+	if (eof)
+		return EOF;
+	fp = input->fp;
+
 	if ((c = getc(fp)) == '\\') {
 		if ((c = getc(fp)) == '\n')
 			goto repeat;
 		ungetc(c, fp);
 		c = '\\';
 	}
+	if (c == '\n' && ++input->nline == 0)
+		die("input file '%s' too long", getfname());
 	return c;
 }
 
 static void
 readline(void)
 {
-	static int comment, commentline;
+	int comment = 0, commentline = 0;
 	char *bp, *lim;
 	int c;
 
@@ -156,8 +166,8 @@ readline(void)
 		if (c == '\n')
 			break;
 		if (bp == lim)
-			die("line %d too big in file '%s'",
-			    input->nline, input->fname);
+			die("line %u too big in file '%s'",
+			    getfline(), getfname());
 		if (c == '/') {
 			if ((c = readchar()) == '*') {
 				comment = 1;
@@ -171,40 +181,28 @@ readline(void)
 		}
 		*bp++ = c;
 	}
-	ungetc(c, input->fp);
 	*bp = '\0';
 }
 
 static bool
 fill(void)
 {
-	int c;
 	char *p;
-	FILE *fp;
+	int c;
 
 repeat:
-	if (!input)
+	if (eof)
 		return 0;
 	if (input->begin && *input->begin != '\0')
 		return 1;
-
-	fp = input->fp;
 	if (!input->line)
 		input->line = xmalloc(INPUTSIZ);
-
-	while ((c = getc(fp)) != EOF && (c == '\n')) {
-		if (++input->nline == 0)
-			die("input file '%s' too long", input->fname);
-	}
-	if (c == EOF) {
-		delinput();
-		goto repeat;
-	}
-	ungetc(c, fp);
 	readline();
+	if (*input->line == '\0')
+		goto repeat;
 	if ((p = preprocessor(input->line)) == NULL)
 		goto repeat;
-	input->begin = input->p = p;
+	input->p = input->begin = p;
 	return 1;
 }
 
@@ -377,8 +375,8 @@ repeat:
 		input->begin = input->p;
 		if (isspace((c = *input->p))) {
 			++input->p;
-		} else if (c == '\0') {
-			fill();
+		} else if (c == '\0' && fill()) {
+			continue;
 		} else if (c == '"') {
 			goto repeat;
 		} else {
@@ -513,12 +511,15 @@ next(void)
 {
 	char c;
 
-	if (!fill())
+repeat:
+	if (!fill()) {
+		strcpy(yytext, "<EOF>");
 		return yytoken = EOFTOK;
-
+	}
 	while (isspace(*input->begin))
 		++input->begin;
-	c = *(input->p = input->begin);
+	if ((c = *(input->p = input->begin)) == '\0')
+		goto repeat;
 
 	if (isalpha(c) || c == '_') {
 		yytoken = iden();
@@ -553,16 +554,13 @@ ahead(void)
 {
 	int c;
 
-	/* FIX: It will break all the error messages */
 repeat:
 	if (!fill())
 		return EOFTOK;
 	while (isspace(c = *input->begin))
 		++input->begin;
-	if (c == '\0') {
-		fill();
+	if (c == '\0')
 		goto repeat;
-	}
 	return c;
 }
 

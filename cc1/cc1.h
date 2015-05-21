@@ -272,7 +272,6 @@ extern unsigned short getfline(void);
 extern void setfname(char *name);
 extern void setfline(unsigned short line);
 extern bool addinput(char *fname);
-extern void delinput(void);
 extern void setnamespace(int ns);
 extern void setsafe(int type);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
