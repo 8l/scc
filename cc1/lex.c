@@ -29,9 +29,8 @@ char yytext[IDENTSIZ + 1];
 unsigned short yylen;
 
 static unsigned lex_ns = NS_IDEN;
-static int safe;
+static int safe, eof, incomment;
 static Input *input;
-static int eof;
 
 bool
 addinput(char *fname)
@@ -112,7 +111,7 @@ getfline(void)
 	return input->nline;
 }
 
-static int
+static char
 readchar(void)
 {
 	int c;
@@ -121,8 +120,11 @@ readchar(void)
 repeat:
 	while (feof(input->fp) && !eof)
 		delinput();
-	if (eof)
-		return EOF;
+	if (eof) {
+		if (incomment)
+			error("unterminated comment");
+		return '\0';
+	}
 	fp = input->fp;
 
 	if ((c = getc(fp)) == '\\') {
@@ -133,57 +135,55 @@ repeat:
 	} else if (c == EOF) {
 		goto repeat;
 	} else if (c == '\n' && ++input->nline == 0) {
-		die("input file '%s' too long", getfname());
+		die("error:input file '%s' too long", getfname());
 	}
 	return c;
 }
 
 static void
+comment(char c)
+{
+	/* TODO: Ensure that incomment == 0 after a recovery */
+	incomment = 1;
+	if (c == '*') {
+		for (;;) {
+			while (readchar() !=  '*')
+				/* nothing */;
+			if (readchar() == '/')
+				break;
+		}
+	} else {
+		while (readchar() != '\n')
+			/* nothing */;
+	}
+	incomment = 0;
+}
+
+static void
 readline(void)
 {
-	int comment = 0, commentline = 0;
 	char *bp, *lim;
-	int c;
+	char c, peekc = 0;
 
-	bp = input->line;
-	lim = bp + INPUTSIZ-1;
-
-	for (;;) {
-		c = readchar();
-	nextchar:
-		if (c == EOF)
+	lim = input->line + INPUTSIZ;
+	for (bp = input->line; bp != lim; *bp++ = c) {
+		c = (peekc) ? peekc : readchar();
+		peekc = 0;
+		if (c == '\n' || c == '\0')
 			break;
-		if (comment) {
-			if (c != '*')
-				continue;
-			if ((c = readchar()) != '/')
-				goto nextchar;
-			comment = 0;
-			c = ' ';
-		} else if (commentline) {
-			if (c != '\n')
-				continue;
-			commentline = 0;
+		if (c != '/')
+			continue;
+		if ((c = readchar()) != '*' && c != '/') {
+			peekc = c;
+			c = '/';
+		} else {
+			comment(c);
 			c = ' ';
 		}
-		if (c == '\n')
-			break;
-		if (bp == lim)
-			die("line %u too big in file '%s'",
-			    getfline(), getfname());
-		if (c == '/') {
-			if ((c = readchar()) == '*') {
-				comment = 1;
-				continue;
-			} else if (c == '/') {
-				commentline = 1;
-				continue;
-			}
-			*bp++ = '/';
-			goto nextchar;
-		}
-		*bp++ = c;
 	}
+
+	if (bp == lim)
+		error("line %u too big in file '%s'", getfline(), getfname());
 	*bp = '\0';
 }
 
