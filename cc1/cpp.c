@@ -281,7 +281,7 @@ preprocessor(char *p)
 	for (++p; isspace(*p); ++p)
 		/* nothing */;
 	if (*p == '\0')
-		return NULL;
+		return p;
 	for (q = p; isalpha(*q); ++q)
 		/* nothing */;
 	if ((n = q - p) == 0)
@@ -296,7 +296,7 @@ preprocessor(char *p)
 			/* nothing */;
 		if (*q != '\0')
 			error("trailing characters after preprocessor directive");
-		return NULL;
+		return q;
 	}
 incorrect:
 	error("incorrect preprocessor directive");

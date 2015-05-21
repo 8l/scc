@@ -59,7 +59,8 @@ addinput(char *fname)
 	ip = xmalloc(sizeof(Input));
 	ip->fname = fname;
 	ip->next = input;
-	ip->line = NULL;
+	ip->begin = ip->p = ip->line = xmalloc(INPUTSIZ);
+	*ip->begin = '\0';
 	ip->nline = nline;
 	ip->fp = fp;
 	input = ip;
@@ -116,7 +117,7 @@ readchar(void)
 {
 	int c;
 	FILE *fp;
-	
+
 repeat:
 	while (feof(input->fp) && !eof)
 		delinput();
@@ -129,9 +130,11 @@ repeat:
 			goto repeat;
 		ungetc(c, fp);
 		c = '\\';
-	}
-	if (c == '\n' && ++input->nline == 0)
+	} else if (c == EOF) {
+		goto repeat;
+	} else if (c == '\n' && ++input->nline == 0) {
 		die("input file '%s' too long", getfname());
+	}
 	return c;
 }
 
@@ -185,25 +188,17 @@ readline(void)
 }
 
 static bool
-fill(void)
+moreinput(void)
 {
 	char *p;
-	int c;
 
 repeat:
-	if (eof)
-		return 0;
-	if (input->begin && *input->begin != '\0')
-		return 1;
-	if (!input->line)
-		input->line = xmalloc(INPUTSIZ);
+	*(p = input->line) = '\0';
 	readline();
-	if (*input->line == '\0')
-		goto repeat;
-	if ((p = preprocessor(input->line)) == NULL)
+	if ((p = preprocessor(p)) == '\0')
 		goto repeat;
 	input->p = input->begin = p;
-	return 1;
+	return *p != '\0';
 }
 
 static void
@@ -369,21 +364,10 @@ repeat:
 
 	if (c == '\0')
 		error("missing terminating '\"' character");
-	++input->p;
+	input->begin = input->p + 1;
 
-	for (;;) {
-		input->begin = input->p;
-		if (isspace((c = *input->p))) {
-			++input->p;
-		} else if (c == '\0' && fill()) {
-			continue;
-		} else if (c == '"') {
-			goto repeat;
-		} else {
-			break;
-		}
-	}
-
+	if (ahead() == '"')
+		goto repeat;
 	*bp = '\0';
 	sym = newsym(NS_IDEN);
 	sym->u.s = xstrdup(buf);
@@ -506,32 +490,44 @@ setnamespace(int ns)
 	lex_ns = ns;
 }
 
+static void
+skipspaces(void)
+{
+	char *p;
+
+repeat:
+	for (p = input->begin; isspace(*p); ++p)
+		/* nothing */;
+	if (*p == '\0') {
+		if (!moreinput())
+			return;
+		goto repeat;
+	}
+	input->begin = input->p = p;
+}
+
 unsigned
 next(void)
 {
 	char c;
 
-repeat:
-	if (!fill()) {
+	skipspaces();
+	if (eof) {
 		strcpy(yytext, "<EOF>");
 		return yytoken = EOFTOK;
 	}
-	while (isspace(*input->begin))
-		++input->begin;
-	if ((c = *(input->p = input->begin)) == '\0')
-		goto repeat;
 
-	if (isalpha(c) || c == '_') {
+	c = *input->begin;
+	if (isalpha(c) || c == '_')
 		yytoken = iden();
-	} else if (isdigit(c)) {
+	else if (isdigit(c))
 		yytoken = number();
-	} else if (c == '"') {
+	else if (c == '"')
 		yytoken = string();
-	} else if (c == '\'') {
+	else if (c == '\'')
 		yytoken = character();
-	} else {
+	else
 		yytoken = operator();
-	}
 	lex_ns = NS_IDEN;
 	return yytoken;
 }
@@ -552,16 +548,8 @@ expect(unsigned tok)
 char
 ahead(void)
 {
-	int c;
-
-repeat:
-	if (!fill())
-		return EOFTOK;
-	while (isspace(c = *input->begin))
-		++input->begin;
-	if (c == '\0')
-		goto repeat;
-	return c;
+	skipspaces();
+	return *input->begin;
 }
 
 void
@@ -596,7 +584,7 @@ discard(void)
 				goto jump;
 			break;
 		}
-		if (!fill())
+		if (!moreinput())
 			exit(-1);
 	}
 jump:
