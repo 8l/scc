@@ -19,19 +19,18 @@
 static char *
 parseargs(char *s, char *args[NR_MACROARG], int *nargs)
 {
-	unsigned n ;
+	int n;
 	size_t len;
 	char *endp, c;
 
-	if (*s != '(') {
-		*nargs = -1;
-		return s;
-	}
-	if (*++s == ')') {
-		*nargs = 0;
-		return s+1;
-	}
-
+	n = -1;
+	if (*s != '(')
+		goto set_nargs;
+	n = 0;
+	while (isspace(*s++))
+		/* nothing */;
+	if (*s == ')')
+		goto set_nargs;
 
 	for (n = 1; n <= NR_MACROARG; ++n) {
 		while (isspace(*s))
@@ -56,6 +55,8 @@ parseargs(char *s, char *args[NR_MACROARG], int *nargs)
 	}
 	if (n > NR_MACROARG)
 		error("too much parameters in macro");
+
+set_nargs:
 	*nargs = n;
 	return s;
 }
