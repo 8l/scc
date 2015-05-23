@@ -13,8 +13,16 @@
 
 static char *argp;
 static unsigned arglen;
-static unsigned numif;
+static unsigned numif, iffalse;
 static Symbol *lastmacro;
+static void
+cleanup(char *s)
+{
+	while (isspace(*s))
+		++s;
+	if (*s != '\0')
+		error("trailing characters after preprocessor directive");
+}
 
 static void
 nextcpp(void)
@@ -264,7 +272,7 @@ mkdefine(char *s, Symbol *sym)
 	return s;
 }
 
-static char *
+static bool
 define(char *s)
 {
 	char *t;
@@ -291,7 +299,9 @@ define(char *s)
 		/* nothing */;
 	for (t = s + strlen(s); isspace(*--t); *t = '\0')
 		/* nothing */;
-	return mkdefine(s, sym);
+	s = mkdefine(s, sym);
+	cleanup(s);
+	return 1;
 
 too_long:
 	error("macro identifier too long");
@@ -299,7 +309,7 @@ bad_define:
 	error("macro names must be identifiers");
 }
 
-static char *
+static bool
 include(char *s)
 {
 	char fname[FILENAME_MAX], delim, c, *p;
@@ -329,7 +339,8 @@ include(char *s)
 		abort();
 	}
 
-	return p+1;
+	cleanup(p+1);
+	return 1;
 
 not_found:
 	error("included file '%s' not found", fname);
@@ -339,7 +350,7 @@ bad_include:
 	error("#include expects \"FILENAME\" or <FILENAME>");
 }
 
-static char *
+static bool
 line(char *s)
 {
 	char *p, *q;
@@ -364,8 +375,10 @@ line(char *s)
 		p = q+1;
 		/* passthrough */
 	case '\0':
+		/* TODO: check this atoi */
 		setfline(atoi(s)-1);
-		return p;
+		cleanup(p);
+		return 1;
 	default:
 		goto bad_file;
 	}
@@ -376,28 +389,25 @@ bad_line:
 	error("first parameter of #line is not a positive integer");
 }
 
-static char *
+static bool
 pragma(char *s)
 {
-	while (*s)
-		++s;
-	return s;
+	cleanup(s);
+	return 1;
 }
 
-static char *
+static bool
 usererr(char *s)
 {
-	fprintf(stderr, "%s:%u:error: #error %s\n", getfname(), getfline(), s);
-	exit(-1);
+	error("#error %s", s);
 }
 
-static char *
+static bool
 ifclause(char *s, int isdef)
 {
 	unsigned curif, len;
 	char *endp;
 	Symbol *sym;
-
 
 	while (isspace(*s))
 		++s;
@@ -407,51 +417,54 @@ ifclause(char *s, int isdef)
 		error("...");
 	memcpy(yytext, s, len);
 	yytext[len] = '\0';
-	while (isspace(*endp))
-		++endp;
-	if (*endp != '\0')
-		error("trailing characters after preprocessor directive");
-
+	cleanup(endp);
 	curif = numif++;
-	sym = lookup(NS_CPP);
-	if ((sym->flags & ISDEFINED) != 0 == isdef)
-		return endp;
+
+	if (iffalse != 0) {
+		sym = lookup(NS_CPP);
+		if ((sym->flags & ISDEFINED) != 0 == isdef)
+			return 1;
+	}
+
+	++iffalse;
 	while (curif != numif) {
 		if (!moreinput())
 			error("found EOF while ...");
 	}
-	return "";
+	--iffalse;
+
+	return 1;
 }
 
-static char *
+static bool
 ifdef(char *s)
 {
 	return ifclause(s, 1);
 }
 
-static char *
+static bool
 ifndef(char *s)
 {
 	return ifclause(s, 0);
 }
 
-static char *
+static bool
 endif(char *s)
 {
 	if (numif == 0)
 		error("#endif without #if");
 	--numif;
-	return NULL;
+	return iffalse == 0;
 }
 
-char *
+bool
 preprocessor(char *p)
 {
 	char *q;
 	unsigned short n;
 	static struct {
 		char *name;
-		char *(*fun)(char *);
+		bool (*fun)(char *);
 	} *bp, cmds[] =  {
 		"define", define,
 		"include", include,
@@ -467,11 +480,11 @@ preprocessor(char *p)
 	while (isspace(*p))
 		++p;
 	if (*p != '#')
-		return p;
+		return 0;
 	for (++p; isspace(*p); ++p)
 		/* nothing */;
 	if (*p == '\0')
-		return p;
+		return 1;
 	for (q = p; isalpha(*q); ++q)
 		/* nothing */;
 	if ((n = q - p) == 0)
@@ -481,13 +494,7 @@ preprocessor(char *p)
 	for (bp = cmds; bp->name; ++bp) {
 		if (strncmp(bp->name, p, n))
 			continue;
-		if ((q = (*bp->fun)(q)) == NULL)
-			return NULL;
-		while (isspace(*q))
-			++q;
-		if (*q != '\0')
-			error("trailing characters after preprocessor directive");
-		return q;
+		return (*bp->fun)(q);
 	}
 incorrect:
 	error("incorrect preprocessor directive");

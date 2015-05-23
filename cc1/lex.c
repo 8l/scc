@@ -202,9 +202,7 @@ repeat:
 
 	*(p = input->line) = '\0';
 	readline();
-	if ((p = preprocessor(p)) == NULL)
-		return 1;
-	if (*p == '\0')
+	if (preprocessor(p))
 		goto repeat;
 	input->p = input->begin = p;
 	return 1;

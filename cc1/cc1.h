@@ -290,7 +290,7 @@ extern void freetree(Node *np);
 extern Node *expr(void), *negate(Node *np);
 
 /* cpp.c */
-extern char *preprocessor(char *s);
+extern bool preprocessor(char *s);
 extern bool expand(Symbol *sym);
 
 /*
