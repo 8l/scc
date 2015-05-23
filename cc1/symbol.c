@@ -53,7 +53,8 @@ popctx(void)
 		} else if (sym->ns == NS_TAG) {
 			sym->type->defined = 0;
 		}
-		htab[hash(sym->name)] = sym->hash;
+		if (sym->hash)
+			htab[hash(sym->name)] = sym->hash;
 		free(sym->name);
 		free(sym);
 	}
