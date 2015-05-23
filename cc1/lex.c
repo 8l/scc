@@ -117,7 +117,7 @@ readchar(void)
 	FILE *fp;
 
 repeat:
-	while (feof(input->fp) && !eof)
+	while (!input->fp || (feof(input->fp) && !eof))
 		delinput();
 	if (eof) {
 		if (incomment)
@@ -192,12 +192,20 @@ moreinput(void)
 	char *p;
 
 repeat:
+	if (eof)
+		return 0;
+	while (*input->begin == '\0' && !input->fp) {
+		delinput();
+		if (*input->begin)
+			return 1;
+	}
+
 	*(p = input->line) = '\0';
 	readline();
-	if ((p = preprocessor(p)) == '\0')
+	if (*(p = preprocessor(p)) == '\0')
 		goto repeat;
 	input->p = input->begin = p;
-	return *p != '\0';
+	return 1;
 }
 
 static void
