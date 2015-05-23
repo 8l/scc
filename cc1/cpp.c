@@ -418,20 +418,19 @@ ifclause(char *s, int isdef)
 	memcpy(yytext, s, len);
 	yytext[len] = '\0';
 	cleanup(endp);
-	curif = numif++;
+	++numif;
 
-	if (iffalse != 0) {
+	if (iffalse == 0) {
 		sym = lookup(NS_CPP);
 		if ((sym->flags & ISDEFINED) != 0 == isdef)
 			return 1;
 	}
 
-	++iffalse;
-	while (curif != numif) {
+	curif = iffalse++;
+	while (curif != iffalse) {
 		if (!moreinput())
 			error("found EOF while ...");
 	}
-	--iffalse;
 
 	return 1;
 }
@@ -451,10 +450,32 @@ ifndef(char *s)
 static bool
 endif(char *s)
 {
+	cleanup(s);
 	if (numif == 0)
 		error("#endif without #if");
 	--numif;
 	return iffalse == 0;
+}
+
+static bool
+elseclause(char *s)
+{
+	unsigned curif;
+
+	cleanup(s);
+	if (numif == 0)
+		error("#else without #if");
+
+	if (iffalse == 0) {
+		curif = iffalse++;
+		while (curif != iffalse) {
+			if (!moreinput())
+				error("found EOF while ...");
+		}
+	}
+	--iffalse;
+
+	return iffalse != 0;
 }
 
 bool
@@ -471,6 +492,7 @@ preprocessor(char *p)
 		"ifdef", ifdef,
 		"ifndef", ifndef,
 		"endif", endif,
+		"else", elseclause,
 		"line", line,
 		"pragma", pragma,
 		"error", usererr,
