@@ -200,7 +200,8 @@ set_nargs:
 static char *
 copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 {
-	unsigned ncopy, n;
+	unsigned ncopy;
+	int n;
 	size_t len;
 	char arroba[6], *par, *endp, **bp;
 
@@ -222,7 +223,7 @@ copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 			sprintf(arroba, "@%02d@", n);
 			break;
 		}
-		if (n == nargs)
+		if (n == nargs || nargs == -1)
 			par = s, ncopy = len;
 		else
 			par = arroba, ncopy = 4;
