@@ -43,7 +43,7 @@ popctx(void)
 
 	for (sym = head; sym && sym->ctx > curctx; sym = next) {
 		next = sym->next;
-		if  (sym->ns == NS_LABEL && curctx != 0) {
+		if  (sym->ns == NS_CPP || sym->ns == NS_LABEL && curctx != 0) {
 			hp->next = sym;
 			hp = sym;
 			continue;
