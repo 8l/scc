@@ -11,7 +11,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-#define INPUTSIZ 120
 
 typedef struct input Input;
 
@@ -32,7 +31,7 @@ static unsigned lex_ns = NS_IDEN;
 static int safe, eof, incomment;
 static Input *input;
 
-bool
+char *
 addinput(char *fname)
 {
 	Input *ip;
@@ -44,7 +43,7 @@ addinput(char *fname)
 
 	if (fname) {
 		if ((fp = fopen(fname, "r")) == NULL)
-			return 0;
+			return NULL;
 		fname = xstrdup(fname);
 	} else if (!input) {
 		fp = stdin;
@@ -63,7 +62,7 @@ addinput(char *fname)
 	ip->nline = nline;
 	ip->fp = fp;
 	input = ip;
-	return 1;
+	return input->line;
 }
 
 static void
@@ -386,6 +385,8 @@ iden(void)
 	input->p = p;
 	tok2str();
 	yylval.sym = lookup(lex_ns);
+	if (yylval.sym->ns == NS_CPP && expand(yylval.sym))
+		return 0;
 	if (yylval.sym->token != IDEN)
 		yylval.token = yylval.sym->u.token;
 	return yylval.sym->token;
@@ -511,6 +512,7 @@ next(void)
 {
 	char c;
 
+repeat:
 	skipspaces();
 	if (eof) {
 		strcpy(yytext, "<EOF>");
@@ -528,6 +530,10 @@ next(void)
 		yytoken = character();
 	else
 		yytoken = operator();
+
+	if (!yytoken)
+		goto repeat;
+
 	lex_ns = NS_IDEN;
 	return yytoken;
 }

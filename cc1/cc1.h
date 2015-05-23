@@ -1,4 +1,5 @@
 
+#define INPUTSIZ 120
 
 /*
  * Definition of structures
@@ -271,7 +272,7 @@ extern char *getfname(void);
 extern unsigned short getfline(void);
 extern void setfname(char *name);
 extern void setfline(unsigned short line);
-extern bool addinput(char *fname);
+extern char *addinput(char *fname);
 extern void setnamespace(int ns);
 extern void setsafe(int type);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
@@ -289,6 +290,7 @@ extern Node *expr(void), *negate(Node *np);
 
 /* cpp.c */
 extern char *preprocessor(char *s);
+extern bool expand(Symbol *sym);
 
 /*
  * Definition of global variables
@@ -296,6 +298,7 @@ extern char *preprocessor(char *s);
 extern struct yystype yylval;
 extern char yytext[];
 extern unsigned yytoken;
+extern unsigned short yylen;
 
 extern Type *voidtype, *pvoidtype, *booltype,	
             *uchartype,   *chartype,

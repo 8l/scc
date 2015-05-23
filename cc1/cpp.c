@@ -11,6 +11,138 @@
 
 /* TODO: preprocessor error must not rise recover */
 
+static char *argp;
+static unsigned arglen;
+static Symbol *lastmacro;
+
+static void
+nextcpp(void)
+{
+	next();
+	if (yytoken == EOFTOK) {
+		error("unterminated argument list invoking macro \"%s\"",
+		      lastmacro->name);
+	}
+	if (yylen + 1 > arglen) {
+		error("argument overflow invoking macro \"%s\"",
+		      lastmacro->name);
+	}
+	memcpy(argp, yytext, yylen);
+	argp += yylen;
+	*argp++ = ' ';
+	arglen -= yylen + 1;
+}
+
+static void
+paren(void)
+{
+	for (;;) {
+		nextcpp();
+		switch (yytoken) {
+		case ')':
+			return;
+		case '(':
+			paren();
+			break;
+		}
+	}
+}
+
+static void
+parameter(void)
+{
+	for (;;) {
+		nextcpp();
+		switch (yytoken) {
+		case ')':
+		case ',':
+			argp -= 2;
+			*argp++ = '\0';
+			return;
+		case '(':
+			paren();
+			break;
+		}
+	}
+}
+
+static bool
+parsepars(char *buffer, char **listp, int nargs)
+{
+	int n;
+
+	if (nargs == -1)
+		return 1;
+
+	if (ahead() != '(')
+		return 0;
+	next();
+
+	n = 0;
+	argp = buffer;
+	arglen = INPUTSIZ;
+	if (ahead() != ')') {
+		do {
+			*listp++ = argp;
+			parameter();
+		} while (++n < NR_MACROARG && yytoken == ',');
+	}
+
+	if (n == NR_MACROARG)
+		error("too much parameters in macro \"%s\"", lastmacro->name);
+	if (n != nargs) {
+		error("macro \"%s\" passed %d arguments, but it takes %d",
+		      lastmacro->name, n, nargs);
+	}
+	return 1;
+}
+
+/*
+ * sym->u.s is a string with the following format:
+ * 	dd#string
+ * where dd is the number of arguments of the macro
+ * (-1 if it is a macro without arguments), and string
+ * is the macro definition, where @dd@ indicates the
+ * parameter number dd
+ */
+bool
+expand(Symbol *sym)
+{
+	unsigned len;
+	char *arglist[NR_MACROARG], buffer[INPUTSIZ];
+	char c, *bp, *arg, *s = sym->u.s;
+
+	lastmacro = sym;
+	if (!parsepars(buffer, arglist, atoi(s)))
+		return 0;
+
+	bp = addinput(NULL);
+	len = INPUTSIZ-1;
+	for (s += 3; c = *s; ++s) {
+		if (c != '@') {
+			if (len-- == 0)
+				goto expansion_too_long;
+			*bp++ = c;
+		} else {
+			unsigned size;
+
+			arg = arglist[atoi(++s)];
+			size = strlen(arg);
+			if (size > len)
+				goto expansion_too_long;
+			memcpy(bp, arg, size);
+			bp += size;
+			len -= size;
+			s += 2;
+		}
+	}
+	*bp = '\0';
+	return 1;
+
+expansion_too_long:
+	error("expansion of macro \"%s\" is too long", lastmacro->name);
+}
+
 /*
  * Parse an argument list (par0, par1, ...) and creates
  * an array with pointers to all the arguments in the
