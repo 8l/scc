@@ -186,7 +186,7 @@ readline(void)
 	*bp = '\0';
 }
 
-static bool
+bool
 moreinput(void)
 {
 	char *p;
@@ -202,7 +202,9 @@ repeat:
 
 	*(p = input->line) = '\0';
 	readline();
-	if (*(p = preprocessor(p)) == '\0')
+	if ((p = preprocessor(p)) == NULL)
+		return 1;
+	if (*p == '\0')
 		goto repeat;
 	input->p = input->begin = p;
 	return 1;

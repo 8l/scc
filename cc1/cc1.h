@@ -266,6 +266,7 @@ extern void extdecl(void), decl(void);
 /* lex.c */
 extern char ahead(void);
 extern unsigned next(void);
+extern bool moreinput(void);
 extern void expect(unsigned tok);
 extern void discard(void);
 extern char *getfname(void);

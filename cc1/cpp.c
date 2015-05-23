@@ -13,6 +13,7 @@
 
 static char *argp;
 static unsigned arglen;
+static unsigned numif;
 static Symbol *lastmacro;
 
 static void
@@ -266,7 +267,6 @@ mkdefine(char *s, Symbol *sym)
 static char *
 define(char *s)
 {
-	extern char yytext[];
 	char *t;
 	size_t len;
 	Symbol *sym;
@@ -391,6 +391,59 @@ usererr(char *s)
 	exit(-1);
 }
 
+static char *
+ifclause(char *s, int isdef)
+{
+	unsigned curif, len;
+	char *endp;
+	Symbol *sym;
+
+
+	while (isspace(*s))
+		++s;
+	for (endp = s; isalnum(*endp) || *endp == '_'; ++endp)
+		/* nothing */;
+	if ((len = endp - s) > IDENTSIZ)
+		error("...");
+	memcpy(yytext, s, len);
+	yytext[len] = '\0';
+	while (isspace(*endp))
+		++endp;
+	if (*endp != '\0')
+		error("trailing characters after preprocessor directive");
+
+	curif = numif++;
+	sym = lookup(NS_CPP);
+	if ((sym->flags & ISDEFINED) != 0 == isdef)
+		return endp;
+	while (curif != numif) {
+		if (!moreinput())
+			error("found EOF while ...");
+	}
+	return "";
+}
+
+static char *
+ifdef(char *s)
+{
+	return ifclause(s, 1);
+}
+
+static char *
+ifndef(char *s)
+{
+	return ifclause(s, 0);
+}
+
+static char *
+endif(char *s)
+{
+	if (numif == 0)
+		error("#endif without #if");
+	--numif;
+	return NULL;
+}
+
 char *
 preprocessor(char *p)
 {
@@ -402,6 +455,9 @@ preprocessor(char *p)
 	} *bp, cmds[] =  {
 		"define", define,
 		"include", include,
+		"ifdef", ifdef,
+		"ifndef", ifndef,
+		"endif", endif,
 		"line", line,
 		"pragma", pragma,
 		"error", usererr,
@@ -425,9 +481,10 @@ preprocessor(char *p)
 	for (bp = cmds; bp->name; ++bp) {
 		if (strncmp(bp->name, p, n))
 			continue;
-		q = (*bp->fun)(q);
-		while (isspace(*q++))
-			/* nothing */;
+		if ((q = (*bp->fun)(q)) == NULL)
+			return NULL;
+		while (isspace(*q))
+			++q;
 		if (*q != '\0')
 			error("trailing characters after preprocessor directive");
 		return q;
