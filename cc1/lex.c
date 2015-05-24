@@ -202,7 +202,9 @@ repeat:
 
 	*(p = input->line) = '\0';
 	readline();
-	if (preprocessor(p))
+	while (isspace(*p))
+		++p;
+	if (*p == '\0' || preprocessor(p))
 		goto repeat;
 	input->p = input->begin = p;
 	return 1;
