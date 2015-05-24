@@ -1,6 +1,7 @@
 
 #include <ctype.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,48 @@ static char *argp;
 static unsigned arglen;
 static unsigned numif, iffalse;
 static Symbol *lastmacro;
+
+static bool
+iden(char **str)
+{
+	char c, *bp, *s = *str;
+
+	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = c) {
+		if ((c = *s) == '\0' || !isalnum(c) && c != '_')
+			break;
+		++s;
+	}
+	if (bp == &yytext[IDENTSIZ])
+		error("identifier too long");
+	if (bp - yytext == 0)
+		return 0;
+	*bp = '\0';
+
+	while (isspace(*s))
+		++s;
+
+	*str = s;
+	return 1;
+}
+
+static bool
+string(char **input, char **str, char delim)
+{
+	char c, *s = *input;
+
+	if (str)
+		*str = s;
+
+	while ((c = *s) && c != delim)
+		++s;
+	if (c == '\0')
+		return 0;
+	*s++ = '\0';
+	*input = s;
+
+	return 1;
+}
+
 static void
 cleanup(char *s)
 {
@@ -276,17 +319,11 @@ static bool
 define(char *s)
 {
 	char *t;
-	size_t len;
 	Symbol *sym;
 
-	if (!isalnum(*s) && *s != '_')
-		goto bad_define;
-	for (t = s; isalnum(*t) || *t == '_'; ++t)
-		/* nothing */;
-	if ((len = t - s) > IDENTSIZ)
-		goto too_long;
-	strncpy(yytext, s, len);
-	yytext[len] = '\0';
+	if (!iden(&s))
+		error("macro names must be identifiers");
+
 	sym = lookup(NS_CPP);
 	if ((sym->flags & ISDEFINED) && sym->ns == NS_CPP) {
 		warn("'%s' redefined", yytext);
@@ -295,25 +332,16 @@ define(char *s)
 	sym->flags |= ISDEFINED;
 	sym->ns = NS_CPP;
 
-	for (s = t; isspace(*s); ++s)
+	for (t = s + strlen(s) + 1; isspace(*--t); *t = '\0')
 		/* nothing */;
-	for (t = s + strlen(s); isspace(*--t); *t = '\0')
-		/* nothing */;
-	s = mkdefine(s, sym);
-	cleanup(s);
+	mkdefine(s, sym);
 	return 1;
-
-too_long:
-	error("macro identifier too long");
-bad_define:
-	error("macro names must be identifiers");
 }
 
 static bool
 include(char *s)
 {
-	char fname[FILENAME_MAX], delim, c, *p;
-	size_t len;
+	char delim, c, *p, *file;
 
 	if ((c = *s++) == '>')
 		delim = '>';
@@ -322,30 +350,15 @@ include(char *s)
 	else
 		goto bad_include;
 
-	for (p = s; (c = *p) && c != delim; ++p)
-		/* nothing */;
-	if (c == '\0')
+	if (!string(&s, &file, delim))
 		goto bad_include;
-
-	len = p - s;
-	if (delim == '"') {
-		if (len >= FILENAME_MAX)
-			goto too_long;
-		strncpy(fname, s, len);
-		fname[len] = '\0';
-		if (!addinput(fname))
-			goto not_found;
-	} else {
-		abort();
-	}
-
-	cleanup(p+1);
-	return 1;
+	cleanup(s);
+	if (delim == '"' && addinput(file))
+		return 1;
+	abort();
 
 not_found:
-	error("included file '%s' not found", fname);
-too_long:
-	error("file name in include too long");
+	error("included file '%s' not found", s);
 bad_include:
 	error("#include expects \"FILENAME\" or <FILENAME>");
 }
@@ -353,46 +366,36 @@ bad_include:
 static bool
 line(char *s)
 {
-	char *p, *q;
+	char *file;
+	long n;
 
-	if (!isdigit(*s))
-		goto bad_line;
-	for (p = s; isdigit(*p); ++p)
-		/* nothing */;
-	switch (*p) {
+	if ((n = strtol(s, &s, 10)) <= 0 || n > USHRT_MAX)
+		error("first parameter of #line is not a positive integer");
+
+	switch (*s) {
 	case ' ':
 	case '\t':
-		while (isspace(*p))
-			++p;
-		if (*p != '"')
-			goto bad_line;
-		for (q = p+1; *q && *q != '"'; ++q)
-			/* nothing */;
-		if (*q == '\0')
-			goto bad_line;
-		*q = '\0';
-		setfname(p);
-		p = q+1;
-		/* passthrough */
+		while (isspace(*s))
+			++s;
+		if (*s == '\0')
+			goto end_string;
+		if (*s++ != '"' && !string(&s, &file, '"'))
+			goto bad_file;
+		setfname(file);
+		cleanup(s);
 	case '\0':
-		/* TODO: check this atoi */
-		setfline(atoi(s)-1);
-		cleanup(p);
+	end_string:
+		setfline(n-1);
 		return 1;
 	default:
-		goto bad_file;
+	bad_file:
+		error("second parameter of #line is not a valid filename");
 	}
-
-bad_file:
-	error("second parameter of #line is not a valid filename");
-bad_line:
-	error("first parameter of #line is not a positive integer");
 }
 
 static bool
 pragma(char *s)
 {
-	cleanup(s);
 	return 1;
 }
 
@@ -405,21 +408,15 @@ usererr(char *s)
 static bool
 ifclause(char *s, int isdef)
 {
-	unsigned curif, len;
+	unsigned curif;
 	char *endp;
 	Symbol *sym;
 
-	while (isspace(*s))
-		++s;
-	for (endp = s; isalnum(*endp) || *endp == '_'; ++endp)
-		/* nothing */;
-	if ((len = endp - s) > IDENTSIZ)
+	if (iden(&s))
 		error("...");
-	memcpy(yytext, s, len);
-	yytext[len] = '\0';
-	cleanup(endp);
-	++numif;
+	cleanup(s);
 
+	++numif;
 	if (iffalse == 0) {
 		sym = lookup(NS_CPP);
 		if ((sym->flags & ISDEFINED) != 0 == isdef)
@@ -479,10 +476,8 @@ elseclause(char *s)
 }
 
 bool
-preprocessor(char *p)
+preprocessor(char *s)
 {
-	char *q;
-	unsigned short n;
 	static struct {
 		char *name;
 		bool (*fun)(char *);
@@ -499,25 +494,17 @@ preprocessor(char *p)
 		NULL, NULL
 	};
 
-	while (isspace(*p))
-		++p;
-	if (*p != '#')
+	if (*s++ != '#')
 		return 0;
-	for (++p; isspace(*p); ++p)
-		/* nothing */;
-	if (*p == '\0')
-		return 1;
-	for (q = p; isalpha(*q); ++q)
-		/* nothing */;
-	if ((n = q - p) == 0)
+	while (isspace(*s))
+		++s;
+	if (!iden(&s))
 		goto incorrect;
-	while (isspace(*q))
-		++q;
 	for (bp = cmds; bp->name; ++bp) {
-		if (strncmp(bp->name, p, n))
+		if (strcmp(bp->name, yytext))
 			continue;
-		return (*bp->fun)(q);
+		return (*bp->fun)(s);
 	}
 incorrect:
-	error("incorrect preprocessor directive");
+	error("invalid preprocessor directive #%s", yytext);
 }
