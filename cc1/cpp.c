@@ -22,15 +22,15 @@ iden(char **str)
 {
 	char c, *bp, *s = *str;
 
+	if (!isalpha(c = *s) && c != '_')
+		return 0;
 	for (bp = yytext; bp < &yytext[IDENTSIZ]; *bp++ = c) {
 		if ((c = *s) == '\0' || !isalnum(c) && c != '_')
 			break;
 		++s;
 	}
 	if (bp == &yytext[IDENTSIZ])
-		error("identifier too long");
-	if (bp - yytext == 0)
-		return 0;
+		error("identifier too long in preprocessor");
 	*bp = '\0';
 
 	while (isspace(*s))
@@ -219,9 +219,9 @@ parseargs(char *s, char *args[NR_MACROARG], int *nargs)
 	for (n = 1; n <= NR_MACROARG; ++n) {
 		while (isspace(*s))
 			++s;
-		if (!isalnum(*s) && *s != '_')
+		if (!isalpha(*s) && *s != '_')
 			error("macro arguments must be identifiers");
-		for (endp = s; isalnum(*endp) || *endp == '_'; ++endp)
+		for (endp = s+1; isalnum(*endp) || *endp == '_'; ++endp)
 			/* nothing */;
 		if ((len = endp - s) > IDENTSIZ)
 			error("macro argument too long");
@@ -257,7 +257,7 @@ copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 	char arroba[6], *p, **bp, c;
 
 	while ((c = *s) && bufsiz > 0) {
-		if (!isalnum(c) && c != '_' || nargs < 1) {
+		if (!isalpha(c) && c != '_' || nargs < 1) {
 			*buff++ = c;
 			++s, --bufsiz;
 			continue;
