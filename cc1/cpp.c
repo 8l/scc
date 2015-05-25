@@ -246,51 +246,43 @@ set_nargs:
 }
 /*
  * Copy a define string, and substitute formal arguments of the
- * macro into strings in the form @XX, where XX is the position
+ * macro into strings in the form @XX@, where XX is the position
  * of the argument in the argument list.
  */
 static char *
 copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 {
-	unsigned ncopy;
 	int n;
-	size_t len;
-	char arroba[6], *par, *endp, **bp;
+	size_t ncopy;
+	char arroba[6], *p, **bp, c;
 
-	while (*s && bufsiz > 0) {
-		if (!isalnum(*s) && *s != '_') {
-			--bufsiz;
-			*buff++ = *s++;
+	while ((c = *s) && bufsiz > 0) {
+		if (!isalnum(c) && c != '_' || nargs < 1) {
+			*buff++ = c;
+			++s, --bufsiz;
 			continue;
 		}
-		/*
-		 * found an identifier, is it one of the macro arguments?
-		 */
-		for (endp = s+1; isalnum(*endp) || *endp == '_'; ++endp)
+		/* found an identifier, is it one of the macro arguments? */
+		for (p = s+1; isalnum(c = *p) || c == '_'; ++p)
 			/* nothing */;
-		len = endp - s;
-		for (bp =args, n = 0; n < nargs; ++bp, n++) {
-			if (strncmp(s, *bp, len))
+		ncopy = p - s;
+		bp = args;
+		for (n = 0; n < nargs; ++n) {
+			if (strncmp(s, *bp++, ncopy))
 				continue;
 			sprintf(arroba, "@%02d@", n);
+			s = arroba, ncopy = 4;
 			break;
 		}
-		if (n == nargs || nargs == -1)
-			par = s, ncopy = len;
-		else
-			par = arroba, ncopy = 4;
-
 		if ((bufsiz -= ncopy) < 0)
 			goto too_long;
-		memcpy(buff, par, ncopy);
-		buff += ncopy;
-		s = endp;
+		memcpy(buff, s, ncopy);
+		buff += ncopy, s = p;
 	}
-
-	if (*s == '\0') {
-		*buff = '\0';
-		return s;
-	}
+	if (bufsiz == 0)
+		goto too_long;
+	*buff = '\0';
+	return s;
 
 too_long:
 	error("macro definition too long");
