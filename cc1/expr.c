@@ -493,8 +493,16 @@ static Node *
 arguments(Node *np)
 {
 	Node *par;
+	Type *tp = np->type;
 
-	/* TODO: Check type of np */
+	if (tp->op == PTR && tp->type->op == FTN) {
+		np = content(OPTR, np);
+		tp = np->type;
+	}
+	if (tp->op != FTN)
+		error("function or function pointer expected");
+	/* TODO: implement function calls */
+	abort();
 	expect('(');
 	if (accept(')'))
 		return np;
