@@ -460,8 +460,18 @@ elseclause(char *s)
 		error("#else without #if");
 	cleanup(s);
 	cppoff += (ifstatus[numif-1] ^= 1) ? -1 : 1;
+}
 
-	return;
+static void
+undef(char *s)
+{
+	Symbol *sym;
+
+	if (!iden(&s))
+		error("#undef must have an identifier as parameter");
+	sym = lookup(NS_CPP);
+	sym->flags &= ~ISDEFINED;
+	cleanup(s);
 }
 
 bool
@@ -477,6 +487,7 @@ preprocessor(char *s)
 		"ifndef", ifndef,
 		"endif", endif,
 		"else", elseclause,
+		"undef", undef,
 		"line", line,
 		"pragma", pragma,
 		"error", usererr,
