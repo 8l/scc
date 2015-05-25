@@ -309,14 +309,14 @@ mkdefine(char *s, Symbol *sym)
 	return s;
 }
 
-static bool
+static void
 define(char *s)
 {
 	char *t;
 	Symbol *sym;
 
 	if (cppoff)
-		return 1;
+		return;
 	if (!iden(&s))
 		error("#define must have an identifier as parameter");
 
@@ -331,16 +331,16 @@ define(char *s)
 	for (t = s + strlen(s) + 1; isspace(*--t); *t = '\0')
 		/* nothing */;
 	mkdefine(s, sym);
-	return 1;
+	return;
 }
 
-static bool
+static void
 include(char *s)
 {
 	char delim, c, *p, *file;
 
 	if (cppoff)
-		return 1;
+		return;
 	if ((c = *s++) == '>')
 		delim = '>';
 	else if (c == '"')
@@ -352,7 +352,7 @@ include(char *s)
 		goto bad_include;
 	cleanup(s);
 	if (delim == '"' && addinput(file))
-		return 1;
+		return;
 	abort();
 
 not_found:
@@ -361,14 +361,14 @@ bad_include:
 	error("#include expects \"FILENAME\" or <FILENAME>");
 }
 
-static bool
+static void
 line(char *s)
 {
 	char *file;
 	long n;
 
 	if (cppoff)
-		return 1;
+		return;
 	if ((n = strtol(s, &s, 10)) <= 0 || n > USHRT_MAX)
 		error("first parameter of #line is not a positive integer");
 
@@ -386,30 +386,30 @@ line(char *s)
 	case '\0':
 	end_string:
 		setfline(n-1);
-		return 1;
+		return;
 	default:
 	bad_file:
 		error("second parameter of #line is not a valid filename");
 	}
 }
 
-static bool
+static void
 pragma(char *s)
 {
 	if (cppoff)
-		return 1;
-	return 1;
+		return;
+	return;
 }
 
-static bool
+static void
 usererr(char *s)
 {
 	if (cppoff)
-		return 1;
+		return;
 	error("#error %s", s);
 }
 
-static bool
+static void
 ifclause(char *s, int isdef)
 {
 	Symbol *sym;
@@ -426,22 +426,22 @@ ifclause(char *s, int isdef)
 	if (!(ifstatus[n] = (sym->flags & ISDEFINED) != 0 == isdef))
 		++cppoff;
 
-	return 1;
+	return;
 }
 
-static bool
+static void
 ifdef(char *s)
 {
-	return ifclause(s, 1);
+	ifclause(s, 1);
 }
 
-static bool
+static void
 ifndef(char *s)
 {
-	return ifclause(s, 0);
+	ifclause(s, 0);
 }
 
-static bool
+static void
 endif(char *s)
 {
 	if (numif == 0)
@@ -449,10 +449,10 @@ endif(char *s)
 	cleanup(s);
 	if (!ifstatus[--numif])
 		--cppoff;
-	return 1;
+	return;
 }
 
-static bool
+static void
 elseclause(char *s)
 {
 	struct ifstatus *ip;
@@ -462,7 +462,7 @@ elseclause(char *s)
 	cleanup(s);
 	cppoff += (ifstatus[numif-1] ^= 1) ? -1 : 1;
 
-	return 1;
+	return;
 }
 
 bool
@@ -470,7 +470,7 @@ preprocessor(char *s)
 {
 	static struct {
 		char *name;
-		bool (*fun)(char *);
+		void (*fun)(char *);
 	} *bp, cmds[] =  {
 		"define", define,
 		"include", include,
@@ -493,7 +493,8 @@ preprocessor(char *s)
 	for (bp = cmds; bp->name; ++bp) {
 		if (strcmp(bp->name, yytext))
 			continue;
-		return (*bp->fun)(s);
+		(*bp->fun)(s);
+		return 1;
 	}
 incorrect:
 	error("invalid preprocessor directive #%s", yytext);
