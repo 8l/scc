@@ -67,7 +67,7 @@ main(int argc, char *argv[])
 
 	ikeywords();
 
-	if (!addinput(*argv))
+	if (!addinput(*argv, NULL))
 		die("error opening input file '%s'", *argv);
 	for (next(); yytoken != EOFTOK; extdecl())
 		/* nothing */;

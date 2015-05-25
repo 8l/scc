@@ -129,9 +129,16 @@ install(unsigned ns)
 		return yylval.sym;
 	}
 
-	h = &htab[hash(yytext)];
 	sym = newsym(ns);
 	sym->name = xstrdup(yytext);
+
+	if (yylval.sym->ns == NS_CPP) {
+		sym->hash = yylval.sym->hash;
+		yylval.sym->hash = sym;
+		return sym;
+	}
+
+	h = &htab[hash(yytext)];
 	sym->hash = *h;
 	*h = sym;
 	return sym;

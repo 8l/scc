@@ -164,7 +164,7 @@ Label(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case TYPEIDEN:
 		/*
 		 * We cannot call to insert() because the call to lookup in
-	     * lex.c was done in NS_IDEN namespace, and it is impossibe
+		 * lex.c was done in NS_IDEN namespace, and it is impossibe
 		 * to fix this point, because an identifier at the beginning
 		 * of a statement may be part of an expression or part of a
 		 * label. This double call to lookup() is going to generate

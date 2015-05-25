@@ -170,7 +170,7 @@ expand(Symbol *sym)
 	if (!parsepars(buffer, arglist, atoi(s)))
 		return 0;
 
-	bp = addinput(NULL);
+	bp = addinput(NULL, sym);
 	len = INPUTSIZ-1;
 	for (s += 3; c = *s; ++s) {
 		if (c != '@') {
@@ -291,7 +291,7 @@ too_long:
 }
 
 static char *
-mkdefine(char *s, Symbol *sym)
+mkdefine(char *s)
 {
 	int nargs;
 	char *args[NR_MACROARG], buff[LINESIZ+1];
@@ -304,9 +304,7 @@ mkdefine(char *s, Symbol *sym)
 
 	if (*s != '\0')
 		s = copydefine(s, args, buff+3, LINESIZ-3, nargs);
-	sym->u.s = xstrdup(buff);
-
-	return s;
+	return xstrdup(buff);
 }
 
 static void
@@ -327,10 +325,11 @@ define(char *s)
 	}
 	sym->flags |= ISDEFINED;
 	sym->ns = NS_CPP;
+	sym->ctx = UCHAR_MAX;
 
 	for (t = s + strlen(s) + 1; isspace(*--t); *t = '\0')
 		/* nothing */;
-	mkdefine(s, sym);
+	sym->u.s = mkdefine(s);
 	return;
 }
 
@@ -351,7 +350,7 @@ include(char *s)
 	if (!string(&s, &file, delim))
 		goto bad_include;
 	cleanup(s);
-	if (delim == '"' && addinput(file))
+	if (delim == '"' && addinput(file, NULL))
 		return;
 	abort();
 

@@ -19,6 +19,7 @@ struct input {
 	unsigned short nline;
 	FILE *fp;
 	char *line, *begin, *p;
+	Symbol *macro;
 	struct input *next;
 };
 
@@ -33,7 +34,7 @@ static int safe, eof, incomment;
 static Input *input;
 
 char *
-addinput(char *fname)
+addinput(char *fname, Symbol *sym)
 {
 	Input *ip;
 	FILE *fp;
@@ -58,6 +59,7 @@ addinput(char *fname)
 	ip = xmalloc(sizeof(Input));
 	ip->fname = fname;
 	ip->next = input;
+	ip->macro = sym;
 	ip->begin = ip->p = ip->line = xmalloc(INPUTSIZ);
 	*ip->begin = '\0';
 	ip->nline = nline;
@@ -389,15 +391,36 @@ repeat:
 static unsigned
 iden(void)
 {
-	char *p;
+	char *p, *t, c;
 
 	for (p = input->p; isalnum(*p) || *p == '_'; ++p)
 		/* nothing */;
 	input->p = p;
 	tok2str();
 	yylval.sym = lookup(lex_ns);
-	if (yylval.sym->ns == NS_CPP && expand(yylval.sym))
-		return 0;
+	if (yylval.sym->ns == NS_CPP) {
+		Symbol *sym;
+
+		if (yylval.sym != input->macro && expand(yylval.sym))
+			return 0;
+		/*
+		 * it is not a correct macro call, so try to find
+		 * another definition. This is going to be expensive
+		 * but I think it is not going to be a common case.
+		 */
+		p = yylval.sym->name;
+		c = *p;
+		for (sym = yylval.sym->hash; sym; sym = sym->hash) {
+			t = sym->name;
+			if (c == *t && !strcmp(p, t)) {
+				yylval.sym = sym;
+				goto found_iden;
+			}
+		}
+		yylval.sym = install(lex_ns);
+		yylval.sym->flags &= ~ISDEFINED;
+	}
+found_iden:
 	if (yylval.sym->token != IDEN)
 		yylval.token = yylval.sym->u.token;
 	return yylval.sym->token;
