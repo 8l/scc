@@ -37,7 +37,7 @@ addinput(char *fname)
 {
 	Input *ip;
 	FILE *fp;
-	unsigned short nline = 1;
+	unsigned short nline = 0;
 
 	/* TODO: Add a field in input to see easier which is the case
 	   where we are */
