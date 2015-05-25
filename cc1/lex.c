@@ -26,6 +26,7 @@ unsigned yytoken;
 struct yystype yylval;
 char yytext[IDENTSIZ + 1];
 unsigned short yylen;
+int cppoff;
 
 static unsigned lex_ns = NS_IDEN;
 static int safe, eof, incomment;
@@ -204,7 +205,7 @@ repeat:
 	readline();
 	while (isspace(*p))
 		++p;
-	if (*p == '\0' || preprocessor(p))
+	if (*p == '\0' || preprocessor(p) || cppoff)
 		goto repeat;
 	input->p = input->begin = p;
 	return 1;

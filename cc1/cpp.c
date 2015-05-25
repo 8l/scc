@@ -14,8 +14,10 @@
 
 static char *argp;
 static unsigned arglen;
-static unsigned numif, iffalse;
+static unsigned numif;
 static Symbol *lastmacro;
+
+unsigned char ifstatus[NR_COND];
 
 static bool
 iden(char **str)
@@ -245,7 +247,7 @@ set_nargs:
 	return s;
 }
 /*
- * Copy a define string, and substitute formal arguments of the
+ * Copy a string define, and substitute formal arguments of the
  * macro into strings in the form @XX@, where XX is the position
  * of the argument in the argument list.
  */
@@ -313,8 +315,10 @@ define(char *s)
 	char *t;
 	Symbol *sym;
 
+	if (cppoff)
+		return 1;
 	if (!iden(&s))
-		error("macro names must be identifiers");
+		error("#define must have an identifier as parameter");
 
 	sym = lookup(NS_CPP);
 	if ((sym->flags & ISDEFINED) && sym->ns == NS_CPP) {
@@ -335,6 +339,8 @@ include(char *s)
 {
 	char delim, c, *p, *file;
 
+	if (cppoff)
+		return 1;
 	if ((c = *s++) == '>')
 		delim = '>';
 	else if (c == '"')
@@ -361,6 +367,8 @@ line(char *s)
 	char *file;
 	long n;
 
+	if (cppoff)
+		return 1;
 	if ((n = strtol(s, &s, 10)) <= 0 || n > USHRT_MAX)
 		error("first parameter of #line is not a positive integer");
 
@@ -388,38 +396,35 @@ line(char *s)
 static bool
 pragma(char *s)
 {
+	if (cppoff)
+		return 1;
 	return 1;
 }
 
 static bool
 usererr(char *s)
 {
+	if (cppoff)
+		return 1;
 	error("#error %s", s);
 }
 
 static bool
 ifclause(char *s, int isdef)
 {
-	unsigned curif;
-	char *endp;
 	Symbol *sym;
+	unsigned n = numif++;
 
-	if (iden(&s))
-		error("...");
+	if (numif == NR_COND-1)
+		error("too much nesting levels of conditional inclusion");
+
+	if (!iden(&s))
+		error("#ifdef clause must have an identifier as parameter");
 	cleanup(s);
 
-	++numif;
-	if (iffalse == 0) {
-		sym = lookup(NS_CPP);
-		if ((sym->flags & ISDEFINED) != 0 == isdef)
-			return 1;
-	}
-
-	curif = iffalse++;
-	while (curif != iffalse) {
-		if (!moreinput())
-			error("found EOF while ...");
-	}
+	sym = lookup(NS_CPP);
+	if (!(ifstatus[n] = (sym->flags & ISDEFINED) != 0 == isdef))
+		++cppoff;
 
 	return 1;
 }
@@ -439,32 +444,25 @@ ifndef(char *s)
 static bool
 endif(char *s)
 {
-	cleanup(s);
 	if (numif == 0)
 		error("#endif without #if");
-	--numif;
-	return iffalse == 0;
+	cleanup(s);
+	if (!ifstatus[--numif])
+		--cppoff;
+	return 1;
 }
 
 static bool
 elseclause(char *s)
 {
-	unsigned curif;
+	struct ifstatus *ip;
 
-	cleanup(s);
 	if (numif == 0)
 		error("#else without #if");
+	cleanup(s);
+	cppoff += (ifstatus[numif-1] ^= 1) ? -1 : 1;
 
-	if (iffalse == 0) {
-		curif = iffalse++;
-		while (curif != iffalse) {
-			if (!moreinput())
-				error("found EOF while ...");
-		}
-	}
-	--iffalse;
-
-	return iffalse != 0;
+	return 1;
 }
 
 bool

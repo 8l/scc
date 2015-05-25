@@ -300,6 +300,7 @@ extern struct yystype yylval;
 extern char yytext[];
 extern unsigned yytoken;
 extern unsigned short yylen;
+extern int cppoff;
 
 extern Type *voidtype, *pvoidtype, *booltype,	
             *uchartype,   *chartype,
