@@ -433,8 +433,6 @@ iden(void)
 	tok2str();
 	yylval.sym = lookup(lex_ns);
 	if (yylval.sym->ns == NS_CPP) {
-		Symbol *sym;
-
 		if (yylval.sym != input->macro && expand(yylval.sym))
 			return 0;
 		/*
@@ -442,19 +440,8 @@ iden(void)
 		 * another definition. This is going to be expensive
 		 * but I think it is not going to be a common case.
 		 */
-		p = yylval.sym->name;
-		c = *p;
-		for (sym = yylval.sym->hash; sym; sym = sym->hash) {
-			t = sym->name;
-			if (c == *t && !strcmp(p, t)) {
-				yylval.sym = sym;
-				goto found_iden;
-			}
-		}
-		yylval.sym = install(lex_ns);
-		yylval.sym->flags &= ~ISDEFINED;
+		yylval.sym = nextsym(yylval.sym, lex_ns);
 	}
-found_iden:
 	if (yylval.sym->token != IDEN)
 		yylval.token = yylval.sym->u.token;
 	return yylval.sym->token;

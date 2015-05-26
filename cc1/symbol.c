@@ -131,6 +131,33 @@ lookup(unsigned ns)
 }
 
 Symbol *
+nextsym(Symbol *sym, unsigned ns)
+{
+	char *s, *t, c;
+	Symbol *new, *p;
+
+	/* FIXME:
+	 * This function is only called when a macro with parameters
+	 * is called without them.
+	 *      #define x(y) ((y) + 1)
+	 *      int x = x(y);
+	 * This solution fixes the problem but destroy the order of
+	 * contexts in the hash table.
+	 */
+	s = sym->name;
+	c = *s;
+	for (p = sym->hash; p; p = p->hash) {
+		t = p->name;
+		if (c == *t && !strcmp(s, t))
+			return sym;
+	}
+	new = newsym(ns);
+	new->name = xstrdup(yytext);
+	new->hash = sym->hash;
+	return sym->hash = new;
+}
+
+Symbol *
 install(unsigned ns)
 {
 	Symbol *sym, **h;
@@ -151,13 +178,6 @@ install(unsigned ns)
 
 	sym = newsym(ns);
 	sym->name = xstrdup(yytext);
-
-	if (yylval.sym->ns == NS_CPP) {
-		sym->hash = yylval.sym->hash;
-		yylval.sym->hash = sym;
-		return sym;
-	}
-
 	h = &htab[hash(yytext)];
 	sym->hash = *h;
 	*h = sym;
