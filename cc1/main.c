@@ -9,8 +9,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-extern void ikeywords(void), lexfile(char *file);
-
 int warnings;
 jmp_buf recover;
 
@@ -65,6 +63,7 @@ main(int argc, char *argv[])
 	if (argc > 1)
 		usage();
 
+	initcpp();
 	ikeywords();
 
 	if (!addinput(*argv, NULL))

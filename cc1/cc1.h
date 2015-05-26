@@ -256,6 +256,7 @@ extern Symbol *lookup(unsigned ns);
 extern Symbol *install(unsigned ns);
 extern Symbol *newsym(unsigned ns);
 extern void pushctx(void), popctx(void);
+extern void ikeywords(void);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
@@ -277,6 +278,7 @@ extern void setfline(unsigned short line);
 extern char *addinput(char *fname, Symbol *sym);
 extern void setnamespace(int ns);
 extern void setsafe(int type);
+extern void initcpp(void);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */

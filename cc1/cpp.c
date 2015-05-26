@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "../inc/sizes.h"
 #include "../inc/cc.h"
@@ -16,8 +17,41 @@ static char *argp;
 static unsigned arglen;
 static unsigned numif;
 static Symbol *lastmacro;
+static Symbol *symline, *symfile;
 
 unsigned char ifstatus[NR_COND];
+
+static Symbol *
+defmacro(char *s)
+{
+	Symbol *sym;
+
+	strcpy(yytext, s);
+	sym = lookup(NS_CPP);
+	sym->flags |= ISDEFINED;
+	return sym;
+}
+
+void
+initcpp(void)
+{
+	static char sdate[17], stime[14];
+	struct tm *tm;
+	time_t t;
+
+	t = time(NULL);
+	tm = localtime(&t);
+	strftime(sdate, sizeof(sdate), "-1#\"%b %d %Y\"", tm);
+	strftime(stime, sizeof(stime), "-1#\"%H:%M:%S\"", tm);
+
+	defmacro("__STDC__")->u.s = "-1#1";
+	defmacro("__DATE__")->u.s = sdate;
+	defmacro("__TIME__")->u.s = stime;
+	defmacro("__STDC_HOSTED__")->u.s = "-1#1";
+	defmacro("__STDC_VERSION__")->u.s = "-1#199409L";
+	symline = defmacro("__LINE__");
+	symfile = defmacro("__FILE__");
+}
 
 static bool
 iden(char **str)
@@ -159,12 +193,24 @@ parsepars(char *buffer, char **listp, int nargs)
  * is the macro definition, where @dd@ indicates the
  * parameter number dd
  */
+#define BUFSIZE ((INPUTSIZ > FILENAME_MAX+5) ? INPUTSIZ : FILENAME_MAX+5)
 bool
 expand(Symbol *sym)
 {
 	unsigned len;
-	char *arglist[NR_MACROARG], buffer[INPUTSIZ];
+	char *arglist[NR_MACROARG], buffer[BUFSIZE];
 	char c, *bp, *arg, *s = sym->u.s;
+
+	if (sym == symfile) {
+		sprintf(buffer, "-1#\"%s\"", getfname());
+		strcpy(addinput(NULL, symfile), buffer);
+		return 0;
+	}
+	if (sym == symline) {
+		sprintf(buffer, "-1#%d", getfline());
+		strcpy(addinput(NULL, symline), buffer);
+		return 0;
+	}
 
 	lastmacro = sym;
 	if (!parsepars(buffer, arglist, atoi(s)))
@@ -196,6 +242,7 @@ expand(Symbol *sym)
 expansion_too_long:
 	error("expansion of macro \"%s\" is too long", lastmacro->name);
 }
+#undef BUFSIZE
 
 /*
  * Parse an argument list (par0, par1, ...) and creates
