@@ -193,7 +193,7 @@ parsepars(char *buffer, char **listp, int nargs)
  * is the macro definition, where @dd@ indicates the
  * parameter number dd
  */
-#define BUFSIZE ((INPUTSIZ > FILENAME_MAX+5) ? INPUTSIZ : FILENAME_MAX+5)
+#define BUFSIZE ((INPUTSIZ > FILENAME_MAX+2) ? INPUTSIZ : FILENAME_MAX+5)
 bool
 expand(Symbol *sym)
 {
@@ -202,14 +202,14 @@ expand(Symbol *sym)
 	char c, *bp, *arg, *s = sym->u.s;
 
 	if (sym == symfile) {
-		sprintf(buffer, "-1#\"%s\"", getfname());
+		sprintf(buffer, "\"%s\"", getfname());
 		strcpy(addinput(NULL, symfile), buffer);
-		return 0;
+		return 1;
 	}
 	if (sym == symline) {
-		sprintf(buffer, "-1#%d", getfline());
+		sprintf(buffer, "%d", getfline());
 		strcpy(addinput(NULL, symline), buffer);
-		return 0;
+		return 1;
 	}
 
 	lastmacro = sym;
