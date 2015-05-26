@@ -377,7 +377,6 @@ define(char *s)
 	for (t = s + strlen(s) + 1; isspace(*--t); *t = '\0')
 		/* nothing */;
 	sym->u.s = mkdefine(s);
-	return;
 }
 
 static void
@@ -459,7 +458,6 @@ pragma(char *s)
 {
 	if (cppoff)
 		return;
-	return;
 }
 
 static void
@@ -486,8 +484,6 @@ ifclause(char *s, int isdef)
 	sym = lookup(NS_CPP);
 	if (!(ifstatus[n] = (sym->flags & ISDEFINED) != 0 == isdef))
 		++cppoff;
-
-	return;
 }
 
 static void
@@ -510,7 +506,6 @@ endif(char *s)
 	cleanup(s);
 	if (!ifstatus[--numif])
 		--cppoff;
-	return;
 }
 
 static void
