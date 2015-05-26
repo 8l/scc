@@ -1,5 +1,8 @@
 
 #define INPUTSIZ 120
+#ifndef PREFIX
+#define PREFIX "/usr/"
+#endif
 
 /*
  * Definition of structures

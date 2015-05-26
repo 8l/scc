@@ -383,7 +383,13 @@ define(char *s)
 static void
 include(char *s)
 {
-	char delim, c, *p, *file;
+	char **bp, delim, c, *p, *file, buff[FILENAME_MAX];
+	char *sysinclude[] = {
+		PREFIX"/include/",
+		PREFIX"/local/include/",
+		NULL
+	};
+	size_t filelen, dirlen;
 
 	if (cppoff)
 		return;
@@ -399,10 +405,19 @@ include(char *s)
 	cleanup(s);
 	if (delim == '"' && addinput(file, NULL))
 		return;
-	abort();
 
-not_found:
-	error("included file '%s' not found", s);
+	filelen = strlen(file);
+	for (bp = sysinclude; *bp; ++bp) {
+		dirlen = strlen(*bp);
+		if (dirlen + filelen > FILENAME_MAX)
+			continue;
+		memcpy(buff, *bp, dirlen);
+		memcpy(buff+dirlen, file, filelen);
+		if (addinput(buff, NULL))
+			return;
+	}
+	error("included file '%s' not found", file);
+
 bad_include:
 	error("#include expects \"FILENAME\" or <FILENAME>");
 }
