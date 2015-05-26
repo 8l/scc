@@ -7,7 +7,7 @@
 #include "../inc/sizes.h"
 #include "cc1.h"
 
-#define NR_SYM_HASH 32
+#define NR_SYM_HASH 64
 
 static unsigned curctx;
 static short localcnt;
@@ -19,11 +19,11 @@ static Symbol *htab[NR_SYM_HASH];
 static inline unsigned
 hash(const char *s)
 {
-	unsigned h, ch;
+	unsigned c, h;
 
-	for (h = 0; ch = *s++; h += ch)
-		/* nothing */;
-	return h & NR_SYM_HASH - 1;
+	for (h = 0; c = *s; ++s)
+		h ^= 33 * c;
+	return h & NR_SYM_HASH-1;
 }
 
 void
