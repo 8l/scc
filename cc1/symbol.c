@@ -88,8 +88,8 @@ newsym(unsigned ns)
 	Symbol *sym;
 
 	sym = malloc(sizeof(*sym));
-	sym->ns = ns;
-	sym->id = (curctx) ? ++localcnt : ++globalcnt;
+	if ((sym->ns = ns) != NS_CPP)
+		sym->id = (curctx) ? ++localcnt : ++globalcnt;
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->flags = ISDEFINED;
