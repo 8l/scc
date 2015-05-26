@@ -16,6 +16,26 @@ static short globalcnt;
 static Symbol *head;
 static Symbol *htab[NR_SYM_HASH];
 
+#ifndef NDEBUG
+#include <stdio.h>
+void
+dumpstab(char *msg)
+{
+	Symbol **bp, *sym;
+
+	fputs(msg, stderr);
+	putc('\n', stderr);
+	for (bp = htab; bp < &htab[NR_SYM_HASH]; ++bp) {
+		if (*bp == NULL)
+			continue;
+		fprintf(stderr, "%d", bp - htab);
+		for (sym = *bp; sym; sym = sym->hash)
+			fprintf(stderr, "->%d:%s", sym->ns, sym->name);
+		putc('\n', stderr);
+	}
+}
+#endif
+
 static inline unsigned
 hash(const char *s)
 {

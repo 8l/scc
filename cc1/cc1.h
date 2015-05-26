@@ -251,6 +251,7 @@ extern Type *ctype(unsigned type, unsigned sign, unsigned size);
 extern Type *mktype(Type *tp, unsigned op, short nelem, void *data);
 
 /* symbol.c */
+extern void dumpstab(char *msg);
 extern Symbol *lookup(unsigned ns);
 extern Symbol *install(unsigned ns);
 extern Symbol *newsym(unsigned ns);
