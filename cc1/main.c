@@ -63,11 +63,10 @@ main(int argc, char *argv[])
 	if (argc > 1)
 		usage();
 
-	initcpp();
+	icpp();
 	ikeywords();
+	ilex(*argv);
 
-	if (!addinput(*argv, NULL))
-		die("error opening input file '%s'", *argv);
 	for (next(); yytoken != EOFTOK; extdecl())
 		/* nothing */;
 

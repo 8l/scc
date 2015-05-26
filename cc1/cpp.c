@@ -13,13 +13,12 @@
 
 /* TODO: preprocessor error must not rise recover */
 
-static char *argp;
+static char *argp, *macroname;
 static unsigned arglen;
-static unsigned numif;
-static Symbol *lastmacro;
 static Symbol *symline, *symfile;
+static unsigned char ifstatus[NR_COND];
 
-unsigned char ifstatus[NR_COND];
+unsigned cppctx;
 
 static Symbol *
 defmacro(char *s)
@@ -33,7 +32,7 @@ defmacro(char *s)
 }
 
 void
-initcpp(void)
+icpp(void)
 {
 	static char sdate[17], stime[14];
 	struct tm *tm;
@@ -109,11 +108,11 @@ nextcpp(void)
 	next();
 	if (yytoken == EOFTOK) {
 		error("unterminated argument list invoking macro \"%s\"",
-		      lastmacro->name);
+		      macroname);
 	}
 	if (yylen + 1 > arglen) {
 		error("argument overflow invoking macro \"%s\"",
-		      lastmacro->name);
+		      macroname);
 	}
 	memcpy(argp, yytext, yylen);
 	argp += yylen;
@@ -177,10 +176,10 @@ parsepars(char *buffer, char **listp, int nargs)
 	}
 
 	if (n == NR_MACROARG)
-		error("too much parameters in macro \"%s\"", lastmacro->name);
+		error("too much parameters in macro \"%s\"", macroname);
 	if (n != nargs) {
 		error("macro \"%s\" passed %d arguments, but it takes %d",
-		      lastmacro->name, n, nargs);
+		      macroname, n, nargs);
 	}
 	return 1;
 }
@@ -193,7 +192,7 @@ parsepars(char *buffer, char **listp, int nargs)
  * is the macro definition, where @dd@ indicates the
  * parameter number dd
  */
-#define BUFSIZE ((INPUTSIZ > FILENAME_MAX+2) ? INPUTSIZ : FILENAME_MAX+5)
+#define BUFSIZE ((INPUTSIZ > FILENAME_MAX+2) ? INPUTSIZ : FILENAME_MAX+2)
 bool
 expand(Symbol *sym)
 {
@@ -203,20 +202,18 @@ expand(Symbol *sym)
 
 	if (sym == symfile) {
 		sprintf(buffer, "\"%s\"", getfname());
-		strcpy(addinput(NULL, symfile), buffer);
-		return 1;
+		goto add_macro;
 	}
 	if (sym == symline) {
 		sprintf(buffer, "%d", getfline());
-		strcpy(addinput(NULL, symline), buffer);
-		return 1;
+		goto add_macro;
 	}
 
-	lastmacro = sym;
+	macroname = sym->name;
 	if (!parsepars(buffer, arglist, atoi(s)))
 		return 0;
 
-	bp = addinput(NULL, sym);
+	bp = buffer;
 	len = INPUTSIZ-1;
 	for (s += 3; c = *s; ++s) {
 		if (c != '@') {
@@ -237,10 +234,12 @@ expand(Symbol *sym)
 		}
 	}
 	*bp = '\0';
+add_macro:
+	addinput(NULL, sym, buffer);
 	return 1;
 
 expansion_too_long:
-	error("expansion of macro \"%s\" is too long", lastmacro->name);
+	error("expansion of macro \"%s\" is too long", macroname);
 }
 #undef BUFSIZE
 
@@ -382,7 +381,7 @@ define(char *s)
 static void
 include(char *s)
 {
-	char **bp, delim, c, *p, *file, buff[FILENAME_MAX];
+	char **bp, delim, c, *p, *file, path[FILENAME_MAX];
 	char *sysinclude[] = {
 		PREFIX"/include/",
 		PREFIX"/local/include/",
@@ -402,7 +401,7 @@ include(char *s)
 	if (!string(&s, &file, delim))
 		goto bad_include;
 	cleanup(s);
-	if (delim == '"' && addinput(file, NULL))
+	if (delim == '"' && addinput(file, NULL, NULL))
 		return;
 
 	filelen = strlen(file);
@@ -410,9 +409,9 @@ include(char *s)
 		dirlen = strlen(*bp);
 		if (dirlen + filelen > FILENAME_MAX)
 			continue;
-		memcpy(buff, *bp, dirlen);
-		memcpy(buff+dirlen, file, filelen);
-		if (addinput(buff, NULL))
+		memcpy(path, *bp, dirlen);
+		memcpy(path+dirlen, file, filelen);
+		if (addinput(path, NULL, NULL))
 			return;
 	}
 	error("included file '%s' not found", file);
@@ -472,13 +471,15 @@ static void
 ifclause(char *s, int isdef)
 {
 	Symbol *sym;
-	unsigned n = numif++;
+	unsigned n = cppctx++;
 
-	if (numif == NR_COND-1)
+	if (cppctx == NR_COND-1)
 		error("too much nesting levels of conditional inclusion");
 
-	if (!iden(&s))
-		error("#ifdef clause must have an identifier as parameter");
+	if (!iden(&s)) {
+		error("no macro name given in #%s directive",
+		      (isdef) ? "ifdef" : "ifndef");
+	}
 	cleanup(s);
 
 	sym = lookup(NS_CPP);
@@ -501,10 +502,10 @@ ifndef(char *s)
 static void
 endif(char *s)
 {
-	if (numif == 0)
+	if (cppctx == 0)
 		error("#endif without #if");
 	cleanup(s);
-	if (!ifstatus[--numif])
+	if (!ifstatus[--cppctx])
 		--cppoff;
 }
 
@@ -513,10 +514,10 @@ elseclause(char *s)
 {
 	struct ifstatus *ip;
 
-	if (numif == 0)
+	if (cppctx == 0)
 		error("#else without #if");
 	cleanup(s);
-	cppoff += (ifstatus[numif-1] ^= 1) ? -1 : 1;
+	cppoff += (ifstatus[cppctx-1] ^= 1) ? -1 : 1;
 }
 
 static void
@@ -532,7 +533,7 @@ undef(char *s)
 }
 
 bool
-preprocessor(char *s)
+cpp(char *s)
 {
 	static struct {
 		char *name;

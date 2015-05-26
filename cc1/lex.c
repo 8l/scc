@@ -1,16 +1,15 @@
 
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "../inc/sizes.h"
 #include "../inc/cc.h"
 #include "cc1.h"
-
 
 typedef struct input Input;
 
@@ -30,62 +29,103 @@ unsigned short yylen;
 int cppoff;
 
 static unsigned lex_ns = NS_IDEN;
-static int safe, eof, incomment;
+static int safe, eof;
 static Input *input;
 
-char *
-addinput(char *fname, Symbol *sym)
+static void
+allocinput(char *fname, FILE *fp, char *buff)
 {
 	Input *ip;
-	FILE *fp;
-	unsigned short nline = 0;
-
-	/* TODO: Add a field in input to see easier which is the case
-	   where we are */
-
-	if (fname) {
-		if ((fp = fopen(fname, "r")) == NULL)
-			return NULL;
-		fname = xstrdup(fname);
-	} else if (!input) {
-		fp = stdin;
-		fname = xstrdup("<stdin>");
-	} else {
-		fname = input->fname;
-		nline = input->nline;
-		fp = NULL;
-	}
 
 	ip = xmalloc(sizeof(Input));
 	ip->fname = fname;
 	ip->next = input;
-	ip->macro = sym;
-	ip->begin = ip->p = ip->line = xmalloc(INPUTSIZ);
-	*ip->begin = '\0';
-	ip->nline = nline;
+	ip->macro = NULL;
+	ip->begin = ip->line = buff;
+	ip->nline = (fp) ? 0 : input->nline;
 	ip->fp = fp;
 	input = ip;
-	return input->line;
+}
+
+void
+ilex(char *fname)
+{
+	FILE *fp;
+
+	/*
+	 * we can use static file names because this Input is not going
+	 * to be freed ever
+	 */
+	if (!fname) {
+		fp = stdin;
+		fname = "<stdin>";
+	} else {
+		if ((fp = fopen(fname, "r")) == NULL)
+			die("error opening output:%s", strerror(errno));
+		fname = fname;
+	}
+	allocinput(fname, fp, xmalloc(INPUTSIZ));
+	*input->begin = '\0';
+}
+
+bool
+addinput(char *fname, Symbol *sym, char *str)
+{
+	FILE *fp;
+	char flags = 0;
+
+	if (fname) {
+		/*
+		 * this call comes from an include clause, so we reuse
+		 * the buffer from the calling Input
+		 */
+		if ((fp = fopen(fname, "r")) == NULL)
+			return 0;
+		fname = xstrdup(fname);
+		str = input->line;
+		*str = '\0';
+	} else {
+		/*
+		 * This call comes from a macro expansion, so we have
+		 * to duplicate the input string because it is the
+		 * expansion of the macro in a temporal buffer
+		 */
+		fname = input->fname;
+		fp = NULL;
+		str = xstrdup(str);
+	}
+	allocinput(fname, fp, str);
+	input->macro = sym;
+	return 1;
 }
 
 static void
 delinput(void)
 {
-	Input *ip = input;
-	FILE *fp = ip->fp;
+	Input *ip;
 
-	if (!ip->next)
-		eof = 1;
-	if (fp) {
-		if (fclose(fp))
-			die("error reading from input file '%s'", ip->fname);
-		if (eof)
+repeat:
+	if (input->fp) {
+		/* include input */
+		if (fclose(input->fp))
+			die("error reading from input file '%s'", input->fname);
+		if (!input->next) {
+			eof = 1;
 			return;
-		free(ip->fname);
+		}
+		free(input->fname);
+	} else {
+		/* macro input */
+		free(input->line);
 	}
-	input = ip->next;
-	free(ip->line);
+	ip = input;
+	input = input->next;
 	free(ip);
+
+	if (*input->begin != '\0')
+		return;
+	if (!input->fp)
+		goto repeat;
 }
 
 void
@@ -120,13 +160,10 @@ readchar(void)
 	FILE *fp;
 
 repeat:
-	while (!input->fp || (feof(input->fp) && !eof))
+	if (feof(input->fp))
 		delinput();
-	if (eof) {
-		if (incomment)
-			error("unterminated comment");
+	if (eof)
 		return '\0';
-	}
 	fp = input->fp;
 
 	if ((c = getc(fp)) == '\\') {
@@ -135,7 +172,7 @@ repeat:
 		ungetc(c, fp);
 		c = '\\';
 	} else if (c == EOF) {
-		goto repeat;
+		c = '\n';
 	} else if (c == '\n' && ++input->nline == 0) {
 		die("error:input file '%s' too long", getfname());
 	}
@@ -143,31 +180,32 @@ repeat:
 }
 
 static void
-comment(char c)
+comment(char type)
 {
-	/* TODO: Ensure that incomment == 0 after a recovery */
-	incomment = 1;
-	if (c == '*') {
-		for (;;) {
-			while (readchar() !=  '*')
-				/* nothing */;
+	if (type == '*') {
+		while (!eof) {
+			while (readchar() !=  '*' && !eof)
+				/* nothing */
 			if (readchar() == '/')
 				break;
 		}
 	} else {
-		while (readchar() != '\n')
+		while (readchar() != '\n' && !eof)
 			/* nothing */;
 	}
-	incomment = 0;
+	if (eof)
+		error("unterminated comment");
 }
 
-static void
+static bool
 readline(void)
 {
 	char *bp, *lim;
 	char c, peekc = 0;
 
-	lim = input->line + INPUTSIZ;
+	if (eof)
+		return 0;
+	lim = &input->line[INPUTSIZ-1];
 	for (bp = input->line; bp != lim; *bp++ = c) {
 		c = (peekc) ? peekc : readchar();
 		peekc = 0;
@@ -180,13 +218,14 @@ readline(void)
 			c = '/';
 		} else {
 			comment(c);
-			c = ' ';
+			break;
 		}
 	}
 
 	if (bp == lim)
 		error("line %u too big in file '%s'", getfline(), getfname());
 	*bp = '\0';
+	return 1;
 }
 
 bool
@@ -195,19 +234,14 @@ moreinput(void)
 	char *p;
 
 repeat:
-	if (eof)
-		return 0;
-	while (*input->begin == '\0' && !input->fp) {
+	if (!input->fp)
 		delinput();
-		if (*input->begin)
-			return 1;
-	}
-
-	*(p = input->line) = '\0';
-	readline();
+	if (!readline())
+		return 0;
+	p = input->line;
 	while (isspace(*p))
 		++p;
-	if (*p == '\0' || preprocessor(p) || cppoff)
+	if (*p == '\0' || cpp(p) || cppoff)
 		goto repeat;
 	input->p = input->begin = p;
 	return 1;
@@ -549,6 +583,8 @@ next(void)
 repeat:
 	skipspaces();
 	if (eof) {
+		if (cppctx)
+			error("#endif expected");
 		strcpy(yytext, "<EOF>");
 		return yytoken = EOFTOK;
 	}
@@ -624,7 +660,7 @@ discard(void)
 				goto jump;
 			break;
 		}
-		if (!moreinput())
+		if (c == '\0' && !moreinput())
 			exit(-1);
 	}
 jump:

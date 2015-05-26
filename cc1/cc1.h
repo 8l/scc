@@ -256,6 +256,7 @@ extern Type *mktype(Type *tp, unsigned op, short nelem, void *data);
 /* symbol.c */
 extern void dumpstab(char *msg);
 extern Symbol *lookup(unsigned ns);
+extern Symbol *nextsym(Symbol *sym, unsigned ns);
 extern Symbol *install(unsigned ns);
 extern Symbol *newsym(unsigned ns);
 extern void pushctx(void), popctx(void);
@@ -278,10 +279,10 @@ extern char *getfname(void);
 extern unsigned short getfline(void);
 extern void setfname(char *name);
 extern void setfline(unsigned short line);
-extern char *addinput(char *fname, Symbol *sym);
+extern bool addinput(char *fname, Symbol *sym, char *str);
 extern void setnamespace(int ns);
 extern void setsafe(int type);
-extern void initcpp(void);
+extern void ilex(char *fname);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */
@@ -296,7 +297,8 @@ extern void freetree(Node *np);
 extern Node *expr(void), *negate(Node *np);
 
 /* cpp.c */
-extern bool preprocessor(char *s);
+extern void icpp(void);
+extern bool cpp(char *s);
 extern bool expand(Symbol *sym);
 
 /*
@@ -307,6 +309,7 @@ extern char yytext[];
 extern unsigned yytoken;
 extern unsigned short yylen;
 extern int cppoff;
+extern unsigned cppctx;
 
 extern Type *voidtype, *pvoidtype, *booltype,	
             *uchartype,   *chartype,
