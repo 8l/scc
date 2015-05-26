@@ -515,7 +515,7 @@ elseclause(char *s)
 	struct ifstatus *ip;
 
 	if (cppctx == 0)
-		error("#else without #if");
+		error("#else without #ifdef/ifndef");
 	cleanup(s);
 	cppoff += (ifstatus[cppctx-1] ^= 1) ? -1 : 1;
 }
@@ -526,7 +526,7 @@ undef(char *s)
 	Symbol *sym;
 
 	if (!iden(&s))
-		error("#undef must have an identifier as parameter");
+		error("no macro name given in #undef directive");
 	sym = lookup(NS_CPP);
 	sym->flags &= ~ISDEFINED;
 	cleanup(s);
