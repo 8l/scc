@@ -420,6 +420,7 @@ repeat:
 	if (ahead() == '"')
 		goto repeat;
 	*bp = '\0';
+	fprintf(stderr, "\"%s\"\n", buf);
 	sym = newsym(NS_IDEN);
 	sym->u.s = xstrdup(buf);
 	sym->type = mktype(chartype, ARY, (bp - buf) + 1, NULL);
