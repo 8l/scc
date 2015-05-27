@@ -236,13 +236,18 @@ moreinput(void)
 repeat:
 	if (!input->fp)
 		delinput();
+	if (*input->begin)
+		return 1;
 	if (!readline())
 		return 0;
 	p = input->line;
 	while (isspace(*p))
 		++p;
-	if (*p == '\0' || cpp(p) || cppoff)
+	if (*p == '\0' || cpp(p) || cppoff) {
+		*input->begin = '\0';
 		goto repeat;
+	}
+
 	input->p = input->begin = p;
 	return 1;
 }
