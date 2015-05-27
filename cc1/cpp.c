@@ -143,7 +143,7 @@ parameter(void)
 		switch (yytoken) {
 		case ')':
 		case ',':
-			argp -= 2;
+			argp -= 3;
 			*argp++ = '\0';
 			return;
 		case '(':
@@ -197,8 +197,8 @@ bool
 expand(Symbol *sym)
 {
 	unsigned len;
-	char *arglist[NR_MACROARG], buffer[BUFSIZE];
-	char c, *bp, *arg, *s = sym->u.s;
+	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
+	char prevc, c, *bp, *lim, *arg, *s = sym->u.s;
 
 	if (sym == symfile) {
 		sprintf(buffer, "\"%s\"", getfname());
@@ -210,25 +210,33 @@ expand(Symbol *sym)
 	}
 
 	macroname = sym->name;
-	if (!parsepars(buffer, arglist, atoi(s)))
+	if (!parsepars(arguments, arglist, atoi(s)))
 		return 0;
 
-	bp = buffer;
 	len = INPUTSIZ-1;
-	for (s += 3; c = *s; ++s) {
+	bp = buffer;
+	for (prevc = '\0', s += 3; c = *s; prevc = c, ++s) {
 		if (c != '@') {
+			if (c == '#')
+				continue;
 			if (len-- == 0)
 				goto expansion_too_long;
 			*bp++ = c;
 		} else {
 			unsigned size;
 
+			if (prevc == '#')
+				len -= 2;
 			arg = arglist[atoi(++s)];
 			size = strlen(arg);
 			if (size > len)
 				goto expansion_too_long;
+			if (prevc == '#')
+				*bp++ = '"';
 			memcpy(bp, arg, size);
 			bp += size;
+			if (prevc == '#')
+				*bp++ = '"';
 			len -= size;
 			s += 2;
 		}
@@ -292,6 +300,7 @@ set_nargs:
 	*nargs = n;
 	return s;
 }
+
 /*
  * Copy a string define, and substitute formal arguments of the
  * macro into strings in the form @XX@, where XX is the position
@@ -302,18 +311,24 @@ copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 {
 	int n;
 	size_t ncopy;
-	char arroba[6], *p, **bp, c;
+	char arroba[6], *p, **bp, c, prevc;
 
-	while ((c = *s) && bufsiz > 0) {
+	for (prevc = '\0'; c = *s++; prevc = c) {
 		if (!isalpha(c) && c != '_' || nargs < 1) {
+			if (bufsiz-- == 0)
+				goto too_long;
+			if (prevc == '#')
+				goto bad_stringer;
 			*buff++ = c;
-			++s, --bufsiz;
-			continue;
+			if (c != '#')
+				continue;
+			while (isspace(*++s))
+				/* nothing */;
 		}
 		/* found an identifier, is it one of the macro arguments? */
-		for (p = s+1; isalnum(c = *p) || c == '_'; ++p)
+		for (p = s; isalnum(c = *p) || c == '_'; ++p)
 			/* nothing */;
-		ncopy = p - s;
+		ncopy = p - --s;
 		bp = args;
 		for (n = 0; n < nargs; ++n) {
 			if (strncmp(s, *bp++, ncopy))
@@ -322,6 +337,8 @@ copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 			s = arroba, ncopy = 4;
 			break;
 		}
+		if (n == nargs && prevc == '#')
+			goto bad_stringer;
 		if ((bufsiz -= ncopy) < 0)
 			goto too_long;
 		memcpy(buff, s, ncopy);
@@ -332,6 +349,8 @@ copydefine(char *s, char *args[], char *buff, int bufsiz, int nargs)
 	*buff = '\0';
 	return s;
 
+bad_stringer:
+	error("'#' is not followed by a macro parameter");
 too_long:
 	error("macro definition too long");
 }
