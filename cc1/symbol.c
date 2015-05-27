@@ -152,6 +152,7 @@ nextsym(Symbol *sym, unsigned ns)
 			return sym;
 	}
 	new = newsym(ns);
+	new->flags &= ~ISDEFINED;
 	new->name = xstrdup(yytext);
 	new->hash = sym->hash;
 	return sym->hash = new;
