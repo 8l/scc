@@ -15,8 +15,10 @@ static unsigned nerrors;
 static void
 warn_helper(int flag, char *fmt, va_list va)
 {
-	if (!flag)
+	if (flag == 0)
 		return;
+	if (flag < 0)
+		failure = 1;
 	fprintf(stderr, "%s:%s:%u: ",
 		(flag < 0) ? "error" : "warning", getfname(), getfline());
 	vfprintf(stderr, fmt, va);
@@ -46,18 +48,16 @@ error(char *fmt, ...)
 	va_start(va, fmt);
 	warn_helper(-1, fmt, va);
 	va_end(va);
-	failure = 1;
 	discard();
 }
 
 void
-softerror(char *fmt, ...)
+printerr(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
 	warn_helper(-1, fmt, va);
 	va_end(va);
-	failure = 1;
 }
 
 void

@@ -606,9 +606,9 @@ expect(unsigned tok)
 {
 	if (yytoken != tok) {
 		if (isgraph(tok))
-			softerror("expected '%c' before '%s'", tok, yytext);
+			printerr("expected '%c' before '%s'", tok, yytext);
 		else
-			softerror("unexpected '%s'", yytext);
+			printerr("unexpected '%s'", yytext);
 	} else {
 		next();
 	}

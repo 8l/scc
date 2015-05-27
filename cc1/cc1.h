@@ -246,7 +246,7 @@ enum {
 extern void error(char *fmt, ...);
 extern void warn(char *fmt, ...);
 extern void unexpected(void);
-extern void softerror(char *fmt, ...);
+extern void printerr(char *fmt, ...);
 
 /* types.c */
 extern bool eqtype(Type *tp1, Type *tp2);
@@ -299,7 +299,7 @@ extern Node *expr(void), *negate(Node *np);
 /* cpp.c */
 extern void icpp(void);
 extern bool cpp(char *s);
-extern bool expand(Symbol *sym);
+extern int expand(Symbol *sym);
 
 /*
  * Definition of global variables
