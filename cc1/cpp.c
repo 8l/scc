@@ -364,6 +364,10 @@ define(char *s)
 	if (!iden(&s))
 		error("#define must have an identifier as parameter");
 
+	for (t = s + strlen(s) + 1; isspace(*--t); *t = '\0')
+		/* nothing */;
+	s = mkdefine(s);
+
 	sym = lookup(NS_CPP);
 	if ((sym->flags & ISDEFINED) && sym->ns == NS_CPP) {
 		warn("'%s' redefined", yytext);
@@ -372,10 +376,7 @@ define(char *s)
 	sym->flags |= ISDEFINED;
 	sym->ns = NS_CPP;
 	sym->ctx = UCHAR_MAX;
-
-	for (t = s + strlen(s) + 1; isspace(*--t); *t = '\0')
-		/* nothing */;
-	sym->u.s = mkdefine(s);
+	sym->u.s = s;
 }
 
 static void
