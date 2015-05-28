@@ -24,7 +24,7 @@ struct input {
 
 unsigned yytoken;
 struct yystype yylval;
-char yytext[IDENTSIZ + 1];
+char yytext[STRINGSIZ+3];
 unsigned short yylen;
 int cppoff;
 
@@ -259,7 +259,6 @@ tok2str(void)
 		error("token too big");
 	strncpy(yytext, input->begin, yylen);
 	yytext[yylen] = '\0';
-	fprintf(stderr ,"%s\n", yytext);
 	input->begin = input->p;
 }
 
@@ -400,31 +399,30 @@ character(void)
 static unsigned
 string(void)
 {
-	char buf[STRINGSIZ+1];
-	Symbol *sym;
-	char *bp = buf, c;
+	char *bp = yytext, c;
 
+	*bp++ = '"';
 repeat:
 	for (++input->p; (c = *input->p) != '\0' && c != '"'; ++input->p) {
 		if (c == '\\')
 			c = escape();
-		if (bp == &buf[STRINGSIZ])
+		if (bp == &yytext[STRINGSIZ+1])
 			error("string too long");
 		*bp++ = c;
 	}
-
 	if (c == '\0')
 		error("missing terminating '\"' character");
 	input->begin = input->p + 1;
-
 	if (ahead() == '"')
 		goto repeat;
 	*bp = '\0';
-	fprintf(stderr, "\"%s\"\n", buf);
-	sym = newsym(NS_IDEN);
-	sym->u.s = xstrdup(buf);
-	sym->type = mktype(chartype, ARY, (bp - buf) + 1, NULL);
-	yylval.sym = sym;
+
+	yylen = bp - yytext + 1;
+	yylval.sym = newsym(NS_IDEN);
+	yylval.sym->u.s = xstrdup(yytext+1);
+	yylval.sym->type = mktype(chartype, ARY, yylen - 2, NULL);
+	*bp++ = '"';
+	*bp = '\0';
 	return CONSTANT;
 }
 
@@ -597,6 +595,8 @@ repeat:
 	if (!yytoken)
 		goto repeat;
 
+	fputs(yytext, stderr);
+	putc('\n', stderr);
 	lex_ns = NS_IDEN;
 	return yytoken;
 }
