@@ -218,7 +218,7 @@ readline(void)
 			c = '/';
 		} else {
 			comment(c);
-			break;
+			c = ' ';
 		}
 	}
 
