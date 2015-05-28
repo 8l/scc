@@ -152,7 +152,7 @@ parameter(void)
 		switch (yytoken) {
 		case ')':
 		case ',':
-			argp -= 3;
+			argp -= 3;  /* remove " , "  or " ) "*/
 			*argp++ = '\0';
 			return;
 		case '(':
