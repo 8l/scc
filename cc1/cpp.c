@@ -525,6 +525,7 @@ usererr(char *s)
 	if (cppoff)
 		return;
 	printerr("#error %s", s);
+	exit(-1);
 }
 
 static void
