@@ -218,6 +218,7 @@ expand(Symbol *sym)
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 	char prevc, c, *bp, *lim, *arg, *s = sym->u.s;
 
+	fprintf(stderr, "macro %s:%s\n", sym->name, sym->u.s);
 	if (sym == symfile) {
 		sprintf(buffer, "\"%s\"", getfname());
 		goto add_macro;
@@ -230,6 +231,9 @@ expand(Symbol *sym)
 	macroname = sym->name;
 	if ((r = parsepars(arguments, arglist, atoi(s))) < 1)
 		return r;
+
+	for (int n = 0; n < atoi(s); ++n)
+		fprintf(stderr, "PAR%d:%s\n", n, arglist[n]);
 
 	len = INPUTSIZ-1;
 	bp = buffer;
@@ -260,6 +264,7 @@ expand(Symbol *sym)
 		}
 	}
 	*bp = '\0';
+	fprintf(stderr, "macro expanded:%s\n", buffer);
 add_macro:
 	addinput(NULL, sym, buffer);
 	return 1;
