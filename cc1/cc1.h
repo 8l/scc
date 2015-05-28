@@ -308,7 +308,7 @@ extern struct yystype yylval;
 extern char yytext[];
 extern unsigned yytoken;
 extern unsigned short yylen;
-extern int cppoff;
+extern int cppoff, disexpand;
 extern unsigned cppctx;
 
 extern Type *voidtype, *pvoidtype, *booltype,	

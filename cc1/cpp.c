@@ -18,6 +18,7 @@ static unsigned char ifstatus[NR_COND];
 static int paramerr;
 
 unsigned cppctx;
+int disexpand;
 
 static Symbol *
 defmacro(char *s)
@@ -171,8 +172,9 @@ parsepars(char *buffer, char **listp, int nargs)
 
 	if (ahead() != '(')
 		return 0;
-	next();
 
+	disexpand = 1;
+	next();
 	paramerr = n = 0;
 	argp = buffer;
 	arglen = INPUTSIZ;
@@ -182,6 +184,7 @@ parsepars(char *buffer, char **listp, int nargs)
 			parameter();
 		} while (!paramerr && ++n < NR_MACROARG && yytoken == ',');
 	}
+	disexpand = 0;
 
 	if (paramerr)
 		return -1;
@@ -194,6 +197,7 @@ parsepars(char *buffer, char **listp, int nargs)
 		      macroname, n, nargs);
 		return -1;
 	}
+
 	return 1;
 }
 

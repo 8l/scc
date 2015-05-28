@@ -429,26 +429,27 @@ repeat:
 static unsigned
 iden(void)
 {
+	Symbol *sym;
 	char *p, *t, c;
 
 	for (p = input->p; isalnum(*p) || *p == '_'; ++p)
 		/* nothing */;
 	input->p = p;
 	tok2str();
-	yylval.sym = lookup(lex_ns);
-	if (yylval.sym->ns == NS_CPP) {
-		if (yylval.sym != input->macro && expand(yylval.sym))
+	yylval.sym = sym = lookup(lex_ns);
+	if (sym->ns == NS_CPP) {
+		if (!disexpand && sym != input->macro && expand(sym))
 			return 0;
 		/*
 		 * it is not a correct macro call, so try to find
 		 * another definition. This is going to be expensive
 		 * but I think it is not going to be a common case.
 		 */
-		yylval.sym = nextsym(yylval.sym, lex_ns);
+		sym = nextsym(sym, lex_ns);
 	}
-	if (yylval.sym->token != IDEN)
-		yylval.token = yylval.sym->u.token;
-	return yylval.sym->token;
+	if (sym->token != IDEN)
+		yylval.token = sym->u.token;
+	return sym->token;
 }
 
 static unsigned
