@@ -545,7 +545,7 @@ ifclause(char *s, int isdef)
 	}
 	if (!iden(&s)) {
 		printerr("no macro name given in #%s directive",
-		      (isdef) ? "ifdef" : "ifndef");
+		         (isdef) ? "ifdef" : "ifndef");
 		return;
 	}
 	sym = lookup(NS_CPP);
