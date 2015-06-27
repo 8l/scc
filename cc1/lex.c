@@ -439,7 +439,7 @@ iden(void)
 	yylval.sym = sym = lookup(lex_ns);
 	if (sym->ns == NS_CPP) {
 		if (!disexpand && sym != input->macro && expand(sym))
-			return 0;
+			return next();
 		/*
 		 * it is not a correct macro call, so try to find
 		 * another definition. This is going to be expensive
@@ -572,7 +572,6 @@ next(void)
 {
 	char c;
 
-repeat:
 	skipspaces();
 	if (eof) {
 		if (cppctx)
@@ -592,9 +591,6 @@ repeat:
 		yytoken = character();
 	else
 		yytoken = operator();
-
-	if (!yytoken)
-		goto repeat;
 
 	fputs(yytext, stderr);
 	putc('\n', stderr);
