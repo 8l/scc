@@ -11,6 +11,10 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
+#ifndef PREFIX
+#define PREFIX "/usr/include/local"
+#endif
+
 static char *argp, *macroname;
 static unsigned arglen;
 static Symbol *symline, *symfile;
