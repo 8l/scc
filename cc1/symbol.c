@@ -36,7 +36,7 @@ dumpstab(char *msg)
 }
 #endif
 
-static inline unsigned
+static unsigned
 hash(const char *s)
 {
 	unsigned c, h;
