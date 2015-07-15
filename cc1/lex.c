@@ -184,8 +184,8 @@ comment(char type)
 {
 	if (type == '*') {
 		while (!eof) {
-			while (readchar() !=  '*' && !eof)
-				/* nothing */
+			while (readchar() != '*' && !eof)
+				/* nothing */;
 			if (readchar() == '/')
 				break;
 		}
