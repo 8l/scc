@@ -23,8 +23,8 @@ friends).
 This is the reason why I begin to develop this compiler, and I hope
 it will be useful for you.
 
-Changes from standar C
-======================
+Changes from standard C
+=======================
 This compiler is near of being full compatible with C99 standard, but
 it has some differences:
 

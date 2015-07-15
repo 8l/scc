@@ -651,7 +651,7 @@ discard(void)
 			break;
 		}
 		if (c == '\0' && !moreinput())
-			exit(-1);
+			exit(1);
 	}
 jump:
 	yytoken = c;

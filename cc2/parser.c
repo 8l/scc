@@ -464,7 +464,7 @@ oreturn(char *token)
 	if (token = strtok(NULL, "\t")) {
 		expr(token);
 		lp = pop();
-		np ->left = lp;
+		np->left = lp;
 		np->type = lp->type;
 	} else {
 		np->left = NULL;

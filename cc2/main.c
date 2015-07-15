@@ -22,7 +22,7 @@ error(unsigned nerror, ...)
 		vfprintf(stderr, errlist[nerror], va);
 	va_end(va);
 	putc('\n', stderr);
-	exit(EXIT_FAILURE);
+	exit(1);
 }
 
 bool

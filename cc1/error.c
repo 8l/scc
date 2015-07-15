@@ -25,7 +25,7 @@ warn_helper(int flag, char *fmt, va_list va)
 	putc('\n', stderr);
 	if (flag < 0 && nerrors++ == MAXERRNUM) {
 		fputs("too many errors\n", stderr);
-		exit(-1);
+		exit(1);
 	}
 }
 
@@ -62,6 +62,6 @@ printerr(char *fmt, ...)
 
 void
 unexpected(void)
-{	
+{
 	error("unexpected '%s'", yytext);
 }

@@ -34,7 +34,7 @@ repeat:
 
 	np->left = optcasts(np->left, tp);
 	np->right = optcasts(np->right, tp);
-	return np;			
+	return np;
 }
 
 static Node *
