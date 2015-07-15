@@ -218,7 +218,7 @@ int
 expand(Symbol *sym)
 {
 	unsigned len;
-	int r;
+	int r, n;
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 	char prevc, c, *bp, *lim, *arg, *s = sym->u.s;
 
@@ -236,7 +236,7 @@ expand(Symbol *sym)
 	if ((r = parsepars(arguments, arglist, atoi(s))) < 1)
 		return r;
 
-	for (int n = 0; n < atoi(s); ++n)
+	for (n = 0; n < atoi(s); ++n)
 		fprintf(stderr, "PAR%d:%s\n", n, arglist[n]);
 
 	len = INPUTSIZ-1;
