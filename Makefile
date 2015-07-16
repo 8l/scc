@@ -6,3 +6,5 @@ all clean:
 	do \
 		(cd $$i && $(MAKE) $@) ;\
 	done
+
+.POSIX:

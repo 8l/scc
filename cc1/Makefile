@@ -1,8 +1,9 @@
-CFLAGS = -ansi
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
 	code.o stmt.o cpp.o
 
 all: cc1
+
+.POSIX:
 
 $(OBJS) : cc1.h ../inc/cc.h ../inc/sizes.h
 

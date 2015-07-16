@@ -5,6 +5,8 @@ LIBS = -lcc
 
 all: cc2
 
+.POSIX:
+
 $(OBJS): ../inc/cc.h ../inc/sizes.h cc2.h
 main.o: error.h
 
