@@ -1,5 +1,4 @@
 #!/bin/sh
 
-source env.sh
-make $@
-
+. ./env.sh
+make "$@"

@@ -1,6 +1,5 @@
 #!/bin/sh
 
-PATH=$PWD/cc1:$PWD/cc2
+PATH="$PWD/cc1:$PWD/cc2"
 
-cc1 < $1 | cc2
-
+cc1 < "$1" | cc2

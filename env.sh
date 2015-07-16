@@ -1,15 +1,15 @@
 #!/bin/sh
 
-case `uname` in
+case "$(uname)" in
 Plan9)
 	CFLAGS="-D_SUSV2_SOURCE -DNBOOL"
 	export CFLAGS
 	;;
 *)
-	case x$CC in
-	xc99)
+	case "$CC" in
+	c99)
 		;;
-	x|xgcc)
+	''|gcc)
 		CC=gcc
 		CFLAGS=-std=c99
 		export CFLAGS CC
