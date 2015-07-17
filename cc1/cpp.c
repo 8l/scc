@@ -512,6 +512,7 @@ undef(void)
 	}
 	sym = lookup(NS_CPP);
 	sym->flags &= ~ISDEFINED;
+	next();
 }
 
 bool
