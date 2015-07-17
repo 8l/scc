@@ -13,7 +13,6 @@ typedef struct caselist Caselist;
 typedef struct node Node;
 typedef struct input Input;
 
-
 struct type {
 	unsigned char op;           /* type builder operator */
 	unsigned char ns;

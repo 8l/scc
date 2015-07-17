@@ -59,17 +59,17 @@ icpp(void)
 static void
 nextcpp(void)
 {
-        next();
-        if (yytoken == EOFTOK)
+	next();
+	if (yytoken == EOFTOK)
 		error("unterminated argument list invoking macro \"%s\"",
-                      macroname);
-        if (yylen + 1 > arglen)
-                error("argument overflow invoking macro \"%s\"",
-                      macroname);
-        memcpy(argp, yytext, yylen);
-        argp += yylen;
-        *argp++ = ' ';
-        arglen -= yylen + 1;
+		      macroname);
+	if (yylen + 1 > arglen)
+		error("argument overflow invoking macro \"%s\"",
+		      macroname);
+	memcpy(argp, yytext, yylen);
+	argp += yylen;
+	*argp++ = ' ';
+	arglen -= yylen + 1;
 }
 
 static void
@@ -171,7 +171,7 @@ copymacro(char *bp, char *s, size_t bufsiz, char *arglist[])
 			s += 2;
 		}
 	}
-        *bp = '\0';
+	*bp = '\0';
 
 	return;
 
@@ -201,8 +201,8 @@ expand(char *begin, Symbol *sym)
 	macroname = sym->name;
 	if (!parsepars(arguments, arglist, atoi(s)))
 		return 0;
-        for (n = 0; n < atoi(s); ++n)
-                fprintf(stderr, "PAR%d:%s\n", n, arglist[n]);
+	for (n = 0; n < atoi(s); ++n)
+		fprintf(stderr, "PAR%d:%s\n", n, arglist[n]);
 
 	copymacro(buffer, s+3, INPUTSIZ-1, arglist);
 
