@@ -296,10 +296,8 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 		memcpy(bp, yytext, len);
 		bp += len;
 		bufsiz -= len;
-		if ((prevc = yytoken) != '#') {
-			bufsiz;
+		if ((prevc = yytoken) != '#')
 			*bp++ = ' ';
-		}
 		next();
 	}
 	*bp = '\0';
