@@ -191,7 +191,7 @@ ikeywords(void)
 	static struct {
 		char *str;
 		unsigned char token, value;
-	} *bp, buff[] = {
+	} *bp, keywords[] = {
 		{"auto", SCLASS, AUTO},
 		{"break", BREAK, BREAK},
 		{"_Bool", TYPE, BOOL},
@@ -227,14 +227,32 @@ ikeywords(void)
 		{"volatile", TQUALIFIER, VOLATILE},
 		{"while", WHILE, WHILE},
 		{NULL, 0, 0},
-	};
+	}, cppclauses[] = {
+		{"define", DEFINE, DEFINE},
+		{"include", INCLUDE, INCLUDE},
+		{"line", LINE, LINE},
+		{"ifdef", IFDEF, IFDEF},
+		{"else", ELSE, ELSE},
+		{"ifndef", IFNDEF, IFNDEF},
+		{"undef", UNDEF, UNDEF},
+		{"pragma", PRAGMA, PRAGMA},
+		{"error", ERROR, ERROR}
+	}, *list[] = {
+		keywords,
+		cppclauses,
+		NULL
+	}, **lp;
 	Symbol *sym;
+	int ns = NS_KEYWORD;
 
-	for (bp = buff; bp->str; ++bp) {
-		strcpy(yytext, bp->str);
-		sym = lookup(NS_KEYWORD);
-		sym->token = bp->token;
-		sym->u.token = bp->value;
+	for (lp = list; *lp; ++lp) {
+		for (bp = *lp; bp->str; ++bp) {
+			strcpy(yytext, bp->str);
+			sym = lookup(ns);
+			sym->token = bp->token;
+			sym->u.token = bp->value;
+		}
+		ns = NS_CPPCLAUSES;
 	}
 	globalcnt = 0;
 }

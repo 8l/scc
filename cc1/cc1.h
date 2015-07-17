@@ -11,6 +11,8 @@ typedef struct type Type;
 typedef struct symbol Symbol;
 typedef struct caselist Caselist;
 typedef struct node Node;
+typedef struct input Input;
+
 
 struct type {
 	unsigned char op;           /* type builder operator */
@@ -70,6 +72,14 @@ struct yystype {
 	unsigned char token;
 };
 
+struct input {
+	char *fname;
+	void *fp;
+	char *line, *begin, *p;
+	struct input *next;
+	unsigned short nline;
+};
+
 /*
  * Definition of enumerations
  */
@@ -96,6 +106,7 @@ enum {
 	NS_LABEL,
 	NS_CPP,
 	NS_KEYWORD,
+	NS_CPPCLAUSES,
 	NS_STRUCTS
 };
 
@@ -109,6 +120,13 @@ enum {
 	ISFIELD    = 32,
 	ISPARAM    = 64,
 	ISEXTERN   =128
+};
+
+
+/* lexer mode, compiler or preprocessor directive */
+enum {
+	CCMODE,
+	CPPMODE
 };
 
 /* input tokens */
@@ -177,6 +195,14 @@ enum tokens {
 	CONTINUE,
 	BREAK,
 	RETURN,
+	DEFINE,
+	INCLUDE,
+	LINE,
+	PRAGMA,
+	ERROR,
+	IFDEF,
+	IFNDEF,
+	UNDEF,
 	EOFTOK
 };
 
@@ -275,11 +301,7 @@ extern unsigned next(void);
 extern bool moreinput(void);
 extern void expect(unsigned tok);
 extern void discard(void);
-extern char *getfname(void);
-extern unsigned short getfline(void);
-extern void setfname(char *name);
-extern void setfline(unsigned short line);
-extern bool addinput(char *fname, Symbol *sym, char *str);
+extern bool addinput(char *fname);
 extern void setnamespace(int ns);
 extern void setsafe(int type);
 extern void ilex(char *fname);
@@ -298,8 +320,8 @@ extern Node *expr(void), *negate(Node *np);
 
 /* cpp.c */
 extern void icpp(void);
-extern bool cpp(char *s);
-extern int expand(Symbol *sym);
+extern bool cpp(void);
+extern bool expand(char *begin, Symbol *sym);
 
 /*
  * Definition of global variables
@@ -310,6 +332,8 @@ extern unsigned yytoken;
 extern unsigned short yylen;
 extern int cppoff, disexpand;
 extern unsigned cppctx;
+extern Input *input;
+extern int lexmode;
 
 extern Type *voidtype, *pvoidtype, *booltype,	
             *uchartype,   *chartype,

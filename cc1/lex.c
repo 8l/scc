@@ -11,38 +11,27 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-typedef struct input Input;
-
-struct input {
-	char *fname;
-	unsigned short nline;
-	FILE *fp;
-	char *line, *begin, *p;
-	Symbol *macro;
-	struct input *next;
-};
-
 unsigned yytoken;
 struct yystype yylval;
 char yytext[STRINGSIZ+3];
 unsigned short yylen;
 int cppoff;
+int lexmode = CCMODE;
 
 static unsigned lex_ns = NS_IDEN;
 static int safe, eof;
-static Input *input;
+Input *input;
 
 static void
-allocinput(char *fname, FILE *fp, char *buff)
+allocinput(char *fname, FILE *fp)
 {
 	Input *ip;
 
 	ip = xmalloc(sizeof(Input));
-	ip->fname = fname;
+	ip->fname = xstrdup(fname);
+	ip->p = ip->begin = ip->line = xmalloc(INPUTSIZ);
+	ip->nline = 0;
 	ip->next = input;
-	ip->macro = NULL;
-	ip->begin = ip->line = buff;
-	ip->nline = (fp) ? 0 : input->nline;
 	ip->fp = fp;
 	input = ip;
 }
@@ -52,10 +41,6 @@ ilex(char *fname)
 {
 	FILE *fp;
 
-	/*
-	 * we can use static file names because this Input is not going
-	 * to be freed ever
-	 */
 	if (!fname) {
 		fp = stdin;
 		fname = "<stdin>";
@@ -64,93 +49,42 @@ ilex(char *fname)
 			die("error opening output:%s", strerror(errno));
 		fname = fname;
 	}
-	allocinput(fname, fp, xmalloc(INPUTSIZ));
+	allocinput(fname, fp);
 	*input->begin = '\0';
 }
 
 bool
-addinput(char *fname, Symbol *sym, char *str)
+addinput(char *fname)
 {
 	FILE *fp;
-	char flags = 0;
 
-	if (fname) {
-		/*
-		 * this call comes from an include clause, so we reuse
-		 * the buffer from the calling Input
-		 */
-		if ((fp = fopen(fname, "r")) == NULL)
-			return 0;
-		fname = xstrdup(fname);
-		str = input->line;
-		*str = '\0';
-	} else {
-		/*
-		 * This call comes from a macro expansion, so we have
-		 * to duplicate the input string because it is the
-		 * expansion of the macro in a temporal buffer
-		 */
-		fname = input->fname;
-		fp = NULL;
-		str = xstrdup(str);
-	}
-	allocinput(fname, fp, str);
-	input->macro = sym;
+	if ((fp = fopen(fname, "r")) == NULL)
+		return 0;
+	allocinput(fname, fp);
 	return 1;
 }
 
 static void
 delinput(void)
 {
-	Input *ip;
+	Input *ip = input;
 
-repeat:
-	if (input->fp) {
-		/* include input */
-		if (fclose(input->fp))
-			die("error reading from input file '%s'", input->fname);
-		if (!input->next) {
-			eof = 1;
-			return;
-		}
-		free(input->fname);
-	} else {
-		/* macro input */
-		free(input->line);
-	}
-	ip = input;
-	input = input->next;
-	free(ip);
-
-	if (*input->begin != '\0')
+	if (!ip->next)
+		eof = 1;
+	if (fclose(ip->fp))
+		die("error reading from input file '%s'", ip->fname);
+	if (eof)
 		return;
-	if (!input->fp)
-		goto repeat;
+	input = ip->next;
+	free(ip->fname);
+	free(ip->line);
 }
 
-void
-setfname(char *name)
+static void
+newline(void)
 {
-	free(input->fname);
-	input->fname = xstrdup(name);
-}
-
-char *
-getfname(void)
-{
-	return input->fname;
-}
-
-void
-setfline(unsigned short line)
-{
-	input->nline = line;
-}
-
-unsigned short
-getfline(void)
-{
-	return input->nline;
+	if (++input->nline == 0)
+		die("error:input file '%s' too long", input->fname);
 }
 
 static char
@@ -160,22 +94,25 @@ readchar(void)
 	FILE *fp;
 
 repeat:
-	if (feof(input->fp))
-		delinput();
-	if (eof)
-		return '\0';
 	fp = input->fp;
 
-	if ((c = getc(fp)) == '\\') {
-		if ((c = getc(fp)) == '\n')
+	switch (c = getc(fp)) {
+	case EOF:
+		c = '\0';
+		break;
+	case '\\':
+		if ((c = getc(fp)) == '\n') {
+			newline();
 			goto repeat;
+		}
 		ungetc(c, fp);
 		c = '\\';
-	} else if (c == EOF) {
-		c = '\n';
-	} else if (c == '\n' && ++input->nline == 0) {
-		die("error:input file '%s' too long", getfname());
+		break;
+	case '\n':
+		newline();
+		break;
 	}
+
 	return c;
 }
 
@@ -203,10 +140,17 @@ readline(void)
 	char *bp, *lim;
 	char c, peekc = 0;
 
+repeat:
+	input->begin = input->p = input->line;
+	*input->line = '\0';
 	if (eof)
 		return 0;
+	if (feof(input->fp)) {
+		delinput();
+		goto repeat;
+	}
 	lim = &input->line[INPUTSIZ-1];
-	for (bp = input->line; bp != lim; *bp++ = c) {
+	for (bp = input->line; bp < lim; *bp++ = c) {
 		c = (peekc) ? peekc : readchar();
 		peekc = 0;
 		if (c == '\n' || c == '\0')
@@ -222,8 +166,10 @@ readline(void)
 		}
 	}
 
-	if (bp == lim)
-		error("line %u too big in file '%s'", getfline(), getfname());
+	if (bp == lim) {
+		error("line %u too big in file '%s'",
+		      input->line, input->fname);
+	}
 	*bp = '\0';
 	return 1;
 }
@@ -231,24 +177,18 @@ readline(void)
 bool
 moreinput(void)
 {
-	char *p;
-
 repeat:
-	if (!input->fp)
-		delinput();
-	if (*input->begin)
-		return 1;
 	if (!readline())
 		return 0;
-	p = input->line;
-	while (isspace(*p))
-		++p;
-	if (*p == '\0' || cpp(p) || cppoff) {
+	while (isspace(*input->p))
+		++input->p;
+	input->begin = input->p;
+	if (*input->p == '\0' || cpp() || cppoff) {
 		*input->begin = '\0';
 		goto repeat;
 	}
 
-	input->p = input->begin = p;
+	input->begin = input->p;
 	return 1;
 }
 
@@ -403,16 +343,17 @@ string(void)
 
 	*bp++ = '"';
 repeat:
-	for (++input->p; (c = *input->p) != '\0' && c != '"'; ++input->p) {
+	for (++input->p; (c = *input->p) != '"'; ++input->p) {
+		if (c == '\0')
+			error("missing terminating '\"' character");
 		if (c == '\\')
 			c = escape();
 		if (bp == &yytext[STRINGSIZ+1])
 			error("string too long");
 		*bp++ = c;
 	}
-	if (c == '\0')
-		error("missing terminating '\"' character");
-	input->begin = input->p + 1;
+
+	input->begin = ++input->p;
 	if (ahead() == '"')
 		goto repeat;
 	*bp = '\0';
@@ -430,15 +371,16 @@ static unsigned
 iden(void)
 {
 	Symbol *sym;
-	char *p, *t, c;
+	char *p, *begin;
 
-	for (p = input->p; isalnum(*p) || *p == '_'; ++p)
+	begin = input->p;
+	for (p = begin; isalnum(*p) || *p == '_'; ++p)
 		/* nothing */;
 	input->p = p;
 	tok2str();
 	yylval.sym = sym = lookup(lex_ns);
 	if (sym->ns == NS_CPP) {
-		if (!disexpand && sym != input->macro && expand(sym))
+		if (!disexpand && expand(begin, sym))
 			return next();
 		/*
 		 * it is not a correct macro call, so try to find
@@ -554,17 +496,15 @@ setnamespace(int ns)
 static void
 skipspaces(void)
 {
-	char *p;
-
 repeat:
-	for (p = input->begin; isspace(*p); ++p)
-		/* nothing */;
-	if (*p == '\0') {
+	while (isspace(*input->p))
+		++input->p;
+	if (*input->p == '\0' && lexmode != CPPMODE) {
 		if (!moreinput())
 			return;
 		goto repeat;
 	}
-	input->begin = input->p = p;
+	input->begin = input->p;
 }
 
 unsigned
@@ -573,14 +513,15 @@ next(void)
 	char c;
 
 	skipspaces();
-	if (eof) {
-		if (cppctx)
-			error("#endif expected");
+	c = *input->begin;
+	if ((eof || lexmode == CPPMODE) && c == '\0') {
 		strcpy(yytext, "<EOF>");
-		return yytoken = EOFTOK;
+		if (cppctx && eof)
+			error("#endif expected");
+		yytoken = EOFTOK;
+		goto exit;
 	}
 
-	c = *input->begin;
 	if (isalpha(c) || c == '_')
 		yytoken = iden();
 	else if (isdigit(c))
@@ -592,8 +533,8 @@ next(void)
 	else
 		yytoken = operator();
 
-	fputs(yytext, stderr);
-	putc('\n', stderr);
+exit:
+	fprintf(stderr, "%s\n", yytext);
 	lex_ns = NS_IDEN;
 	return yytoken;
 }
