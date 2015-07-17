@@ -210,12 +210,16 @@ print_subs:
 	fprintf(stderr, "macro '%s' expanded to :'%s'\n", macroname, buffer);
 	len = strlen(buffer);
 
+	if (begin - input->line + len >= LINESIZ-1)
+		error("macro expansion too long");
+
 	/* cut macro invocation */
 	memmove(begin, input->p, input->p - begin);
-	memmove(begin + len, begin, len);
 
 	/* paste macro expansion */
+	memmove(begin + len, begin, len);
 	memcpy(begin, buffer, len);
+
 	input->p = input->begin = begin;
 
 	return 1;
