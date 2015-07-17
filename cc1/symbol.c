@@ -235,6 +235,7 @@ ikeywords(void)
 		{"ifdef", IFDEF, IFDEF},
 		{"else", ELSE, ELSE},
 		{"ifndef", IFNDEF, IFNDEF},
+		{"endif", ENDIF, ENDIF},
 		{"undef", UNDEF, UNDEF},
 		{"pragma", PRAGMA, PRAGMA},
 		{"error", ERROR, ERROR}

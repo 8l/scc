@@ -477,6 +477,15 @@ ifndef(void)
 }
 
 static void
+endif(void)
+{
+	if (cppctx == 0)
+		error("#endif without #if");
+	if (!ifstatus[--cppctx])
+		--cppoff;
+}
+
+static void
 elseclause(void)
 {
 	if (cppctx == 0)
@@ -513,6 +522,7 @@ cpp(void)
 		{IFDEF, ifdef},
 		{IFNDEF, ifndef},
 		{ELSE, elseclause},
+		{ENDIF, endif},
 		{UNDEF, undef},
 		{PRAGMA, pragma},
 		{ERROR, usererr},

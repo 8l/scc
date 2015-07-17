@@ -202,6 +202,7 @@ enum tokens {
 	IFDEF,
 	IFNDEF,
 	UNDEF,
+	ENDIF,
 	EOFTOK
 };
 
