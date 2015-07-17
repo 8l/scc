@@ -207,8 +207,6 @@ moveto(Node *np, uint8_t reg)
 static void
 accum(Node *np)
 {
-	Symbol *sym;
-
 	switch (np->type.size) {
 	case 1:
 		moveto(np, A);

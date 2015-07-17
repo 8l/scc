@@ -19,7 +19,6 @@ static char *argp, *macroname;
 static unsigned arglen;
 static Symbol *symline, *symfile;
 static unsigned char ifstatus[NR_COND];
-static Type *charptype;
 
 unsigned cppctx;
 int disexpand;
@@ -405,7 +404,6 @@ too_long:
 static void
 line(void)
 {
-	char *file, *p;
 	Type *tp;
 	long n;
 
@@ -479,20 +477,8 @@ ifndef(void)
 }
 
 static void
-endif(void)
-{
-	if (cppctx == 0)
-		error("#endif without #if");
-
-	if (!ifstatus[--cppctx])
-		--cppoff;
-}
-
-static void
 elseclause(void)
 {
-	struct ifstatus *ip;
-
 	if (cppctx == 0)
 		error("#else without #ifdef/ifndef");
 
