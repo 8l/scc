@@ -7,12 +7,12 @@ of optimizations to the programmer.
 
 After a lot of years seeing compilers for z80 I notice that it is very
 hard for a C compiler generates a good code for a 8 bit processor like
-z80, with a expensive indirect addressing mode, so the best solution
+z80, with an expensive indirect addressing mode, so the best solution
 is to not try that compiler optimize the code and use C as a macro
 macro assembler.
 
-In order to get this last, we need a compiler that does exactly the
-things we want to do. For example is a variable is register it MUST be
+In order to get this target, we need a compiler that does exactly the
+things programmer want to do. For example is a variable is register it MUST be
 register and fails in other case. If a variable is automatic try to
 realize operations directly with the stack (for example use ADD
 A,(IX+4), instead of allocate the variable into register add and store
@@ -20,7 +20,7 @@ again in memory). So if you declare an automatic variable you are a
 big bullshit or you need it for recursion (static variables are your
 friends). 
 
-This is the reason why I begin to develop this compiler, and I hope
+This is the reason why I began to develop this compiler, and I hope
 it will be useful for you.
 
 Changes from standard C
@@ -37,7 +37,7 @@ time):
 	- const: The definition of const is not clear in the standard.
 	  If a const value is modified then the behaviour is implementation
 	  defined. It seems that it was defined more in order to can
-	  allocate variables in ROM that for the error detection. This
+	  allocate variables in ROM than for the error detection. This
 	  implememtation will not warn about these modifications and
 	  the code will use them as normal variables (standard specifies
 	  that a diagnosis message must be printed).
@@ -47,17 +47,18 @@ time):
 	  variable', which of course depend of the king of optimizations
 	  applied to the variable. This qualifier was added to the standard
 	  to can deal with longjmp (local variables that are not volatile
-	  have undefined state), but this can achieved with special pragma
-	  values, and for memory mapped registers or variables whose
-	  value is modified asynchronous. In the first case, this is a
-	  a non portable code by definition (depend of the register mapped),
-	  so it is better to deal with it using another solution (compiler
-	  extensions or directly assembler), and in the second case it
-	  generated a lot of problems with moderm processors out of order
-	  and multiprocesor, where not hold the value in a register is
-	  good enough (it is needed a explicit memory barrier).
+	  have undefined state), and for memory mapped registers or variables
+	  whose value is modified asynchronous but this can achieved with
+	  special pragma values.
+	  In the first case, this is a a non portable code by definition
+	  (depend of the register mapped), so it is better to deal with
+	  it using another solution (compiler extensions or directly
+	  assembler), and in the second case it generated a lot of
+	  problems with moderm processors out of order and multiprocesor,
+	  where not hold the value in a register is good enough (it is
+	  needed a explicit memory barrier).
 
-	- restricted: This qualifer can be only applied to pointers, to
+	- restrict: This qualifer can be only applied to pointers, to
 	  mark that the pointed object has no other alias. This qualifer
 	  was introduced to can fix some performance problems in numerical
 	  algorithm, where FORTRAN can achieve a better performance (and
