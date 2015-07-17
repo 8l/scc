@@ -184,7 +184,7 @@ bool
 expand(char *begin, Symbol *sym)
 {
 	size_t len;
-	int n;
+	int n, r;
 	char *s = sym->u.s;
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
@@ -194,7 +194,11 @@ expand(char *begin, Symbol *sym)
 		goto print_subs;
 	}
 	if (sym == symline) {
-		sprintf(buffer, "%d", input->line);
+		r = snprintf(buffer, sizeof(buffer), "%s", input->line);
+		if(r == -1 || (size_t)r >= sizeof(buffer)) {
+			error("expansion of macro \"%s\" is too long", sym->name);
+			return 0;
+		}
 		goto print_subs;
 	}
 
