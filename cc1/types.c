@@ -10,7 +10,6 @@
 
 #define NR_TYPE_HASH 16
 
-
 /*
  * Initializaion of type pointers were done with
  * a C99 initilizator '... = &(Type) {...', but

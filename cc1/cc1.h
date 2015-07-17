@@ -334,7 +334,7 @@ extern unsigned cppctx;
 extern Input *input;
 extern int lexmode;
 
-extern Type *voidtype, *pvoidtype, *booltype,	
+extern Type *voidtype, *pvoidtype, *booltype,
             *uchartype,   *chartype,
             *uinttype,    *inttype,
             *ushortype,   *shortype,
