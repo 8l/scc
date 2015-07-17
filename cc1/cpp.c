@@ -532,6 +532,8 @@ cpp(void)
 	if (*input->p != '#')
 		return 0;
 	++input->p;
+
+	disexpand = 1;
 	lexmode = CPPMODE;
 	setnamespace(NS_CPPCLAUSES);
 	next();
@@ -544,6 +546,8 @@ cpp(void)
 
 	if (yytoken != EOFTOK && !cppoff)
 		error("trailing characters after preprocessor directive");
+	disexpand = 0;
 	lexmode = CCMODE;
+
 	return 1;
 }
