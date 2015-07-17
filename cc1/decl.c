@@ -1,6 +1,7 @@
 
 #include <inttypes.h>
 #include <setjmp.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "../inc/sizes.h"

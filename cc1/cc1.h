@@ -73,7 +73,7 @@ struct yystype {
 
 struct input {
 	char *fname;
-	void *fp;
+	FILE *fp;
 	char *line, *begin, *p;
 	struct input *next;
 	unsigned short nline;
