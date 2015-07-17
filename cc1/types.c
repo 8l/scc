@@ -81,7 +81,7 @@ static Type types[] = {
 		.defined = 1,
 		.n.rank = RANK_LONG
 	},
-	{       /* 11 = ulongtype
+	{       /* 11 = ulongtype */
 		.op = INT,
 		.letter = L_ULONG,
 		.defined = 1,
