@@ -182,22 +182,22 @@ expansion_too_long:
 bool
 expand(char *begin, Symbol *sym)
 {
-	size_t len;
+	size_t total, elen, rlen, llen, ilen;
 	int n, r;
 	char *s = sym->u.s;
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
-	fprintf(stderr, "macro '%s':%s\n", sym->name, sym->u.s);
 	if (sym == symfile) {
 		sprintf(buffer, "\"%s\"", input->fname);
 		goto print_subs;
 	}
 	if (sym == symline) {
-		r = snprintf(buffer, sizeof(buffer), "%s", input->line);
+		r = snprintf(buffer, sizeof(buffer), "%d", input->nline);
 		if(r == -1 || (size_t)r >= sizeof(buffer)) {
 			error("expansion of macro \"%s\" is too long", sym->name);
 			return 0;
 		}
+		fprintf(stderr, "Expansion of line '%s'\n", buffer);
 		goto print_subs;
 	}
 
@@ -211,17 +211,22 @@ expand(char *begin, Symbol *sym)
 
 print_subs:
 	fprintf(stderr, "macro '%s' expanded to :'%s'\n", macroname, buffer);
-	len = strlen(buffer);
+	elen = strlen(buffer);        /* expansion lentgh */
+	rlen = strlen(input->p);      /* rigth length */
+	llen = begin - input->line;   /* left length */
+	ilen = input->p - begin;      /* invocation length */
+	total = llen + elen + rlen;
 
-	if (begin - input->line + len >= LINESIZ-1)
+	if (total >= LINESIZ)
 		error("macro expansion too long");
 
 	/* cut macro invocation */
-	memmove(begin, input->p, input->p - begin);
+	memmove(begin, begin + ilen, rlen);
 
 	/* paste macro expansion */
-	memmove(begin + len, begin, len);
-	memcpy(begin, buffer, len);
+	memmove(begin + elen, begin, rlen);
+	memcpy(begin, buffer, elen);
+	input->line[total] = '\0';
 
 	input->p = input->begin = begin;
 
