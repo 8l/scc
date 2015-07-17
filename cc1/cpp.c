@@ -447,7 +447,7 @@ ifclause(int isdef)
 
 	if (cppctx == NR_COND-1)
 		error("too much nesting levels of conditional inclusion");
-	n = cppctx++
+	n = cppctx++;
 	if (yytoken != IDEN) {
 		error("no macro name given in #%s directive",
 		      (isdef) ? "ifdef" : "ifndef");
