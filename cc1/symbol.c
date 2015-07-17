@@ -238,7 +238,8 @@ ikeywords(void)
 		{"endif", ENDIF, ENDIF},
 		{"undef", UNDEF, UNDEF},
 		{"pragma", PRAGMA, PRAGMA},
-		{"error", ERROR, ERROR}
+		{"error", ERROR, ERROR},
+		{NULL, 0, 0}
 	}, *list[] = {
 		keywords,
 		cppclauses,
