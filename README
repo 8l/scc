@@ -44,7 +44,7 @@ time):
 
 	- volatile: The definition of volatile is not concrete, because
 	  it is defined as 'remove all the optimizations about the
-	  variable', which of course depend of the king of optimizations
+	  variable', which of course depend of the kind of optimizations
 	  applied to the variable. This qualifier was added to the standard
 	  to can deal with longjmp (local variables that are not volatile
 	  have undefined state), and for memory mapped registers or variables
