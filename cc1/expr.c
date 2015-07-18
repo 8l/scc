@@ -845,6 +845,17 @@ assign(void)
 }
 
 Node *
+constexpr(void)
+{
+	Node *np;
+
+	np = ternary();
+	if (!np->constant)
+		error("constant expression required");
+	return np;
+}
+
+Node *
 expr(void)
 {
 	Node *lp, *rp;

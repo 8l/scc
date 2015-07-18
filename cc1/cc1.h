@@ -316,7 +316,7 @@ extern Node *sizeofnode(Type *tp);
 extern void freetree(Node *np);
 
 /* expr.c */
-extern Node *expr(void), *negate(Node *np);
+extern Node *expr(void), *negate(Node *np), *constexpr(void);
 
 /* cpp.c */
 extern void icpp(void);

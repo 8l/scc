@@ -313,7 +313,7 @@ emitfield(unsigned op, void *arg)
 }
 
 Node *
-node(unsigned op, Type *tp, Node *left, Node *right)
+node(unsigned op, Type *tp, Node *lp, Node *rp)
 {
 	Node *np;
 
@@ -322,8 +322,14 @@ node(unsigned op, Type *tp, Node *left, Node *right)
 	np->type = tp;
 	np->sym = NULL;
 	np->constant = np->symbol = np->lvalue = 0;
-	np->left = left;
-	np->right = right;
+	np->left = lp;
+	np->right = rp;
+
+	if (lp)
+		np->constant |= lp->constant;
+	if (rp)
+		np->constant |= rp->constant;
+
 	return np;
 }
 
