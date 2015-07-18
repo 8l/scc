@@ -409,15 +409,14 @@ too_long:
 static void
 line(void)
 {
-	Type *tp;
 	long n;
+	char *endp;
 
 	if (cppoff)
 		return;
-	if ((n = strtol(input->p, &input->p, 10)) <= 0 || n > USHRT_MAX)
-		error("first parameter of #line is not a positive integer");
 
-	if (yytoken != CONSTANT || yylval.sym->type != inttype)
+	n = strtol(yytext, &endp, 10);
+	if (n <= 0 || n > USHRT_MAX || *endp != '\0')
 		error("first parameter of #line is not a positive integer");
 
 	input->nline = yylval.sym->u.i;
@@ -425,11 +424,11 @@ line(void)
 	if (yytoken == EOFTOK)
 		return;
 
-	tp = yylval.sym->type;
-	if (yytoken != CONSTANT || tp->op != ARY && tp->type != chartype)
+	if (*yytext != '\"'|| yylen == 1)
 		error("second parameter of #line is not a valid filename");
 	free(input->fname);
 	input->fname = xstrdup(yylval.sym->u.s);
+	next();
 }
 
 static void
