@@ -447,9 +447,11 @@ ifclause(int isdef)
 {
 	Symbol *sym;
 	unsigned n;
+	int status;
 
 	if (cppctx == NR_COND-1)
 		error("too much nesting levels of conditional inclusion");
+
 	n = cppctx++;
 	if (yytoken != IDEN) {
 		error("no macro name given in #%s directive",
@@ -458,7 +460,10 @@ ifclause(int isdef)
 
 	sym = lookup(NS_CPP);
 	next();
-	if (!(ifstatus[n] = (sym->flags & ISDEFINED) != 0 == isdef))
+
+	status = (sym->flags & ISDEFINED) != 0 == isdef;
+
+	if (!(ifstatus[n] = status))
 		++cppoff;
 }
 
@@ -486,10 +491,13 @@ endif(void)
 static void
 elseclause(void)
 {
+	int status;
+
 	if (cppctx == 0)
 		error("#else without #ifdef/ifndef");
 
-	cppoff += (ifstatus[cppctx-1] ^= 1) ? -1 : 1;
+	status = (ifstatus[cppctx-1] ^= 1);
+	cppoff += (status) ? -1 : 1;
 }
 
 static void
