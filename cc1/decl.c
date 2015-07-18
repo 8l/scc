@@ -39,8 +39,14 @@ queue(struct dcldata *dp, unsigned op, short nelem, void *data)
 static struct dcldata *
 arydcl(struct dcldata *dp)
 {
+	Node *np = NULL;
+
 	expect('[');
+	np = (yytoken != ']') ? constexpr() : NULL;
 	expect(']');
+	/*
+	 * TODO: Evaluate np.
+	 */
 	return queue(dp, ARY, 0, NULL);
 }
 
