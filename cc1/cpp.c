@@ -139,10 +139,10 @@ parsepars(char *buffer, char **listp, int nargs)
 	return 1;
 }
 
-static void
-copymacro(char *bp, char *s, size_t bufsiz, char *arglist[])
+static size_t
+copymacro(char *buffer, char *s, size_t bufsiz, char *arglist[])
 {
-	char prevc, c, *arg;
+	char prevc, c, *arg, *bp = buffer;
 
 	for (prevc = '\0'; c = *s; prevc = c, ++s) {
 		if (c != '@') {
@@ -172,7 +172,7 @@ copymacro(char *bp, char *s, size_t bufsiz, char *arglist[])
 	}
 	*bp = '\0';
 
-	return;
+	return bp - buffer;
 
 expansion_too_long:
 	error("expansion of macro \"%s\" is too long", macroname);
@@ -183,22 +183,17 @@ bool
 expand(char *begin, Symbol *sym)
 {
 	size_t total, elen, rlen, llen, ilen;
-	int n, r;
+	int n;
 	char *s = sym->u.s;
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
 	if (sym == symfile) {
-		sprintf(buffer, "\"%s\"", input->fname);
-		goto print_subs;
+		elen = sprintf(buffer, "\"%s\"", input->fname);
+		goto substitute;
 	}
 	if (sym == symline) {
-		r = snprintf(buffer, sizeof(buffer), "%d", input->nline);
-		if(r == -1 || (size_t)r >= sizeof(buffer)) {
-			error("expansion of macro \"%s\" is too long", sym->name);
-			return 0;
-		}
-		fprintf(stderr, "Expansion of line '%s'\n", buffer);
-		goto print_subs;
+		elen = sprintf(buffer, "%d", input->nline);
+		goto substitute;
 	}
 
 	macroname = sym->name;
@@ -207,11 +202,10 @@ expand(char *begin, Symbol *sym)
 	for (n = 0; n < atoi(s); ++n)
 		fprintf(stderr, "PAR%d:%s\n", n, arglist[n]);
 
-	copymacro(buffer, s+3, INPUTSIZ-1, arglist);
+	elen = copymacro(buffer, s+3, INPUTSIZ-1, arglist);
 
-print_subs:
+substitute:
 	fprintf(stderr, "macro '%s' expanded to :'%s'\n", macroname, buffer);
-	elen = strlen(buffer);        /* expansion lentgh */
 	rlen = strlen(input->p);      /* rigth length */
 	llen = begin - input->line;   /* left length */
 	ilen = input->p - begin;      /* invocation length */
