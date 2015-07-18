@@ -166,10 +166,8 @@ repeat:
 		}
 	}
 
-	if (bp == lim) {
-		error("line %u too big in file '%s'",
-		      input->line, input->fname);
-	}
+	if (bp == lim)
+		error("line too long");
 	*bp = '\0';
 	return 1;
 }
