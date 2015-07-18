@@ -321,14 +321,15 @@ node(unsigned op, Type *tp, Node *lp, Node *rp)
 	np->op = op;
 	np->type = tp;
 	np->sym = NULL;
-	np->constant = np->symbol = np->lvalue = 0;
+	np->symbol = np->lvalue = 0;
+	np->constant = 1;
 	np->left = lp;
 	np->right = rp;
 
 	if (lp)
-		np->constant |= lp->constant;
+		np->constant &= lp->constant;
 	if (rp)
-		np->constant |= rp->constant;
+		np->constant &= rp->constant;
 
 	return np;
 }
