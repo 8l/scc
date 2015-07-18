@@ -57,22 +57,35 @@ pushctx(void)
 void
 popctx(void)
 {
-	Symbol *next, dummy = {.next = NULL}, *hp = &dummy, *sym;
+	Symbol *next, *sym;
+	Symbol dummy = {.next = NULL}, *hp = &dummy;
 
 	if (--curctx == 0)
 		localcnt = 0;
 
 	for (sym = head; sym && sym->ctx > curctx; sym = next) {
 		next = sym->next;
-		if  (sym->ns == NS_CPP || sym->ns == NS_LABEL && curctx != 0) {
+		switch (sym->ns) {
+		case NS_LABEL:
+			if (curctx != 0)
+				goto save_symbol;
+			if (sym->flags & ISDEFINED)
+				break;
+			/* TODO: check if the label was used */
+			printerr("label '%s' is not defined", sym->name);
+			break;
+		case NS_CPP:
+		save_symbol:
+			/*
+			 * CPP symbols have file scope
+			 * Labels have function scope
+			 */
 			hp->next = sym;
 			hp = sym;
 			continue;
-		} else if (sym->ns == NS_LABEL && !(sym->flags & ISDEFINED)) {
-			/* FIXME: don't recover in this point */
-			error("label '%s' is not defined", sym->name);
-		} else if (sym->ns == NS_TAG) {
+		case NS_TAG:
 			sym->type->defined = 0;
+			break;
 		}
 		if (sym->hash)
 			htab[hash(sym->name)] = sym->hash;
