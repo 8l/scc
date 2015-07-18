@@ -438,7 +438,8 @@ usererr(void)
 	if (cppoff)
 		return;
 	printerr("#error %s", input->p);
-	/* TODO: discard input */
+	*input->p = '\0';
+	next();
 }
 
 static void
