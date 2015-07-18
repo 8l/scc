@@ -87,7 +87,7 @@ popctx(void)
 			sym->type->defined = 0;
 			break;
 		}
-		if (sym->hash)
+		if (sym->name)
 			htab[hash(sym->name)] = sym->hash;
 		free(sym->name);
 		free(sym);
