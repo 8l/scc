@@ -418,7 +418,7 @@ line(void)
 	if (yytoken == EOFTOK)
 		return;
 
-	if (*yytext != '\"'|| yylen == 1)
+	if (*yytext != '\"' || yylen == 1)
 		error("second parameter of #line is not a valid filename");
 	free(input->fname);
 	input->fname = xstrdup(yylval.sym->u.s);
