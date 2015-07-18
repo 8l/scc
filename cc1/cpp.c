@@ -47,6 +47,7 @@ icpp(void)
 	strftime(stime, sizeof(stime), "-1#\"%H:%M:%S\"", tm);
 
 	defmacro("__STDC__")->u.s = "-1#1";
+	defmacro("__SCC__")->u.s = "-1#1";
 	defmacro("__DATE__")->u.s = sdate;
 	defmacro("__TIME__")->u.s = stime;
 	defmacro("__STDC_HOSTED__")->u.s = "-1#1";
