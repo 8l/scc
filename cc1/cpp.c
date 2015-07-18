@@ -259,7 +259,6 @@ getpars(Symbol *args[NR_MACROARG])
 popctx_and_error:
 	popctx();
 	error(err);
-	return -1;
 }
 
 static void
