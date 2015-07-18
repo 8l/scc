@@ -1,5 +1,5 @@
 
-#define INPUTSIZ 120
+#define INPUTSIZ LINESIZ
 #ifndef PREFIX
 #define PREFIX "/usr/"
 #endif
