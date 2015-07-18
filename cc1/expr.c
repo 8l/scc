@@ -530,7 +530,8 @@ postfix(void)
 			lp = array(lp, rp);
 			expect(']');
 			break;
-		case DEC: case INC:
+		case DEC:
+		case INC:
 			lp = incdec(lp, (yytoken == INC) ? OINC : ODEC);
 			next();
 			break;
@@ -595,7 +596,8 @@ unary(void)
 		next();
 		tp = (yytoken == '(') ? sizeexp() : typeof(unary());
 		return sizeofnode(tp);
-	case INC: case DEC:
+	case INC:
+	case DEC:
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
 		return incdec(unary(), op);
