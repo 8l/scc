@@ -18,14 +18,12 @@ static Symbol *head;
 static Symbol *htab[NR_SYM_HASH];
 
 #ifndef NDEBUG
-#include <stdio.h>
 void
 dumpstab(char *msg)
 {
 	Symbol **bp, *sym;
 
-	fputs(msg, stderr);
-	putc('\n', stderr);
+	fprintf(stderr, "%s\n", msg);
 	for (bp = htab; bp < &htab[NR_SYM_HASH]; ++bp) {
 		if (*bp == NULL)
 			continue;
