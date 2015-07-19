@@ -185,7 +185,7 @@ emitconst(Node *np)
 	} else {
 		putchar('"');
 		for (bp = sym->u.s; c = *bp; ++bp)
-			printf("%02x", (unsigned) c);
+			printf("%02X", (unsigned) c);
 	}
 }
 
