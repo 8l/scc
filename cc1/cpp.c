@@ -341,7 +341,7 @@ define(void)
 	sprintf(buff, "%02d#", n);
 	getdefs(args, n, buff+3, LINESIZ-3);
 	sym->u.s = xstrdup(buff);
-	fprintf(stderr, "Defining macro '%s'='%s'\n", sym->name, buff);
+	fprintf(stderr, "MACRO '%s' defined as '%s'\n", sym->name, buff);
 
 	popctx();
 }
