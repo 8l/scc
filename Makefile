@@ -1,4 +1,4 @@
-# scc - Sucless C Compiler
+# scc - Suckless C Compiler
 
 include config.mk
 

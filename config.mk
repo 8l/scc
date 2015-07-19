@@ -7,9 +7,9 @@ MANPREFIX   = ${PREFIX}/share/man
 VERSION     = 0.1
 
 # Flags
-#CFLAGS      = -std=c99
+CFLAGS      = -std=c99
 #LDFLAGS     =
 
 # Tools
-#CC          = cc
+CC          = cc
 #AR          =

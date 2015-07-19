@@ -1,3 +1,4 @@
+include ../config.mk
 
 OBJS = main.o parser.o cgen.o code.o optm.o peep.o
 
