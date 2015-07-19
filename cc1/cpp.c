@@ -40,20 +40,26 @@ icpp(void)
 	static char sdate[17], stime[14];
 	struct tm *tm;
 	time_t t;
+	char **bp, *list[] = {
+		"__STDC__",
+		"__STDC_HOSTED__",
+		"__SCC__",
+		NULL
+	};
 
 	t = time(NULL);
 	tm = localtime(&t);
 	strftime(sdate, sizeof(sdate), "-1#\"%b %d %Y\"", tm);
 	strftime(stime, sizeof(stime), "-1#\"%H:%M:%S\"", tm);
-
-	defmacro("__STDC__")->u.s = "-1#1";
-	defmacro("__SCC__")->u.s = "-1#1";
 	defmacro("__DATE__")->u.s = sdate;
 	defmacro("__TIME__")->u.s = stime;
-	defmacro("__STDC_HOSTED__")->u.s = "-1#1";
+
 	defmacro("__STDC_VERSION__")->u.s = "-1#199409L";
 	symline = defmacro("__LINE__");
 	symfile = defmacro("__FILE__");
+
+	for (bp = list; *bp; ++bp)
+		defmacro(*bp)->u.s = "-1#1";
 }
 
 static void
