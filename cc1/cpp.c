@@ -207,12 +207,12 @@ expand(char *begin, Symbol *sym)
 	if (!parsepars(arguments, arglist, atoi(s)))
 		return 0;
 	for (n = 0; n < atoi(s); ++n)
-		fprintf(stderr, "PAR%d:%s\n", n, arglist[n]);
+		fprintf(stderr, "MACRO par%d:%s\n", n, arglist[n]);
 
 	elen = copymacro(buffer, s+3, INPUTSIZ-1, arglist);
 
 substitute:
-	fprintf(stderr, "macro '%s' expanded to :'%s'\n", macroname, buffer);
+	fprintf(stderr, "MACRO '%s' expanded to :'%s'\n", macroname, buffer);
 	rlen = strlen(input->p);      /* rigth length */
 	llen = begin - input->line;   /* left length */
 	ilen = input->p - begin;      /* invocation length */
