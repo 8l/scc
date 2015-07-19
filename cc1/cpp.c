@@ -196,11 +196,11 @@ expand(char *begin, Symbol *sym)
 
 	macroname = sym->name;
 	if (sym == symfile) {
-		elen = sprintf(buffer, "\"%s\"", input->fname);
+		elen = sprintf(buffer, "\"%s\" ", input->fname);
 		goto substitute;
 	}
 	if (sym == symline) {
-		elen = sprintf(buffer, "%d", input->nline);
+		elen = sprintf(buffer, "%d ", input->nline);
 		goto substitute;
 	}
 
