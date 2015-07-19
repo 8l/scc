@@ -473,6 +473,7 @@ primary(void)
 			yylval.sym->flags |= ISDEFINED;
 			error("'%s' undeclared", yytext);
 		}
+		yylval.sym->flags |= ISUSED;
 		np = varnode(yylval.sym);
 		next();
 		break;

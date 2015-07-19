@@ -201,6 +201,7 @@ Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	next();
 	if (yytoken != IDEN)
 		unexpected();
+	yylval.sym->flags |= ISUSED;
 	emit(OJUMP, yylval.sym);
 	next();
 	expect(';');

@@ -71,7 +71,6 @@ popctx(void)
 				goto save_symbol;
 			if (sym->flags & ISDEFINED)
 				break;
-			/* TODO: check if the label was used */
 			printerr("label '%s' is not defined", sym->name);
 			break;
 		case NS_CPP:
@@ -87,8 +86,11 @@ popctx(void)
 			sym->type->defined = 0;
 			break;
 		}
-		if (sym->name)
+		if (sym->name) {
 			htab[hash(sym->name)] = sym->hash;
+			if ((sym->flags & (ISUSED|ISGLOBAL)) == 0)
+				warn("'%s' defined but not used", sym->name);
+		}
 		free(sym->name);
 		free(sym);
 	}

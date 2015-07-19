@@ -34,7 +34,7 @@ struct symbol {
 	unsigned char ctx;
 	unsigned char ns;
 	unsigned char token;
-	char flags;
+	short flags;
 	union {
 		int i;
 		char *s;
@@ -111,14 +111,15 @@ enum {
 
 /* symbol flags */
 enum {
-	ISGLOBAL   =  1,
-	ISSTATIC   =  2,
-	ISAUTO     =  4,
-	ISREGISTER =  8,
-	ISDEFINED  = 16,
-	ISFIELD    = 32,
-	ISPARAM    = 64,
-	ISEXTERN   =128
+	ISGLOBAL   =       1,
+	ISSTATIC   =       2,
+	ISAUTO     =       4,
+	ISREGISTER =       8,
+	ISDEFINED  =      16,
+	ISFIELD    =      32,
+	ISPARAM    =      64,
+	ISEXTERN   =     128,
+	ISUSED     =     256
 };
 
 
