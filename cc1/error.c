@@ -17,16 +17,18 @@ warn_helper(int flag, char *fmt, va_list va)
 {
 	if (flag == 0)
 		return;
-	if (flag < 0)
-		failure = 1;
 	fprintf(stderr, "%s:%u: %s: ",
 	       input->fname, input->nline,
 	       (flag < 0) ? "error" : "warning");
 	vfprintf(stderr, fmt, va);
 	putc('\n', stderr);
-	if (flag < 0 && nerrors++ == MAXERRNUM) {
-		fputs("too many errors\n", stderr);
-		exit(1);
+
+	if (flag < 0) {
+		failure = 1;
+		if (nerrors++ == MAXERRNUM) {
+			fputs("too many errors\n", stderr);
+			exit(1);
+		}
 	}
 }
 
