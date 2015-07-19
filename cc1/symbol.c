@@ -85,8 +85,9 @@ popctx(void)
 			break;
 		}
 		if (sym->name) {
+			short f = sym->flags;
 			htab[hash(sym->name)] = sym->hash;
-			if ((sym->flags & (ISUSED|ISGLOBAL)) == 0)
+			if ((f & (ISUSED|ISGLOBAL|ISDEFINED)) == ISDEFINED)
 				warn("'%s' defined but not used", sym->name);
 		}
 		free(sym->name);
