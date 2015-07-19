@@ -194,6 +194,7 @@ expand(char *begin, Symbol *sym)
 	char *s = sym->u.s;
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
+	macroname = sym->name;
 	if (sym == symfile) {
 		elen = sprintf(buffer, "\"%s\"", input->fname);
 		goto substitute;
@@ -203,7 +204,6 @@ expand(char *begin, Symbol *sym)
 		goto substitute;
 	}
 
-	macroname = sym->name;
 	if (!parsepars(arguments, arglist, atoi(s)))
 		return 0;
 	for (n = 0; n < atoi(s); ++n)
