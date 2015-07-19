@@ -120,7 +120,6 @@ void (*opcode[])(unsigned, void *) = {
 	[OESTRUCT] = emittext,
 	[OELOOP] = emittext,
 	[OBLOOP] = emittext,
-	[OPRINT] = emitprint,
 	[OFUN] = emitfun,
 	[ORET] = emitret,
 	[ODECL] = emitdcl,
@@ -249,17 +248,6 @@ emitexp(unsigned op, void *arg)
 
 	emitnode(np);
 	putchar('\n');
-	freetree(np);
-}
-
-static void
-emitprint(unsigned op, void *arg)
-{
-	Node *np = arg;
-
-	emitnode(np);
-	printf("\tk%c\n", np->type->letter);
-	fflush(stdout);
 	freetree(np);
 }
 

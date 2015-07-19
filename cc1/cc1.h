@@ -254,7 +254,6 @@ enum {
 	OESTRUCT,
 	OELOOP,
 	OBLOOP,
-	OPRINT,
 	OFUN,
 	ORET,
 	ODECL,

@@ -353,11 +353,6 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case IDEN:
 		fun = (ahead() == ':') ? Label : stmtexp;
 		break;
-	case '@':
-		next();
-		np = expr();
-		emit(OPRINT, np);
-		return;
 	}
 	(*fun)(lbreak, lcont, lswitch);
 }
