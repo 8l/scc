@@ -12,6 +12,6 @@ LD = $(CC)
 AR = ar
 
 # for Plan9 add -D_SUSV2_SOURCE -DNBOOL
-CPPFLAGS = -D_DEFAULT_SOURCE
+CPPFLAGS =
 CFLAGS   = -std=c99
 LDFLAGS  = -s
