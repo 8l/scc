@@ -55,7 +55,7 @@ unnecessary complexity to the compiler (and increased compilation time):
 	  assembler).
 	  In the second case, it generates a lot of problems with modern
 	  processors and multithreading, where not holding the value in a
-	  register is good enough (an explicit memory barrier is needed).
+	  register is not good enough (an explicit memory barrier is needed).
 
 	- restrict: This qualifer can only be applied to pointers to
 	  mark that the pointed object has no other alias. This qualifer
