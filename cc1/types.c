@@ -210,9 +210,12 @@ mktype(Type *tp, unsigned op, short nelem, void *data)
 	unsigned t;
 	Type *bp;
 	static char letters[] = {
-		[PTR] = L_POINTER,   [ARY] = L_ARRAY,
-		[FTN] = L_FUNCTION,  [ENUM] = L_INT,
-		[STRUCT] = L_STRUCT, [UNION] = L_UNION
+		[PTR] = L_POINTER,
+		[ARY] = L_ARRAY,
+		[FTN] = L_FUNCTION,
+		[ENUM] = L_INT,
+		[STRUCT] = L_STRUCT,
+		[UNION] = L_UNION
 	};
 
 	if (op == PTR && tp == voidtype)
@@ -230,7 +233,7 @@ mktype(Type *tp, unsigned op, short nelem, void *data)
 	else
 		type.defined = 1;
 
-	t = (op ^ (char) ((unsigned short) tp >> 3)) & NR_TYPE_HASH-1;
+	t = (op ^ (uintptr_t) tp >> 3) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
 	for (bp = *tbl; bp; bp = bp->next) {
 		if (eqtype(bp, &type)) {
