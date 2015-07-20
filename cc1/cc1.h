@@ -13,11 +13,18 @@ typedef struct caselist Caselist;
 typedef struct node Node;
 typedef struct input Input;
 
+/*
+ * TODO: Some of the data stored in type is shared with
+ *       cc2, so it should be stored in a table shared
+ *       between both programs, and dependant of the target.
+ */
 struct type {
 	unsigned char op;           /* type builder operator */
 	unsigned char ns;
 	char letter;                /* letter of the type */
 	bool defined;               /* type defined */
+	size_t size;                /* sizeof the type */
+	size_t align;               /* align of the type */
 	Type *type;                 /* base type */
 	Type *next;                 /* next element in the hash */
 	Type **pars;                /* type parameters */
@@ -211,7 +218,6 @@ enum tokens {
 enum {
 	OPTR,
 	OADD,
-	OSIZE,
 	OMUL,
 	OSUB,
 	OINC,
@@ -337,7 +343,7 @@ extern int lexmode;
 
 extern Type *voidtype, *pvoidtype, *booltype,
             *uchartype,   *chartype,
-            *uinttype,    *inttype,
+            *uinttype,    *inttype,     *sizetp,
             *ushortype,   *shortype,
             *longtype,    *ulongtype,
             *ullongtype,  *llongtype,

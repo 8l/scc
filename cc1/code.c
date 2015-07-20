@@ -10,7 +10,7 @@
 static void emitbin(unsigned, void *),
             emitcast(unsigned, void *), emitswitch(unsigned, void *),
             emitsym(unsigned, void *), emitfield(unsigned, void *),
-            emitsizeof(unsigned, void *), emitexp(unsigned, void *),
+            emitexp(unsigned, void *),
             emitsymid(unsigned, void *), emittext(unsigned, void *),
             emitprint(unsigned, void *), emitfun(unsigned, void *),
             emitret(unsigned, void *), emitdcl(unsigned, void *);
@@ -21,7 +21,6 @@ char *optxt[] = {
 	[OMUL] = "*",
 	[OINC] = ";+",
 	[ODEC] =  ";-",
-	[OSIZE] = "#",
 	[OPTR] = "@",
 	[OMOD] = "%",
 	[ODIV] = "/",
@@ -72,7 +71,6 @@ void (*opcode[])(unsigned, void *) = {
 	[OMUL] = emitbin,
 	[OINC] = emitbin,
 	[ODEC] =  emitbin,
-	[OSIZE] = emitsizeof,
 	[OPTR] = emitbin,
 	[OMOD] = emitbin,
 	[ODIV] = emitbin,
@@ -235,13 +233,6 @@ emitbin(unsigned op, void *arg)
 }
 
 static void
-emitsizeof(unsigned op, void *arg)
-{
-	Node *np = arg;
-	printf("\t#%c", np->left->type->letter);
-}
-
-static void
 emitexp(unsigned op, void *arg)
 {
 	Node *np = arg;
@@ -351,7 +342,10 @@ Node *
 sizeofnode(Type *tp)
 {
 	Node *np;
+	Symbol *sym;
 
-	np = node(0, tp, NULL, NULL);
-	return node(OSIZE, inttype, np, NULL);
+	sym = newsym(NS_IDEN);
+	sym->type = sizetp;
+	sym->u.i = tp->size;
+	return constnode(sym);
 }

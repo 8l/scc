@@ -24,96 +24,128 @@ static Type types[] = {
 	},
 	{       /* 1 = pvoidtype */
 		.op = PTR,
-		.letter = L_POINTER
+		.letter = L_POINTER,
+		.size = 2,
+		.align = 2
 	},
 	{      /* 2 = booltype */
 		.op = INT,
 		.letter = L_BOOL,
 		.defined = 1,
+		.size = 1,
+		.align = 1,
 		.n.rank = RANK_BOOL
 	},
 	{       /* 3 = schartype */
 		.op = INT,
 		.letter = L_SCHAR,
 		.defined = 1,
+		.size = 1,
+		.align = 1,
 		.n.rank = RANK_SCHAR
 	},
 	{      /* 4 = uchartype */
 		.op = INT,
 		.letter = L_UCHAR,
 		.defined = 1,
+		.size = 1,
+		.align = 1,
 		.n.rank = RANK_UCHAR
 	},
 	{      /* 5 = chartype */
 		.op = INT,
 		.letter = L_CHAR,
 		.defined = 1,
+		.size = 1,
+		.align = 1,
 		.n.rank = RANK_CHAR
 	},
 	{       /* 6 = ushortype */
 		.op = INT,
 		.letter = L_USHORT,
 		.defined = 1,
+		.size = 2,
+		.align = 1,
 		.n.rank = RANK_USHORT
 	},
 	{       /* 7 = shortype */
 		.op = INT,
 		.letter = L_SHORT,
 		.defined = 1,
+		.size = 2,
+		.align = 1,
 		.n.rank = RANK_SHORT
 	},
 	{       /* 8 = uinttype */
 		.op = INT,
 		.letter = L_UINT,
 		.defined = 1,
+		.size = 2,
+		.align = 1,
 		.n.rank = RANK_UINT
 	},
 	{       /* 9 = inttype */
 		.op = INT,
 		.letter = L_INT,
 		.defined = 1,
+		.size = 2,
+		.align = 1,
 		.n.rank = RANK_INT
 	},
 	{      /* 10 = longtype */
 		.op = INT,
 		.letter = L_LONG,
 		.defined = 1,
+		.size = 4,
+		.align = 1,
 		.n.rank = RANK_LONG
 	},
 	{       /* 11 = ulongtype */
 		.op = INT,
 		.letter = L_ULONG,
 		.defined = 1,
+		.size = 4,
+		.align = 1,
 		.n.rank = RANK_ULONG
 	},
 	{	/* 12 = ullongtype */
 		.op = INT,
 		.letter = L_ULLONG,
 		.defined = 1,
+		.size = 8,
+		.align = 1,
 		.n.rank = RANK_ULLONG
 	},
 	{       /* 13 = llongtype */
 		.op = INT,
 		.letter = L_LLONG,
 		.defined = 1,
+		.size = 8,
+		.align = 1,
 		.n.rank = RANK_LLONG
 	},
 	{       /* 14 = floattype */
 		.op = FLOAT,
 		.letter = L_FLOAT,
 		.defined = 1,
+		.size = 4,
+		.align = 1,
 		.n.rank = RANK_FLOAT
 	},
 	{       /* 15 = doubletype */
 		.op = FLOAT,
 		.letter = L_DOUBLE,
 		.defined = 1,
+		.size = 8,
+		.align = 1,
 		.n.rank = RANK_DOUBLE
 	},
 	{       /* 16 = ldoubletype */
 		.op = FLOAT,
 		.letter = L_LDOUBLE,
 		.defined = 1,
+		.size = 16,
+		.align = 1,
 		.n.rank = RANK_LDOUBLE
 	}
 };
@@ -127,6 +159,8 @@ Type *voidtype = &types[0], *pvoidtype = &types[1],
 	*ullongtype = &types[12], *llongtype = &types[13],
 	*floattype = &types[14], *doubletype = &types[15],
 	*ldoubletype = &types[16];
+
+Type *sizetp = &types[8]; /* TODO: This depend of the target */
 
 static Symbol dummy0 = {.u.i = 0, .type = &types[9]},
               dummy1 = {.u.i = 1, .type = &types[9]};
