@@ -345,7 +345,7 @@ sizeofnode(Type *tp)
 	Symbol *sym;
 
 	sym = newsym(NS_IDEN);
-	sym->type = sizetp;
+	sym->type = sizettype;
 	sym->u.i = tp->size;
 	return constnode(sym);
 }

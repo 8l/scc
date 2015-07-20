@@ -343,7 +343,7 @@ extern int lexmode;
 
 extern Type *voidtype, *pvoidtype, *booltype,
             *uchartype,   *chartype,
-            *uinttype,    *inttype,     *sizetp,
+            *uinttype,    *inttype,     *sizettype,
             *ushortype,   *shortype,
             *longtype,    *ulongtype,
             *ullongtype,  *llongtype,
