@@ -23,6 +23,7 @@ struct type {
 	unsigned char ns;
 	char letter;                /* letter of the type */
 	bool defined;               /* type defined */
+	bool sign;                  /* signess of the type */
 	size_t size;                /* sizeof the type */
 	size_t align;               /* align of the type */
 	Type *type;                 /* base type */
@@ -43,7 +44,8 @@ struct symbol {
 	unsigned char token;
 	short flags;
 	union {
-		int i;
+		TINT i;
+		TUINT u;
 		char *s;
 		unsigned char token;
 	} u;
@@ -320,6 +322,7 @@ extern Node *varnode(Symbol *sym);
 extern Node *constnode(Symbol *sym);
 extern Node *sizeofnode(Type *tp);
 extern void freetree(Node *np);
+extern Node *simplify(Node *np);
 
 /* expr.c */
 extern Node *expr(void), *negate(Node *np), *constexpr(void);

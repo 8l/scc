@@ -124,6 +124,15 @@ void (*opcode[])(unsigned, void *) = {
 	[OSWITCH] = emitswitch
 };
 
+static Node *simple_sub(Node *), *simple_add(Node *);
+
+static Node *(*opsimp[])(Node *) = {
+	[OADD] = simple_add,
+	[OSUB] = simple_sub
+
+};
+
+
 void
 freetree(Node *np)
 {
@@ -310,15 +319,9 @@ node(unsigned op, Type *tp, Node *lp, Node *rp)
 	np->op = op;
 	np->type = tp;
 	np->sym = NULL;
-	np->symbol = np->lvalue = 0;
-	np->constant = 1;
+	np->constant = np->symbol = np->lvalue = 0;
 	np->left = lp;
 	np->right = rp;
-
-	if (lp)
-		np->constant &= lp->constant;
-	if (rp)
-		np->constant &= rp->constant;
 
 	return np;
 }
@@ -358,4 +361,56 @@ sizeofnode(Type *tp)
 	sym->type = sizettype;
 	sym->u.i = tp->size;
 	return constnode(sym);
+}
+
+static Node *
+simple_add(Node *np)
+{
+	Node *lp = np->left, *rp = np->right;
+	Type *tp = np->type;
+	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
+
+	switch (tp->op) {
+	case INT:
+		sym = newsym(NS_IDEN);
+		sym->type = tp;
+		if (tp->sign)
+			sym->u.i = ls->u.i + rs->u.i;
+		else
+			sym->u.u = ls->u.u + rs->u.u;
+		freetree(np);
+		return constnode(sym);
+	default:
+		return np;
+	}
+}
+
+static Node *
+simple_sub(Node *np)
+{
+	Node *lp = np->left, *rp = np->right;
+	Type *tp = np->type;
+	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
+
+	switch (tp->op) {
+	case INT:
+		sym = newsym(NS_IDEN);
+		sym->type = tp;
+		if (tp->sign)
+			sym->u.i = ls->u.i - rs->u.i;
+		else
+			sym->u.u = ls->u.u - rs->u.u;
+		freetree(np);
+		return constnode(sym);
+	default:
+		return np;
+	}
+}
+
+Node *
+simplify(Node *np)
+{
+	if (!np->left->constant || !np->right->constant)
+		return np;
+	return (*opsimp[np->op])(np);
 }

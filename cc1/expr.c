@@ -685,6 +685,7 @@ add(void)
 		}
 		next();
 		np = arithmetic(op, np, mul());
+		np = simplify(np);
 	}
 }
 

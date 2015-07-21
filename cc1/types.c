@@ -42,6 +42,7 @@ static Type types[] = {
 		.defined = 1,
 		.size = 1,
 		.align = 1,
+		.sign = 1,
 		.n.rank = RANK_SCHAR
 	},
 	{      /* 4 = uchartype */
@@ -58,6 +59,7 @@ static Type types[] = {
 		.defined = 1,
 		.size = 1,
 		.align = 1,
+		.sign = 1,
 		.n.rank = RANK_CHAR
 	},
 	{       /* 6 = ushortype */
@@ -74,6 +76,7 @@ static Type types[] = {
 		.defined = 1,
 		.size = 2,
 		.align = 1,
+		.sign = 1,
 		.n.rank = RANK_SHORT
 	},
 	{       /* 8 = uinttype */
@@ -90,6 +93,7 @@ static Type types[] = {
 		.defined = 1,
 		.size = 2,
 		.align = 1,
+		.sign = 1,
 		.n.rank = RANK_INT
 	},
 	{      /* 10 = longtype */
@@ -98,6 +102,7 @@ static Type types[] = {
 		.defined = 1,
 		.size = 4,
 		.align = 1,
+		.sign = 1,
 		.n.rank = RANK_LONG
 	},
 	{       /* 11 = ulongtype */
@@ -122,6 +127,7 @@ static Type types[] = {
 		.defined = 1,
 		.size = 8,
 		.align = 1,
+		.sign = 1,
 		.n.rank = RANK_LLONG
 	},
 	{       /* 14 = floattype */

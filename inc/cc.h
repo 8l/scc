@@ -8,7 +8,9 @@ typedef unsigned bool;
 #endif
 
 #define TINT short
+#define TUINT unsigned short
 #define TLONG long
+#define TULONG unsigned long
 
 #define RANK_BOOL    0
 #define RANK_SCHAR   1
