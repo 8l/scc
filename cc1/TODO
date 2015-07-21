@@ -1,0 +1,18 @@
+* Implement constant expressions
+* Verify correctness in initializators
+* emit initializators
+* emit structures definition
+* Assign const expression value to enum members
+* Define array types based in the value of constant expressions
+* Rewrite decl.c and use only one decl function with a function pointer
+  parameter
+* Allow external declarations of incomplete array types
+* Implement bitfields
+* Define data structure shared between cc1 and cc2 with the type
+  information
+* Rewrite error recovery code, and ensure correct state after recovery
+* Allow comparisions between pointers and 0
+* Implement function calls
+* Implement enum type in eqtype()
+* Parse correctly all integer and float constants
+* Add C99 features (almost all the new features of C99 are missed)
