@@ -103,7 +103,8 @@ duptype(Type *base)
 	Type *tp = xmalloc(sizeof(*tp));
 
 	*tp = *base;
-	tp->id = (curctx) ? ++localcnt : ++globalcnt;
+	if (tp->op == ARY)
+		tp->id = (curctx) ? ++localcnt : ++globalcnt;
 	return tp;
 }
 
@@ -113,8 +114,8 @@ newsym(unsigned ns)
 	Symbol *sym;
 
 	sym = malloc(sizeof(*sym));
-	if ((sym->ns = ns) != NS_CPP)
-		sym->id = (curctx) ? ++localcnt : ++globalcnt;
+	sym->id = 0;
+	sym->ns = ns;
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->flags = ISDEFINED;
@@ -199,14 +200,18 @@ install(unsigned ns)
 		if (yylval.sym->flags & ISDEFINED)
 			return NULL;
 		yylval.sym->flags |= ISDEFINED;
-		return yylval.sym;
+		sym = yylval.sym;
+	} else {
+		sym = newsym(ns);
+		sym->name = xstrdup(yytext);
+		h = &htab[hash(yytext)];
+		sym->hash = *h;
+		*h = sym;
 	}
 
-	sym = newsym(ns);
-	sym->name = xstrdup(yytext);
-	h = &htab[hash(yytext)];
-	sym->hash = *h;
-	*h = sym;
+	if (sym->ns != NS_CPP)
+		sym->id = (curctx) ? ++localcnt : ++globalcnt;
+
 	return sym;
 }
 
@@ -281,5 +286,4 @@ ikeywords(void)
 		}
 		ns = NS_CPPCLAUSES;
 	}
-	globalcnt = 0;
 }
