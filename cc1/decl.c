@@ -39,15 +39,20 @@ queue(struct dcldata *dp, unsigned op, short nelem, void *data)
 static struct dcldata *
 arydcl(struct dcldata *dp)
 {
-	Node *np = NULL;
+	Node *np;
+	TINT n;
 
 	expect('[');
 	np = (yytoken != ']') ? constexpr() : NULL;
 	expect(']');
+
 	/*
-	 * TODO: Evaluate np.
+	 * TODO: check that the type of the constant expression
+	 * is the correct, that in this case should be int
 	 */
-	return queue(dp, ARY, 0, NULL);
+	n = (np == NULL) ? 0 : np->sym->u.i;
+
+	return queue(dp, ARY, n, NULL);
 }
 
 static Symbol *parameter(void);
