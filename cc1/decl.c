@@ -396,11 +396,11 @@ enumdcl(void)
 		if (yytoken != IDEN)
 			unexpected();
 		if ((sym = install(NS_IDEN)) == NULL)
-			error("duplicated member '%s'", yytext);
+			error("'%s' redeclared as different kind of symbol", yytext);
 		next();
 		sym->type = inttype;
 		if (accept('='))
-			initializer(sym);
+			constexpr();
 		sym->u.i = val++;
 		if (!accept(','))
 			break;
