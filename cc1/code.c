@@ -177,12 +177,22 @@ emitconst(Node *np)
 	char *bp, c;
 	Symbol *sym = np->sym;
 
-	if (np->type == inttype) {
+	switch (np->type->op) {
+	case INT:
 		printf("#%c%x", np->type->letter, sym->u.i);
-	} else {
+		break;
+	case ARY:
+		/*
+		 * FIX: At this point we are going to assume
+		 * that all the arrays are strings
+		 */
 		putchar('"');
 		for (bp = sym->u.s; c = *bp; ++bp)
-			printf("%02X", (unsigned) c);
+			printf("%02X", c & 0xFF);
+		break;
+	default:
+		/* TODO: Handle other kind of constants */
+		abort;
 	}
 }
 

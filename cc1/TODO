@@ -16,3 +16,4 @@
 * Implement enum type in eqtype()
 * Parse correctly all integer and float constants
 * Add C99 features (almost all the new features of C99 are missed)
+* Add correct emit for any kind of constant
