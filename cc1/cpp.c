@@ -436,7 +436,8 @@ pragma(void)
 {
 	if (cppoff)
 		return;
-	/* TODO: discard input */
+	*input->p = '\0';
+	next();
 }
 
 static void
