@@ -97,6 +97,16 @@ popctx(void)
 	head = dummy.next;
 }
 
+Type *
+duptype(Type *base)
+{
+	Type *tp = xmalloc(sizeof(*tp));
+
+	*tp = *base;
+	tp->id = (curctx) ? ++localcnt : ++globalcnt;
+	return tp;
+}
+
 Symbol *
 newsym(unsigned ns)
 {

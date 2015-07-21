@@ -21,9 +21,11 @@ typedef struct input Input;
 struct type {
 	unsigned char op;           /* type builder operator */
 	unsigned char ns;
+	short id;                   /* type id, used in dcls */
 	char letter;                /* letter of the type */
-	bool defined;               /* type defined */
-	bool sign;                  /* signess of the type */
+	bool defined : 1;           /* type defined */
+	bool sign : 1;              /* signess of the type */
+	bool printed : 1;           /* the type already was printed */
 	size_t size;                /* sizeof the type */
 	size_t align;               /* align of the type */
 	Type *type;                 /* base type */
@@ -286,6 +288,7 @@ extern void printerr(char *fmt, ...);
 extern bool eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(unsigned type, unsigned sign, unsigned size);
 extern Type *mktype(Type *tp, unsigned op, short nelem, void *data);
+extern Type *duptype(Type *base);
 
 /* symbol.c */
 extern void dumpstab(char *msg);

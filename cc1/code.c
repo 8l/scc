@@ -214,9 +214,32 @@ emitsym(unsigned op, void *arg)
 }
 
 static void
-emittype(Type *tp)
+emitletter(Type *tp)
 {
 	putchar(tp->letter);
+	if (tp->op == ARY)
+		printf("%d", tp->id);
+}
+
+static void
+emittype(Type *tp)
+{
+	if (tp->printed)
+		return;
+
+	switch (tp->op) {
+	case ARY:
+		emittype(tp->type);
+		printf("V%d\t", tp->id);
+		emitletter(tp->type);
+		printf("\t#%d\n", tp->n.elem);
+		return;
+	case PTR:
+		emittype(tp->type);
+		return;
+	default:
+		abort();
+	}
 }
 
 static void
@@ -224,9 +247,10 @@ emitdcl(unsigned op, void *arg)
 {
 	Symbol *sym = arg;
 
+	emittype(sym->type);
 	emitvar(sym);
 	putchar('\t');
-	emittype(sym->type);
+	emitletter(sym->type);
 	putchar('\n');
 }
 
@@ -276,7 +300,7 @@ emitret(unsigned op, void *arg)
 	Type *tp = arg;
 
 	fputs("\ty", stdout);
-	emittype(tp);
+	emitletter(tp);
 }
 
 static void

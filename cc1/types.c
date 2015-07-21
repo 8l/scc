@@ -20,13 +20,15 @@
 static Type types[] = {
 	{       /* 0 = voidtype */
 		.op = VOID,
-		.letter = L_VOID
+		.letter = L_VOID,
+		.printed = 1
 	},
 	{       /* 1 = pvoidtype */
 		.op = PTR,
 		.letter = L_POINTER,
 		.size = 2,
-		.align = 2
+		.align = 2,
+		.printed = 1
 	},
 	{      /* 2 = booltype */
 		.op = INT,
@@ -34,7 +36,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 1,
 		.align = 1,
-		.n.rank = RANK_BOOL
+		.n.rank = RANK_BOOL,
+		.printed = 1
 	},
 	{       /* 3 = schartype */
 		.op = INT,
@@ -43,7 +46,8 @@ static Type types[] = {
 		.size = 1,
 		.align = 1,
 		.sign = 1,
-		.n.rank = RANK_SCHAR
+		.n.rank = RANK_SCHAR,
+		.printed = 1
 	},
 	{      /* 4 = uchartype */
 		.op = INT,
@@ -51,7 +55,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 1,
 		.align = 1,
-		.n.rank = RANK_UCHAR
+		.n.rank = RANK_UCHAR,
+		.printed = 1
 	},
 	{      /* 5 = chartype */
 		.op = INT,
@@ -60,7 +65,8 @@ static Type types[] = {
 		.size = 1,
 		.align = 1,
 		.sign = 1,
-		.n.rank = RANK_CHAR
+		.n.rank = RANK_CHAR,
+		.printed = 1
 	},
 	{       /* 6 = ushortype */
 		.op = INT,
@@ -68,7 +74,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 2,
 		.align = 1,
-		.n.rank = RANK_USHORT
+		.n.rank = RANK_USHORT,
+		.printed = 1
 	},
 	{       /* 7 = shortype */
 		.op = INT,
@@ -77,7 +84,8 @@ static Type types[] = {
 		.size = 2,
 		.align = 1,
 		.sign = 1,
-		.n.rank = RANK_SHORT
+		.n.rank = RANK_SHORT,
+		.printed = 1
 	},
 	{       /* 8 = uinttype */
 		.op = INT,
@@ -85,7 +93,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 2,
 		.align = 1,
-		.n.rank = RANK_UINT
+		.n.rank = RANK_UINT,
+		.printed = 1
 	},
 	{       /* 9 = inttype */
 		.op = INT,
@@ -94,7 +103,8 @@ static Type types[] = {
 		.size = 2,
 		.align = 1,
 		.sign = 1,
-		.n.rank = RANK_INT
+		.n.rank = RANK_INT,
+		.printed = 1
 	},
 	{      /* 10 = longtype */
 		.op = INT,
@@ -103,7 +113,8 @@ static Type types[] = {
 		.size = 4,
 		.align = 1,
 		.sign = 1,
-		.n.rank = RANK_LONG
+		.n.rank = RANK_LONG,
+		.printed = 1
 	},
 	{       /* 11 = ulongtype */
 		.op = INT,
@@ -111,7 +122,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 4,
 		.align = 1,
-		.n.rank = RANK_ULONG
+		.n.rank = RANK_ULONG,
+		.printed = 1
 	},
 	{	/* 12 = ullongtype */
 		.op = INT,
@@ -119,7 +131,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 8,
 		.align = 1,
-		.n.rank = RANK_ULLONG
+		.n.rank = RANK_ULLONG,
+		.printed = 1
 	},
 	{       /* 13 = llongtype */
 		.op = INT,
@@ -128,7 +141,8 @@ static Type types[] = {
 		.size = 8,
 		.align = 1,
 		.sign = 1,
-		.n.rank = RANK_LLONG
+		.n.rank = RANK_LLONG,
+		.printed = 1
 	},
 	{       /* 14 = floattype */
 		.op = FLOAT,
@@ -136,7 +150,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 4,
 		.align = 1,
-		.n.rank = RANK_FLOAT
+		.n.rank = RANK_FLOAT,
+		.printed = 1
 	},
 	{       /* 15 = doubletype */
 		.op = FLOAT,
@@ -144,7 +159,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 8,
 		.align = 1,
-		.n.rank = RANK_DOUBLE
+		.n.rank = RANK_DOUBLE,
+		.printed = 1
 	},
 	{       /* 16 = ldoubletype */
 		.op = FLOAT,
@@ -152,7 +168,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 16,
 		.align = 1,
-		.n.rank = RANK_LDOUBLE
+		.n.rank = RANK_LDOUBLE,
+		.printed = 1
 	},
 	{       /* 17 = sizettype */
 		.op = INT,
@@ -160,7 +177,8 @@ static Type types[] = {
 		.defined = 1,
 		.size = 2,
 		.align = 1,
-		.n.rank = RANK_UINT
+		.n.rank = RANK_UINT,
+		.printed = 1
 	}
 };
 
@@ -289,8 +307,7 @@ mktype(Type *tp, unsigned op, short nelem, void *data)
 		}
 	}
 
-	bp = xmalloc(sizeof(*bp));
-	*bp = type;
+	bp = duptype(&type);
 	bp->next = *tbl;
 	return *tbl = bp;
 }
