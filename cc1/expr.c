@@ -667,6 +667,7 @@ mul(void)
 		}
 		next();
 		np = (*fun)(op, np, cast());
+		np = simplify(np);
 	}
 }
 
