@@ -216,11 +216,13 @@ specifier(unsigned *sclass)
 			switch (yylval.token) {
 			case ENUM:
 				dcl = enumdcl;
-				p = &type; break;
+				p = &type;
+				break;
 			case STRUCT:
 			case UNION:
 				dcl = structdcl;
-				p = &type; break;
+				p = &type;
+				break;
 			case VOID:
 			case BOOL:
 			case CHAR:
@@ -231,7 +233,8 @@ specifier(unsigned *sclass)
 				break;
 			case SIGNED:
 			case UNSIGNED:
-				p = &sign; break;
+				p = &sign;
+				break;
 			case LONG:
 				if (size == LONG) {
 					size = LLONG;
@@ -252,6 +255,7 @@ specifier(unsigned *sclass)
 			if (size || sign)
 				goto invalid_type;
 			tp = (*dcl)();
+			goto return_type;
 		} else {
 			next();
 		}
