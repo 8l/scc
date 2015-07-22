@@ -124,14 +124,19 @@ void (*opcode[])(unsigned, void *) = {
 	[OSWITCH] = emitswitch
 };
 
-static Node *simple_sub(Node *), *simple_add(Node *);
+static Node *simple_add(Type *, Node *, Node *),
+            *simple_sub(Type *, Node *, Node *),
+            *simple_mul(Type *, Node *, Node *),
+            *simple_div(Type *, Node *, Node *),
+            *simple_mod(Type *, Node *, Node *);
 
-static Node *(*opsimp[])(Node *) = {
+static Node *(*opsimp[])(Type *, Node *, Node *) = {
 	[OADD] = simple_add,
-	[OSUB] = simple_sub
-
+	[OSUB] = simple_sub,
+	[OMUL] = simple_mul,
+	[ODIV] = simple_div,
+	[OMOD] = simple_mod
 };
-
 
 void
 freetree(Node *np)
@@ -388,10 +393,83 @@ sizeofnode(Type *tp)
 }
 
 static Node *
-simple_add(Node *np)
+simple_mod(Type *tp, Node *lp, Node *rp)
 {
-	Node *lp = np->left, *rp = np->right;
-	Type *tp = np->type;
+	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
+
+	switch (tp->op) {
+	case INT:
+		sym = newsym(NS_IDEN);
+		sym->type = tp;
+		if (tp->sign) {
+			if (rs->u.i == 0)
+				goto division_by_0;
+			sym->u.i = ls->u.i % rs->u.i;
+		} else {
+			if (rs->u.u == 0)
+				goto division_by_0;
+			sym->u.u = ls->u.u % rs->u.u;
+		}
+		return constnode(sym);
+	default:
+		return NULL;
+	}
+
+division_by_0:
+	warn("division by 0");
+	return NULL;
+}
+
+static Node *
+simple_div(Type *tp, Node *lp, Node *rp)
+{
+	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
+
+	switch (tp->op) {
+	case INT:
+		sym = newsym(NS_IDEN);
+		sym->type = tp;
+		if (tp->sign) {
+			if (rs->u.i == 0)
+				goto division_by_0;
+			sym->u.i = ls->u.i / rs->u.i;
+		} else {
+			if (rs->u.u == 0)
+				goto division_by_0;
+			sym->u.u = ls->u.u / rs->u.u;
+		}
+		return constnode(sym);
+	default:
+		return NULL;
+	}
+
+division_by_0:
+	warn("division by 0");
+	return NULL;
+}
+
+static Node *
+simple_mul(Type *tp, Node *lp, Node *rp)
+{
+	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
+
+	switch (tp->op) {
+	case INT:
+		sym = newsym(NS_IDEN);
+		sym->type = tp;
+		if (tp->sign)
+			sym->u.i = ls->u.i * rs->u.i;
+		else
+			sym->u.u = ls->u.u * rs->u.u;
+		return constnode(sym);
+	default:
+		return NULL;
+	}
+}
+
+static Node *
+simple_add(Type *tp, Node *lp, Node *rp)
+{
 	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
 
 	switch (tp->op) {
@@ -402,18 +480,15 @@ simple_add(Node *np)
 			sym->u.i = ls->u.i + rs->u.i;
 		else
 			sym->u.u = ls->u.u + rs->u.u;
-		freetree(np);
 		return constnode(sym);
 	default:
-		return np;
+		return NULL;
 	}
 }
 
 static Node *
-simple_sub(Node *np)
+simple_sub(Type *tp, Node *lp, Node *rp)
 {
-	Node *lp = np->left, *rp = np->right;
-	Type *tp = np->type;
 	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
 
 	switch (tp->op) {
@@ -424,17 +499,23 @@ simple_sub(Node *np)
 			sym->u.i = ls->u.i - rs->u.i;
 		else
 			sym->u.u = ls->u.u - rs->u.u;
-		freetree(np);
 		return constnode(sym);
 	default:
-		return np;
+		return NULL;
 	}
 }
 
 Node *
 simplify(Node *np)
 {
-	if (!np->left->constant || !np->right->constant)
+	Node *new, *lp = np->left, *rp = np->right;
+
+	if (!lp->constant || !rp->constant)
 		return np;
-	return (*opsimp[np->op])(np);
+	new = (*opsimp[np->op])(np->type, lp, rp);
+	if (new) {
+		freetree(np);
+		np = new;
+	}
+	return np;
 }
