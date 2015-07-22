@@ -284,7 +284,7 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 					break;
 			}
 			if (argp != &args[nargs]) {
-				sprintf(yytext, "@%02d@", argp - args);
+				sprintf(yytext, "@%02d@", (int) (argp - args));
 				ispar = 1;
 			}
 		}

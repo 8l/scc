@@ -27,7 +27,7 @@ dumpstab(char *msg)
 	for (bp = htab; bp < &htab[NR_SYM_HASH]; ++bp) {
 		if (*bp == NULL)
 			continue;
-		fprintf(stderr, "%d", bp - htab);
+		fprintf(stderr, "%d", (int) (bp - htab));
 		for (sym = *bp; sym; sym = sym->hash)
 			fprintf(stderr, "->%d:%s", sym->ns, sym->name);
 		putc('\n', stderr);
