@@ -457,7 +457,7 @@ dot(void)
 {
 	char c;
 
-	if (c = *input->p != '.')
+	if ((c = *input->p) != '.')
 		return '.';
 	if ((c = *++input->p) != '.')
 		error("incorrect token '..'");

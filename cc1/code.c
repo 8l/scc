@@ -206,7 +206,7 @@ emitconst(Node *np)
 		break;
 	default:
 		/* TODO: Handle other kind of constants */
-		abort;
+		abort();
 	}
 }
 
