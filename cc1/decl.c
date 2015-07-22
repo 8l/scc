@@ -51,6 +51,7 @@ arydcl(struct dcldata *dp)
 	 * is the correct, that in this case should be int
 	 */
 	n = (np == NULL) ? 0 : np->sym->u.i;
+	freetree(np);
 
 	return queue(dp, ARY, n, NULL);
 }
