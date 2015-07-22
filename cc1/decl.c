@@ -295,7 +295,7 @@ static Symbol *
 newtag(void)
 {
 	Symbol *sym;
-	unsigned tag = yylval.token;
+	int op, tag = yylval.token;
 	static unsigned ns = NS_STRUCTS;
 
 	setnamespace(NS_TAG);
@@ -304,6 +304,7 @@ newtag(void)
 	case IDEN:
 	case TYPEIDEN:
 		sym = yylval.sym;
+		install(NS_TAG);
 		next();
 		break;
 	default:
@@ -318,8 +319,8 @@ newtag(void)
 	}
 
 	sym->flags |= ISDEFINED;
-	if (sym->type->op != tag)
-		error("'%s' defined as wrong kind of tag", yytext);
+	if ((op = sym->type->op) != tag &&  op != INT)
+		error("'%s' defined as wrong kind of tag", sym->name);
 	return sym;
 }
 
@@ -390,28 +391,36 @@ static Type *
 enumdcl(void)
 {
 	Type *tp;
-	Symbol *sym;
-	int val = 0;
+	Symbol *sym, *tagsym;
+	int val;
 
-	tp = newtag()->type;
+	tagsym = newtag();
+	tp = tagsym->type;
 
-	if (yytoken == ';')
+	if (!accept('{'))
 		return tp;
-
-	expect('{');
 	if (tp->defined)
-		error("redefinition of enumeration '%s'", yytext);
+		error("redefinition of enumeration '%s'", tagsym->name);
 	tp->defined = 1;
-	while (yytoken != '}') {
+	for (val = 0; yytoken != ')'; ++val) {
 		if (yytoken != IDEN)
 			unexpected();
 		if ((sym = install(NS_IDEN)) == NULL)
 			error("'%s' redeclared as different kind of symbol", yytext);
 		next();
+		sym->flags |= ISCONSTANT;
 		sym->type = inttype;
-		if (accept('='))
-			constexpr();
-		sym->u.i = val++;
+		if (accept('=')) {
+			Node *np = constexpr();
+			/*
+			 * TODO: check that the type of the constant
+			 * expression is the correct, that in this
+			 * case should be int
+			 */
+			val = np->sym->u.i;
+			freetree(np);
+		}
+		sym->u.i = val;
 		if (!accept(','))
 			break;
 	}

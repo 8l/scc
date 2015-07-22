@@ -231,6 +231,7 @@ convert:
 	tp = ctype(INT, sign, size);
 	sym = newsym(NS_IDEN);
 	sym->type = tp;
+	sym->flags |= ISCONSTANT;
 	v = strtol(s, NULL, base);
 	if (tp == inttype)
 		sym->u.i = v;
@@ -358,6 +359,7 @@ repeat:
 
 	yylen = bp - yytext + 1;
 	yylval.sym = newsym(NS_IDEN);
+	yylval.sym->flags |= ISCONSTANT;
 	yylval.sym->u.s = xstrdup(yytext+1);
 	yylval.sym->type = mktype(chartype, ARY, yylen - 2, NULL);
 	*bp++ = '"';
@@ -387,6 +389,8 @@ iden(void)
 		 */
 		sym = nextsym(sym, lex_ns);
 	}
+	if (sym->flags & ISCONSTANT)
+		return CONSTANT;
 	if (sym->token != IDEN)
 		yylval.token = sym->u.token;
 	return sym->token;

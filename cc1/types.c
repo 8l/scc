@@ -292,10 +292,25 @@ mktype(Type *tp, unsigned op, short nelem, void *data)
 	type.n.elem = nelem;
 	type.ns = 0;
 
-	if (op == ARY && nelem == 0 || op == STRUCT || op == UNION)
-		type.defined = 0;
-	else
+
+	switch (op) {
+	case ARY:
+		if (nelem == 0)
+			goto no_defined;
+		/* PASSTROUGH */
+	case FTN:
+	case PTR:
 		type.defined = 1;
+		break;
+	case ENUM:
+		type.printed = 1;
+		/* PASSTROUGH */
+	case STRUCT:
+	case UNION:
+	no_defined:
+		type.defined = 0;
+		break;
+	}
 
 	t = (op ^ (uintptr_t) tp >> 3) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
@@ -336,7 +351,7 @@ eqtype(Type *tp1, Type *tp2)
 		}
 		return 1;
 	case ENUM:
-		/* TODO: Check when two enum are the same type */
+		break;
 	case INT: case FLOAT:
 		return tp1->letter == tp2->letter;
 	default:

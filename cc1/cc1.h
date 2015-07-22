@@ -130,7 +130,8 @@ enum {
 	ISFIELD    =      32,
 	ISPARAM    =      64,
 	ISEXTERN   =     128,
-	ISUSED     =     256
+	ISUSED     =     256,
+	ISCONSTANT =     512
 };
 
 
