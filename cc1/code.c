@@ -130,14 +130,6 @@ static Node *simple_add(Type *, Node *, Node *),
             *simple_div(Type *, Node *, Node *),
             *simple_mod(Type *, Node *, Node *);
 
-static Node *(*opsimp[])(Type *, Node *, Node *) = {
-	[OADD] = simple_add,
-	[OSUB] = simple_sub,
-	[OMUL] = simple_mul,
-	[ODIV] = simple_div,
-	[OMOD] = simple_mod
-};
-
 void
 freetree(Node *np)
 {
@@ -392,130 +384,59 @@ sizeofnode(Type *tp)
 	return constnode(sym);
 }
 
-static Node *
-simple_mod(Type *tp, Node *lp, Node *rp)
-{
-	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
+#define SYMICMP(sym, val) (((sym)->type->sign) ?         \
+	(sym)->u.i == (val) : (sym)->u.u == (val))
 
-	switch (tp->op) {
-	case INT:
-		sym = newsym(NS_IDEN);
-		sym->type = tp;
-		if (tp->sign) {
-			if (rs->u.i == 0)
-				goto division_by_0;
-			sym->u.i = ls->u.i % rs->u.i;
-		} else {
-			if (rs->u.u == 0)
-				goto division_by_0;
-			sym->u.u = ls->u.u % rs->u.u;
-		}
-		return constnode(sym);
-	default:
-		return NULL;
-	}
-
-division_by_0:
-	warn("division by 0");
-	return NULL;
-}
-
-static Node *
-simple_div(Type *tp, Node *lp, Node *rp)
-{
-	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
-
-	switch (tp->op) {
-	case INT:
-		sym = newsym(NS_IDEN);
-		sym->type = tp;
-		if (tp->sign) {
-			if (rs->u.i == 0)
-				goto division_by_0;
-			sym->u.i = ls->u.i / rs->u.i;
-		} else {
-			if (rs->u.u == 0)
-				goto division_by_0;
-			sym->u.u = ls->u.u / rs->u.u;
-		}
-		return constnode(sym);
-	default:
-		return NULL;
-	}
-
-division_by_0:
-	warn("division by 0");
-	return NULL;
-}
-
-static Node *
-simple_mul(Type *tp, Node *lp, Node *rp)
-{
-	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
-
-	switch (tp->op) {
-	case INT:
-		sym = newsym(NS_IDEN);
-		sym->type = tp;
-		if (tp->sign)
-			sym->u.i = ls->u.i * rs->u.i;
-		else
-			sym->u.u = ls->u.u * rs->u.u;
-		return constnode(sym);
-	default:
-		return NULL;
-	}
-}
-
-static Node *
-simple_add(Type *tp, Node *lp, Node *rp)
-{
-	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
-
-	switch (tp->op) {
-	case INT:
-		sym = newsym(NS_IDEN);
-		sym->type = tp;
-		if (tp->sign)
-			sym->u.i = ls->u.i + rs->u.i;
-		else
-			sym->u.u = ls->u.u + rs->u.u;
-		return constnode(sym);
-	default:
-		return NULL;
-	}
-}
-
-static Node *
-simple_sub(Type *tp, Node *lp, Node *rp)
-{
-	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
-
-	switch (tp->op) {
-	case INT:
-		sym = newsym(NS_IDEN);
-		sym->type = tp;
-		if (tp->sign)
-			sym->u.i = ls->u.i - rs->u.i;
-		else
-			sym->u.u = ls->u.u - rs->u.u;
-		return constnode(sym);
-	default:
-		return NULL;
-	}
-}
+#define FOLDINT(sym, ls, rs, op) (((sym)->type->sign) ? \
+	((sym)->u.i = ((ls)->u.i op (rs)->u.i)) :       \
+	((sym)->u.u = ((ls)->u.u op (rs)->u.u)))
 
 Node *
 simplify(Node *np)
 {
-	Node *new, *lp = np->left, *rp = np->right;
+	Node *lp = np->left, *rp = np->right;
+	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
+	Type *tp = np->type;
 
 	if (!lp->constant || !rp->constant)
 		return np;
-	new = (*opsimp[np->op])(np->type, lp, rp);
-	if (new) {
-		freetree(np);
-		np = new;
+
+	switch (tp->op) {
+	case INT:
+		sym = newsym(NS_IDEN);
+		sym->type = tp;
+		switch (np->op) {
+		case OADD:
+			FOLDINT(sym, ls, rs, +);
+			break;
+		case OSUB:
+			FOLDINT(sym, ls, rs, -);
+			break;
+		case OMUL:
+			FOLDINT(sym, ls, rs, *);
+			break;
+		case ODIV:
+			if (SYMICMP(sym, 0))
+				goto division_by_0;
+			FOLDINT(sym, ls, rs, /);
+			break;
+		case OMOD:
+			if (SYMICMP(sym, 0))
+				goto division_by_0;
+			FOLDINT(sym, ls, rs, %);
+			break;
+		default:
+			abort();
+		}
+		break;
+	default:
+		return np;
 	}
+
+	freetree(np);
+	return constnode(sym);
+
+division_by_0:
+	warn("division by 0");
 	return np;
 }
