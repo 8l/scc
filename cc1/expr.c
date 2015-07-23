@@ -853,9 +853,27 @@ constexpr(void)
 	Node *np;
 
 	np = ternary();
-	if (!np->constant)
-		error("constant expression required");
+	if (!np->constant) {
+		freetree(np);
+		return NULL;
+	}
 	return np;
+}
+
+Node *
+iconstexpr(void)
+{
+	Node *np;
+
+	if ((np = constexpr()) == NULL)
+		return NULL;
+
+	if (np->type->op != INT) {
+		freetree(np);
+		return NULL;
+	}
+
+	return convert(np, inttype, 0);
 }
 
 Node *
