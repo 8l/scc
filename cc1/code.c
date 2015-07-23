@@ -425,10 +425,10 @@ simplify(Node *np)
 				goto division_by_0;
 			FOLDINT(sym, ls, rs, %);
 			break;
-                case OSHL:
+		case OSHL:
 			FOLDINT(sym, ls, rs, <<);
 			break;
-                case OSHR:
+		case OSHR:
 			FOLDINT(sym, ls, rs, >>);
 			break;
 		case OLT:
@@ -452,7 +452,7 @@ simplify(Node *np)
 		case OBAND:
 			FOLDINT(sym, ls, rs, &);
 			break;
-		case OBEXOR:
+		case OBXOR:
 			FOLDINT(sym, ls, rs, ^);
 			break;
 		case OBOR:
