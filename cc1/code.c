@@ -425,6 +425,45 @@ simplify(Node *np)
 				goto division_by_0;
 			FOLDINT(sym, ls, rs, %);
 			break;
+                case OSHL:
+			FOLDINT(sym, ls, rs, <<);
+			break;
+                case OSHR:
+			FOLDINT(sym, ls, rs, >>);
+			break;
+		case OLT:
+			FOLDINT(sym, ls, rs, <);
+			break;
+		case OGT:
+			FOLDINT(sym, ls, rs, >);
+			break;
+		case OGE:
+			FOLDINT(sym, ls, rs, >=);
+			break;
+		case OLE:
+			FOLDINT(sym, ls, rs, <=);
+			break;
+		case OEQ:
+			FOLDINT(sym, ls, rs, ==);
+			break;
+		case ONE:
+			FOLDINT(sym, ls, rs, !=);
+			break;
+		case OBAND:
+			FOLDINT(sym, ls, rs, &);
+			break;
+		case OBEXOR:
+			FOLDINT(sym, ls, rs, ^);
+			break;
+		case OBOR:
+			FOLDINT(sym, ls, rs, |);
+			break;
+		case OAND:
+			FOLDINT(sym, ls, rs, &&);
+			break;
+		case OOR:
+			FOLDINT(sym, ls, rs, ||);
+			break;
 		default:
 			abort();
 		}

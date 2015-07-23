@@ -705,6 +705,7 @@ shift(void)
 		}
 		next();
 		np = integerop(op, np, add());
+		np = simplify(np);
 	}
 }
 
@@ -725,6 +726,7 @@ relational(void)
 		}
 		next();
 		np = compare(op, np, shift());
+		np = simplify(np);
 	}
 }
 
@@ -743,6 +745,7 @@ eq(void)
 		}
 		next();
 		np = compare(op, np, relational());
+		np = simplify(np);
 	}
 }
 
@@ -754,7 +757,7 @@ bit_and(void)
 	np = eq();
 	while (accept('&'))
 		np = integerop(OBAND, np, eq());
-	return np;
+	return simplify(np);
 }
 
 static Node *
@@ -765,7 +768,7 @@ bit_xor(void)
 	np = bit_and();
 	while (accept('^'))
 		np = integerop(OBXOR,  np, bit_and());
-	return np;
+	return simplify(np);
 }
 
 static Node *
@@ -776,7 +779,7 @@ bit_or(void)
 	np = bit_xor();
 	while (accept('|'))
 		np = integerop(OBOR, np, bit_xor());
-	return np;
+	return simplify(np);
 }
 
 static Node *
@@ -787,7 +790,7 @@ and(void)
 	np = bit_or();
 	while (accept(AND))
 		np = logic(OAND, np, bit_or());
-	return np;
+	return simplify(np);
 }
 
 static Node *
@@ -798,7 +801,7 @@ or(void)
 	np = and();
 	while (accept(OR))
 		np = logic(OOR, np, and());
-	return np;
+	return simplify(np);
 }
 
 static Node *
