@@ -9,8 +9,6 @@
 
 Symbol *curfun;
 
-extern Node *convert(Node *np, Type *tp1, char iscast);
-extern Node *iszero(Node *np), *eval(Node *np);
 static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 static void

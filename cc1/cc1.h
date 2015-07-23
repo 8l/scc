@@ -330,8 +330,9 @@ extern Node *simplify(unsigned char, Type *tp, Node *lp, Node *rp);
 extern Node *usimplify(unsigned char op, Type *tp, Node *np);
 
 /* expr.c */
-extern Node *expr(void), *negate(Node *np), *constexpr(void),
-            *iconstexpr(void);
+extern Node *expr(void), *negate(Node *np), *constexpr(void);
+extern Node *convert(Node *np, Type *tp1, char iscast);
+extern Node *iszero(Node *np), *eval(Node *np), *iconstexpr(void);
 
 /* cpp.c */
 extern void icpp(void);
