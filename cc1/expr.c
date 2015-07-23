@@ -78,7 +78,7 @@ integerop(char op, Node *lp, Node *rp)
 	if (BTYPE(lp) != INT || BTYPE(rp) != INT)
 		error("operator requires integer operands");
 	typeconv(&lp, &rp);
-	return node(op, lp->type, lp, rp);
+	return simplify(op, lp->type, lp, rp);
 }
 
 static Node *
@@ -222,7 +222,7 @@ arithmetic(char op, Node *lp, Node *rp)
 		error("incorrect arithmetic operands");
 	}
 
-	return node(op, lp->type, lp, rp);
+	return simplify(op, lp->type, lp, rp);
 }
 
 static Node *
@@ -274,7 +274,7 @@ compare(char op, Node *lp, Node *rp)
 		error("incompatibles type in comparision");
 	}
 
-	return node(op, inttype, lp, rp);
+	return simplify(op, inttype, lp, rp);
 }
 
 Node *
@@ -327,7 +327,7 @@ logic(char op, Node *lp, Node *rp)
 {
 	lp = exp2cond(lp, 0);
 	rp = exp2cond(rp, 0);
-	return node(op, inttype, lp, rp);
+	return simplify(op, inttype, lp, rp);
 }
 
 static Node *
@@ -667,7 +667,6 @@ mul(void)
 		}
 		next();
 		np = (*fun)(op, np, cast());
-		np = simplify(np);
 	}
 }
 
@@ -686,7 +685,6 @@ add(void)
 		}
 		next();
 		np = arithmetic(op, np, mul());
-		np = simplify(np);
 	}
 }
 
@@ -705,7 +703,6 @@ shift(void)
 		}
 		next();
 		np = integerop(op, np, add());
-		np = simplify(np);
 	}
 }
 
@@ -726,7 +723,6 @@ relational(void)
 		}
 		next();
 		np = compare(op, np, shift());
-		np = simplify(np);
 	}
 }
 
@@ -745,7 +741,6 @@ eq(void)
 		}
 		next();
 		np = compare(op, np, relational());
-		np = simplify(np);
 	}
 }
 
@@ -757,7 +752,7 @@ bit_and(void)
 	np = eq();
 	while (accept('&'))
 		np = integerop(OBAND, np, eq());
-	return simplify(np);
+	return np;
 }
 
 static Node *
@@ -768,7 +763,7 @@ bit_xor(void)
 	np = bit_and();
 	while (accept('^'))
 		np = integerop(OBXOR,  np, bit_and());
-	return simplify(np);
+	return np;
 }
 
 static Node *
@@ -779,7 +774,7 @@ bit_or(void)
 	np = bit_xor();
 	while (accept('|'))
 		np = integerop(OBOR, np, bit_xor());
-	return simplify(np);
+	return np;
 }
 
 static Node *
@@ -790,7 +785,7 @@ and(void)
 	np = bit_or();
 	while (accept(AND))
 		np = logic(OAND, np, bit_or());
-	return simplify(np);
+	return np;
 }
 
 static Node *
@@ -801,7 +796,7 @@ or(void)
 	np = and();
 	while (accept(OR))
 		np = logic(OOR, np, and());
-	return simplify(np);
+	return np;
 }
 
 static Node *

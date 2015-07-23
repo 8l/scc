@@ -392,20 +392,19 @@ sizeofnode(Type *tp)
 	((sym)->u.u = ((ls)->u.u op (rs)->u.u)))
 
 Node *
-simplify(Node *np)
+simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 {
-	Node *lp = np->left, *rp = np->right;
-	Symbol *sym, *ls = lp->sym, *rs = rp->sym;
-	Type *tp = np->type;
+	Symbol *sym, *ls, *rs;
 
 	if (!lp->constant || !rp->constant)
-		return np;
+		goto no_simplify;
+	ls = lp->sym, rs = rp->sym;
 
 	switch (tp->op) {
 	case INT:
 		sym = newsym(NS_IDEN);
 		sym->type = tp;
-		switch (np->op) {
+		switch (op) {
 		case OADD:
 			FOLDINT(sym, ls, rs, +);
 			break;
@@ -468,14 +467,17 @@ simplify(Node *np)
 			abort();
 		}
 		break;
+	case FLOAT:
+		/* TODO: Add simplification of floats */
 	default:
-		return np;
+		goto no_simplify;
 	}
 
-	freetree(np);
 	return constnode(sym);
 
 division_by_0:
 	warn("division by 0");
-	return np;
+
+no_simplify:
+	return node(op, tp, lp, rp);
 }
