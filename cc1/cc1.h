@@ -327,6 +327,7 @@ extern Node *constnode(Symbol *sym);
 extern Node *sizeofnode(Type *tp);
 extern void freetree(Node *np);
 extern Node *simplify(unsigned char, Type *tp, Node *lp, Node *rp);
+extern Node *usimplify(unsigned char op, Type *tp, Node *np);
 
 /* expr.c */
 extern Node *expr(void), *negate(Node *np), *constexpr(void);

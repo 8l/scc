@@ -463,8 +463,6 @@ simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 		case OOR:
 			FOLDINT(sym, ls, rs, ||);
 			break;
-		default:
-			abort();
 		}
 		break;
 	case FLOAT:
@@ -480,4 +478,46 @@ division_by_0:
 
 no_simplify:
 	return node(op, tp, lp, rp);
+}
+
+#define UFOLDINT(sym, ls, op) (((sym)->type->sign) ?     \
+	((sym)->u.i = (op (ls)->u.i)) :                  \
+	((sym)->u.u = (op (ls)->u.u)))
+
+Node *
+usimplify(unsigned char op, Type *tp, Node *np)
+{
+	Symbol *sym, *ns;
+
+	if (!np->constant)
+		goto no_simplify;
+	ns = np->sym;
+
+	switch (tp->op) {
+	case INT:
+		switch (op) {
+		case ONEG:
+			sym = newsym(NS_IDEN);
+			sym->type = tp;
+			UFOLDINT(sym, ns, -);
+			break;
+		case OCPL:
+			sym = newsym(NS_IDEN);
+			sym->type = tp;
+			UFOLDINT(sym, ns, ~);
+			break;
+		default:
+			goto no_simplify;
+		}
+		break;
+	case FLOAT:
+		/* TODO: implement floats */
+	default:
+		goto no_simplify;
+	}
+
+	return constnode(sym);
+
+no_simplify:
+	return node(op, tp, np, NULL);
 }

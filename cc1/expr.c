@@ -90,7 +90,7 @@ numericaluop(char op, Node *np)
 	case FLOAT:
 		if (op == OADD)
 			return np;
-		return node(op, np->type, np, NULL);
+		return usimplify(op, np->type, np);
 	default:
 		error("unary operator requires integer operand");
 	}
@@ -102,7 +102,7 @@ integeruop(char op, Node *np)
 	np = eval(np);
 	if (BTYPE(np) != INT)
 		error("unary operator requires integer operand");
-	return node(op, np->type, np, NULL);
+	return usimplify(op, np->type, np);
 }
 
 static Node *
