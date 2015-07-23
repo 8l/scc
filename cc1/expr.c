@@ -125,13 +125,18 @@ convert(Node *np, Type *tp, char iscast)
 	if (eqtype(np->type, tp))
 		return np;
 	switch (BTYPE(np)) {
-	case ENUM: case INT: case FLOAT:
+	case ENUM:
+	case INT:
+	case FLOAT:
 		switch (tp->op) {
 		case PTR:
 			if (!iscast || BTYPE(np) == FLOAT)
 				return NULL;
 			/* PASSTHROUGH */
-		case INT: case FLOAT: case ENUM: case VOID:
+		case INT:
+		case FLOAT:
+		case ENUM:
+		case VOID:
 			break;
 		default:
 			return NULL;
@@ -139,7 +144,9 @@ convert(Node *np, Type *tp, char iscast)
 		break;
 	case PTR:
 		switch (tp->op) {
-		case ENUM: case INT: case VOID: /* TODO: allow p = 0 */
+		case ENUM:  /* TODO: allow p = 0 */
+		case INT:
+		case VOID:
 			if (!iscast)
 				return NULL;;
 			break;
