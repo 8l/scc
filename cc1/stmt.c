@@ -219,7 +219,7 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(SWITCH);
 	expect ('(');
 	cond = expr();
-	if (cond->type->op != INT)
+	if (BTYPE(cond) != INT)
 		error("incorrect type in switch statement");
 	cond = convert(cond, inttype, 0);
 	expect (')');

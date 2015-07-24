@@ -183,7 +183,7 @@ emitconst(Node *np)
 	char *bp, c;
 	Symbol *sym = np->sym;
 
-	switch (np->type->op) {
+	switch (BTYPE(np)) {
 	case INT:
 		printf("#%c%x", np->type->letter, sym->u.i);
 		break;

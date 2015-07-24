@@ -6,8 +6,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-#define BTYPE(np) ((np)->type->op)
-
 extern Symbol *zero, *one;
 
 Node *expr(void);
@@ -377,7 +375,7 @@ iszero(Node *np)
 static Node *
 assignop(char op, Node *lp, Node *rp)
 {
-	switch (rp->type->op) {
+	switch (BTYPE(rp)) {
 	case FTN:
 	case ARY:
 		rp = decay(rp);
