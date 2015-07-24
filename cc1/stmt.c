@@ -219,8 +219,9 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(SWITCH);
 	expect ('(');
 	cond = expr();
-	if ((cond = convert(cond, inttype, 0)) == NULL)
+	if (cond->type->op != INT)
 		error("incorrect type in switch statement");
+	cond = convert(cond, inttype, 0);
 	expect (')');
 
 	lbreak = newsym(NS_LABEL);
