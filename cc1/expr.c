@@ -88,7 +88,7 @@ numericaluop(char op, Node *np)
 	case FLOAT:
 		if (op == OADD)
 			return np;
-		return node(op, np->type, np, NULL);
+		return usimplify(op, np->type, np);
 	default:
 		error("unary operator requires integer operand");
 	}
@@ -100,7 +100,7 @@ integeruop(char op, Node *np)
 	np = eval(np);
 	if (BTYPE(np) != INT)
 		error("unary operator requires integer operand");
-	return node(op, np->type, np, NULL);
+	return usimplify(op, np->type, np);
 }
 
 static Node *
@@ -123,13 +123,18 @@ convert(Node *np, Type *tp, char iscast)
 	if (eqtype(np->type, tp))
 		return np;
 	switch (BTYPE(np)) {
-	case ENUM: case INT: case FLOAT:
+	case ENUM:
+	case INT:
+	case FLOAT:
 		switch (tp->op) {
 		case PTR:
 			if (!iscast || BTYPE(np) == FLOAT)
 				return NULL;
 			/* PASSTHROUGH */
-		case INT: case FLOAT: case ENUM: case VOID:
+		case INT:
+		case FLOAT:
+		case ENUM:
+		case VOID:
 			break;
 		default:
 			return NULL;
@@ -137,7 +142,9 @@ convert(Node *np, Type *tp, char iscast)
 		break;
 	case PTR:
 		switch (tp->op) {
-		case ENUM: case INT: case VOID: /* TODO: allow p = 0 */
+		case ENUM:  /* TODO: allow p = 0 */
+		case INT:
+		case VOID:
 			if (!iscast)
 				return NULL;;
 			break;
@@ -851,9 +858,27 @@ constexpr(void)
 	Node *np;
 
 	np = ternary();
-	if (!np->constant)
-		error("constant expression required");
+	if (!np->constant) {
+		freetree(np);
+		return NULL;
+	}
 	return np;
+}
+
+Node *
+iconstexpr(void)
+{
+	Node *np;
+
+	if ((np = constexpr()) == NULL)
+		return NULL;
+
+	if (np->type->op != INT) {
+		freetree(np);
+		return NULL;
+	}
+
+	return convert(np, inttype, 0);
 }
 
 Node *

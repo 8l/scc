@@ -39,17 +39,16 @@ queue(struct dcldata *dp, unsigned op, short nelem, void *data)
 static struct dcldata *
 arydcl(struct dcldata *dp)
 {
-	Node *np;
+	Node *np = NULL;
 	TINT n;
 
 	expect('[');
-	np = (yytoken != ']') ? constexpr() : NULL;
+	if (yytoken != ']') {
+		if ((np = iconstexpr()) == NULL)
+			error("invalid storage size");
+	}
 	expect(']');
 
-	/*
-	 * TODO: check that the type of the constant expression
-	 * is the correct, that in this case should be int
-	 */
 	n = (np == NULL) ? 0 : np->sym->u.i;
 	freetree(np);
 

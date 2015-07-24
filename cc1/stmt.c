@@ -9,8 +9,6 @@
 
 Symbol *curfun;
 
-extern Node *convert(Node *np, Type *tp1, char iscast);
-extern Node *iszero(Node *np), *eval(Node *np);
 static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 static void
@@ -251,9 +249,8 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(CASE);
 	if (!lswitch)
 		error("case label not within a switch statement");
-	np = expr();
-	if ((np = convert(np, inttype, 0)) == NULL)
-		error("incorrect type in case statement");
+	if ((np = iconstexpr()) == NULL)
+		error("case label does not reduce to an integer constant");
 	expect(':');
 	pcase = xmalloc(sizeof(*pcase));
 	pcase->expr = np;
