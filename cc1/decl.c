@@ -303,7 +303,8 @@ newtag(void)
 	case IDEN:
 	case TYPEIDEN:
 		sym = yylval.sym;
-		install(NS_TAG);
+		if ((sym->flags & ISDEFINED) == 0)
+			install(NS_TAG);
 		next();
 		break;
 	default:
@@ -317,7 +318,6 @@ newtag(void)
 		sym->type->ns = ns++;
 	}
 
-	sym->flags |= ISDEFINED;
 	if ((op = sym->type->op) != tag &&  op != INT)
 		error("'%s' defined as wrong kind of tag", sym->name);
 	return sym;
