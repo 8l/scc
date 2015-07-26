@@ -303,10 +303,10 @@ negate(Node *np)
 	return np;
 }
 
-static bool
-isnodecmp(Node *np)
+bool
+isnodecmp(int op)
 {
-	switch (np->op) {
+	switch (op) {
 	case OEQ:
 	case ONE:
 	case OLT:
@@ -322,7 +322,7 @@ isnodecmp(Node *np)
 static Node *
 exp2cond(Node *np, char neg)
 {
-	if (isnodecmp(np))
+	if (isnodecmp(np->op))
 		return (neg) ? negate(np) : np;
 	return compare(ONE ^ neg, np, constnode(zero));
 }
@@ -374,7 +374,7 @@ array(Node *lp, Node *rp)
 Node *
 iszero(Node *np)
 {
-	if (isnodecmp(np))
+	if (isnodecmp(np->op))
 		return np;
 	return compare(ONE, np, constnode(zero));
 }

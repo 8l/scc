@@ -335,6 +335,7 @@ extern Node *usimplify(unsigned char op, Type *tp, Node *np);
 extern Node *expr(void), *negate(Node *np), *constexpr(void);
 extern Node *convert(Node *np, Type *tp1, char iscast);
 extern Node *iszero(Node *np), *eval(Node *np), *iconstexpr(void);
+extern bool isnodecmp(int op);
 
 /* cpp.c */
 extern void icpp(void);

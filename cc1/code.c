@@ -391,6 +391,9 @@ sizeofnode(Type *tp)
 	((sym)->u.i = ((ls)->u.i op (rs)->u.i)) :       \
 	((sym)->u.u = ((ls)->u.u op (rs)->u.u)))
 
+#define CMPISYM(sym, ls, rs, op) (((sym)->type->sign) ? \
+	((ls)->u.i op (rs)->u.i) : ((ls)->u.u op (rs)->u.u))
+
 Node *
 simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 {
@@ -403,8 +406,22 @@ simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 
 	/* TODO: Add overflow checkings */
 
+	if (isnodecmp(op)) {
+		/*
+		 * Comparision nodes have integer type
+		 * but the operands can have different
+		 * type.
+		 */
+		switch (BTYPE(lp)) {
+		case INT:   goto cmp_integers;
+		case FLOAT: goto cmp_floats;
+		default:    goto no_simplify;
+		}
+	}
+
 	switch (tp->op) {
 	case INT:
+	cmp_integers:
 		switch (op) {
 		case OADD:
 			FOLDINT(&aux, ls, rs, +);
@@ -431,29 +448,6 @@ simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 		case OSHR:
 			FOLDINT(&aux, ls, rs, >>);
 			break;
-		/*
-		 * FIXME: comparision nodes are integers
-		 * but it doesn't mean the operands are
-		 * integers too
-		 */
-		case OLT:
-			FOLDINT(&aux, ls, rs, <);
-			break;
-		case OGT:
-			FOLDINT(&aux, ls, rs, >);
-			break;
-		case OGE:
-			FOLDINT(&aux, ls, rs, >=);
-			break;
-		case OLE:
-			FOLDINT(&aux, ls, rs, <=);
-			break;
-		case OEQ:
-			FOLDINT(&aux, ls, rs, ==);
-			break;
-		case ONE:
-			FOLDINT(&aux, ls, rs, !=);
-			break;
 		case OBAND:
 			FOLDINT(&aux, ls, rs, &);
 			break;
@@ -469,9 +463,28 @@ simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 		case OOR:
 			FOLDINT(&aux, ls, rs, ||);
 			break;
+		case OLT:
+			aux.u.i = CMPISYM(&aux, ls, rs, <);
+			break;
+		case OGT:
+			aux.u.i = CMPISYM(&aux, ls, rs, >);
+			break;
+		case OGE:
+			aux.u.i = CMPISYM(&aux, ls, rs, >=);
+			break;
+		case OLE:
+			aux.u.i = CMPISYM(&aux, ls, rs, <=);
+			break;
+		case OEQ:
+			aux.u.i = CMPISYM(&aux, ls, rs, ==);
+			break;
+		case ONE:
+			aux.u.i = CMPISYM(&aux, ls, rs, !=);
+			break;
 		}
 		break;
 	case FLOAT:
+	cmp_floats:
 		switch (op) {
 		case OADD:
 			aux.u.f = ls->u.f + rs->u.f;
@@ -486,6 +499,24 @@ simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 			if (rs->u.f == 0.0)
 				goto division_by_0;
 			aux.u.f = ls->u.f / rs->u.f;
+			break;
+		case OLT:
+			aux.u.i = ls->u.f < rs->u.f;
+			break;
+		case OGT:
+			aux.u.i = ls->u.f > rs->u.f;
+			break;
+		case OGE:
+			aux.u.i = ls->u.f >= rs->u.f;
+			break;
+		case OLE:
+			aux.u.i = ls->u.f <= rs->u.f;
+			break;
+		case OEQ:
+			aux.u.i = ls->u.f == rs->u.f;
+			break;
+		case ONE:
+			aux.u.i = ls->u.f != rs->u.f;
 			break;
 		}
 		break;
