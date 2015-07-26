@@ -48,6 +48,7 @@ struct symbol {
 	union {
 		TINT i;
 		TUINT u;
+		TFLOAT f;
 		char *s;
 		unsigned char token;
 	} u;

@@ -394,83 +394,108 @@ sizeofnode(Type *tp)
 Node *
 simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 {
-	Symbol *sym, *ls, *rs;
+	Symbol *sym, *ls, *rs, aux;
 
 	if (!lp->constant || !rp->constant)
 		goto no_simplify;
 	ls = lp->sym, rs = rp->sym;
+	aux.type = tp;
+
+	/* TODO: Add overflow checkings */
 
 	switch (tp->op) {
 	case INT:
-		sym = newsym(NS_IDEN);
-		sym->type = tp;
 		switch (op) {
 		case OADD:
-			FOLDINT(sym, ls, rs, +);
+			FOLDINT(&aux, ls, rs, +);
 			break;
 		case OSUB:
-			FOLDINT(sym, ls, rs, -);
+			FOLDINT(&aux, ls, rs, -);
 			break;
 		case OMUL:
-			FOLDINT(sym, ls, rs, *);
+			FOLDINT(&aux, ls, rs, *);
 			break;
 		case ODIV:
-			if (SYMICMP(sym, 0))
+			if (SYMICMP(&aux, 0))
 				goto division_by_0;
-			FOLDINT(sym, ls, rs, /);
+			FOLDINT(&aux, ls, rs, /);
 			break;
 		case OMOD:
-			if (SYMICMP(sym, 0))
+			if (SYMICMP(&aux, 0))
 				goto division_by_0;
-			FOLDINT(sym, ls, rs, %);
+			FOLDINT(&aux, ls, rs, %);
 			break;
 		case OSHL:
-			FOLDINT(sym, ls, rs, <<);
+			FOLDINT(&aux, ls, rs, <<);
 			break;
 		case OSHR:
-			FOLDINT(sym, ls, rs, >>);
+			FOLDINT(&aux, ls, rs, >>);
 			break;
+		/*
+		 * FIXME: comparision nodes are integers
+		 * but it doesn't mean the operands are
+		 * integers too
+		 */
 		case OLT:
-			FOLDINT(sym, ls, rs, <);
+			FOLDINT(&aux, ls, rs, <);
 			break;
 		case OGT:
-			FOLDINT(sym, ls, rs, >);
+			FOLDINT(&aux, ls, rs, >);
 			break;
 		case OGE:
-			FOLDINT(sym, ls, rs, >=);
+			FOLDINT(&aux, ls, rs, >=);
 			break;
 		case OLE:
-			FOLDINT(sym, ls, rs, <=);
+			FOLDINT(&aux, ls, rs, <=);
 			break;
 		case OEQ:
-			FOLDINT(sym, ls, rs, ==);
+			FOLDINT(&aux, ls, rs, ==);
 			break;
 		case ONE:
-			FOLDINT(sym, ls, rs, !=);
+			FOLDINT(&aux, ls, rs, !=);
 			break;
 		case OBAND:
-			FOLDINT(sym, ls, rs, &);
+			FOLDINT(&aux, ls, rs, &);
 			break;
 		case OBXOR:
-			FOLDINT(sym, ls, rs, ^);
+			FOLDINT(&aux, ls, rs, ^);
 			break;
 		case OBOR:
-			FOLDINT(sym, ls, rs, |);
+			FOLDINT(&aux, ls, rs, |);
 			break;
 		case OAND:
-			FOLDINT(sym, ls, rs, &&);
+			FOLDINT(&aux, ls, rs, &&);
 			break;
 		case OOR:
-			FOLDINT(sym, ls, rs, ||);
+			FOLDINT(&aux, ls, rs, ||);
 			break;
 		}
 		break;
 	case FLOAT:
-		/* TODO: Add simplification of floats */
+		switch (op) {
+		case OADD:
+			aux.u.f = ls->u.f + rs->u.f;
+			break;
+		case OSUB:
+			aux.u.f = ls->u.f - rs->u.f;
+			break;
+		case OMUL:
+			aux.u.f = ls->u.f * rs->u.f;
+			break;
+		case ODIV:
+			if (rs->u.f == 0.0)
+				goto division_by_0;
+			aux.u.f = ls->u.f / rs->u.f;
+			break;
+		}
+		break;
 	default:
 		goto no_simplify;
 	}
 
+	sym = newsym(NS_IDEN);
+	sym->type = tp;
+	sym->u = aux.u;
 	return constnode(sym);
 
 division_by_0:
@@ -487,35 +512,38 @@ no_simplify:
 Node *
 usimplify(unsigned char op, Type *tp, Node *np)
 {
-	Symbol *sym, *ns;
+	Symbol *sym, *ns, aux;
 
 	if (!np->constant)
 		goto no_simplify;
 	ns = np->sym;
+	aux.type = tp;
 
 	switch (tp->op) {
 	case INT:
 		switch (op) {
 		case ONEG:
-			sym = newsym(NS_IDEN);
-			sym->type = tp;
-			UFOLDINT(sym, ns, -);
+			UFOLDINT(&aux, ns, -);
 			break;
 		case OCPL:
-			sym = newsym(NS_IDEN);
-			sym->type = tp;
-			UFOLDINT(sym, ns, ~);
+			UFOLDINT(&aux, ns, ~);
 			break;
 		default:
 			goto no_simplify;
 		}
 		break;
 	case FLOAT:
-		/* TODO: implement floats */
+		if (op != ONEG)
+			goto no_simplify;
+		aux.u.f = -ns->u.f;
+		break;
 	default:
 		goto no_simplify;
 	}
 
+	sym = newsym(NS_IDEN);
+	sym->type = tp;
+	sym->u = aux.u;
 	return constnode(sym);
 
 no_simplify:
