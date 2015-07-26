@@ -1,27 +1,3 @@
-Introduction
-============
-This is the suckless C compiler, a very stupid non-retargetable compiler
-for the Z80. It is intended to be very simple and suitable for running on
-small machines (like MSX for example), and leaves almost all optimizations
-to the programmer.
-
-After a lot of years seeing compilers for the Z80 I noticed that it is very
-hard for a C compiler to generate good programs for 8 Bit processors like
-the Z80, with an expensive indirect addressing mode, so the best solution
-is not to try to make the compiler optimizing, but instead use C as a macro
-macro assembler.
-
-In order to reach this target, we need a compiler that does exactly the
-things the programmer wants to do. For example, if a variable is a register
-it MUST be a register and should fail in any other case.
-If a variable is automatic operations should be attempted to be realized
-with the stack directly (for example use ADD A,(IX+4) instead of
-allocating the variable into a register add and store it again in memory).
-If you declare an automatic variable you are either doing it wrong or you
-need it for recursion (static variables are you friends).
-
-This is the reason why I began to develop this compiler, and I hope
-it will be useful for you.
 
 Derivations from standard C
 ===========================
@@ -83,7 +59,7 @@ grammar ambiguous because it is impossible to differentiate between:
 Function type names are stupid, because they are used as an alias
 of the function pointer types, but it is stupid that something
 like sizeof(int (int)) is not allowed (because here it should be
-understood as the size of a function), but is f(int (int)) is allowed
+understood as the size of a function), but f(int (int)) is allowed
 because it is understood as a parameter of function pointer type.
 
 This complexity is not needed at all as function pointers fix all these
