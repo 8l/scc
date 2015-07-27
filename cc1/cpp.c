@@ -548,7 +548,7 @@ bool
 cpp(void)
 {
 	static struct {
-		uint8_t tok;
+		uint8_t token;
 		void (*fun)(void);
 	} *bp, clauses [] = {
 		{DEFINE, define},
@@ -574,9 +574,9 @@ cpp(void)
 	lexmode = CPPMODE;
 	setnamespace(NS_CPPCLAUSES);
 	next();
-	for (bp = clauses; bp->tok && bp->tok != yytoken; ++bp)
+	for (bp = clauses; bp->token && bp->token != yytoken; ++bp)
 		/* nothing */;
-	if (!bp->tok)
+	if (!bp->token)
 		error("incorrect preprocessor directive");
 	next();
 	(*bp->fun)();
