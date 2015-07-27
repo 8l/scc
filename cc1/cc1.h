@@ -328,15 +328,12 @@ extern Node *varnode(Symbol *sym);
 extern Node *constnode(Symbol *sym);
 extern Node *sizeofnode(Type *tp);
 extern void freetree(Node *np);
-extern Node *simplify(unsigned char, Type *tp, Node *lp, Node *rp);
-extern Node *usimplify(unsigned char op, Type *tp, Node *np);
 #define BTYPE(np) ((np)->type->op)
 
 /* expr.c */
 extern Node *expr(void), *negate(Node *np), *constexpr(void);
 extern Node *convert(Node *np, Type *tp1, char iscast);
 extern Node *iszero(Node *np), *eval(Node *np), *iconstexpr(void);
-extern bool isnodecmp(int op);
 
 /* cpp.c */
 extern void icpp(void);
