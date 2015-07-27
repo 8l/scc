@@ -217,9 +217,14 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(SWITCH);
 	expect ('(');
 	cond = expr();
-	if (BTYPE(cond) != INT)
+	switch (BTYPE(cond)) {
+	case INT:
+	case ENUM:
+		cond = convert(cond, inttype, 0);
+		break;
+	default:
 		error("incorrect type in switch statement");
-	cond = convert(cond, inttype, 0);
+	}
 	expect (')');
 
 	lbreak = newsym(NS_LABEL);
