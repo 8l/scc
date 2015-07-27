@@ -451,58 +451,53 @@ usererr(void)
 }
 
 static void
-ifclause(int isdef)
+ifclause(int negate, int isifdef)
 {
 	Symbol *sym;
 	unsigned n;
 	int status;
+	Node *expr;
 
 	if (cppctx == NR_COND-1)
 		error("too much nesting levels of conditional inclusion");
-
 	n = cppctx++;
-	if (yytoken != IDEN) {
-		error("no macro name given in #%s directive",
-		      (isdef) ? "ifdef" : "ifndef");
+
+	if (isifdef) {
+		if (yytoken != IDEN) {
+			error("no macro name given in #%s directive",
+			      (negate) ? "ifndef" : "ifdef");
+		}
+		sym = lookup(NS_CPP);
+		next();
+		status = (sym->flags & ISDEFINED) != 0;
+	} else {
+		if ((expr = iconstexpr()) == NULL)
+			error("parameter of #if is not an integer constant expression");
+		status = expr->sym->u.i != 0;
 	}
 
-	sym = lookup(NS_CPP);
-	next();
-
-	status = (sym->flags & ISDEFINED) != 0 == isdef;
-
-	if (!(ifstatus[n] = status))
+	if (negate)
+		status = !status;
+	if ((ifstatus[n] = status) == 0)
 		++cppoff;
 }
 
 static void
 cppif(void)
 {
-	Node *expr;
-	int status;
-	unsigned n;
-
-	if (cppctx == NR_COND-1)
-		error("too much nesting levels of conditional inclusion");
-	n = cppctx++;
-
-	if ((expr = iconstexpr()) == NULL)
-		error("parameter of #if is not an integer constant expression");
-	status = expr->sym->u.i != 0;
-	if (!(ifstatus[n] = status))
-		++cppoff;
+	ifclause(0, 0);
 }
 
 static void
 ifdef(void)
 {
-	ifclause(1);
+	ifclause(0, 1);
 }
 
 static void
 ifndef(void)
 {
-	ifclause(0);
+	ifclause(1, 1);
 }
 
 static void
