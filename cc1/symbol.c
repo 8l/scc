@@ -262,6 +262,7 @@ ikeywords(void)
 		{"include", INCLUDE, INCLUDE},
 		{"line", LINE, LINE},
 		{"ifdef", IFDEF, IFDEF},
+		{"if", IF, IF},
 		{"else", ELSE, ELSE},
 		{"ifndef", IFNDEF, IFNDEF},
 		{"endif", ENDIF, ENDIF},

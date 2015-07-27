@@ -476,6 +476,24 @@ ifclause(int isdef)
 }
 
 static void
+cppif(void)
+{
+	Node *expr;
+	int status;
+	unsigned n;
+
+	if (cppctx == NR_COND-1)
+		error("too much nesting levels of conditional inclusion");
+	n = cppctx++;
+
+	if ((expr = iconstexpr()) == NULL)
+		error("parameter of #if is not an integer constant expression");
+	status = expr->sym->u.i != 0;
+	if (!(ifstatus[n] = status))
+		++cppoff;
+}
+
+static void
 ifdef(void)
 {
 	ifclause(1);
@@ -535,6 +553,7 @@ cpp(void)
 		{INCLUDE, include},
 		{LINE, line},
 		{IFDEF, ifdef},
+		{IF, cppif},
 		{IFNDEF, ifndef},
 		{ELSE, elseclause},
 		{ENDIF, endif},
