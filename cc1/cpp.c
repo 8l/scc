@@ -522,6 +522,13 @@ elseclause(void)
 }
 
 static void
+elif(void)
+{
+	elseclause();
+	ifclause(0, 0);
+}
+
+static void
 undef(void)
 {
 	Symbol *sym;
@@ -549,6 +556,7 @@ cpp(void)
 		{LINE, line},
 		{IFDEF, ifdef},
 		{IF, cppif},
+		{ELIF, elif},
 		{IFNDEF, ifndef},
 		{ELSE, elseclause},
 		{ENDIF, endif},

@@ -214,6 +214,7 @@ enum tokens {
 	PRAGMA,
 	ERROR,
 	IFDEF,
+	ELIF,
 	IFNDEF,
 	UNDEF,
 	ENDIF,

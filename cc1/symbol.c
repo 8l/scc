@@ -263,6 +263,7 @@ ikeywords(void)
 		{"line", LINE, LINE},
 		{"ifdef", IFDEF, IFDEF},
 		{"if", IF, IF},
+		{"elif", ELIF, ELIF},
 		{"else", ELSE, ELSE},
 		{"ifndef", IFNDEF, IFNDEF},
 		{"endif", ENDIF, ENDIF},
