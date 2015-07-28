@@ -69,7 +69,7 @@ fundcl(struct dcldata *dp)
 	expect('(');
 
 	n = noname = 0;
-	do {
+	if (yytoken != ')') do {
 		if ((sym = parameter()) == NULL) {
 			if (n == 0)
 				break;
