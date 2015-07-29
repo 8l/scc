@@ -327,21 +327,71 @@ decay(Node *np)
 	return node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
 }
 
+static Node *
+constconv(Node *np, Type *newtp)
+{
+	Type *oldtp = np->type;
+	Symbol aux, *sym, *osym = np->sym;
+
+	switch (newtp->op) {
+	case INT:
+	case ENUM:
+		switch (oldtp->op) {
+		case INT:
+		case ENUM:
+			if (newtp->sign == oldtp->sign)
+				aux.u = osym->u;
+			if (newtp->sign && !oldtp->sign)
+				aux.u.i = osym->u.u;
+			else if (!newtp->sign && oldtp->sign)
+				aux.u.u = osym->u.u;
+			break;
+		case FLOAT:
+			if (newtp->sign)
+				aux.u.i = osym->u.f;
+			else
+				aux.u.u = osym->u.f;
+			break;
+		default:
+			return NULL;
+		}
+		break;
+	case FLOAT:
+		aux.u.f = (oldtp->sign) ? sym->u.i : sym->u.u;
+		break;
+	default:
+		return NULL;
+	}
+
+	sym = newsym(NS_IDEN);
+	np->type = sym->type = newtp;
+	np->sym = sym;
+	sym->u = aux.u;
+
+	return np;
+}
+
 /*
  * Convert a Node to a type
  */
 Node *
-convert(Node *np, Type *tp, char iscast)
+convert(Node *np, Type *newtp, char iscast)
 {
-	if (eqtype(np->type, tp))
+	Type *oldtp = np->type;
+	Node *p;
+
+	if (eqtype(newtp, oldtp))
 		return np;
-	switch (BTYPE(np)) {
+	if (np->constant && (p = constconv(np, newtp)) != NULL)
+		return p;
+
+	switch (oldtp->op) {
 	case ENUM:
 	case INT:
 	case FLOAT:
-		switch (tp->op) {
+		switch (newtp->op) {
 		case PTR:
-			if (!iscast || BTYPE(np) == FLOAT)
+			if (!iscast || oldtp->op == FLOAT)
 				return NULL;
 			/* PASSTHROUGH */
 		case INT:
@@ -354,7 +404,7 @@ convert(Node *np, Type *tp, char iscast)
 		}
 		break;
 	case PTR:
-		switch (tp->op) {
+		switch (newtp->op) {
 		case ENUM:  /* TODO: allow p = 0 */
 		case INT:
 		case VOID:
@@ -363,14 +413,14 @@ convert(Node *np, Type *tp, char iscast)
 			break;
 		case PTR:
 			if (iscast ||
-			    tp == pvoidtype ||
-			    np->type == pvoidtype) {
+			    newtp == pvoidtype ||
+			    oldtp == pvoidtype) {
 				/* TODO:
 				 * we assume conversion between pointers
 				 * do not need any operation, but due to
 				 * alignment problems that may be false
 				 */
-				np->type = tp;
+				np->type = newtp;
 				return np;
 			}
 		default:
@@ -379,7 +429,7 @@ convert(Node *np, Type *tp, char iscast)
 	default:
 			return NULL;
 	}
-	return node(OCAST, tp, np, NULL);
+	return node(OCAST, newtp, np, NULL);
 }
 
 static Node *
