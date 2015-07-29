@@ -1065,6 +1065,18 @@ ternary(void)
 		expect(':');
 		ifno = promote(ternary());
 		typeconv(&ifyes, &ifno);
+		if (cond->constant) {
+			TINT i = cond->sym->u.i;
+
+			freetree(cond);
+			if (i == 0) {
+				freetree(ifyes);
+				return ifno;
+			} else {
+				freetree(ifno);
+				return ifyes;
+			}
+		}
 		np = node(OCOLON, ifyes->type, ifyes, ifno);
 		cond = node(OASK, np->type, cond, np);
 	}
