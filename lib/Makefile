@@ -1,3 +1,4 @@
+include ../config.mk
 
 OBJS = die.o xcalloc.o xmalloc.o xrealloc.o xstrdup.o
 
