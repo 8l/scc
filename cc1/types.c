@@ -257,8 +257,6 @@ ctype(unsigned type, unsigned sign, unsigned size)
 		}
 		break;
 	}
-	fputs("internal type error, aborting\n", stderr);
-	abort();
 
 invalid_type:
 	error("invalid type specification");
