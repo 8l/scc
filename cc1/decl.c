@@ -188,9 +188,9 @@ static Type *
 specifier(unsigned *sclass)
 {
 	Type *tp = NULL;
-	unsigned qlf, sign, type, cls, size;
+	unsigned spec, qlf, sign, type, cls, size;
 
-	qlf = sign = type = cls = size = 0;
+	spec = qlf = sign = type = cls = size = 0;
 
 	for (;;) {
 		unsigned *p;
@@ -258,12 +258,13 @@ specifier(unsigned *sclass)
 		} else {
 			next();
 		}
+		spec = 1;
 	}
 
 return_type:
 	if (sclass)
 		*sclass = cls;
-	if (!tp)
+	if (!tp && spec)
 		tp = ctype(type, sign, size);
 	return tp;
 
