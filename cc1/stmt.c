@@ -12,9 +12,41 @@ Symbol *curfun;
 static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 static void
+label(void)
+{
+	Symbol *sym;
+
+	switch (yytoken) {
+	case IDEN:
+	case TYPEIDEN:
+		/*
+		 * We cannot call to insert() because the call to lookup in
+		 * lex.c was done in NS_IDEN namespace, and it is impossibe
+		 * to fix this point, because an identifier at the beginning
+		 * of a statement may be part of an expression or part of a
+		 * label. This double call to lookup() is going to generate
+		 * an undefined symbol that is not going to be used ever.
+		 */
+		sym = lookup(NS_LABEL);
+		if (sym->flags & ISDEFINED)
+			error("label '%s' already defined", yytoken);
+		sym->flags |= ISDEFINED;
+		emit(OLABEL, sym);
+		next();
+		expect(':');
+		break;
+	default:
+		unexpected();
+	}
+}
+
+static void
 stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Node *np = NULL;;
+	Node *np;
+
+	if (ahead() == ':')
+		label();
 
 	if (yytoken != ';') {
 		np = expr();
@@ -150,38 +182,6 @@ Break(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(';');
 }
 
-static void stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
-
-static void
-Label(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
-{
-	Symbol *sym;
-
-	switch (yytoken) {
-	case IDEN:
-	case TYPEIDEN:
-		/*
-		 * We cannot call to insert() because the call to lookup in
-		 * lex.c was done in NS_IDEN namespace, and it is impossibe
-		 * to fix this point, because an identifier at the beginning
-		 * of a statement may be part of an expression or part of a
-		 * label. This double call to lookup() is going to generate
-		 * an undefined symbol that is not going to be used ever.
-		 */
-		sym = lookup(NS_LABEL);
-		if (sym->flags & ISDEFINED)
-			error("label '%s' already defined", yytoken);
-		sym->flags |= ISDEFINED;
-		emit(OLABEL, sym);
-		next();
-		expect(':');
-		stmt(lbreak, lcont, lswitch);
-		break;
-	default:
-		unexpected();
-	}
-}
-
 static void
 Continue(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -299,6 +299,25 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 }
 
+static void
+blockit(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
+{
+	switch (yytoken) {
+	case TYPEIDEN:
+		if (ahead() == ':')
+			goto parse_stmt;
+		/* PASSTHROUGH */
+	case TYPE:
+	case TQUALIFIER:
+	case SCLASS:
+		decl();
+		return;
+	default:
+	parse_stmt:
+		stmt(lbreak, lcont, lswitch);
+	}
+}
+
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -310,26 +329,13 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	for (;;) {
 		setsafe(END_COMP);
 		setjmp(recover);
-		switch (yytoken) {
-		case '}':
-			goto end_compound;
-		case TYPEIDEN:
-			if (ahead() == ':')
-				goto statement;
-			/* pass through */
-		case TYPE: case SCLASS: case TQUALIFIER:
-			decl();
+		if (yytoken == '}')
 			break;
-		default:
-		statement:
-			stmt(lbreak, lcont, lswitch);
-		}
+		blockit(lbreak, lcont, lswitch);
 	}
 
-end_compound:
 	popctx();
 	expect('}');
-	return;
 }
 
 static void
@@ -352,10 +358,6 @@ stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	case CASE:     fun = Case;     break;
 	case DEFAULT:  fun = Default;  break;
 	default:       fun = stmtexp;  break;
-	case TYPEIDEN:
-	case IDEN:
-		fun = (ahead() == ':') ? Label : stmtexp;
-		break;
 	}
 	(*fun)(lbreak, lcont, lswitch);
 }
