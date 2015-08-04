@@ -342,7 +342,6 @@ structdcl(void)
 	if (tagtype->defined)
 		error("redefinition of struct/union '%s'", yytext);
 	tagtype->defined = 1;
-	emit(OSTRUCT, tagsym);
 
 	while (!accept('}')) {
 		Type *base, *tp;
@@ -378,7 +377,6 @@ structdcl(void)
 		expect(';');
 	}
 
-	emit(OESTRUCT, NULL);
 	if ((n = bp - buff) != 0) {
 		siz = sizeof(Type *) * n;
 		tagtype->n.elem = n;
