@@ -364,7 +364,7 @@ typename(void)
 }
 
 static void
-field(Symbol *sym, unsigned sclass, Type *data)
+field(Symbol *sym, int sclass, Type *data)
 {
 	Type *tp = sym->type, *funtp = data;
 	size_t n = funtp->n.elem;
@@ -384,7 +384,7 @@ field(Symbol *sym, unsigned sclass, Type *data)
 }
 
 static void
-parameter(Symbol *sym, unsigned sclass, Type *data)
+parameter(Symbol *sym, int sclass, Type *data)
 {
 	Type *tp = sym->type, *funtp = data;
 	size_t n = funtp->n.elem;
@@ -415,7 +415,7 @@ parameter(Symbol *sym, unsigned sclass, Type *data)
 }
 
 static void
-internal(Symbol *sym, unsigned sclass, Type *data)
+internal(Symbol *sym, int sclass, Type *data)
 {
 
 	if (!sym->name) {
@@ -431,7 +431,7 @@ internal(Symbol *sym, unsigned sclass, Type *data)
 }
 
 static void
-external(Symbol *sym, unsigned sclass, Type *data)
+external(Symbol *sym, int sclass, Type *data)
 {
 	if (!sym->name) {
 		warn("empty declaration");
@@ -480,25 +480,24 @@ prototype(Symbol *sym)
 }
 
 static bool
-dodcl(int rep, void (*fun)(Symbol *, unsigned, Type *), uint8_t ns, Type *type)
+dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 {
-	Type *base, *tp = NULL;
-	unsigned sclass = 0;
-	Symbol *sym = NULL;
+	Type *base;
+	int sclass;
 
 	/* FIXME: curctx == PARCTX is incorrect. Structs also
 	 * create new contexts
 	 */
-	/* FIXME: in arguments base can be NULL */
-	base = specifier(&sclass);
-	if (!base && curctx == OUTCTX) {
+	if ((base = specifier(&sclass)) == NULL) {
+		if (curctx != OUTCTX)
+			unexpected();
 		warn("type defaults to 'int' in declaration");
-		tp = inttype;
+		base = inttype;
 	}
 
 	do {
-		sym = declarator(base, ns);
-		tp = sym->type;
+		Symbol *sym = declarator(base, ns);
+		Type *tp = sym->type;
 
 		switch (sclass) {
 		case REGISTER:
