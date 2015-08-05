@@ -12,7 +12,7 @@ static void emitbin(unsigned, void *),
             emitsym(unsigned, void *), emitfield(unsigned, void *),
             emitexp(unsigned, void *),
             emitsymid(unsigned, void *), emittext(unsigned, void *),
-            emitprint(unsigned, void *), emitfun(unsigned, void *),
+            emitfun(unsigned, void *),
             emitret(unsigned, void *), emitdcl(unsigned, void *);
 
 char *optxt[] = {
@@ -119,12 +119,6 @@ void (*opcode[])(unsigned, void *) = {
 	[ODECL] = emitdcl,
 	[OSWITCH] = emitswitch
 };
-
-static Node *simple_add(Type *, Node *, Node *),
-            *simple_sub(Type *, Node *, Node *),
-            *simple_mul(Type *, Node *, Node *),
-            *simple_div(Type *, Node *, Node *),
-            *simple_mod(Type *, Node *, Node *);
 
 void
 freetree(Node *np)
