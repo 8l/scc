@@ -365,7 +365,6 @@ constnode(Symbol *sym)
 Node *
 sizeofnode(Type *tp)
 {
-	Node *np;
 	Symbol *sym;
 
 	sym = newsym(NS_IDEN);

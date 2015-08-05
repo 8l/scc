@@ -545,7 +545,7 @@ decl(void)
 static void
 parlist(Type *tp)
 {
-	Symbol *pars[NR_FUNPARAM], **sp = pars, *sym;
+	Symbol *pars[NR_FUNPARAM], **sp = pars;
 	bool isfun;
 	int n;
 
