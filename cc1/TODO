@@ -1,8 +1,6 @@
-* Implement constant expressions
 * Verify correctness in initializators
 * emit initializators
 * emit structures definition
-* Define array types based in the value of constant expressions
 * Rewrite decl.c and use only one decl function with a function pointer
   parameter
 * Allow external declarations of incomplete array types
