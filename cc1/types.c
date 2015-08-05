@@ -263,7 +263,7 @@ invalid_type:
 }
 
 Type *
-mktype(Type *tp, unsigned op, short nelem, void *data)
+mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 {
 	static Type *typetab[NR_TYPE_HASH];
 	Type **tbl, type;
@@ -284,7 +284,7 @@ mktype(Type *tp, unsigned op, short nelem, void *data)
 	type.type = tp;
 	type.op = op;
 	type.letter = letters[op];
-	type.pars = data;
+	type.pars = pars;
 	type.n.elem = nelem;
 	type.ns = 0;
 

@@ -289,7 +289,7 @@ extern void printerr(char *fmt, ...);
 /* types.c */
 extern bool eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(unsigned type, unsigned sign, unsigned size);
-extern Type *mktype(Type *tp, unsigned op, short nelem, void *data);
+extern Type *mktype(Type *tp, unsigned op, short nelem, Type *data[]);
 extern Type *duptype(Type *base);
 
 /* symbol.c */
