@@ -10,7 +10,7 @@
 
 #define NR_SYM_HASH 64
 
-static unsigned curctx;
+unsigned curctx;
 static short localcnt;
 static short globalcnt;
 

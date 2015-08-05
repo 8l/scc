@@ -1,8 +1,6 @@
 * Verify correctness in initializators
 * emit initializators
 * emit structures definition
-* Rewrite decl.c and use only one decl function with a function pointer
-  parameter
 * Allow external declarations of incomplete array types
 * Implement bitfields
 * Define data structure shared between cc1 and cc2 with the type

@@ -306,7 +306,7 @@ extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
 
 /* decl.c */
 extern Type *typename(void);
-extern void extdecl(void), decl(void);
+extern void decl(void);
 
 /* lex.c */
 extern char ahead(void);
@@ -350,6 +350,8 @@ extern int cppoff, disexpand;
 extern unsigned cppctx;
 extern Input *input;
 extern int lexmode;
+extern unsigned curctx;
+extern Symbol *curfun;
 
 extern Type *voidtype, *pvoidtype, *booltype,
             *uchartype,   *chartype,

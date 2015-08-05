@@ -67,7 +67,7 @@ main(int argc, char *argv[])
 	ikeywords();
 	ilex(*argv);
 
-	for (next(); yytoken != EOFTOK; extdecl())
+	for (next(); yytoken != EOFTOK; decl())
 		/* nothing */;
 
 	return 0;
