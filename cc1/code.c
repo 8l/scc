@@ -175,7 +175,7 @@ emitconst(Node *np)
 
 	switch (BTYPE(np)) {
 	case INT:
-		printf("#%c%x", np->type->letter, sym->u.i);
+		printf("#%c%X", np->type->letter, sym->u.i);
 		break;
 	case ARY:
 		/*

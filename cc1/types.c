@@ -312,8 +312,12 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 	tbl = &typetab[t];
 	for (bp = *tbl; bp; bp = bp->next) {
 		if (eqtype(bp, &type)) {
-			/* FIXME: data can be a pointer to static data */
-			free(data);
+			/*
+			 * pars was allocated by the caller
+			 * but the type already exists, so
+			 * we have to deallocted it
+			 */
+			free(pars);
 			return bp;
 		}
 	}

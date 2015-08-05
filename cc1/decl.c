@@ -14,7 +14,7 @@
 struct dcldata {
 	unsigned char op;
 	unsigned short nelem;
-	unsigned ndcl;
+	unsigned char ndcl;
 	void *data;
 };
 
@@ -140,7 +140,7 @@ declarator(Type *tp, unsigned ns)
 static Type *structdcl(void), *enumdcl(void);
 
 static Type *
-specifier(unsigned *sclass)
+specifier(int *sclass)
 {
 	Type *tp = NULL;
 	unsigned spec, qlf, sign, type, cls, size;

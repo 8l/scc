@@ -341,8 +341,7 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 stmt(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	void (*fun)(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
-	Node *np;
+	void (*fun)(Symbol *, Symbol *, Caselist *);
 
 	switch (yytoken) {
 	case '{':      fun = compound; break;
