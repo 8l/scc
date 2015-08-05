@@ -59,8 +59,8 @@ fundcl(struct dcldata *dp)
 {
 	Type dummy = {.n = {.elem = 0}, .pars = NULL};
 
-	pushctx();
 	parlist(&dummy);
+
 	return queue(dp, FTN, dummy.n.elem, dummy.pars);
 }
 
@@ -409,6 +409,7 @@ parameter(Symbol *sym, int sclass, Type *data)
 		error("bad storage class in function parameter");
 	if (n++ == NR_FUNPARAM)
 		error("too much parameters in function definition");
+	sym->flags |= ISPARAM;
 	funtp->pars = xrealloc(funtp->pars, n);
 	funtp->pars[n-1] = tp;
 	funtp->n.elem = n;
@@ -462,27 +463,23 @@ prototype(Symbol *sym)
 		if (sym->token == TYPEIDEN)
 			error("function definition declared 'typedef'");
 
-		/* TODO: emit parameters emit(ODECL, *sp++); */
 		sym->flags |= ISDEFINED;
 		curfun = sym;
 		emit(OFUN, sym);
 		compound(NULL, NULL, NULL);
 		emit(OEFUN, NULL);
+		popctx();
 		r = 0;
 	}
 
-	/*
-	 * fundcl() creates a new context for the parameters
-	 * and in this point we have to destroy the context
-	 */
-	popctx();
 	return r;
 }
 
-static bool
+static Symbol *
 dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 {
-	Type *base;
+	Symbol *sym;
+	Type *base, *tp;
 	int sclass;
 
 	/* FIXME: curctx == PARCTX is incorrect. Structs also
@@ -496,8 +493,8 @@ dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 	}
 
 	do {
-		Symbol *sym = declarator(base, ns);
-		Type *tp = sym->type;
+		sym = declarator(base, ns);
+		tp = sym->type;
 
 		switch (sclass) {
 		case REGISTER:
@@ -516,13 +513,13 @@ dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 			sym->token = TYPEIDEN;
 			break;
 		}
-
 		if (tp->op == FTN && !prototype(sym))
-			return 0;
+			return NULL;
 		(*fun)(sym, sclass, type);
+
 	} while (rep && accept(','));
 
-	return 1;
+	return sym;
 }
 
 void
@@ -535,20 +532,46 @@ decl(void)
 	expect(';');
 }
 
+/*
+ * parlist() is called every time there is a argument list.
+ * It means that is called for prototypes and for functions.
+ * In both cases a new context is needed for the arguments,
+ * but in the case of prototypes we need pop the context
+ * before parsing anything else or we can have name conflicts.
+ * The heuristic used here to detect a function is check if
+ * next token will be '{', but it implies that K&R alike
+ * functions are not allowed.
+ */
 static void
 parlist(Type *tp)
 {
+	Symbol *pars[NR_FUNPARAM], **sp = pars, *sym;
+	bool isfun;
+	int n;
+
+	pushctx();
 	expect('(');
 
 	if (accept(')')) {
-		/* TODO: implement k&r functions */
+		tp->n.elem = -1;
 		return;
 	}
+
 	do
-		dodcl(0, parameter, NS_IDEN, tp);
+		*sp++ = dodcl(0, parameter, NS_IDEN, tp);
 	while (accept(','));
 
+	isfun = ahead() == '{';
+	if (!isfun)
+		popctx();
 	expect(')');
+
+	if (!isfun)
+		return;
+
+	n = tp->n.elem;
+	for (sp = pars; n-- > 0; ++sp)
+		emit(ODECL, *sp);
 }
 
 static void
