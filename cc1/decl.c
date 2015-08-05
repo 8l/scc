@@ -327,12 +327,10 @@ enumdcl(void)
 		sym->flags |= ISCONSTANT;
 		sym->type = inttype;
 		if (accept('=')) {
-			Node *np = constexpr();
-			/*
-			 * TODO: check that the type of the constant
-			 * expression is the correct, that in this
-			 * case should be int
-			 */
+			Node *np = iconstexpr();
+
+			if (np == NULL)
+				error("invalid enumeration value");
 			val = np->sym->u.i;
 			freetree(np);
 		}
