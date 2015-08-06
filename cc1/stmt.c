@@ -60,7 +60,6 @@ static Node *
 condition(void)
 {
 	extern jmp_buf recover;
-	extern Symbol *zero;
 	Node *np;
 
 	expect('(');

@@ -351,7 +351,7 @@ extern unsigned cppctx;
 extern Input *input;
 extern int lexmode;
 extern unsigned curctx;
-extern Symbol *curfun;
+extern Symbol *curfun, *zero, *one;
 
 extern Type *voidtype, *pvoidtype, *booltype,
             *uchartype,   *chartype,

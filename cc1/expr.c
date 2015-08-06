@@ -6,7 +6,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-extern Symbol *zero, *one;
 
 Node *expr(void);
 
