@@ -75,7 +75,7 @@ parameter(Symbol *sym, int sclass, Type *data)
 		error("bad storage class in function parameter");
 	if (n++ == NR_FUNPARAM)
 		error("too much parameters in function definition");
-	funtp->pars = xrealloc(funtp->pars, n);
+	funtp->pars = xrealloc(funtp->pars, n * sizeof(Type *));
 	funtp->pars[n-1] = tp;
 	funtp->n.elem = n;
 }
