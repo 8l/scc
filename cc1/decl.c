@@ -91,34 +91,43 @@ fundcl(struct dcldata *dp)
 	Type type = {.n = {.elem = -1}, .pars = NULL};
 	Symbol *syms[NR_FUNPARAM], **sp;
 	size_t size;
+	void *p;
 
 	pushctx();
 	expect('(');
 
-	if (accept(')'))
-		goto nopars;
+	if (accept(')')) {
+		dp = queue(dp, FTN, type.n.elem, type.pars);
+	} else {
+		type.n.elem = 0;
+		sp = syms;
+		do
+			*sp++ = dodcl(0, parameter, NS_IDEN, &type);
+		while (accept(','));
 
-	type.n.elem = 0;
-	sp = syms;
-	do
-		*sp++ = dodcl(0, parameter, NS_IDEN, &type);
-	while (accept(','));
+		expect(')');
 
-	if (ahead() != '{')
-		goto nopars;
+		dp = queue(dp, FTN, type.n.elem, type.pars);
+		if (type.n.elem != -1) {
+			size = type.n.elem * sizeof(Symbol *);
+			p = memcpy(xmalloc(size), syms, size);
+			dp = queue(dp, PARS, 0, p);
+		}
+	}
 
-	expect(')');
-
-	dp = queue(dp, FTN, type.n.elem, type.pars);
-	if (type.n.elem != -1) {
-		size = type.n.elem * sizeof(Symbol *);
-		dp = queue(dp, PARS, 0, memcpy(xmalloc(size), syms, size));
+	switch (yytoken) {
+	default:
+		/* This is not a function */
+		popctx();
+	case '{':
+	case TYPEIDEN:
+	case TYPE:
+	case TQUALIFIER:
+	case SCLASS:
+		/* This can be a function (K&R included) */
+		break;
 	}
 	return dp;
-
-nopars:
-	expect(')');
-	return queue(dp, FTN, type.n.elem, type.pars);
 }
 
 static struct dcldata *declarator0(struct dcldata *dp, unsigned ns);
@@ -457,9 +466,7 @@ internal(Symbol *sym, int sclass, Type *data)
 		warn("empty declaration");
 		return;
 	}
-	if (sym->type->op == FTN) {
-		popctx();
-	} else {
+	if (sym->type->op != FTN) {
 		if (!sclass)
 			sym->flags |= ISAUTO;
 		if (accept('='))
