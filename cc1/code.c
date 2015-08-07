@@ -147,22 +147,21 @@ emit(unsigned op, void *arg)
 	(*opcode[op])(op, arg);
 }
 
-/* TODO: move these letters to cc.h */
 static void
 emitvar(Symbol *sym)
 {
 	char c;
 
 	if (sym->flags & ISSTATIC)
-		c = (sym->flags & ISGLOBAL) ? 'Y' : 'T';
+		c = (sym->flags & ISGLOBAL) ? L_PRIVATE : L_STATIC;
 	else if (sym->flags & ISGLOBAL)
-		c = 'G';
+		c = L_PUBLIC;
 	else if (sym->flags & ISREGISTER)
-		c = 'R';
+		c = L_REGISTER;
 	else if (sym->flags & ISFIELD)
-		c = 'M';
+		c = L_FIELD;
 	else
-		c = 'A';
+		c = L_AUTO;
 	printf("%c%d", c, sym->id);
 }
 

@@ -59,6 +59,13 @@ typedef unsigned bool;
 #define L_DOUBLE    'D'
 #define L_LDOUBLE   'H'
 
+#define L_PUBLIC    'G'
+#define L_PRIVATE   'Y'
+#define L_STATIC    'T'
+#define L_REGISTER  'R'
+#define L_FIELD     'M'
+#define L_AUTO      'A'
+
 extern void die(const char *fmt, ...);
 extern void *xmalloc(size_t size);
 extern void *xcalloc(size_t nmemb, size_t size);
