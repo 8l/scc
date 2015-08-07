@@ -334,6 +334,12 @@ compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 
 	popctx();
+	/*
+	 * curctx == 1 means we are at the end of a function
+	 * so we have to pop the context related to the parameters
+	 */
+	if (curctx == 1)
+		popctx();
 	expect('}');
 }
 

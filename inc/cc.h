@@ -37,7 +37,7 @@ typedef unsigned bool;
 #define L_UINT64    'O'
 
 #define L_VOID      '0'
-#define L_POINTER   'R'
+#define L_POINTER   'P'
 #define L_FUNCTION  'F'
 #define L_ARRAY     'V'
 #define L_UNION     'U'

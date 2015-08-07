@@ -8,9 +8,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-#define OUTCTX 0
-#define PARCTX 1
-
 struct dcldata {
 	unsigned char op;
 	unsigned short nelem;
@@ -52,16 +49,76 @@ arydcl(struct dcldata *dp)
 	return queue(dp, ARY, n, NULL);
 }
 
-static void parlist(Type *);
+static void
+parameter(Symbol *sym, int sclass, Type *data)
+{
+	Type *tp = sym->type, *funtp = data;
+	size_t n = funtp->n.elem;
 
+	if (tp == voidtype) {
+		if (n != 0)
+			error("incorrect void parameter");
+		funtp->n.elem = -1;
+		return;
+	}
+
+	if (n == -1)
+		error("'void' must be the only parameter");
+	tp = sym->type;
+	if (tp->op == FTN)
+		error("incorrect function type for a function parameter");
+	if (tp->op == ARY)
+		tp = mktype(tp->type, PTR, 0, NULL);
+	if (!sclass)
+		sym->flags |= ISAUTO;
+	if (sym->flags & (ISSTATIC|ISEXTERN))
+		error("bad storage class in function parameter");
+	if (n++ == NR_FUNPARAM)
+		error("too much parameters in function definition");
+	funtp->pars = xrealloc(funtp->pars, n);
+	funtp->pars[n-1] = tp;
+	funtp->n.elem = n;
+}
+
+static Symbol *dodcl(int rep,
+                     void (*fun)(Symbol *, int, Type *),
+                     uint8_t ns, Type *type);
+
+/* FIXME: what happens with the context in int (*f)(int)[];? */
 static struct dcldata *
 fundcl(struct dcldata *dp)
 {
-	Type dummy = {.n = {.elem = 0}, .pars = NULL};
+	Type type = {.n = {.elem = -1}, .pars = NULL};
+	Symbol *syms[NR_FUNPARAM], **sp;
+	size_t size;
 
-	parlist(&dummy);
+	pushctx();
+	expect('(');
 
-	return queue(dp, FTN, dummy.n.elem, dummy.pars);
+	if (accept(')'))
+		goto nopars;
+
+	type.n.elem = 0;
+	sp = syms;
+	do
+		*sp++ = dodcl(0, parameter, NS_IDEN, &type);
+	while (accept(','));
+
+	if (ahead() != '{')
+		goto nopars;
+
+	expect(')');
+
+	dp = queue(dp, FTN, type.n.elem, type.pars);
+	if (type.n.elem != -1) {
+		size = type.n.elem * sizeof(Symbol *);
+		dp = queue(dp, PARS, 0, memcpy(xmalloc(size), syms, size));
+	}
+	return dp;
+
+nopars:
+	expect(')');
+	return queue(dp, FTN, type.n.elem, type.pars);
 }
 
 static struct dcldata *declarator0(struct dcldata *dp, unsigned ns);
@@ -75,6 +132,8 @@ directdcl(struct dcldata *dp, unsigned ns)
 		dp = declarator0(dp, ns);
 		expect(')');
 	} else {
+		/* TODO: check type of the function */
+		/* TODO: check function is not redefined */
 		if (yytoken == IDEN || yytoken == TYPEIDEN) {
 			if ((sym = install(ns)) == NULL)
 				error("redeclaration of '%s'", yytext);
@@ -117,18 +176,26 @@ declarator(Type *tp, unsigned ns)
 {
 	struct dcldata data[NR_DECLARATORS+1];
 	struct dcldata *bp;
-	Symbol *sym;
+	Symbol *sym, **pars = NULL;
 
 	data[0].ndcl = 0;
-	for (bp = declarator0(data, ns); bp > data; ) {
-		--bp;
-		if (bp->op != IDEN) {
-			tp = mktype(tp, bp->op, bp->nelem, bp->data);
-		} else {
+	for (bp = declarator0(data, ns); bp-- > data; ) {
+		switch (bp->op) {
+		case IDEN:
 			sym = bp->data;
+			break;
+		case PARS:
+			pars = bp->data;
+			break;
+		default:
+			tp = mktype(tp, bp->op, bp->nelem, bp->data);
 			break;
 		}
 	}
+
+	sym->u.pars = pars;
+	if (tp->op == FTN && sym->flags & (ISREGISTER|ISAUTO))
+		error("invalid storage class for function '%s'", sym->name);
 
 	/* TODO: deal with external array declarations of []  */
 	if (!tp->defined && sym->name)
@@ -321,8 +388,10 @@ enumdcl(void)
 	for (val = 0; yytoken != ')'; ++val) {
 		if (yytoken != IDEN)
 			unexpected();
-		if ((sym = install(NS_IDEN)) == NULL)
-			error("'%s' redeclared as different kind of symbol", yytext);
+		if ((sym = install(NS_IDEN)) == NULL) {
+			error("'%s' redeclared as different kind of symbol",
+			      yytext);
+		}
 		next();
 		sym->flags |= ISCONSTANT;
 		sym->type = inttype;
@@ -382,50 +451,21 @@ field(Symbol *sym, int sclass, Type *data)
 }
 
 static void
-parameter(Symbol *sym, int sclass, Type *data)
-{
-	Type *tp = sym->type, *funtp = data;
-	size_t n = funtp->n.elem;
-
-	if (tp == voidtype) {
-		if (n != 0)
-			error("incorrect void parameter");
-		funtp->n.elem = -1;
-		return;
-	}
-
-	if (n == -1)
-		error("'void' must be the only parameter");
-	tp = sym->type;
-	if (tp->op == FTN)
-		error("incorrect function type for a function parameter");
-	if (tp->op == ARY)
-		tp = mktype(tp->type, PTR, 0, NULL);
-	if (!sclass)
-		sym->flags |= ISAUTO;
-	if (sym->flags & (ISSTATIC|ISEXTERN))
-		error("bad storage class in function parameter");
-	if (n++ == NR_FUNPARAM)
-		error("too much parameters in function definition");
-	sym->flags |= ISPARAM;
-	funtp->pars = xrealloc(funtp->pars, n);
-	funtp->pars[n-1] = tp;
-	funtp->n.elem = n;
-}
-
-static void
 internal(Symbol *sym, int sclass, Type *data)
 {
-
 	if (!sym->name) {
 		warn("empty declaration");
 		return;
 	}
-	if (!sclass)
-		sym->flags |= ISAUTO;
-	if (accept('='))
-		initializer(sym);
-	/* TODO: check if the variable is extern and has initializer */
+	if (sym->type->op == FTN) {
+		popctx();
+	} else {
+		if (!sclass)
+			sym->flags |= ISAUTO;
+		if (accept('='))
+			initializer(sym);
+		/* TODO: check if the variable is extern and has initializer */
+	}
 	emit(ODECL, sym);
 }
 
@@ -440,37 +480,21 @@ external(Symbol *sym, int sclass, Type *data)
 
 	if (sym->flags & (ISREGISTER|ISAUTO))
 		error("incorrect storage class for file-scope declaration");
+
+	if (sym->type->op == FTN && yytoken == '{') {
+		if (sym->token == TYPEIDEN)
+			error("function definition declared 'typedef'");
+		curfun = sym;
+		sym->flags |= ISDEFINED;
+		emit(OFUN, sym);
+		compound(NULL, NULL, NULL);
+		emit(OEFUN, NULL);
+		return;
+	}
 	if (accept('='))
 		initializer(sym);
 	/* TODO: check if the variable is extern and has initializer */
 	emit(ODECL, sym);
-}
-
-static int
-prototype(Symbol *sym)
-{
-	int r = 1;
-
-	/* TODO: check type of the function */
-	/* TODO: check function is not redefined */
-
-	if (sym->flags & (ISREGISTER|ISAUTO))
-		error("invalid storage class for function '%s'", sym->name);
-
-	if (curctx == PARCTX && yytoken == '{') {
-		if (sym->token == TYPEIDEN)
-			error("function definition declared 'typedef'");
-
-		sym->flags |= ISDEFINED;
-		curfun = sym;
-		emit(OFUN, sym);
-		compound(NULL, NULL, NULL);
-		emit(OEFUN, NULL);
-		popctx();
-		r = 0;
-	}
-
-	return r;
 }
 
 static Symbol *
@@ -480,11 +504,8 @@ dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 	Type *base, *tp;
 	int sclass;
 
-	/* FIXME: curctx == PARCTX is incorrect. Structs also
-	 * create new contexts
-	 */
 	if ((base = specifier(&sclass)) == NULL) {
-		if (curctx != OUTCTX)
+		if (curctx != 0)
 			unexpected();
 		warn("type defaults to 'int' in declaration");
 		base = inttype;
@@ -511,11 +532,8 @@ dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 			sym->token = TYPEIDEN;
 			break;
 		}
-		if (tp->op == FTN && !prototype(sym))
-			return NULL;
 		(*fun)(sym, sclass, type);
-
-	} while (rep && accept(','));
+	} while (rep && !curfun && accept(','));
 
 	return sym;
 }
@@ -525,51 +543,12 @@ decl(void)
 {
 	if (accept(';'))
 		return;
-	if (!dodcl(1, curctx == OUTCTX ? external : internal, NS_IDEN, NULL))
+	if (!dodcl(1, (curctx == 0) ? external : internal, NS_IDEN, NULL))
 		return;
-	expect(';');
-}
-
-/*
- * parlist() is called every time there is a argument list.
- * It means that is called for prototypes and for functions.
- * In both cases a new context is needed for the arguments,
- * but in the case of prototypes we need pop the context
- * before parsing anything else or we can have name conflicts.
- * The heuristic used here to detect a function is check if
- * next token will be '{', but it implies that K&R alike
- * functions are not allowed.
- */
-static void
-parlist(Type *tp)
-{
-	Symbol *pars[NR_FUNPARAM], **sp = pars;
-	bool isfun;
-	int n;
-
-	pushctx();
-	expect('(');
-
-	if (accept(')')) {
-		tp->n.elem = -1;
-		return;
-	}
-
-	do
-		*sp++ = dodcl(0, parameter, NS_IDEN, tp);
-	while (accept(','));
-
-	isfun = ahead() == '{';
-	if (!isfun)
-		popctx();
-	expect(')');
-
-	if (!isfun)
-		return;
-
-	n = tp->n.elem;
-	for (sp = pars; n-- > 0; ++sp)
-		emit(ODECL, *sp);
+	if (curfun)
+		curfun == NULL;
+	else
+		expect(';');
 }
 
 static void

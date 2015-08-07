@@ -147,6 +147,7 @@ emit(unsigned op, void *arg)
 	(*opcode[op])(op, arg);
 }
 
+/* TODO: move these letters to cc.h */
 static void
 emitvar(Symbol *sym)
 {
@@ -157,11 +158,9 @@ emitvar(Symbol *sym)
 	else if (sym->flags & ISGLOBAL)
 		c = 'G';
 	else if (sym->flags & ISREGISTER)
-		c = 'K';
+		c = 'R';
 	else if (sym->flags & ISFIELD)
 		c = 'M';
-	else if (sym->flags & ISPARAM)
-		c = 'P';
 	else
 		c = 'A';
 	printf("%c%d", c, sym->id);
@@ -204,25 +203,43 @@ static void
 emitletter(Type *tp)
 {
 	putchar(tp->letter);
-	if (tp->op == ARY)
+	switch (tp->op) {
+	case ARY:
+	case FTN:
+	case STRUCT:
+	case UNION:
 		printf("%d", tp->id);
+	}
 }
 
 static void
 emittype(Type *tp)
 {
+	int n;
+	Type **vp;
+
 	if (tp->printed)
 		return;
 
 	switch (tp->op) {
 	case ARY:
 		emittype(tp->type);
-		printf("V%d\t", tp->id);
+		emitletter(tp);
+		putchar('\t');
 		emitletter(tp->type);
 		printf("\t#%d\n", tp->n.elem);
 		return;
 	case PTR:
 		emittype(tp->type);
+		return;
+	case FTN:
+		emitletter(tp);
+		n = tp->n.elem;
+		for (vp = tp->pars; n-- > 0; ++vp) {
+			putchar('\t');
+			emitletter(*vp);
+		}
+		putchar('\n');
 		return;
 	default:
 		abort();
@@ -238,7 +255,8 @@ emitdcl(unsigned op, void *arg)
 	emitvar(sym);
 	putchar('\t');
 	emitletter(sym->type);
-	putchar('\n');
+	if (op != OFUN)
+		putchar('\n');
 }
 
 static void
@@ -275,10 +293,16 @@ emitexp(unsigned op, void *arg)
 static void
 emitfun(unsigned op, void *arg)
 {
-	Symbol *sym = arg;
+	Symbol *sym = arg, **sp;
+	int n;
 
-	printf("%c%d\tF\t%s\t{\n",
-	       sym->flags & ISGLOBAL ? 'G' : 'Y', sym->id, sym->name);
+	emitdcl(op, arg);
+	puts("\t{");
+
+	n = sym->type->n.elem;
+	for (sp = sym->u.pars; n-- > 0; ++sp)
+		emit(ODECL, *sp);
+	puts("-");
 }
 
 static void

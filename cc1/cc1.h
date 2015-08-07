@@ -51,6 +51,7 @@ struct symbol {
 		TFLOAT f;
 		char *s;
 		unsigned char token;
+		Symbol **pars;
 	} u;
 	struct symbol *next;
 	struct symbol *hash;
@@ -108,6 +109,7 @@ enum {
 	FTN = 1,
 	PTR,
 	ARY,
+	PARS,
 };
 
 /* namespaces */
@@ -129,10 +131,9 @@ enum {
 	ISREGISTER =       8,
 	ISDEFINED  =      16,
 	ISFIELD    =      32,
-	ISPARAM    =      64,
-	ISEXTERN   =     128,
-	ISUSED     =     256,
-	ISCONSTANT =     512
+	ISEXTERN   =      64,
+	ISUSED     =     128,
+	ISCONSTANT =     256
 };
 
 

@@ -42,6 +42,8 @@ repeat:
 int
 main(void)
 {
+	fputs("cc2 is not updated with the output of cc1", stderr);
+	exit(1);
 	while (moreinput()) {
 		parse();
 		optimize();
