@@ -423,7 +423,7 @@ type(Symbol *sym, int sclass, Type *data)
 {
 	if (sclass)
 		error("class storage in type name");
-	if (!sym->name)
+	if (sym->name)
 		error("unexpected identifier in type name");
 }
 
