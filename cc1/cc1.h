@@ -297,7 +297,7 @@ extern Type *duptype(Type *base);
 extern void dumpstab(char *msg);
 extern Symbol *lookup(unsigned ns);
 extern Symbol *nextsym(Symbol *sym, unsigned ns);
-extern Symbol *install(unsigned ns);
+extern Symbol *install(unsigned ns, Symbol *sym);
 extern Symbol *newsym(unsigned ns);
 extern void pushctx(void), popctx(void);
 extern void ikeywords(void);

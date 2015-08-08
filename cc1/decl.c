@@ -143,7 +143,7 @@ directdcl(struct dcldata *dp, unsigned ns)
 		/* TODO: check type of the function */
 		/* TODO: check function is not redefined */
 		if (yytoken == IDEN || yytoken == TYPEIDEN) {
-			if ((sym = install(ns)) == NULL)
+			if ((sym = install(ns, yylval.sym)) == NULL)
 				error("redeclaration of '%s'", yytext);
 			next();
 		} else {
@@ -333,7 +333,7 @@ newtag(void)
 	case TYPEIDEN:
 		sym = yylval.sym;
 		if ((sym->flags & ISDEFINED) == 0)
-			install(NS_TAG);
+			install(NS_TAG, yylval.sym);
 		next();
 		break;
 	default:
@@ -394,7 +394,7 @@ enumdcl(void)
 	for (val = 0; yytoken != ')'; ++val) {
 		if (yytoken != IDEN)
 			unexpected();
-		if ((sym = install(NS_IDEN)) == NULL) {
+		if ((sym = install(NS_IDEN, yylval.sym)) == NULL) {
 			error("'%s' redeclared as different kind of symbol",
 			      yytext);
 		}

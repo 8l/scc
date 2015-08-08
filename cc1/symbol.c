@@ -185,25 +185,19 @@ nextsym(Symbol *sym, unsigned ns)
 }
 
 Symbol *
-install(unsigned ns)
+install(unsigned ns, Symbol *sym)
 {
-	Symbol *sym, **h;
-	/*
-	 * install() is always called after a call to lookup(), so
-	 * yylval.sym always points to a symbol with yytext name.
-	 * if the symbol is an undefined symbol and in the same
-	 * context, then it was generated in the previous lookup()
-	 * call. If the symbol is defined and in the same context
-	 * then there is a redefinition
-	 */
-	if (yylval.sym->ctx == curctx) {
-		if (yylval.sym->flags & ISDEFINED)
+	if (sym->ctx == curctx) {
+		if (sym->flags & ISDEFINED)
 			return NULL;
-		yylval.sym->flags |= ISDEFINED;
+		sym->flags |= ISDEFINED;
 		sym = yylval.sym;
 	} else {
+		char *name = sym->name;
+		Symbol **h;
+
 		sym = newsym(ns);
-		sym->name = xstrdup(yytext);
+		sym->name = xstrdup(name);
 		h = &htab[hash(yytext)];
 		sym->hash = *h;
 		*h = sym;
