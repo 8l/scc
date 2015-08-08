@@ -114,7 +114,7 @@ enum {
 
 /* namespaces */
 enum {
-	NS_IDEN,
+	NS_IDEN = 1,
 	NS_TAG,
 	NS_LABEL,
 	NS_CPP,

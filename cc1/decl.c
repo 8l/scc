@@ -84,7 +84,6 @@ static Symbol *dodcl(int rep,
                      void (*fun)(Symbol *, int, Type *),
                      uint8_t ns, Type *type);
 
-/* FIXME: what happens with the context in int (*f)(int)[];? */
 static struct dcldata *
 fundcl(struct dcldata *dp)
 {
@@ -421,22 +420,13 @@ enumdcl(void)
 	return tp;
 }
 
-Type *
-typename(void)
+static void
+type(Symbol *sym, int sclass, Type *data)
 {
-	unsigned sclass;
-	Type *tp;
-	Symbol *sym;
-
-	tp = specifier(&sclass);
 	if (sclass)
 		error("class storage in type name");
-	sym = declarator(tp, NS_IDEN);
-
 	if (!sym->name)
 		error("unexpected identifier in type name");
-
-	return  sym->type;
 }
 
 static void
@@ -564,4 +554,10 @@ fieldlist(Type *tp)
 	if (yytoken != ';')
 		dodcl(1, field, tp->ns, tp);
 	expect(';');
+}
+
+Type *
+typename(void)
+{
+	return dodcl(0, type, 0, NULL)->type;
 }
