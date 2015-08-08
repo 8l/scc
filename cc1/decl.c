@@ -69,10 +69,10 @@ parameter(Symbol *sym, int sclass, Type *data)
 		error("incorrect function type for a function parameter");
 	if (tp->op == ARY)
 		tp = mktype(tp->type, PTR, 0, NULL);
+	if (sym->flags & (ISSTATIC|ISEXTERN|ISAUTO))
+		error("bad storage class in function parameter");
 	if (!sclass)
 		sym->flags |= ISAUTO;
-	if (sym->flags & (ISSTATIC|ISEXTERN))
-		error("bad storage class in function parameter");
 	if (n++ == NR_FUNPARAM)
 		error("too much parameters in function definition");
 	funtp->pars = xrealloc(funtp->pars, n * sizeof(Type *));
