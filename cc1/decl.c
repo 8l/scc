@@ -202,8 +202,6 @@ declarator(Type *tp, unsigned ns)
 	}
 
 	sym->u.pars = pars;
-	if (tp->op == FTN && sym->flags & (ISREGISTER|ISAUTO))
-		error("invalid storage class for function '%s'", sym->name);
 
 	/* TODO: deal with external array declarations of []  */
 	if (!tp->defined && sym->name)
@@ -528,6 +526,10 @@ dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 		case TYPEDEF:
 			sym->token = TYPEIDEN;
 			break;
+		}
+		if (tp->op == FTN && (sym->flags & (ISREGISTER|ISAUTO))) {
+			error("invalid storage class for function '%s'",
+			      sym->name);
 		}
 		(*fun)(sym, sclass, type);
 	} while (rep && !curfun && accept(','));
