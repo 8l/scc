@@ -125,15 +125,17 @@ enum {
 
 /* symbol flags */
 enum {
-	ISGLOBAL   =       1,
-	ISSTATIC   =       2,
-	ISAUTO     =       4,
-	ISREGISTER =       8,
-	ISDEFINED  =      16,
-	ISFIELD    =      32,
-	ISEXTERN   =      64,
-	ISUSED     =     128,
-	ISCONSTANT =     256
+	ISSTATIC   =       1,
+	ISAUTO     =       2,
+	ISREGISTER =       4,
+	ISDEFINED  =       8,
+	ISFIELD    =      16,
+	ISEXTERN   =      32,
+	ISUSED     =      64,
+	ISCONSTANT =     128,
+	ISGLOBAL   =     256,
+	ISPRIVATE  =     512,
+	ISLOCAL    =    1024
 };
 
 

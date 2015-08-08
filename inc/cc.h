@@ -61,7 +61,7 @@ typedef unsigned bool;
 
 #define L_PUBLIC    'G'
 #define L_PRIVATE   'Y'
-#define L_STATIC    'T'
+#define L_LOCAL     'T'
 #define L_REGISTER  'R'
 #define L_FIELD     'M'
 #define L_AUTO      'A'

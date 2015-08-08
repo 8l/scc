@@ -191,7 +191,6 @@ install(unsigned ns, Symbol *sym)
 		if (sym->flags & ISDEFINED)
 			return NULL;
 		sym->flags |= ISDEFINED;
-		sym = yylval.sym;
 	} else {
 		char *name = sym->name;
 		Symbol **h;

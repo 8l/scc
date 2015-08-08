@@ -461,6 +461,8 @@ internal(Symbol *sym, int sclass, Type *data)
 			initializer(sym);
 		/* TODO: check if the variable is extern and has initializer */
 	}
+	if (sym->flags & ISSTATIC)
+		sym->flags |= ISLOCAL;
 	emit(ODECL, sym);
 }
 
@@ -471,10 +473,10 @@ external(Symbol *sym, int sclass, Type *data)
 		warn("empty declaration");
 		return;
 	}
-	sym->flags |= ISSTATIC|ISGLOBAL;
 
 	if (sym->flags & (ISREGISTER|ISAUTO))
 		error("incorrect storage class for file-scope declaration");
+	sym->flags |= (sym->flags & ISSTATIC) ? ISPRIVATE : ISGLOBAL;
 
 	if (sym->type->op == FTN && yytoken == '{') {
 		if (sym->token == TYPEIDEN)

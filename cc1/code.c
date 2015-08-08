@@ -151,14 +151,17 @@ static void
 emitvar(Symbol *sym)
 {
 	char c;
+	short flags = sym->flags;
 
-	if (sym->flags & ISSTATIC)
-		c = (sym->flags & ISGLOBAL) ? L_PRIVATE : L_STATIC;
-	else if (sym->flags & ISGLOBAL)
+	if (flags & ISLOCAL)
+		c = L_LOCAL;
+	else if (flags & ISPRIVATE)
+		c =  L_PRIVATE;
+	else if (flags & ISGLOBAL)
 		c = L_PUBLIC;
-	else if (sym->flags & ISREGISTER)
+	else if (flags & ISREGISTER)
 		c = L_REGISTER;
-	else if (sym->flags & ISFIELD)
+	else if (flags & ISFIELD)
 		c = L_FIELD;
 	else
 		c = L_AUTO;
