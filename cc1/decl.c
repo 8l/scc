@@ -140,11 +140,8 @@ directdcl(struct dcldata *dp, unsigned ns)
 		dp = declarator0(dp, ns);
 		expect(')');
 	} else {
-		/* TODO: check type of the function */
-		/* TODO: check function is not redefined */
 		if (yytoken == IDEN || yytoken == TYPEIDEN) {
-			if ((sym = install(ns, yylval.sym)) == NULL)
-				error("redeclaration of '%s'", yytext);
+			sym = yylval.sym;
 			next();
 		} else {
 			sym = newsym(ns);
@@ -180,11 +177,12 @@ declarator0(struct dcldata *dp, unsigned ns)
 }
 
 static Symbol *
-declarator(Type *tp, unsigned ns)
+declarator(Type *tp, unsigned ns, int sclass)
 {
 	struct dcldata data[NR_DECLARATORS+1];
 	struct dcldata *bp;
-	Symbol *sym, **pars = NULL;
+	Symbol *osym, *sym, **pars = NULL;
+	char *name;
 
 	data[0].ndcl = 0;
 	for (bp = declarator0(data, ns); bp-- > data; ) {
@@ -201,12 +199,25 @@ declarator(Type *tp, unsigned ns)
 		}
 	}
 
-	sym->u.pars = pars;
+	if ((name = sym->name) == NULL) {
+		sym->type = tp;
+	} else {
+		short flags;
 
-	/* TODO: deal with external array declarations of []  */
-	if (!tp->defined && sym->name)
-		error("declared variable '%s' of incomplete type", sym->name);
-	sym->type = tp;
+		if ((sym = install(ns, osym = sym)) == NULL) {
+			if (!eqtype(osym->type, tp))
+				error("conflicting types for '%s'", name);
+			sym = osym;
+		} else {
+			sym->u.pars = pars;
+			sym->type = tp;
+		}
+		if (!tp->defined && sclass != EXTERN) {
+			error("declared variable '%s' of incomplete type",
+			      name);
+		}
+	}
+
 	return sym;
 }
 
@@ -509,7 +520,7 @@ dodcl(int rep, void (*fun)(Symbol *, int, Type *), uint8_t ns, Type *type)
 	}
 
 	do {
-		sym = declarator(base, ns);
+		sym = declarator(base, ns, sclass);
 		tp = sym->type;
 
 		switch (sclass) {
