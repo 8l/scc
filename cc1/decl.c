@@ -450,11 +450,13 @@ field(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
 	size_t n = funtp->n.elem;
 	char *name = sym->name;
 
+	if (!name) {
+		sym->type = tp;
+		warn("empty declaration");
+		return sym;
+	}
 	if (sclass)
 		error("storage class in struct/union field");
-	if (!sym->name)
-		error("missed identifier in field declaration");
-
 	if (tp->op == FTN)
 		error("invalid type in struct/union");
 	if (!tp->defined)
