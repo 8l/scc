@@ -91,8 +91,7 @@ popctx(void)
 				warn("'%s' defined but not used", sym->name);
 		}
 		free(sym->name);
-		if (sym->type && sym->type->op == FTN)
-			free(sym->u.pars);
+		// TODO: Fix this memory leak free(sym->u.pars);
 		free(sym);
 	}
 	hp->next = sym;
@@ -123,8 +122,21 @@ newsym(unsigned ns)
 	sym->name = NULL;
 	sym->type = NULL;
 	sym->hash = NULL;
-	sym->next = head;
-	head = sym;
+
+	if (!head || head->ctx <= curctx) {
+		sym->next = head;
+		head = sym;
+	} else {
+		Symbol *p, *prev;
+
+		for (prev = p = head; p; prev = p, p = p->next) {
+			if (p->ctx <= sym->ctx)
+				break;
+		}
+		p = prev->next;
+		prev->next = sym;
+		sym->next = p;
+	}
 	return sym;
 }
 
@@ -151,7 +163,7 @@ lookup(unsigned ns)
 
 	sym = newsym(ns);
 	sym->name = xstrdup(yytext);
-	sym->flags &= ~ISDEFINED;
+	sym->flags &= ~ISDECLARED;
 	sym->hash = *h;
 	*h = sym;
 	return sym;
@@ -199,8 +211,21 @@ install(unsigned ns, Symbol *sym)
 		sym = newsym(ns);
 		sym->name = xstrdup(name);
 		h = &htab[hash(name)];
-		sym->hash = *h;
-		*h = sym;
+
+		if (!*h || (*h)->ctx <= curctx) {
+			sym->hash = *h;
+			*h = sym;
+		} else {
+			Symbol *p, *prev;
+
+			for (prev = p = *h; p; prev = p, p = p->hash) {
+				if (p->ctx <= sym->ctx)
+					break;
+			}
+			p = prev->hash;
+			prev->hash = sym;
+			sym->hash = p;
+		}
 	}
 
 	if (sym->ns != NS_CPP)
@@ -280,6 +305,7 @@ ikeywords(void)
 			sym->token = bp->token;
 			sym->u.token = bp->value;
 		}
+		head = NULL;
 		ns = NS_CPPCLAUSES;
 	}
 }

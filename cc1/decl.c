@@ -495,12 +495,10 @@ identifier(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
 		if (sclass == NOSCLASS)
 			sclass = EXTERN;
 		/*
-		 * FIXME: Ugly workaround to solve function declarations.
+		 * Ugly workaround to solve function declarations.
 		 * A new context is added for the parameters,
 		 * so at this point curctx is incremented by
 		 * one when sym was parsed.
-		 * It can destroy the order of the hash when
-		 * there is a previous declaration in an outer contex.
 		 */
 		--curctx;
 		sym = install(NS_IDEN, sym);
@@ -634,7 +632,10 @@ decl(void)
 	 * but due to parameter context, we have to check
 	 * against GLOBALCTX+1
 	 */
-	if (sym->type->op == FTN && curctx == GLOBALCTX+1) {
+	if (sym->type->op == FTN) {
+		if (curctx != GLOBALCTX+1)
+			goto remove_pars;
+
 		switch (yytoken) {
 		case '{':
 		case TYPEIDEN:
@@ -658,6 +659,7 @@ decl(void)
 			curfun = NULL;
 			return;
 		default:
+		remove_pars:
 			popctx();
 		}
 	}
