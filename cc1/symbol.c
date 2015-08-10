@@ -67,7 +67,7 @@ popctx(void)
 		case NS_LABEL:
 			if (curctx != 0)
 				goto save_symbol;
-			if (sym->flags & ISDEFINED)
+			if (sym->flags & ISDECLARED)
 				break;
 			printerr("label '%s' is not defined", sym->name);
 			break;
@@ -87,10 +87,12 @@ popctx(void)
 		if (sym->name) {
 			short f = sym->flags;
 			htab[hash(sym->name)] = sym->hash;
-			if ((f & (ISUSED|ISGLOBAL|ISDEFINED)) == ISDEFINED)
+			if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
 				warn("'%s' defined but not used", sym->name);
 		}
 		free(sym->name);
+		if (sym->type && sym->type->op == FTN)
+			free(sym->u.pars);
 		free(sym);
 	}
 	hp->next = sym;
@@ -103,8 +105,7 @@ duptype(Type *base)
 	Type *tp = xmalloc(sizeof(*tp));
 
 	*tp = *base;
-	if (tp->op == ARY)
-		tp->id = (curctx) ? ++localcnt : ++globalcnt;
+	tp->id = (curctx) ? ++localcnt : ++globalcnt;
 	return tp;
 }
 
@@ -118,7 +119,7 @@ newsym(unsigned ns)
 	sym->ns = ns;
 	sym->ctx = curctx;
 	sym->token = IDEN;
-	sym->flags = ISDEFINED;
+	sym->flags = ISDECLARED;
 	sym->name = NULL;
 	sym->type = NULL;
 	sym->hash = NULL;
@@ -178,7 +179,7 @@ nextsym(Symbol *sym, unsigned ns)
 			return sym;
 	}
 	new = newsym(ns);
-	new->flags &= ~ISDEFINED;
+	new->flags &= ~ISDECLARED;
 	new->name = xstrdup(yytext);
 	new->hash = sym->hash;
 	return sym->hash = new;
@@ -188,16 +189,16 @@ Symbol *
 install(unsigned ns, Symbol *sym)
 {
 	if (sym->ctx == curctx) {
-		if (sym->flags & ISDEFINED)
+		if (sym->flags & ISDECLARED)
 			return NULL;
-		sym->flags |= ISDEFINED;
+		sym->flags |= ISDECLARED;
 	} else {
 		char *name = sym->name;
 		Symbol **h;
 
 		sym = newsym(ns);
 		sym->name = xstrdup(name);
-		h = &htab[hash(yytext)];
+		h = &htab[hash(name)];
 		sym->hash = *h;
 		*h = sym;
 	}

@@ -109,7 +109,7 @@ enum {
 	FTN = 1,
 	PTR,
 	ARY,
-	PARS,
+	PARS
 };
 
 /* namespaces */
@@ -125,17 +125,18 @@ enum {
 
 /* symbol flags */
 enum {
-	ISSTATIC   =       1,
-	ISAUTO     =       2,
-	ISREGISTER =       4,
-	ISDEFINED  =       8,
-	ISFIELD    =      16,
-	ISEXTERN   =      32,
-	ISUSED     =      64,
-	ISCONSTANT =     128,
-	ISGLOBAL   =     256,
-	ISPRIVATE  =     512,
-	ISLOCAL    =    1024
+	ISAUTO     =       1,
+	ISREGISTER =       2,
+	ISDECLARED =       4,
+	ISFIELD    =       8,
+	ISEXTERN   =      16,
+	ISUSED     =      32,
+	ISCONSTANT =      64,
+	ISGLOBAL   =     128,
+	ISPRIVATE  =     256,
+	ISLOCAL    =     512,
+	ISEMITTED  =    1024,
+	ISDEFINED  =    2048
 };
 
 

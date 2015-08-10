@@ -65,6 +65,7 @@ typedef unsigned bool;
 #define L_REGISTER  'R'
 #define L_FIELD     'M'
 #define L_AUTO      'A'
+#define L_EXTERN    'X'
 
 extern void die(const char *fmt, ...);
 extern void *xmalloc(size_t size);

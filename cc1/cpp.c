@@ -30,7 +30,7 @@ defmacro(char *s)
 
 	strcpy(yytext, s);
 	sym = lookup(NS_CPP);
-	sym->flags |= ISDEFINED;
+	sym->flags |= ISDECLARED;
 	return sym;
 }
 
@@ -326,13 +326,13 @@ define(void)
 	if (yytoken != IDEN)
 		error("macro names must be identifiers");
 	sym = yylval.sym;
-	if ((sym->flags & ISDEFINED) && sym->ns == NS_CPP) {
+	if ((sym->flags & ISDECLARED) && sym->ns == NS_CPP) {
 		warn("'%s' redefined", yytext);
 		free(sym->u.s);
 	} else if (sym->ns != NS_CPP) {
 		sym = lookup(NS_CPP);
 	}
-	sym->flags |= ISDEFINED;
+	sym->flags |= ISDECLARED;
 
 	pushctx();
 
@@ -469,7 +469,7 @@ ifclause(int negate, int isifdef)
 		}
 		sym = lookup(NS_CPP);
 		next();
-		status = (sym->flags & ISDEFINED) != 0;
+		status = (sym->flags & ISDECLARED) != 0;
 	} else {
 		if ((expr = iconstexpr()) == NULL)
 			error("parameter of #if is not an integer constant expression");
@@ -540,7 +540,7 @@ undef(void)
 		return;
 	}
 	sym = lookup(NS_CPP);
-	sym->flags &= ~ISDEFINED;
+	sym->flags &= ~ISDECLARED;
 	next();
 }
 

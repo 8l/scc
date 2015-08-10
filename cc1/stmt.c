@@ -28,9 +28,9 @@ label(void)
 		 * an undefined symbol that is not going to be used ever.
 		 */
 		sym = lookup(NS_LABEL);
-		if (sym->flags & ISDEFINED)
+		if (sym->flags & ISDECLARED)
 			error("label '%s' already defined", yytoken);
-		sym->flags |= ISDEFINED;
+		sym->flags |= ISDECLARED;
 		emit(OLABEL, sym);
 		next();
 		expect(':');

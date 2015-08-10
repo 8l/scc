@@ -721,9 +721,9 @@ primary(void)
 		next();
 		break;
 	case IDEN:
-		if (!(yylval.sym->flags & ISDEFINED)) {
+		if (!(yylval.sym->flags & ISDECLARED)) {
 			yylval.sym->type = inttype;
-			yylval.sym->flags |= ISDEFINED;
+			yylval.sym->flags |= ISDECLARED;
 			error("'%s' undeclared", yytext);
 		}
 		yylval.sym->flags |= ISUSED;

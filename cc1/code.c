@@ -163,6 +163,8 @@ emitvar(Symbol *sym)
 		c = L_REGISTER;
 	else if (flags & ISFIELD)
 		c = L_FIELD;
+	else if (flags & ISEXTERN)
+		c = L_EXTERN;
 	else
 		c = L_AUTO;
 	printf("%c%d", c, sym->id);
@@ -222,6 +224,7 @@ emittype(Type *tp)
 
 	if (tp->printed)
 		return;
+	tp->printed = 1;
 
 	switch (tp->op) {
 	case ARY:
@@ -253,12 +256,15 @@ emitdcl(unsigned op, void *arg)
 {
 	Symbol *sym = arg;
 
+	if (sym->flags & ISEMITTED)
+		return;
 	emittype(sym->type);
 	emitvar(sym);
 	putchar('\t');
 	emitletter(sym->type);
 	if (op != OFUN)
 		putchar('\n');
+	sym->flags |= ISEMITTED;
 }
 
 static void

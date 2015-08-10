@@ -1,7 +1,6 @@
 * Verify correctness in initializators
 * emit initializators
 * emit structures definition
-* Allow external declarations of incomplete array types
 * Implement bitfields
 * Define data structure shared between cc1 and cc2 with the type
   information
@@ -11,3 +10,5 @@
 * Parse correctly all integer and float constants
 * Add C99 features (almost all the new features of C99 are missed)
 * Add correct emit for any kind of constant
+* Add warnings in overflow of contant operations
+* Add warning when some ANSI limit is violated.

@@ -283,6 +283,7 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 
 	type.type = tp;
 	type.op = op;
+	type.printed = 0;
 	type.letter = letters[op];
 	type.pars = pars;
 	type.n.elem = nelem;
@@ -351,7 +352,8 @@ eqtype(Type *tp1, Type *tp2)
 		return 1;
 	case ENUM:
 		break;
-	case INT: case FLOAT:
+	case INT:
+	case FLOAT:
 		return tp1->letter == tp2->letter;
 	default:
 		fputs("internal type error, aborting\n", stderr);
