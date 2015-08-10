@@ -330,9 +330,11 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 bool
 eqtype(Type *tp1, Type *tp2)
 {
-	unsigned n;
+	int n;
 	Type **p1, **p2;
 
+	if (!tp1 || !tp2)
+		return 0;
 	if (tp1 == tp2)
 		return 1;
 	if (tp1->op != tp2->op || tp1->n.elem != tp2->n.elem)
@@ -345,7 +347,7 @@ eqtype(Type *tp1, Type *tp2)
 	case STRUCT:
 	case FTN:
 		p1 = tp1->pars, p2 = tp2->pars;
-		for (n = tp1->n.elem; n != 0; --n) {
+		for (n = tp1->n.elem; n > 0; --n) {
 			if (!eqtype(*p1++, *p2++))
 				return 0;
 		}
