@@ -23,15 +23,23 @@ dumpstab(char *msg)
 {
 	Symbol **bp, *sym;
 
-	fprintf(stderr, "%s\n", msg);
+	fprintf(stderr, "Symbol Table dump at ctx=%u\n%s\n", curctx, msg);
 	for (bp = htab; bp < &htab[NR_SYM_HASH]; ++bp) {
 		if (*bp == NULL)
 			continue;
 		fprintf(stderr, "%d", (int) (bp - htab));
 		for (sym = *bp; sym; sym = sym->hash)
-			fprintf(stderr, "->%d:%s", sym->ns, sym->name);
+			fprintf(stderr, "->%d,%d:%s",
+			        sym->ns, sym->ctx, sym->name);
 		putc('\n', stderr);
 	}
+	fputs("head:", stderr);
+	for (sym = head; sym; sym = sym->next) {
+		fprintf(stderr, "->%d,%d:'%s'",
+		        sym->ns, sym->ctx,
+		        (sym->name) ? sym->name : "");
+	}
+	putc('\n', stderr);
 }
 #endif
 
@@ -305,7 +313,12 @@ ikeywords(void)
 			sym->token = bp->token;
 			sym->u.token = bp->value;
 		}
-		head = NULL;
 		ns = NS_CPPCLAUSES;
 	}
+	/*
+	 * Remove all the predefined symbols from * the symbol list. It
+	 * will make faster someoperations. There is no problem of memory
+	 * leakeage because this memory is not ever freed
+	 */
+	head = NULL;
 }
