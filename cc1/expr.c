@@ -517,7 +517,8 @@ compare(char op, Node *lp, Node *rp)
 	lp = eval(lp);
 	rp = eval(rp);
 	switch (BTYPE(lp)) {
-	case INT: case FLOAT:
+	case INT:
+	case FLOAT:
 		switch (BTYPE(lp)) {
 		case INT:
 		case FLOAT:
@@ -532,7 +533,8 @@ compare(char op, Node *lp, Node *rp)
 			goto nocompat;
 		}
 		break;
-	case ARY: case FTN:
+	case ARY:
+	case FTN:
 		lp = decay(lp);
 	case PTR:
 		return pcompare(op, lp, rp);

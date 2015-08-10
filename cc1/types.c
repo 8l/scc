@@ -288,7 +288,6 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 	type.n.elem = nelem;
 	type.ns = 0;
 
-
 	switch (op) {
 	case ARY:
 		if (nelem == 0)
