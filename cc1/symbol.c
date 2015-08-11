@@ -53,6 +53,44 @@ hash(const char *s)
 	return h & NR_SYM_HASH-1;
 }
 
+static Symbol *
+linkhash(Symbol *sym, char *name)
+{
+	Symbol **h, *p, *prev;
+
+	sym->name = xstrdup(name);
+	h = &htab[hash(name)];
+
+	for (prev = p = *h; p; prev = p, p = p->hash) {
+		if (p->ctx <= sym->ctx)
+			break;
+	}
+	if (p == prev) {
+		sym->hash = *h;
+		*h = sym;
+	} else {
+		p = prev->hash;
+		prev->hash = sym;
+		sym->hash = p;
+	}
+
+	return sym;
+}
+
+static void
+unlinkhash(Symbol *sym)
+{
+	Symbol **h, *p, *prev;
+
+	h = &htab[hash(sym->name)];
+	for (prev = p = *h; p != sym; prev = p, p = p->hash)
+		/* nothing */;
+	if (prev == p)
+		*h = sym->hash;
+	else
+		prev->hash = sym->hash;
+}
+
 void
 pushctx(void)
 {
@@ -94,7 +132,7 @@ popctx(void)
 		}
 		if (sym->name) {
 			short f = sym->flags;
-			htab[hash(sym->name)] = sym->hash;
+			unlinkhash(sym);
 			if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
 				warn("'%s' defined but not used", sym->name);
 		}
@@ -119,7 +157,7 @@ duptype(Type *base)
 Symbol *
 newsym(unsigned ns)
 {
-	Symbol *sym;
+	Symbol *sym, *p, *prev;
 
 	sym = malloc(sizeof(*sym));
 	sym->id = 0;
@@ -129,22 +167,24 @@ newsym(unsigned ns)
 	sym->flags = ISDECLARED;
 	sym->name = NULL;
 	sym->type = NULL;
-	sym->hash = NULL;
+	sym->next = sym->hash = NULL;
 
-	if (!head || head->ctx <= curctx) {
+	if (ns == NS_CPP)
+		return sym;
+
+	for (prev = p = head; p; prev = p, p = p->next) {
+		if (p->ctx <= sym->ctx)
+			break;
+	}
+	if (p == prev) {
 		sym->next = head;
 		head = sym;
 	} else {
-		Symbol *p, *prev;
-
-		for (prev = p = head; p; prev = p, p = p->next) {
-			if (p->ctx <= sym->ctx)
-				break;
-		}
 		p = prev->next;
 		prev->next = sym;
 		sym->next = p;
 	}
+
 	return sym;
 }
 
@@ -168,12 +208,9 @@ lookup(unsigned ns)
 			continue;
 		return sym;
 	}
-
-	sym = newsym(ns);
-	sym->name = xstrdup(yytext);
+	sym = linkhash(newsym(ns), yytext);
 	sym->flags &= ~ISDECLARED;
-	sym->hash = *h;
-	*h = sym;
+
 	return sym;
 }
 
@@ -213,27 +250,7 @@ install(unsigned ns, Symbol *sym)
 			return NULL;
 		sym->flags |= ISDECLARED;
 	} else {
-		char *name = sym->name;
-		Symbol **h;
-
-		sym = newsym(ns);
-		sym->name = xstrdup(name);
-		h = &htab[hash(name)];
-
-		if (!*h || (*h)->ctx <= curctx) {
-			sym->hash = *h;
-			*h = sym;
-		} else {
-			Symbol *p, *prev;
-
-			for (prev = p = *h; p; prev = p, p = p->hash) {
-				if (p->ctx <= sym->ctx)
-					break;
-			}
-			p = prev->hash;
-			prev->hash = sym;
-			sym->hash = p;
-		}
+		sym = linkhash(newsym(ns), sym->name);
 	}
 
 	if (sym->ns != NS_CPP)
