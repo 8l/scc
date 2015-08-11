@@ -43,16 +43,14 @@ label(void)
 static void
 stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Node *np;
-
-	if (ahead() == ':')
+	if (accept(';'))
+		return;
+	if (ahead() == ':') {
 		label();
-
-	if (yytoken != ';') {
-		np = expr();
-		emit(OEXPR, np);
+		stmt(lbreak, lcont, lswitch);
+		return;
 	}
-
+	emit(OEXPR, expr());
 	expect(';');
 }
 
