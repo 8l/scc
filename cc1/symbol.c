@@ -157,7 +157,7 @@ newsym(unsigned ns)
 	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->flags = ISDECLARED;
-	sym->name = NULL;
+	sym->u.s = sym->name = NULL;
 	sym->type = NULL;
 	sym->next = sym->hash = NULL;
 
@@ -219,6 +219,7 @@ addmacro(void)
 	/* Force cpp symbols to be at the beginning of the hash */
 	curctx = UCHAR_MAX;
 	sym = lookup(NS_CPP);
+	sym->flags |= ISDECLARED;
 	curctx = ctx;
 	return sym;
 }

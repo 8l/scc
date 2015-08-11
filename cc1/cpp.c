@@ -26,12 +26,8 @@ int disexpand;
 static Symbol *
 defmacro(char *s)
 {
-	Symbol *sym;
-
 	strcpy(yytext, s);
-	sym = addmacro();
-	sym->flags |= ISDECLARED;
-	return sym;
+	return addmacro();
 }
 
 void
@@ -239,7 +235,6 @@ static int
 getpars(Symbol *args[NR_MACROARG])
 {
 	int n = -1;
-	char *err;
 
 	if (!accept('('))
 		return n;
@@ -249,12 +244,12 @@ getpars(Symbol *args[NR_MACROARG])
 
 	do {
 		if (n == NR_MACROARG) {
-			err = "too much parameters in macro";
-			goto popctx_and_error;
+			printerr("too much parameters in macro");
+			return NR_MACROARG;
 		}
 		if (yytoken != IDEN) {
-			err = "macro arguments must be identifiers";
-			goto popctx_and_error;
+			printerr("macro arguments must be identifiers");
+			return NR_MACROARG;
 		}
 		args[n++] = yylval.sym;
 		next();
@@ -262,17 +257,12 @@ getpars(Symbol *args[NR_MACROARG])
 	expect(')');
 
 	return n;
-
-popctx_and_error:
-	popctx();
-	error(err);
 }
 
-static void
+static bool
 getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 {
 	Symbol **argp;
-	char *err;
 	size_t len;
 	int prevc = 0, ispar;
 
@@ -288,14 +278,16 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 				ispar = 1;
 			}
 		}
-		if (prevc == '#' && !ispar)
-			goto bad_stringer;
+		if (prevc == '#' && !ispar) {
+			printerr("'#' is not followed by a macro parameter");
+			return 0;
+		}
 		if (yytoken == EOFTOK)
 			break;
 
 		if ((len = strlen(yytext)) >= bufsiz) {
-			err = "too long macro";
-			goto popctx_and_error;
+			printerr("too long macro");
+			return 0;
 		}
 		memcpy(bp, yytext, len);
 		bp += len;
@@ -305,13 +297,7 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 		next();
 	}
 	*bp = '\0';
-	return;
-
-bad_stringer:
-	err = "'#' is not followed by a macro parameter";
-popctx_and_error:
-	popctx();
-	error(err);
+	return 1;
 }
 
 static void
@@ -323,27 +309,31 @@ define(void)
 
 	if (cppoff)
 		return;
+
+	setnamespace(NS_CPP);
+	next();
 	if (yytoken != IDEN)
 		error("macro names must be identifiers");
 	sym = yylval.sym;
-	if ((sym->flags & ISDECLARED) && sym->ns == NS_CPP) {
+	if (sym->flags & ISDECLARED) {
 		warn("'%s' redefined", yytext);
 		free(sym->u.s);
-	} else if (sym->ns != NS_CPP) {
+	} else {
 		sym = addmacro();
 	}
-	sym->flags |= ISDECLARED;
-
-	pushctx();
 
 	next();
-	n = getpars(args);
+	if ((n = getpars(args)) == NR_MACROARG)
+		goto delete;
 	sprintf(buff, "%02d#", n);
-	getdefs(args, n, buff+3, LINESIZ-3);
+	if (!getdefs(args, n, buff+3, LINESIZ-3))
+		goto delete;
 	sym->u.s = xstrdup(buff);
 	fprintf(stderr, "MACRO '%s' defined as '%s'\n", sym->name, buff);
+	return;
 
-	popctx();
+delete:
+	delmacro(sym);
 }
 
 static void
@@ -359,6 +349,10 @@ include(void)
 
 	if (cppoff)
 		return;
+
+	setnamespace(NS_IDEN);
+	next();
+
 	switch (*yytext) {
 	case '<':
 		if ((p = strchr(input->begin, '>')) == NULL)
@@ -395,15 +389,18 @@ include(void)
 		if (addinput(path))
 			break;
 	}
+
 	if (*bp)
-		error("included file '%s' not found", file);
+		printerr("included file '%s' not found", file);
 
 	return;
 
 bad_include:
-	error("#include expects \"FILENAME\" or <FILENAME>");
+	printerr("#include expects \"FILENAME\" or <FILENAME>");
+	return;
 too_long:
-	error("#include FILENAME too long");
+	printerr("#include FILENAME too long");
+	return;
 }
 
 static void
@@ -415,20 +412,29 @@ line(void)
 	if (cppoff)
 		return;
 
+	setnamespace(NS_IDEN);
+	next();
 	n = strtol(yytext, &endp, 10);
-	if (n <= 0 || n > USHRT_MAX || *endp != '\0')
-		error("first parameter of #line is not a positive integer");
+	if (n <= 0 || n > USHRT_MAX || *endp != '\0') {
+		printerr("first parameter of #line is not a positive integer");
+		return;
+	}
 
-	input->nline = yylval.sym->u.i;
 	next();
 	if (yytoken == EOFTOK)
-		return;
+		goto set_line;
 
-	if (*yytext != '\"' || yylen == 1)
-		error("second parameter of #line is not a valid filename");
+	if (*yytext != '\"' || yylen == 1) {
+		printerr("second parameter of #line is not a valid filename");
+		return;
+	}
+
 	free(input->fname);
 	input->fname = xstrdup(yylval.sym->u.s);
 	next();
+
+set_line:
+	input->nline = yylval.sym->u.i;
 }
 
 static void
@@ -464,15 +470,21 @@ ifclause(int negate, int isifdef)
 
 	if (isifdef) {
 		if (yytoken != IDEN) {
-			error("no macro name given in #%s directive",
-			      (negate) ? "ifndef" : "ifdef");
+			printerr("no macro name given in #%s directive",
+			         (negate) ? "ifndef" : "ifdef");
+			return;
 		}
-		sym = lookup(NS_CPP);
+		sym = yylval.sym;
 		next();
 		status = (sym->flags & ISDECLARED) != 0;
+		if (!status)
+			delmacro(sym);
 	} else {
-		if ((expr = iconstexpr()) == NULL)
-			error("parameter of #if is not an integer constant expression");
+		/* TODO: catch recovery here */
+		if ((expr = iconstexpr()) == NULL) {
+			printerr("parameter of #if is not an integer constant expression");
+			return;
+		}
 		status = expr->sym->u.i != 0;
 	}
 
@@ -485,18 +497,24 @@ ifclause(int negate, int isifdef)
 static void
 cppif(void)
 {
+	setnamespace(NS_CPP);
+	next();
 	ifclause(0, 0);
 }
 
 static void
 ifdef(void)
 {
+	setnamespace(NS_CPP);
+	next();
 	ifclause(0, 1);
 }
 
 static void
 ifndef(void)
 {
+	setnamespace(NS_CPP);
+	next();
 	ifclause(1, 1);
 }
 
@@ -507,6 +525,7 @@ endif(void)
 		error("#endif without #if");
 	if (!ifstatus[--cppctx])
 		--cppoff;
+	next();
 }
 
 static void
@@ -519,6 +538,7 @@ elseclause(void)
 
 	status = (ifstatus[cppctx-1] ^= 1);
 	cppoff += (status) ? -1 : 1;
+	next();
 }
 
 static void
@@ -533,12 +553,14 @@ undef(void)
 {
 	if (cppoff)
 		return;
+
+	setnamespace(NS_CPP);
+	next();
 	if (yytoken != IDEN) {
 		error("no macro name given in #undef directive");
 		return;
 	}
-	if (yylval.sym->ns == NS_CPP)
-		delmacro(yylval.sym);
+	delmacro(yylval.sym);
 	next();
 }
 
@@ -576,11 +598,13 @@ cpp(void)
 		/* nothing */;
 	if (!bp->token)
 		error("incorrect preprocessor directive");
-	next();
-	(*bp->fun)();
+
+	pushctx();              /* create a new context to avoid polish */
+	(*bp->fun)();           /* the current context, and to get all  */
+	popctx();               /* the symbols freed at the  end        */
 
 	if (yytoken != EOFTOK && !cppoff)
-		error("trailing characters after preprocessor directive");
+		printerr("trailing characters after preprocessor directive");
 	disexpand = 0;
 	lexmode = CCMODE;
 

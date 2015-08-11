@@ -379,7 +379,7 @@ iden(void)
 	input->p = p;
 	tok2str();
 	yylval.sym = sym = lookup(lex_ns);
-	if (sym->ns == NS_CPP) {
+	if (sym->ns == NS_CPP && lexmode == CCMODE) {
 		if (!disexpand && expand(begin, sym))
 			return next();
 		/*
