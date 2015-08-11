@@ -306,6 +306,7 @@ extern Symbol *install(unsigned ns, Symbol *sym);
 extern Symbol *newsym(unsigned ns);
 extern void pushctx(void), popctx(void);
 extern void ikeywords(void);
+extern Symbol *addmacro(void);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);

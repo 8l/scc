@@ -1,5 +1,6 @@
 
 #include <inttypes.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -207,6 +208,20 @@ lookup(unsigned ns)
 	sym->flags &= ~ISDECLARED;
 
 	return sym;
+}
+
+Symbol *
+addmacro(void)
+{
+	unsigned ctx = curctx;
+	Symbol *sym;
+
+	/* Force cpp symbols to be at the beginning of the hash */
+	curctx = UCHAR_MAX;
+	sym = lookup(NS_CPP);
+	curctx = ctx;
+	return sym;
+}
 }
 
 Symbol *

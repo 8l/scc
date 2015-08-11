@@ -29,7 +29,7 @@ defmacro(char *s)
 	Symbol *sym;
 
 	strcpy(yytext, s);
-	sym = lookup(NS_CPP);
+	sym = addmacro();
 	sym->flags |= ISDECLARED;
 	return sym;
 }
@@ -330,7 +330,7 @@ define(void)
 		warn("'%s' redefined", yytext);
 		free(sym->u.s);
 	} else if (sym->ns != NS_CPP) {
-		sym = lookup(NS_CPP);
+		sym = addmacro();
 	}
 	sym->flags |= ISDECLARED;
 
