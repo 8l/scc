@@ -94,7 +94,7 @@ unlinkhash(Symbol *sym)
 void
 pushctx(void)
 {
-	if (++curctx == NR_BLOCK)
+	if (++curctx == NR_BLOCK+1)
 		error("too much nested blocks");
 }
 
