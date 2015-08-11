@@ -9,7 +9,6 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-#define GLOBALCTX 0
 #define NOSCLASS  0
 
 struct dcldata {

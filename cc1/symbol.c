@@ -14,7 +14,7 @@ unsigned curctx;
 static short localcnt;
 static short globalcnt;
 
-static Symbol *head;
+static Symbol *head, *labels;
 static Symbol *htab[NR_SYM_HASH];
 
 #ifndef NDEBUG
@@ -102,36 +102,28 @@ void
 popctx(void)
 {
 	Symbol *next, *sym;
-	Symbol dummy = {.next = NULL}, *hp = &dummy;
+	short f;
 
-	if (--curctx == 0)
+	if (--curctx == GLOBALCTX) {
 		localcnt = 0;
+		for (sym = labels; sym; sym = next) {
+			next = sym->next;
+			if ((f & (ISUSED|ISDECLARED)) == ISDECLARED)
+				warn("'%s' defined but not used", sym->name);
+			if ((sym->flags & ISDECLARED) == 0)
+				printerr("label '%s' is not defined", sym->name);
+			free(sym->name);
+			free(sym);
+		}
+		labels = NULL;
+	}
 
 	for (sym = head; sym && sym->ctx > curctx; sym = next) {
 		next = sym->next;
-		switch (sym->ns) {
-		case NS_LABEL:
-			if (curctx != 0)
-				goto save_symbol;
-			if (sym->flags & ISDECLARED)
-				break;
-			printerr("label '%s' is not defined", sym->name);
-			break;
-		case NS_CPP:
-		save_symbol:
-			/*
-			 * CPP symbols have file scope
-			 * Labels have function scope
-			 */
-			hp->next = sym;
-			hp = sym;
-			continue;
-		case NS_TAG:
+		if (sym->ns == NS_TAG)
 			sym->type->defined = 0;
-			break;
-		}
 		if (sym->name) {
-			short f = sym->flags;
+			f = sym->flags;
 			unlinkhash(sym);
 			if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
 				warn("'%s' defined but not used", sym->name);
@@ -140,8 +132,7 @@ popctx(void)
 		// TODO: Fix this memory leak free(sym->u.pars);
 		free(sym);
 	}
-	hp->next = sym;
-	head = dummy.next;
+	head = sym;
 }
 
 Type *
@@ -171,6 +162,10 @@ newsym(unsigned ns)
 
 	if (ns == NS_CPP)
 		return sym;
+	if (ns == NS_LABEL) {
+		sym->next = labels;
+		return labels = sym;
+	}
 
 	for (prev = p = head; p; prev = p, p = p->next) {
 		if (p->ctx <= sym->ctx)

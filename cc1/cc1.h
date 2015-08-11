@@ -4,6 +4,8 @@
 #define PREFIX "/usr/"
 #endif
 
+#define GLOBALCTX 0
+
 /*
  * Definition of structures
  */
