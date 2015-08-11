@@ -13,7 +13,7 @@ extern int failure;
 static unsigned nerrors;
 
 static void
-warn_helper(int flag, char *fmt, va_list va)
+warn_error(int flag, char *fmt, va_list va)
 {
 	if (flag == 0)
 		return;
@@ -39,7 +39,7 @@ warn(char *fmt, ...)
 
 	va_list va;
 	va_start(va, fmt);
-	warn_helper(warnings, fmt, va);
+	warn_error(warnings, fmt, va);
 	va_end(va);
 }
 
@@ -49,7 +49,7 @@ error(char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-	warn_helper(-1, fmt, va);
+	warn_error(-1, fmt, va);
 	va_end(va);
 	exit(1);
 	discard();
@@ -60,8 +60,21 @@ printerr(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	warn_helper(-1, fmt, va);
+	warn_error(-1, fmt, va);
 	va_end(va);
+}
+
+void
+cpperror(char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	warn_error(-1, fmt, va);
+	va_end(va);
+
+	/* discard input until the end of the line */
+	*input->p = '\0';
+	next();
 }
 
 void

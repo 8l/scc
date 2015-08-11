@@ -244,11 +244,11 @@ getpars(Symbol *args[NR_MACROARG])
 
 	do {
 		if (n == NR_MACROARG) {
-			printerr("too much parameters in macro");
+			cpperror("too much parameters in macro");
 			return NR_MACROARG;
 		}
 		if (yytoken != IDEN) {
-			printerr("macro arguments must be identifiers");
+			cpperror("macro arguments must be identifiers");
 			return NR_MACROARG;
 		}
 		args[n++] = yylval.sym;
@@ -279,14 +279,14 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 			}
 		}
 		if (prevc == '#' && !ispar) {
-			printerr("'#' is not followed by a macro parameter");
+			cpperror("'#' is not followed by a macro parameter");
 			return 0;
 		}
 		if (yytoken == EOFTOK)
 			break;
 
 		if ((len = strlen(yytext)) >= bufsiz) {
-			printerr("too long macro");
+			cpperror("too long macro");
 			return 0;
 		}
 		memcpy(bp, yytext, len);
@@ -391,15 +391,15 @@ include(void)
 	}
 
 	if (*bp)
-		printerr("included file '%s' not found", file);
+		cpperror("included file '%s' not found", file);
 
 	return;
 
 bad_include:
-	printerr("#include expects \"FILENAME\" or <FILENAME>");
+	cpperror("#include expects \"FILENAME\" or <FILENAME>");
 	return;
 too_long:
-	printerr("#include FILENAME too long");
+	cpperror("#include FILENAME too long");
 	return;
 }
 
@@ -412,11 +412,10 @@ line(void)
 	if (cppoff)
 		return;
 
-	setnamespace(NS_IDEN);
 	next();
 	n = strtol(yytext, &endp, 10);
 	if (n <= 0 || n > USHRT_MAX || *endp != '\0') {
-		printerr("first parameter of #line is not a positive integer");
+		cpperror("first parameter of #line is not a positive integer");
 		return;
 	}
 
@@ -425,7 +424,7 @@ line(void)
 		goto set_line;
 
 	if (*yytext != '\"' || yylen == 1) {
-		printerr("second parameter of #line is not a valid filename");
+		cpperror("second parameter of #line is not a valid filename");
 		return;
 	}
 
@@ -434,7 +433,7 @@ line(void)
 	next();
 
 set_line:
-	input->nline = yylval.sym->u.i;
+	input->nline = n;
 }
 
 static void
@@ -451,7 +450,7 @@ usererr(void)
 {
 	if (cppoff)
 		return;
-	printerr("#error %s", input->p);
+	cpperror("#error %s", input->p);
 	*input->p = '\0';
 	next();
 }
@@ -470,7 +469,7 @@ ifclause(int negate, int isifdef)
 
 	if (isifdef) {
 		if (yytoken != IDEN) {
-			printerr("no macro name given in #%s directive",
+			cpperror("no macro name given in #%s directive",
 			         (negate) ? "ifndef" : "ifdef");
 			return;
 		}
@@ -482,7 +481,7 @@ ifclause(int negate, int isifdef)
 	} else {
 		/* TODO: catch recovery here */
 		if ((expr = iconstexpr()) == NULL) {
-			printerr("parameter of #if is not an integer constant expression");
+			cpperror("parameter of #if is not an integer constant expression");
 			return;
 		}
 		status = expr->sym->u.i != 0;
