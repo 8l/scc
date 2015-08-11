@@ -307,6 +307,7 @@ extern Symbol *newsym(unsigned ns);
 extern void pushctx(void), popctx(void);
 extern void ikeywords(void);
 extern Symbol *addmacro(void);
+extern void delmacro(Symbol *sym);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);

@@ -531,16 +531,14 @@ elif(void)
 static void
 undef(void)
 {
-	Symbol *sym;
-
 	if (cppoff)
 		return;
 	if (yytoken != IDEN) {
 		error("no macro name given in #undef directive");
 		return;
 	}
-	sym = lookup(NS_CPP);
-	sym->flags &= ~ISDECLARED;
+	if (yylval.sym->ns == NS_CPP)
+		delmacro(yylval.sym);
 	next();
 }
 

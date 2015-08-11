@@ -222,6 +222,14 @@ addmacro(void)
 	curctx = ctx;
 	return sym;
 }
+
+void
+delmacro(Symbol *sym)
+{
+	unlinkhash(sym);
+	free(sym->name);
+	free(sym->u.s);
+	free(sym);
 }
 
 Symbol *
