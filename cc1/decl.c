@@ -1,6 +1,7 @@
 
 #include <inttypes.h>
 #include <setjmp.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,30 +12,85 @@
 
 #define NOSCLASS  0
 
-struct dcldata {
-	unsigned char op;
-	unsigned short nelem;
-	unsigned char ndcl;
-	void *data;
+struct declarators {
+	unsigned char nr;
+	struct declarator {
+		unsigned char op;
+		unsigned short nelem;
+		Symbol *sym;
+		Type **tpars;
+		Symbol **pars;
+	} d [NR_DECLARATORS];
 };
 
-static struct dcldata *
-queue(struct dcldata *dp, unsigned op, short nelem, void *data)
-{
-	unsigned n;
+struct decl {
+	unsigned ns;
+	int sclass;
+	Symbol *sym;
+	Symbol **pars;
+	Type *type;
+	Type *parent;
+};
 
-	if ((n = dp->ndcl) == NR_DECLARATORS)
+static void
+push(struct declarators *dp, unsigned op, ...)
+{
+	va_list va;
+	unsigned n;
+	struct declarator *p;
+
+	va_start(va, op);
+	if ((n = dp->nr++) == NR_DECLARATORS)
 		error("too much declarators");
-	dp->op = op;
-	dp->nelem = nelem;
-	dp->data = data;
-	++dp;
-	dp->ndcl = n+1;
-	return dp;
+	p = &dp->d[n];
+
+	p->op = op;
+	switch (op) {
+	case ARY:
+		p->nelem = va_arg(va, unsigned);
+		break;
+	case FTN:
+		p->nelem = va_arg(va, unsigned);
+		p->tpars = va_arg(va, Type **);
+		p->pars = va_arg(va, Symbol **);
+		break;
+	case IDEN:
+		p->sym = va_arg(va, Symbol *);
+		break;
+	}
 }
 
-static struct dcldata *
-arydcl(struct dcldata *dp)
+static bool
+pop(struct declarators *dp, struct decl *dcl)
+{
+	struct declarator *p;
+
+	if (dp->nr == 0)
+		return 0;
+
+	p = &dp->d[--dp->nr];
+	if (p->op == IDEN) {
+		dcl->sym = p->sym;
+		return 1;
+	}
+	if (dcl->type->op == FTN) {
+		/*
+		 * constructor applied to a
+		 * function. We  don't need
+		 * the parameter symbols anymore.
+		 */
+		free(dcl->pars);
+		popctx();
+		dcl->pars = NULL;
+	}
+	if (p->op == FTN)
+		dcl->pars = p->pars;
+	dcl->type = mktype(dcl->type, p->op, p->nelem, p->tpars);
+	return 1;
+}
+
+static void
+arydcl(struct declarators *dp)
 {
 	Node *np = NULL;
 	TINT n;
@@ -49,13 +105,14 @@ arydcl(struct dcldata *dp)
 	n = (np == NULL) ? 0 : np->sym->u.i;
 	freetree(np);
 
-	return queue(dp, ARY, n, NULL);
+	push(dp, ARY, n);
 }
 
 static Symbol *
-parameter(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
+parameter(struct decl *dcl)
 {
-	Type *funtp = data;
+	Symbol *sym = dcl->sym;
+	Type *funtp = dcl->parent, *tp = dcl->type;
 	size_t n = funtp->n.elem;
 	char *name = sym->name;
 
@@ -64,7 +121,7 @@ parameter(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
 	if (n == -1)
 		error("'void' must be the only parameter");
 
-	switch (sclass) {
+	switch (dcl->sclass) {
 	case STATIC:
 	case EXTERN:
 	case AUTO:
@@ -81,7 +138,7 @@ parameter(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
 	case VOID:
 		if (n != 0)
 			error("incorrect void parameter");
-		if (sclass)
+		if (dcl->sclass)
 			error("void as unique parameter may not be qualified");
 		funtp->n.elem = -1;
 		return NULL;
@@ -108,17 +165,17 @@ parameter(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
 }
 
 static Symbol *dodcl(int rep,
-                     Symbol *(*fun)(Symbol *, Type *, unsigned, int, Type *),
+                     Symbol *(*fun)(struct decl *),
                      unsigned ns,
                      Type *type);
 
-static struct dcldata *
-fundcl(struct dcldata *dp)
+static void
+fundcl(struct declarators *dp)
 {
 	Type type = {.n = {.elem = -1}, .pars = NULL};
 	Symbol *syms[NR_FUNPARAM], **sp;
 	size_t size;
-	void *pars = NULL;
+	Symbol *pars = NULL;
 
 	pushctx();
 	expect('(');
@@ -137,21 +194,18 @@ fundcl(struct dcldata *dp)
 			pars = memcpy(xmalloc(size), syms, size);
 		}
 	}
-	dp = queue(dp, PARS, 0, pars);
-	dp = queue(dp, FTN, type.n.elem, type.pars);
-
-	return dp;
+	push(dp, FTN, type.n.elem, type.pars, pars);
 }
 
-static struct dcldata *declarator0(struct dcldata *dp, unsigned ns);
+static void declarator(struct declarators *dp, unsigned ns);
 
-static struct dcldata *
-directdcl(struct dcldata *dp, unsigned ns)
+static void
+directdcl(struct declarators *dp, unsigned ns)
 {
 	Symbol *sym;
 
 	if (accept('(')) {
-		dp = declarator0(dp, ns);
+		declarator(dp, ns);
 		expect(')');
 	} else {
 		if (yytoken == IDEN || yytoken == TYPEIDEN) {
@@ -160,20 +214,20 @@ directdcl(struct dcldata *dp, unsigned ns)
 		} else {
 			sym = newsym(ns);
 		}
-		dp = queue(dp, IDEN, 0, sym);
+		push(dp, IDEN, sym);
 	}
 
 	for (;;) {
 		switch (yytoken) {
-		case '(':  dp = fundcl(dp); break;
-		case '[':  dp = arydcl(dp); break;
-		default:   return dp;
+		case '(':  fundcl(dp); break;
+		case '[':  arydcl(dp); break;
+		default:   return;
 		}
 	}
 }
 
-static struct dcldata*
-declarator0(struct dcldata *dp, unsigned ns)
+static void
+declarator(struct declarators *dp, unsigned ns)
 {
 	unsigned  n;
 
@@ -182,52 +236,10 @@ declarator0(struct dcldata *dp, unsigned ns)
 			/* nothing */;
 	}
 
-	dp = directdcl(dp, ns);
+	directdcl(dp, ns);
 
 	while (n--)
-		dp = queue(dp, PTR, 0, NULL);
-
-	return dp;
-}
-
-static Symbol *
-declarator(Type *tp, unsigned ns, Type **otp)
-{
-	struct dcldata data[NR_DECLARATORS+1];
-	struct dcldata *bp;
-	Symbol *osym, *sym, **pars = NULL;
-	char *name;
-
-	data[0].ndcl = 0;
-	for (bp = declarator0(data, ns); bp-- > data; ) {
-		switch (bp->op) {
-		case IDEN:
-			sym = bp->data;
-			break;
-		case PARS:
-			pars = bp->data;
-			break;
-		default:
-			if (pars) {
-				/*
-				 * constructor applied to a function. We  don't
-				 * need the parameter symbols anymore.
-				 */
-				free(pars);
-				popctx();
-				pars = NULL;
-			}
-			tp = mktype(tp, bp->op, bp->nelem, bp->data);
-			break;
-		}
-	}
-	/*
-	 * FIXME: This assignation can destroy pars of a previous definition
-	 */
-	if (pars)
-		sym->u.pars = pars;
-	*otp = tp;
-	return sym;
+		push(dp, PTR);
 }
 
 static Type *structdcl(void), *enumdcl(void);
@@ -312,8 +324,16 @@ specifier(int *sclass)
 return_type:
 	if (sclass)
 		*sclass = cls;
-	if (!tp && spec)
-		tp = ctype(type, sign, size);
+	if (!tp) {
+		if (spec) {
+			tp = ctype(type, sign, size);
+		} else {
+			if (curctx != GLOBALCTX)
+				unexpected();
+			warn("type defaults to 'int' in declaration");
+			tp = inttype;
+		}
+	}
 	return tp;
 
 invalid_type:
@@ -439,56 +459,61 @@ enumdcl(void)
 }
 
 static Symbol *
-type(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
+type(struct decl *dcl)
 {
-	if (sclass)
+	Symbol *sym = dcl->sym;
+
+	if (dcl->sclass)
 		error("class storage in type name");
 	if (sym->name)
 		error("unexpected identifier in type name");
-	sym->type = tp;
+	sym->type = dcl->type;
 
 	return sym;
 }
 
 static Symbol *
-field(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
+field(struct decl *dcl)
 {
-	Type *funtp = data;
-	size_t n = funtp->n.elem;
+	Symbol *sym = dcl->sym;
 	char *name = sym->name;
+	Type *structp = dcl->parent, *tp = dcl->type;
+	size_t n = structp->n.elem;
 
 	if (!name) {
 		sym->type = tp;
 		warn("empty declaration");
 		return sym;
 	}
-	if (sclass)
+	if (dcl->sclass)
 		error("storage class in struct/union field");
 	if (tp->op == FTN)
 		error("invalid type in struct/union");
 	if (!tp->defined)
 		error("field '%s' has incomplete type", name);
 
-	if ((sym = install(ns, sym)) == NULL)
+	if ((sym = install(dcl->ns, sym)) == NULL)
 		error("duplicated member '%s'", name);
 	sym->type = tp;
 
 	sym->flags |= ISFIELD;
 	if (n++ == NR_FUNPARAM)
 		error("too much fields in struct/union");
-	funtp->pars = xrealloc(funtp->pars, n);
-	funtp->pars[n-1] = tp;
-	funtp->n.elem = n;
+	structp->pars = xrealloc(structp->pars, n);
+	structp->pars[n-1] = tp;
+	structp->n.elem = n;
 
 	return sym;
 }
 
 static Symbol *
-identifier(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
+identifier(struct decl *dcl)
 {
+	Symbol *sym = dcl->sym;
+	Type *tp = dcl->type;
 	char *name = sym->name;
 	short flags;
-	Symbol *osym;
+	int sclass = dcl->sclass;
 
 	if (!name) {
 		sym->type = tp;
@@ -513,11 +538,11 @@ identifier(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
 		sym = install(NS_IDEN, sym);
 		++curctx;
 	} else {
-		sym = install(NS_IDEN, osym = sym);
+		sym = install(NS_IDEN, sym);
 	}
 
 	if (sym == NULL) {
-		sym = osym;
+		sym = dcl->sym;
 		flags = sym->flags;
 		if (!eqtype(sym->type, tp))
 			error("conflicting types for '%s'", name);
@@ -572,6 +597,7 @@ identifier(Symbol *sym, Type *tp, unsigned ns, int sclass, Type *data)
 		}
 	}
 
+	sym->u.pars = dcl->pars;
 	sym->flags = flags;
 	sym->type = tp;
 
@@ -603,25 +629,27 @@ static_after_non:
 }
 
 static Symbol *
-dodcl(int rep,
-      Symbol *(*fun)(Symbol *, Type *, unsigned, int, Type *),
-      unsigned ns,
-      Type *data)
+dodcl(int rep, Symbol *(*fun)(struct decl *), unsigned ns, Type *parent)
 {
 	Symbol *sym;
-	Type *base, *tp;
-	int sclass;
+	Type *base;
+	struct decl dcl;
+	struct declarators stack;
 
-	if ((base = specifier(&sclass)) == NULL) {
-		if (curctx != GLOBALCTX)
-			unexpected();
-		warn("type defaults to 'int' in declaration");
-		base = inttype;
-	}
+	dcl.ns = ns;
+	dcl.parent = parent;
+	base = specifier(&dcl.sclass);
 
 	do {
-		sym = declarator(base, ns, &tp);
-		sym = (*fun)(sym, tp, ns, sclass, data);
+		stack.nr = 0;
+		dcl.pars = NULL;
+		dcl.type = base;
+
+		declarator(&stack, ns);
+
+		while (pop(&stack, &dcl))
+			/* nothing */;
+		sym = (*fun)(&dcl);
 	} while (rep && accept(','));
 
 	return sym;

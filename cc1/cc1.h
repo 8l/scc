@@ -110,8 +110,7 @@ enum {
 enum {
 	FTN = 1,
 	PTR,
-	ARY,
-	PARS
+	ARY
 };
 
 /* namespaces */
