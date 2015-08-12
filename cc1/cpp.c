@@ -26,8 +26,12 @@ int disexpand;
 static Symbol *
 defmacro(char *s)
 {
+	Symbol *sym;
+
 	strcpy(yytext, s);
-	return addmacro();
+	sym = lookup(NS_CPP);
+	sym->flags |= ISDECLARED;
+	return sym;
 }
 
 void
@@ -319,7 +323,8 @@ define(void)
 		warn("'%s' redefined", yytext);
 		free(sym->u.s);
 	} else {
-		sym = addmacro();
+		sym = lookup(NS_CPP);
+		sym->flags |= ISDECLARED;
 	}
 
 	next();

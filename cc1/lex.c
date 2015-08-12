@@ -378,17 +378,17 @@ iden(void)
 		/* nothing */;
 	input->p = p;
 	tok2str();
-	yylval.sym = sym = lookup(lex_ns);
+	sym = lookup(lex_ns);
 	if (sym->ns == NS_CPP && lexmode == CCMODE) {
 		if (!disexpand && expand(begin, sym))
 			return next();
 		/*
 		 * it is not a correct macro call, so try to find
-		 * another definition. This is going to be expensive
-		 * but I think it is not going to be a common case.
+		 * another definition.
 		 */
 		sym = nextsym(sym, lex_ns);
 	}
+	yylval.sym = sym;
 	if (sym->flags & ISCONSTANT)
 		return CONSTANT;
 	if (sym->token != IDEN)

@@ -154,7 +154,7 @@ newsym(unsigned ns)
 	sym = malloc(sizeof(*sym));
 	sym->id = 0;
 	sym->ns = ns;
-	sym->ctx = curctx;
+	sym->ctx = (ns == NS_CPP) ? UCHAR_MAX : curctx;
 	sym->token = IDEN;
 	sym->flags = ISDECLARED;
 	sym->u.s = sym->name = NULL;
@@ -210,20 +210,6 @@ lookup(unsigned ns)
 	return sym;
 }
 
-Symbol *
-addmacro(void)
-{
-	unsigned ctx = curctx;
-	Symbol *sym;
-
-	/* Force cpp symbols to be at the beginning of the hash */
-	curctx = UCHAR_MAX;
-	sym = lookup(NS_CPP);
-	sym->flags |= ISDECLARED;
-	curctx = ctx;
-	return sym;
-}
-
 void
 delmacro(Symbol *sym)
 {
@@ -239,13 +225,11 @@ nextsym(Symbol *sym, unsigned ns)
 	char *s, *t, c;
 	Symbol *new, *p;
 
-	/* FIXME:
+	/*
 	 * This function is only called when a macro with parameters
 	 * is called without them.
 	 *      #define x(y) ((y) + 1)
 	 *      int x = x(y);
-	 * This solution fixes the problem but destroy the order of
-	 * contexts in the hash table.
 	 */
 	s = sym->name;
 	c = *s;
@@ -254,11 +238,9 @@ nextsym(Symbol *sym, unsigned ns)
 		if (c == *t && !strcmp(s, t))
 			return sym;
 	}
-	new = newsym(ns);
+	new = linkhash(newsym(ns), s);
 	new->flags &= ~ISDECLARED;
-	new->name = xstrdup(yytext);
-	new->hash = sym->hash;
-	return sym->hash = new;
+	return new;
 }
 
 Symbol *
