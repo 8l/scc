@@ -746,8 +746,9 @@ static Node *assign(void);
 static Node *
 arguments(Node *np)
 {
-	Node *par;
-	Type *tp = np->type;
+	int n;
+	Node *par = NULL, *arg;
+	Type **targs, *tp = np->type;
 
 	if (tp->op == PTR && tp->type->op == FTN) {
 		np = content(OPTR, np);
@@ -755,19 +756,25 @@ arguments(Node *np)
 	}
 	if (tp->op != FTN)
 		error("function or function pointer expected");
-	/* TODO: implement function calls */
-	abort();
-	expect('(');
-	if (accept(')'))
-		return np;
+	targs = tp->pars;
 
-	do {
-		if ((par = eval(assign())) == NULL)
-			unexpected();
-	} while (accept(','));
+	expect('(');
+
+	if ((n = tp->n.elem) > 0) {
+		do {
+			if ((arg = eval(assign())) == NULL)
+				unexpected();
+			if ((arg = convert(arg, *targs++, 0)) == NULL)
+				error("bad type");
+			par = node(OPAR, arg->type, par, arg);
+		} while (--n && accept(','));
+	}
+
+	if (n > 0)
+		error("insuficient number of parameters...");
 
 	expect(')');
-	return np;
+	return node(OCALL, np->type->type, np, par);
 }
 
 static Node *

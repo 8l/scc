@@ -272,6 +272,8 @@ enum {
 	OELOOP,
 	OBLOOP,
 	OFUN,
+	OPAR,
+	OCALL,
 	ORET,
 	ODECL,
 	OSWITCH,

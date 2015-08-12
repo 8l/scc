@@ -60,7 +60,9 @@ char *optxt[] = {
 	[OBRANCH] = "\tj\tL%d",
 	[OEFUN] = "}",
 	[OELOOP] = "\tb",
-	[OBLOOP] = "\td"
+	[OBLOOP] = "\td",
+	[OPAR] = "p",
+	[OCALL] = "c"
 };
 
 void (*opcode[])(unsigned, void *) = {
@@ -117,7 +119,9 @@ void (*opcode[])(unsigned, void *) = {
 	[OFUN] = emitfun,
 	[ORET] = emitret,
 	[ODECL] = emitdcl,
-	[OSWITCH] = emitswitch
+	[OSWITCH] = emitswitch,
+	[OPAR] = emitbin,
+	[OCALL] = emitbin
 };
 
 void
