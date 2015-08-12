@@ -30,13 +30,13 @@ dumpstab(char *msg)
 			continue;
 		fprintf(stderr, "%d", (int) (bp - htab));
 		for (sym = *bp; sym; sym = sym->hash)
-			fprintf(stderr, "->%d,%d:%s",
+			fprintf(stderr, "->[%d,%d:%s]",
 			        sym->ns, sym->ctx, sym->name);
 		putc('\n', stderr);
 	}
 	fputs("head:", stderr);
 	for (sym = head; sym; sym = sym->next) {
-		fprintf(stderr, "->%d,%d:'%s'",
+		fprintf(stderr, "->[%d,%d:'%s']",
 		        sym->ns, sym->ctx,
 		        (sym->name) ? sym->name : "");
 	}
