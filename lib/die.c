@@ -14,7 +14,8 @@ die(const char *fmt, ...)
 	failure = 1;
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, fmt, va);
+	vfprintf(stderr, fmt, va);
+	putc('\n', stderr);
 	va_end(va);
 	exit(1);
 }
