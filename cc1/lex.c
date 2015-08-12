@@ -45,9 +45,10 @@ ilex(char *fname)
 		fp = stdin;
 		fname = "<stdin>";
 	} else {
-		if ((fp = fopen(fname, "r")) == NULL)
-			die("error opening output:%s", strerror(errno));
-		fname = fname;
+		if ((fp = fopen(fname, "r")) == NULL) {
+			die("error opening input '%s':%s",
+			    fname, strerror(errno));
+		}	
 	}
 	allocinput(fname, fp);
 	*input->begin = '\0';
