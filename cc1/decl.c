@@ -118,14 +118,12 @@ fundcl(struct dcldata *dp)
 	Type type = {.n = {.elem = -1}, .pars = NULL};
 	Symbol *syms[NR_FUNPARAM], **sp;
 	size_t size;
-	void *p;
+	void *pars = NULL;
 
 	pushctx();
 	expect('(');
 
-	if (accept(')')) {
-		dp = queue(dp, FTN, type.n.elem, type.pars);
-	} else {
+	if (!accept(')')) {
 		type.n.elem = 0;
 		sp = syms;
 		do
@@ -134,13 +132,13 @@ fundcl(struct dcldata *dp)
 
 		expect(')');
 
-		dp = queue(dp, FTN, type.n.elem, type.pars);
 		if (type.n.elem != -1) {
 			size = type.n.elem * sizeof(Symbol *);
-			p = memcpy(xmalloc(size), syms, size);
-			dp = queue(dp, PARS, 0, p);
+			pars = memcpy(xmalloc(size), syms, size);
 		}
 	}
+	dp = queue(dp, PARS, 0, pars);
+	dp = queue(dp, FTN, type.n.elem, type.pars);
 
 	return dp;
 }
@@ -210,6 +208,15 @@ declarator(Type *tp, unsigned ns, Type **otp)
 			pars = bp->data;
 			break;
 		default:
+			if (pars) {
+				/*
+				 * constructor applied to a function. We  don't
+				 * need the parameter symbols anymore.
+				 */
+				free(pars);
+				popctx();
+				pars = NULL;
+			}
 			tp = mktype(tp, bp->op, bp->nelem, bp->data);
 			break;
 		}
@@ -217,7 +224,8 @@ declarator(Type *tp, unsigned ns, Type **otp)
 	/*
 	 * FIXME: This assignation can destroy pars of a previous definition
 	 */
-	sym->u.pars = pars;
+	if (pars)
+		sym->u.pars = pars;
 	*otp = tp;
 	return sym;
 }
@@ -655,12 +663,14 @@ decl(void)
 			sym->flags &= ~ISEMITTED;
 			curfun = sym;
 			emit(OFUN, sym);
+			free(sym->u.pars);
 			compound(NULL, NULL, NULL);
 			emit(OEFUN, NULL);
 			curfun = NULL;
 			return;
 		default:
 		remove_pars:
+			free(sym->u.pars);
 			popctx();
 		}
 	}

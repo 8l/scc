@@ -130,7 +130,7 @@ popctx(void)
 				warn("'%s' defined but not used", sym->name);
 		}
 		free(sym->name);
-		// TODO: Fix this memory leak free(sym->u.pars);
+		// TODO: There is a memory leak with sym->u.s
 		free(sym);
 	}
 	head = sym;
