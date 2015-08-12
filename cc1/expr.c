@@ -560,8 +560,6 @@ negate(Node *np)
 	case OGE:  op = OLT;  break;
 	case OLE:  op = OGT;  break;
 	case OGT:  op = OLE;  break;
-	default:
-		abort();
 	}
 	np->op = op;
 	return np;
