@@ -18,7 +18,7 @@ unsigned short yylen;
 int cppoff;
 int lexmode = CCMODE;
 
-static unsigned lex_ns = NS_IDEN;
+static unsigned lex_ns = NS_IDEN, saved_ns;
 static int safe, eof;
 Input *input;
 
@@ -380,7 +380,7 @@ iden(void)
 	input->p = p;
 	tok2str();
 	sym = lookup(lex_ns);
-	if (sym->ns == NS_CPP && lexmode == CCMODE) {
+	if (sym->ns == NS_CPP) {
 		if (!disexpand && expand(begin, sym))
 			return next();
 		/*
@@ -493,6 +493,7 @@ operator(void)
 void
 setnamespace(int ns)
 {
+	saved_ns = (ns == NS_CPPCLAUSES) ? lex_ns : 0;
 	lex_ns = ns;
 }
 
@@ -518,6 +519,8 @@ next(void)
 	skipspaces();
 	c = *input->begin;
 	if ((eof || lexmode == CPPMODE) && c == '\0') {
+		if (lexmode == CPPMODE)
+			lex_ns = saved_ns;
 		strcpy(yytext, "<EOF>");
 		if (cppctx && eof)
 			error("#endif expected");
@@ -538,7 +541,8 @@ next(void)
 
 exit:
 	DBG(stderr, "TOKEN %s\n", yytext);
-	lex_ns = NS_IDEN;
+	if (lexmode == CCMODE)
+		lex_ns = NS_IDEN;
 	return yytoken;
 }
 

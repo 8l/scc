@@ -195,6 +195,16 @@ expand(char *begin, Symbol *sym)
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
 	macroname = sym->name;
+	if (!(sym->flags & ISDECLARED)) {
+		/*
+		 * This case happens in #if were macro not defined must
+		 * be expanded to 0
+		 */
+		buffer[0] = '0';
+		buffer[1] = '\0';
+		elen = 1;
+		goto substitute;
+	}
 	if (sym == symfile) {
 		elen = sprintf(buffer, "\"%s\" ", input->fname);
 		goto substitute;
@@ -230,6 +240,9 @@ substitute:
 	input->line[total] = '\0';
 
 	input->p = input->begin = begin;
+
+	if (!(sym->flags & ISDECLARED))
+		delmacro(sym);
 
 	return 1;
 }
@@ -327,6 +340,7 @@ define(void)
 		sym->flags |= ISDECLARED;
 	}
 
+	setnamespace(NS_IDEN);       /* Avoid polution in NS_CPP */
 	next();
 	if ((n = getpars(args)) == NR_MACROARG)
 		goto delete;
@@ -502,6 +516,7 @@ static void
 cppif(void)
 {
 	setnamespace(NS_CPP);
+	disexpand = 0;
 	next();
 	ifclause(0, 0);
 }
@@ -548,6 +563,8 @@ elseclause(void)
 static void
 elif(void)
 {
+	setnamespace(NS_CPP);
+	disexpand = 0;
 	elseclause();
 	ifclause(0, 0);
 }
