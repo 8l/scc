@@ -607,6 +607,7 @@ field(Node *np)
 			error("incorrect field in struct/union");
 		next();
 		np = node(OFIELD, sym->type, np, NULL);
+		np->lvalue = 1;
 		np->sym = sym;
 		return np;
 	default:
