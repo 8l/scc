@@ -484,7 +484,10 @@ ifclause(int negate, int isifdef)
 
 	if (cppctx == NR_COND-1)
 		error("too much nesting levels of conditional inclusion");
+
 	n = cppctx++;
+	setnamespace(NS_CPP);
+	next();
 
 	if (isifdef) {
 		if (yytoken != IDEN) {
@@ -515,36 +518,20 @@ ifclause(int negate, int isifdef)
 static void
 cppif(void)
 {
-	setnamespace(NS_CPP);
 	disexpand = 0;
-	next();
 	ifclause(0, 0);
 }
 
 static void
 ifdef(void)
 {
-	setnamespace(NS_CPP);
-	next();
 	ifclause(0, 1);
 }
 
 static void
 ifndef(void)
 {
-	setnamespace(NS_CPP);
-	next();
 	ifclause(1, 1);
-}
-
-static void
-endif(void)
-{
-	if (cppctx == 0)
-		error("#endif without #if");
-	if (!ifstatus[--cppctx])
-		--cppoff;
-	next();
 }
 
 static void
@@ -557,16 +544,30 @@ elseclause(void)
 
 	status = (ifstatus[cppctx-1] ^= 1);
 	cppoff += (status) ? -1 : 1;
+}
+
+static void
+cppelse(void)
+{
+	elseclause();
 	next();
 }
 
 static void
 elif(void)
 {
-	setnamespace(NS_CPP);
-	disexpand = 0;
 	elseclause();
-	ifclause(0, 0);
+	cppif();
+}
+
+static void
+endif(void)
+{
+	if (cppctx == 0)
+		error("#endif without #if");
+	if (!ifstatus[--cppctx])
+		--cppoff;
+	next();
 }
 
 static void
@@ -599,7 +600,7 @@ cpp(void)
 		{IF, cppif},
 		{ELIF, elif},
 		{IFNDEF, ifndef},
-		{ELSE, elseclause},
+		{ELSE, cppelse},
 		{ENDIF, endif},
 		{UNDEF, undef},
 		{PRAGMA, pragma},
