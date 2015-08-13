@@ -267,6 +267,10 @@ chklvalue(Node *np, Type *tp)
 		error("invalid use of void expression");
 }
 
+/* TODO: put decay() call in a better place, because at this
+    moment we call dozens of calls in all the code */
+static Node *decay(Node *np);
+
 Node *
 eval(Node *np)
 {
@@ -274,6 +278,12 @@ eval(Node *np)
 
 	if (!np)
 		return NULL;
+
+	switch (BTYPE(np)) {
+	case ARY:
+	case FTN:
+		np = decay(np);
+	}
 	if (np->op != OAND && np->op != OOR)
 		return np;
 	p = node(OCOLON, inttype, constnode(one), constnode(zero));
