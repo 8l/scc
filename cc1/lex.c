@@ -291,8 +291,7 @@ escape(void)
 {
 	int c, base;
 
-	++input->p;
-	switch (*input->p++) {
+	switch (*++input->p) {
 	case '\\': return '\\';
 	case 'a':  return '\a';
 	case 'f':  return '\f';
