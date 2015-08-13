@@ -763,16 +763,22 @@ arguments(Node *np)
 			if ((arg = eval(assign())) == NULL)
 				unexpected();
 			if ((arg = convert(arg, *targs++, 0)) == NULL)
-				error("bad type");
+				goto bad_type;
 			par = node(OPAR, arg->type, par, arg);
 		} while (--n && accept(','));
 	}
 
 	if (n > 0)
-		error("insuficient number of parameters...");
+		error("too few arguments in function call");
+	if (yytoken == ',')
+		error("too many arguments in function call");
 
 	expect(')');
 	return node(OCALL, np->type->type, np, par);
+
+bad_type:
+	error("incompatible type for argument %d in function call",
+	      tp->n.elem - n + 1);
 }
 
 static Node *
