@@ -587,7 +587,8 @@ field(Node *np)
 	Symbol *sym;
 
 	switch (BTYPE(np)) {
-	case STRUCT: case UNION:
+	case STRUCT:
+	case UNION:
 		setnamespace(np->type->ns);
 		next();
 		if (yytoken != IDEN)
@@ -595,7 +596,9 @@ field(Node *np)
 		if ((sym = yylval.sym) == NULL)
 			error("incorrect field in struct/union");
 		next();
-		return node(OFIELD, sym->type, varnode(sym), np);
+		np = node(OFIELD, sym->type, np, NULL);
+		np->sym = sym;
+		return np;
 	default:
 		error("struct or union expected");
 	}
