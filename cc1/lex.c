@@ -537,7 +537,7 @@ next(void)
 		yytoken = operator();
 
 exit:
-	fprintf(stderr, "TOKEN %s\n", yytext);
+	DBG(stderr, "TOKEN %s\n", yytext);
 	lex_ns = NS_IDEN;
 	return yytoken;
 }

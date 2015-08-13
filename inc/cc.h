@@ -7,6 +7,12 @@ typedef unsigned bool;
 #endif
 #endif
 
+#ifndef NDEBUG
+#define DBG(...) fprintf(__VA_ARGS__)
+#else
+#define DBG(...)
+#endif
+
 #define TINT    long
 #define TUINT   unsigned long
 #define TFLOAT  double
