@@ -329,8 +329,10 @@ define(void)
 
 	setnamespace(NS_CPP);
 	next();
-	if (yytoken != IDEN)
-		error("macro names must be identifiers");
+	if (yytoken != IDEN) {
+		cpperror("macro names must be identifiers");
+		return;
+	}
 	sym = yylval.sym;
 	if (sym->flags & ISDECLARED) {
 		warn("'%s' redefined", yytext);
