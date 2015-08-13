@@ -225,6 +225,7 @@ emittype(Type *tp)
 {
 	int n;
 	Type **vp;
+	Symbol **sp;
 
 	if (tp->printed)
 		return;
@@ -241,6 +242,18 @@ emittype(Type *tp)
 	case PTR:
 		emittype(tp->type);
 		return;
+	case UNION:
+	case STRUCT:
+		n = tp->n.elem;
+		for (sp = tp->fields; n-- > 0; ++sp)
+			emittype((*sp)->type);
+		emitletter(tp);
+		puts("\t(");
+		n = tp->n.elem;
+		for (sp = tp->fields; n-- > 0; ++sp)
+			emit(ODECL, *sp);
+		puts(")");
+		break;
 	case FTN:
 		emitletter(tp);
 		n = tp->n.elem;

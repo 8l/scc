@@ -381,10 +381,14 @@ newtag(void)
 		break;
 	}
 	if (!sym->type) {
+		Type *tp;
+
 		if (ns == NS_STRUCTS + NR_MAXSTRUCTS)
 			error("too much tags declared");
-		sym->type = mktype(NULL, tag, 0, NULL);
-		sym->type->ns = ns++;
+		tp = mktype(NULL, tag, 0, NULL);
+		tp->ns = ns++;
+		tp->fields = NULL;
+		sym->type = tp;
 	}
 
 	if ((op = sym->type->op) != tag &&  op != INT)
@@ -499,8 +503,8 @@ field(struct decl *dcl)
 	sym->flags |= ISFIELD;
 	if (n++ == NR_FUNPARAM)
 		error("too much fields in struct/union");
-	structp->pars = xrealloc(structp->pars, n);
-	structp->pars[n-1] = tp;
+	structp->fields = xrealloc(structp->fields, n * sizeof(*sym));
+	structp->fields[n-1] = sym;
 	structp->n.elem = n;
 
 	return sym;

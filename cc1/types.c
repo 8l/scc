@@ -311,7 +311,7 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 	t = (op ^ (uintptr_t) tp >> 3) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
 	for (bp = *tbl; bp; bp = bp->next) {
-		if (eqtype(bp, &type)) {
+		if (eqtype(bp, &type) && op != STRUCT && op != UNION) {
 			/*
 			 * pars was allocated by the caller
 			 * but the type already exists, so
@@ -353,7 +353,7 @@ eqtype(Type *tp1, Type *tp2)
 		}
 		return 1;
 	case ENUM:
-		break;
+		return 0;
 	case INT:
 	case FLOAT:
 		return tp1->letter == tp2->letter;
