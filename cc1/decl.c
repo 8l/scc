@@ -521,8 +521,14 @@ identifier(struct decl *dcl)
 
 	if (!name) {
 		sym->type = tp;
-		warn("empty declaration");
-		return sym;
+		switch (tp->op) {
+		default:
+			warn("empty declaration");
+		case STRUCT:
+		case UNION:
+		case ENUM:
+			return sym;
+		}
 	}
 
 	/* TODO: Add warning about ANSI limits */
