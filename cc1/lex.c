@@ -48,7 +48,7 @@ ilex(char *fname)
 		if ((fp = fopen(fname, "r")) == NULL) {
 			die("error opening input '%s':%s",
 			    fname, strerror(errno));
-		}	
+		}
 	}
 	allocinput(fname, fp);
 	*input->begin = '\0';
