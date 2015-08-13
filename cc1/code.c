@@ -266,6 +266,8 @@ emitdcl(unsigned op, void *arg)
 	emitvar(sym);
 	putchar('\t');
 	emitletter(sym->type);
+	if (sym->name)
+		printf("\t%s", sym->name);
 	if (op != OFUN)
 		putchar('\n');
 	sym->flags |= ISEMITTED;
