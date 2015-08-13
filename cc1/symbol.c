@@ -247,13 +247,18 @@ Symbol *
 install(unsigned ns, Symbol *sym)
 {
 	if (sym->ctx == curctx) {
-		if (sym->flags & ISDECLARED)
-			return NULL;
-		sym->flags |= ISDECLARED;
-	} else {
-		sym = linkhash(newsym(ns), sym->name);
+		if (sym->flags & ISDECLARED) {
+			if (ns == sym->ns)
+				return NULL;
+		} else {
+			sym->flags |= ISDECLARED;
+			sym->ns = ns;
+			goto assign_id;
+		}
 	}
+	sym = linkhash(newsym(ns), sym->name);
 
+assign_id:
 	if (sym->ns != NS_CPP)
 		sym->id = (curctx) ? ++localcnt : ++globalcnt;
 
