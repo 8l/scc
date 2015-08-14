@@ -291,7 +291,7 @@ eval(Node *np)
 	case FTN:
 		np = decay(np);
 	}
-	if (np->op != OAND && np->op != OOR)
+	if (!isnodecmp(np->op))
 		return np;
 	p = node(OCOLON, inttype, constnode(one), constnode(zero));
 	return node(OASK, inttype, np, p);
@@ -562,6 +562,11 @@ negate(Node *np)
 static Node *
 exp2cond(Node *np, char neg)
 {
+	switch (BTYPE(np)) {
+	case ARY:
+	case FTN:
+		np = decay(np);
+	}
 	if (isnodecmp(np->op))
 		return (neg) ? negate(np) : np;
 	return compare(ONE ^ neg, np, constnode(zero));
