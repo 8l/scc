@@ -307,7 +307,8 @@ emitbin(unsigned op, void *arg)
 
 	emitnode(np->left);
 	emitnode(np->right);
-	printf("\t%s", optxt[op]);
+	if ((s = optxt[op]) != NULL)        /* do not print in OCOLON case */
+		printf("\t%s", optxt[op]);
 	emitletter(np->type);
 }
 
