@@ -556,6 +556,7 @@ negate(Node *np)
 	case OGE:  op = OLT;  break;
 	case OLE:  op = OGT;  break;
 	case OGT:  op = OLE;  break;
+	default:   return np;
 	}
 	np->op = op;
 	return np;
@@ -615,14 +616,6 @@ array(Node *lp, Node *rp)
 	lp =  node(OPTR, tp->type, lp, NULL);
 	lp->lvalue = 1;
 	return lp;
-}
-
-Node *
-iszero(Node *np)
-{
-	if (isnodecmp(np->op))
-		return np;
-	return compare(ONE, np, constnode(zero));
 }
 
 static Node *
@@ -1158,4 +1151,18 @@ expr(void)
 	}
 
 	return lp;
+}
+
+Node *
+condition(void)
+{
+	Node *np;
+
+	expect('(');
+	np = exp2cond(expr(), 0);
+	if (np->constant)
+		np = node(ONE, inttype, np, constnode(zero));
+	expect(')');
+
+	return np;
 }

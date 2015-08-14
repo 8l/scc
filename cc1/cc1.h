@@ -346,7 +346,7 @@ extern void freetree(Node *np);
 /* expr.c */
 extern Node *expr(void), *negate(Node *np), *constexpr(void);
 extern Node *convert(Node *np, Type *tp1, char iscast);
-extern Node *iszero(Node *np), *eval(Node *np), *iconstexpr(void);
+extern Node *eval(Node *np), *iconstexpr(void), *condition(void);
 
 /* cpp.c */
 extern void icpp(void);

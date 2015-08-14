@@ -54,23 +54,6 @@ stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(';');
 }
 
-static Node *
-condition(void)
-{
-	extern jmp_buf recover;
-	Node *np;
-
-	expect('(');
-	setsafe(END_COND);
-	if (!setjmp(recover))
-		np = expr();
-	else
-		np = constnode(zero);
-	np = iszero(np);
-	expect(')');
-	return np;
-}
-
 static void
 While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
