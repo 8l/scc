@@ -265,8 +265,9 @@ specifier(int *sclass)
 			p = &cls;
 			break;
 		case TQUALIFIER:
-			if ((qlf |= yylval.token) & RESTRICT)
+			if (qlf && qlf != RESTRICT)
 				goto invalid_type;
+			qlf |= yylval.token;
 			next();
 			continue;
 		case TYPEIDEN:
