@@ -226,6 +226,7 @@ emittype(Type *tp)
 	int n;
 	Type **vp;
 	Symbol **sp;
+	char *tag;
 
 	if (tp->printed || !tp->defined)
 		return;
@@ -248,6 +249,8 @@ emittype(Type *tp)
 		for (sp = tp->p.fields; n-- > 0; ++sp)
 			emittype((*sp)->type);
 		emitletter(tp);
+		if ((tag = tp->tag->name) != NULL)
+			printf("\t%s", tag);
 		puts("\t(");
 		n = tp->n.elem;
 		for (sp = tp->p.fields; n-- > 0; ++sp)

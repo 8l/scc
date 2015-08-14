@@ -393,6 +393,7 @@ newtag(void)
 		tp->ns = ns++;
 		tp->p.fields = NULL;
 		sym->type = tp;
+		tp->tag = sym;
 	}
 
 	if ((op = sym->type->op) != tag &&  op != INT)

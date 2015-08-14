@@ -22,7 +22,7 @@ typedef struct input Input;
  */
 struct type {
 	unsigned char op;           /* type builder operator */
-	unsigned char ns;
+	unsigned char ns;           /* namespace for struct members */
 	short id;                   /* type id, used in dcls */
 	char letter;                /* letter of the type */
 	bool defined : 1;           /* type defined */
@@ -31,6 +31,7 @@ struct type {
 	size_t size;                /* sizeof the type */
 	size_t align;               /* align of the type */
 	Type *type;                 /* base type */
+	Symbol *tag;                /* symbol of the strug tag */
 	Type *next;                 /* next element in the hash */
 	union {
 		Type **pars;            /* Function type parameters */
