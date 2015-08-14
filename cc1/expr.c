@@ -779,11 +779,12 @@ bad_type:
 }
 
 static Node *
-postfix(void)
+postfix(Node *lp)
 {
-	Node *lp, *rp;
+	Node *rp;
 
-	lp = primary();
+	if (!lp)
+		lp = primary();
 	for (;;) {
 		switch (yytoken) {
 		case '[':
@@ -869,7 +870,7 @@ unary(void)
 	case '~': op = OCPL;  fun = integeruop;   break;
 	case '&': op = OADDR; fun = address;      break;
 	case '*': op = OPTR;  fun = content;      break;
-	default:  return postfix();
+	default:  return postfix(NULL);
 	}
 
 	next();
@@ -906,6 +907,7 @@ cast(void)
 	default:
 		rp = expr();
 		expect(')');
+		rp = postfix(rp);
 		break;
 	}
 
