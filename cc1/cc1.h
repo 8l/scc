@@ -138,7 +138,8 @@ enum {
 	ISPRIVATE  =     256,
 	ISLOCAL    =     512,
 	ISEMITTED  =    1024,
-	ISDEFINED  =    2048
+	ISDEFINED  =    2048,
+	ISSTRING   =    4096
 };
 
 

@@ -359,7 +359,7 @@ repeat:
 
 	yylen = bp - yytext + 1;
 	yylval.sym = newsym(NS_IDEN);
-	yylval.sym->flags |= ISCONSTANT;
+	yylval.sym->flags |= ISSTRING | ISCONSTANT;
 	yylval.sym->u.s = xstrdup(yytext+1);
 	yylval.sym->type = mktype(chartype, ARY, yylen - 2, NULL);
 	*bp++ = '"';
