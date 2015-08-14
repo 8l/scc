@@ -9,7 +9,7 @@
 
 static void emitbin(unsigned, void *),
             emitcast(unsigned, void *), emitswitch(unsigned, void *),
-            emitsym(unsigned, void *), emitfield(unsigned, void *),
+            emitsym(unsigned, void *),
             emitexp(unsigned, void *),
             emitsymid(unsigned, void *), emittext(unsigned, void *),
             emitfun(unsigned, void *),
@@ -62,7 +62,8 @@ char *optxt[] = {
 	[OELOOP] = "\tb",
 	[OBLOOP] = "\td",
 	[OPAR] = "p",
-	[OCALL] = "c"
+	[OCALL] = "c",
+	[OFIELD] = "."
 };
 
 void (*opcode[])(unsigned, void *) = {
@@ -106,7 +107,7 @@ void (*opcode[])(unsigned, void *) = {
 	[OSYM] = emitsym,
 	[OASK] = emitbin,
 	[OCOLON] = emitbin,
-	[OFIELD]= emitfield,
+	[OFIELD]= emitbin,
 	[OEXPR] = emitexp,
 	[OLABEL] = emitsymid,
 	[ODEFAULT] = emitsymid,
@@ -366,16 +367,6 @@ emitswitch(unsigned op, void *arg)
 	Caselist *lcase = arg;
 
 	printf("\teI\t#%0x", lcase->nr);
-}
-
-void
-emitfield(unsigned op, void *arg)
-{
-	Node *np = arg;
-
-	emitnode(np->left);
-	putchar('\t');
-	emitvar(np->sym);
 }
 
 Node *

@@ -590,9 +590,8 @@ field(Node *np)
 		if ((sym = yylval.sym) == NULL)
 			error("incorrect field in struct/union");
 		next();
-		np = node(OFIELD, sym->type, np, NULL);
+		np = node(OFIELD, sym->type, np, varnode(sym));
 		np->lvalue = 1;
-		np->sym = sym;
 		return np;
 	default:
 		error("struct or union expected");
