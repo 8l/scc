@@ -42,9 +42,11 @@ push(struct declarators *dp, unsigned op, ...)
 	va_start(va, op);
 	if ((n = dp->nr++) == NR_DECLARATORS)
 		error("too much declarators");
-	p = &dp->d[n];
 
+	p = &dp->d[n];
 	p->op = op;
+	p->tpars = NULL;
+
 	switch (op) {
 	case ARY:
 		p->nelem = va_arg(va, unsigned);
