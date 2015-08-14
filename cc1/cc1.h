@@ -32,8 +32,10 @@ struct type {
 	size_t align;               /* align of the type */
 	Type *type;                 /* base type */
 	Type *next;                 /* next element in the hash */
-	Type **pars;                /* type parameters */
-	Symbol **fields;            /* fields of aggregate type */
+	union {
+		Type **pars;            /* Function type parameters */
+		Symbol **fields;        /* fields of aggregate type */
+	} p;
 	union {
 		unsigned char rank;     /* convertion rank */
 		short elem;             /* number of type parameters */

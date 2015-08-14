@@ -245,19 +245,19 @@ emittype(Type *tp)
 	case UNION:
 	case STRUCT:
 		n = tp->n.elem;
-		for (sp = tp->fields; n-- > 0; ++sp)
+		for (sp = tp->p.fields; n-- > 0; ++sp)
 			emittype((*sp)->type);
 		emitletter(tp);
 		puts("\t(");
 		n = tp->n.elem;
-		for (sp = tp->fields; n-- > 0; ++sp)
+		for (sp = tp->p.fields; n-- > 0; ++sp)
 			emit(ODECL, *sp);
 		puts(")");
 		break;
 	case FTN:
 		emitletter(tp);
 		n = tp->n.elem;
-		for (vp = tp->pars; n-- > 0; ++vp) {
+		for (vp = tp->p.pars; n-- > 0; ++vp) {
 			putchar('\t');
 			emitletter(*vp);
 		}

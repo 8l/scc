@@ -161,8 +161,8 @@ parameter(struct decl *dcl)
 
 	if (n++ == NR_FUNPARAM)
 		error("too much parameters in function definition");
-	funtp->pars = xrealloc(funtp->pars, n * sizeof(Type *));
-	funtp->pars[n-1] = tp;
+	funtp->p.pars = xrealloc(funtp->p.pars, n * sizeof(Type *));
+	funtp->p.pars[n-1] = tp;
 	funtp->n.elem = n;
 
 	return sym;
@@ -176,7 +176,7 @@ static Symbol *dodcl(int rep,
 static void
 fundcl(struct declarators *dp)
 {
-	Type type = {.n = {.elem = -1}, .pars = NULL};
+	Type type = {.n = {.elem = -1}, .p = {.pars= NULL}};
 	Symbol *syms[NR_FUNPARAM], **sp;
 	size_t size;
 	Symbol *pars = NULL;
@@ -198,7 +198,7 @@ fundcl(struct declarators *dp)
 			pars = memcpy(xmalloc(size), syms, size);
 		}
 	}
-	push(dp, FTN, type.n.elem, type.pars, pars);
+	push(dp, FTN, type.n.elem, type.p.pars, pars);
 }
 
 static void declarator(struct declarators *dp, unsigned ns);
@@ -391,7 +391,7 @@ newtag(void)
 			error("too much tags declared");
 		tp = mktype(NULL, tag, 0, NULL);
 		tp->ns = ns++;
-		tp->fields = NULL;
+		tp->p.fields = NULL;
 		sym->type = tp;
 	}
 
@@ -507,8 +507,8 @@ field(struct decl *dcl)
 	sym->flags |= ISFIELD;
 	if (n++ == NR_FUNPARAM)
 		error("too much fields in struct/union");
-	structp->fields = xrealloc(structp->fields, n * sizeof(*sym));
-	structp->fields[n-1] = sym;
+	structp->p.fields = xrealloc(structp->p.fields, n * sizeof(*sym));
+	structp->p.fields[n-1] = sym;
 	structp->n.elem = n;
 
 	return sym;

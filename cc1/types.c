@@ -285,7 +285,7 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 	type.op = op;
 	type.printed = 0;
 	type.letter = letters[op];
-	type.pars = pars;
+	type.p.pars = pars;
 	type.n.elem = nelem;
 	type.ns = 0;
 
@@ -348,7 +348,7 @@ eqtype(Type *tp1, Type *tp2)
 	case FTN:
 		if (tp1->op != tp2->op || tp1->n.elem != tp2->n.elem)
 			return 0;
-		p1 = tp1->pars, p2 = tp2->pars;
+		p1 = tp1->p.pars, p2 = tp2->p.pars;
 		for (n = tp1->n.elem; n > 0; --n) {
 			if (!eqtype(*p1++, *p2++))
 				return 0;

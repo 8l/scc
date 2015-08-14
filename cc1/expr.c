@@ -750,7 +750,7 @@ arguments(Node *np)
 	}
 	if (tp->op != FTN)
 		error("function or function pointer expected");
-	targs = tp->pars;
+	targs = tp->p.pars;
 
 	expect('(');
 
