@@ -12,9 +12,9 @@ A2	I	x
 	A2	A2	#I0	=I	#I1	#I0	?I	:I
 	A2	A2	~I	:I
 	A2	A2	_I	:I
-	j	L0	A2	#I2	=I
+	j	L3	A2	#I2	=I
 	yI	#I1
-L0
+L3
 	yI	#I0
 }
 */

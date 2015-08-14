@@ -166,6 +166,7 @@ newsym(unsigned ns)
 		return sym;
 	if (ns == NS_LABEL) {
 		sym->next = labels;
+		sym->id = ++localcnt;
 		return labels = sym;
 	}
 
@@ -260,7 +261,7 @@ install(unsigned ns, Symbol *sym)
 	sym = linkhash(newsym(ns), sym->name);
 
 assign_id:
-	if (sym->ns != NS_CPP)
+	if (sym->ns != NS_CPP || sym->ns != NS_LABEL)
 		sym->id = (curctx) ? ++localcnt : ++globalcnt;
 
 	return sym;
