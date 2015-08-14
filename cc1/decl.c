@@ -58,6 +58,7 @@ push(struct declarators *dp, unsigned op, ...)
 		p->sym = va_arg(va, Symbol *);
 		break;
 	}
+	va_end(va);
 }
 
 static bool
