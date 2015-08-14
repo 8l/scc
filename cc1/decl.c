@@ -349,9 +349,6 @@ invalid_type:
 static struct node *
 initializer(Symbol *sym)
 {
-	if (!(sym->flags & ISEXTERN))
-		error("'%s' initialized and declared extern", sym->name);
-
 	if (accept('{')) {
 		initializer(sym);
 		expect('}');
