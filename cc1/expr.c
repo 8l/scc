@@ -567,7 +567,7 @@ exp2cond(Node *np, char neg)
 	np = decay(np);
 	if (isnodecmp(np->op))
 		return (neg) ? negate(np) : np;
-	return compare(ONE ^ neg, np, constnode(zero));
+	return compare((neg) ?  OEQ : ONE, np, constnode(zero));
 }
 
 static Node *
