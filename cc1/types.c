@@ -354,6 +354,7 @@ eqtype(Type *tp1, Type *tp2)
 				return 0;
 		}
 		return 1;
+	case VOID:
 	case ENUM:
 		return 0;
 	case INT:
