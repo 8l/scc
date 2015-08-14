@@ -272,8 +272,14 @@ decay(Node *np)
 {
 	Type *tp = np->type;
 
-	if (tp->op == ARY)
+	switch (tp->op) {
+	case ARY:
 		tp = tp->type;
+	case FTN:
+		break;
+	default:
+		return np;
+	}
 
 	return node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
 }
@@ -286,11 +292,7 @@ eval(Node *np)
 	if (!np)
 		return NULL;
 
-	switch (BTYPE(np)) {
-	case ARY:
-	case FTN:
-		np = decay(np);
-	}
+	np = decay(np);
 	if (!isnodecmp(np->op))
 		return np;
 	p = node(OCOLON, inttype, constnode(one), constnode(zero));
@@ -562,11 +564,7 @@ negate(Node *np)
 static Node *
 exp2cond(Node *np, char neg)
 {
-	switch (BTYPE(np)) {
-	case ARY:
-	case FTN:
-		np = decay(np);
-	}
+	np = decay(np);
 	if (isnodecmp(np->op))
 		return (neg) ? negate(np) : np;
 	return compare(ONE ^ neg, np, constnode(zero));
@@ -695,7 +693,6 @@ negation(char op, Node *np)
 	switch (BTYPE(np)) {
 	case FTN:
 	case ARY:
-		np = decay(np);
 	case INT:
 	case FLOAT:
 	case PTR:
