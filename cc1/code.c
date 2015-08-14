@@ -227,7 +227,7 @@ emittype(Type *tp)
 	Type **vp;
 	Symbol **sp;
 
-	if (tp->printed)
+	if (tp->printed || !tp->defined)
 		return;
 	tp->printed = 1;
 
