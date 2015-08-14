@@ -157,6 +157,7 @@ parameter(struct decl *dcl)
 			error("redefinition of parameter '%s'", name);
 	}
 	sym->type = tp;
+	sym->flags |= ISUSED;    /* avoid non used warnings in prototypes */
 
 	if (n++ == NR_FUNPARAM)
 		error("too much parameters in function definition");

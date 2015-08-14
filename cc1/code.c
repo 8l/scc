@@ -327,8 +327,11 @@ emitfun(unsigned op, void *arg)
 	puts("\t{");
 
 	n = sym->type->n.elem;
-	for (sp = sym->u.pars; n-- > 0; ++sp)
+	for (sp = sym->u.pars; n-- > 0; ++sp) {
+		/* enable non used warnings in parameters */
+		(*sp)->flags &= ~ISUSED;
 		emit(ODECL, *sp);
+	}
 	puts("-");
 }
 
