@@ -1,6 +1,6 @@
 /*
 name: TEST002
-description: Test forward references before definition of type definition
+description: Test forward references before definition of types
 output:
 S2	S
 G4	P	x
