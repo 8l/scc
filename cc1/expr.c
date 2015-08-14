@@ -267,9 +267,16 @@ chklvalue(Node *np, Type *tp)
 		error("invalid use of void expression");
 }
 
-/* TODO: put decay() call in a better place, because at this
-    moment we call dozens of calls in all the code */
-static Node *decay(Node *np);
+static Node *
+decay(Node *np)
+{
+	Type *tp = np->type;
+
+	if (tp->op == ARY)
+		tp = tp->type;
+
+	return node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
+}
 
 Node *
 eval(Node *np)
@@ -323,17 +330,6 @@ integeruop(char op, Node *np)
 	if (BTYPE(np) != INT)
 		error("unary operator requires integer operand");
 	return usimplify(op, np->type, np);
-}
-
-static Node *
-decay(Node *np)
-{
-	Type *tp = np->type;
-
-	if (tp->op == ARY)
-		tp = tp->type;
-
-	return node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
 }
 
 static Node *
@@ -449,8 +445,6 @@ parithmetic(char op, Node *lp, Node *rp)
 
 	tp = lp->type;
 	size = sizeofnode(tp->type);
-	if (BTYPE(rp) == ARY)
-		rp = decay(rp);
 
 	if (op == OSUB && BTYPE(rp) == PTR) {
 		if (tp != rp->type)
@@ -481,8 +475,6 @@ arithmetic(char op, Node *lp, Node *rp)
 		case FLOAT:
 			typeconv(&lp, &rp);
 			break;
-		case ARY:
-			rp = decay(rp);
 		case PTR:
 			if (op == OADD || op == OSUB)
 				return parithmetic(op, rp, lp);
@@ -490,8 +482,6 @@ arithmetic(char op, Node *lp, Node *rp)
 			goto incorrect;
 		}
 		break;
-	case ARY:
-		lp = decay(lp);
 	case PTR:
 		return parithmetic(op, lp, rp);
 	default:
@@ -534,18 +524,12 @@ compare(char op, Node *lp, Node *rp)
 		case FLOAT:
 			typeconv(&lp, &rp);
 			break;
-		case ARY:
-		case FTN:
-			rp = decay(rp);
 		case PTR:
 			return pcompare(op, rp, lp);
 		default:
 			goto nocompat;
 		}
 		break;
-	case ARY:
-	case FTN:
-		lp = decay(lp);
 	case PTR:
 		return pcompare(op, lp, rp);
 	default:
@@ -642,15 +626,12 @@ iszero(Node *np)
 static Node *
 assignop(char op, Node *lp, Node *rp)
 {
-	switch (BTYPE(rp)) {
-	case FTN:
-	case ARY:
-		rp = decay(rp);
-		/* PASSTHROUGH */
-	default:
-		if ((rp = convert(rp, lp->type, 0)) == NULL)
-			error("incompatible types when assigning");
-	}
+	lp = eval(lp);
+	rp = eval(rp);
+
+	if ((rp = convert(rp, lp->type, 0)) == NULL)
+		error("incompatible types when assigning");
+
 	return node(op, lp->type, lp, rp);
 }
 
@@ -692,7 +673,8 @@ static Node *
 content(char op, Node *np)
 {
 	switch (BTYPE(np)) {
-	case ARY: case FTN:
+	case ARY:
+	case FTN:
 		np = decay(np);
 	case PTR:
 		np = node(op, np->type->type, np, NULL);
@@ -1133,7 +1115,7 @@ assign(void)
 		}
 		chklvalue(np, np->type);
 		next();
-		np = (fun)(op, np, eval(assign()));
+		np = (fun)(op, np, assign());
 	}
 }
 
