@@ -2,14 +2,19 @@
 
 out=/tmp/$$.out
 chk=/tmp/$$.chk
+err=test.log
 
 trap "rm -f $out $chk" EXIT INT QUIT HUP
+rm -f $err
 
 for i in *.c
 do
 	awk '
 	BEGIN {
-		out="'$out'";chk="'$chk'"
+		out="'$out'"
+		chk="'$chk'"
+		err="'$err'"
+		test="'$i'"
 		system("rm -f " out " " chk)
 	}
 	/^name:/ {
@@ -25,7 +30,9 @@ do
 		print $0 >> chk
 	}
 	END {
-		system("../cc1 -w '$i' > " out " 2>&1")
-		print system("cmp -s " out " " chk) ? "[FAILED]" : "[OK]"
+		system("../cc1 -w " test " > " out " 2>&1")
+		cmd="diff -u " chk " " out " >> " err
+		print test >> err
+		print system(cmd) ? "[FAILED]" : "[OK]"
 	}' $i
 done
