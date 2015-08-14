@@ -725,11 +725,6 @@ primary(void)
 		np = varnode(yylval.sym);
 		next();
 		break;
-	case '(':
-		next();
-		np = expr();
-		expect(')');
-		break;
 	default:
 		unexpected();
 	}
