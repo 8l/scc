@@ -303,8 +303,8 @@ emitbin(unsigned op, void *arg)
 
 	emitnode(np->left);
 	emitnode(np->right);
-	if ((s = optxt[op]) != NULL)
-		printf("\t%s%c", s, np->type->letter);
+	printf("\t%s", optxt[op]);
+	emitletter(np->type);
 }
 
 static void
