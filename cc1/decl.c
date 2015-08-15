@@ -619,7 +619,7 @@ identifier(struct decl *dcl)
 	/* TODO: disallow initializators in functions */
 	/* TODO: check if typedef has initializer */
 	/* TODO: check if the variable is extern and has initializer */
-	if (sym->token == IDEN)
+	if (sym->token == IDEN && sym->type->op != FTN)
 		emit(ODECL, sym);
 	return sym;
 
@@ -684,7 +684,7 @@ decl(void)
 	 */
 	if (sym->type->op == FTN) {
 		if (curctx != GLOBALCTX+1)
-			goto remove_pars;
+			goto prototype;
 
 		switch (yytoken) {
 		case '{':
@@ -710,7 +710,8 @@ decl(void)
 			curfun = NULL;
 			return;
 		default:
-		remove_pars:
+		prototype:
+			emit(ODECL, sym);
 			free(sym->u.pars);
 			popctx();
 		}

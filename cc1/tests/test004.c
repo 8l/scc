@@ -3,7 +3,6 @@ name: TEST004
 description: Test integer operations
 output:
 F1
-X1	F1	main
 G1	F1	main	{
 -
 A2	I	x
