@@ -3,7 +3,8 @@ name: TEST005
 description: Test unary integer operations
 output:
 F1
-G1	F1	main	{
+G1	F1	main
+{
 -
 A2	I	x
 	A2	#I3	:I

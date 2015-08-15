@@ -4,7 +4,8 @@ description: Test forward references before definition of types
 output:
 G4	P	x
 F1
-G6	F1	main	{
+G6	F1	main
+{
 -
 S2	S	(
 M5	I	i

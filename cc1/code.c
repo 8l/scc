@@ -330,7 +330,7 @@ emitfun(unsigned op, void *arg)
 	int n;
 
 	emitdcl(op, arg);
-	puts("\t{");
+	puts("\n{");
 
 	n = sym->type->n.elem;
 	for (sp = sym->u.pars; n-- > 0; ++sp) {

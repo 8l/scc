@@ -2,12 +2,13 @@
 name: TEST006
 description: Basic test for if
 output:
-test006.c:41: warning: conditional expression is constant
-test006.c:43: warning: conditional expression is constant
-test006.c:46: warning: conditional expression is constant
+test006.c:42: warning: conditional expression is constant
+test006.c:44: warning: conditional expression is constant
+test006.c:47: warning: conditional expression is constant
 G1	M	c
 F1
-G2	F1	main	{
+G2	F1	main
+{
 -
 	j	L2	#I0
 	yI	#I1
