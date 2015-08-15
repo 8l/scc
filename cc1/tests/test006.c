@@ -2,9 +2,9 @@
 name: TEST006
 description: Basic test for if
 output:
-test006.c:42: warning: conditional expression is constant
-test006.c:44: warning: conditional expression is constant
-test006.c:47: warning: conditional expression is constant
+test006.c:6: warning: conditional expression is constant
+test006.c:8: warning: conditional expression is constant
+test006.c:11: warning: conditional expression is constant
 G1	M	c
 F1
 G2	F1	main
@@ -35,6 +35,8 @@ L3
 */
 
 char c;
+
+#line 1
 
 int
 main()
