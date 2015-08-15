@@ -232,7 +232,7 @@ enum tokens {
 };
 
 /* operations */
-enum {
+enum op {
 	OPTR,
 	OADD,
 	OMUL,
