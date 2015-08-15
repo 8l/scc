@@ -1161,7 +1161,7 @@ condition(void)
 	expect('(');
 	np = exp2cond(expr(), 0);
 	if (np->constant)
-		np = node(ONE, inttype, np, constnode(zero));
+		warn("conditional expression is constant");
 	expect(')');
 
 	return np;

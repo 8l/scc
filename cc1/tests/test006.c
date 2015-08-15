@@ -2,19 +2,22 @@
 name: TEST006
 description: Basic test for if
 output:
+test006.c:42: warning: conditional expression is constant
+test006.c:44: warning: conditional expression is constant
+test006.c:47: warning: conditional expression is constant
 G1	M	c
 F1
 X2	F1	main
 G2	F1	main	{
 -
-	j	L2	#I0	#I0	=I
+	j	L2	#I0
 	yI	#I1
 	j	L3
 L2
-	j	L4	#I0	#I0	=I
+	j	L4	#I0
 	j	L5
 L4
-	j	L6	#I1	#I0	=I
+	j	L6	#I1
 	j	L7	G1	MI	#I0	=I
 	yI	#I1
 	j	L8
@@ -52,4 +55,3 @@ main()
 	}
 	return 1;
 }
-
