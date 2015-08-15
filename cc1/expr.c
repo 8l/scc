@@ -562,7 +562,7 @@ negate(Node *np)
 	return np;
 }
 
-static Node *
+Node *
 exp2cond(Node *np, char neg)
 {
 	np = decay(np);

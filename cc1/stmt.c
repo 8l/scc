@@ -91,7 +91,7 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect('(');
 	einit = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	econd = (yytoken != ';') ? condition() : NULL;
+	econd = (yytoken != ';') ? exp2cond(expr(), 0) : NULL;
 	expect(';');
 	einc = (yytoken != ')') ? expr() : NULL;
 	expect(')');
