@@ -109,9 +109,10 @@ popctx(void)
 		localcnt = 0;
 		for (sym = labels; sym; sym = next) {
 			next = sym->next;
+			f = sym->flags;
 			if ((f & (ISUSED|ISDECLARED)) == ISDECLARED)
 				warn("'%s' defined but not used", sym->name);
-			if ((sym->flags & ISDECLARED) == 0)
+			if ((f & ISDECLARED) == 0)
 				printerr("label '%s' is not defined", sym->name);
 			free(sym->name);
 			free(sym);
@@ -121,16 +122,16 @@ popctx(void)
 
 	for (sym = head; sym && sym->ctx > curctx; sym = next) {
 		next = sym->next;
+		f = sym->flags;
 		if (sym->ns == NS_TAG)
 			sym->type->defined = 0;
 		if (sym->name) {
-			f = sym->flags;
 			unlinkhash(sym);
 			if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
 				warn("'%s' defined but not used", sym->name);
 		}
 		free(sym->name);
-		if (sym->flags & ISSTRING)
+		if (f & ISSTRING)
 			free(sym->u.s);
 		free(sym);
 	}
