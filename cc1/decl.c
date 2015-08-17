@@ -301,7 +301,8 @@ specifier(int *sclass)
 				break;
 			case LONG:
 				if (size == LONG) {
-					size = LLONG;
+					yylval.token = LLONG;
+					size = 0;
 					break;
 				}
 			case SHORT:

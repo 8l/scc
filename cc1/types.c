@@ -222,7 +222,6 @@ ctype(unsigned type, unsigned sign, unsigned size)
 			goto invalid_type;
 		return booltype;
 	case 0:
-		warn("type defaults to 'int' in declaration");
 		/* fallthrough */
 	case INT:
 		switch (size) {
