@@ -172,7 +172,7 @@ emitvar(Symbol *sym)
 		c = L_EXTERN;
 	else
 		c = L_AUTO;
-	printf("%c%d", c, sym->id);
+	printf("%c%u", c, sym->id);
 }
 
 static void
@@ -217,7 +217,7 @@ emitletter(Type *tp)
 	case FTN:
 	case STRUCT:
 	case UNION:
-		printf("%d", tp->id);
+		printf("%u", tp->id);
 	}
 }
 

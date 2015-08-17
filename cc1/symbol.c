@@ -12,8 +12,8 @@
 #define NR_SYM_HASH 64
 
 unsigned curctx;
-static short localcnt;
-static short globalcnt;
+static unsigned short localcnt;
+static unsigned short globalcnt;
 
 static Symbol *head, *labels;
 static Symbol *htab[NR_SYM_HASH];
@@ -138,13 +138,26 @@ popctx(void)
 	head = sym;
 }
 
+static unsigned short
+newid(void)
+{
+	unsigned id;
+
+	id = (curctx) ? ++localcnt : ++globalcnt;
+	if (id == 0) {
+		die("Overflow in %s identifiers",
+		    (curctx) ? "internal" : "external");
+	}
+	return id;
+}
+
 Type *
 duptype(Type *base)
 {
 	Type *tp = xmalloc(sizeof(*tp));
 
 	*tp = *base;
-	tp->id = (curctx) ? ++localcnt : ++globalcnt;
+	tp->id = newid();
 	return tp;
 }
 
@@ -167,7 +180,7 @@ newsym(unsigned ns)
 		return sym;
 	if (ns == NS_LABEL) {
 		sym->next = labels;
-		sym->id = ++localcnt;
+		sym->id = newid();
 		return labels = sym;
 	}
 
@@ -263,7 +276,7 @@ install(unsigned ns, Symbol *sym)
 
 assign_id:
 	if (sym->ns != NS_CPP || sym->ns != NS_LABEL)
-		sym->id = (curctx) ? ++localcnt : ++globalcnt;
+		sym->id = newid();
 
 	return sym;
 }

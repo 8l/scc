@@ -46,7 +46,7 @@ struct type {
 struct symbol {
 	char *name;
 	Type *type;
-	short id;
+	unsigned short id;
 	unsigned char ctx;
 	unsigned char ns;
 	unsigned char token;
