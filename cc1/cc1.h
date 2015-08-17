@@ -82,6 +82,9 @@ struct scase {
 struct caselist {
 	short nr;
 	Symbol *deflabel;
+	Symbol *ltable;
+	Symbol *lbreak;
+	Node *expr;
 	struct scase *head;
 };
 
@@ -282,6 +285,7 @@ enum op {
 	ORET,
 	ODECL,
 	OSWITCH,
+	OSWITCHT,
 	OAND,
 	OOR,
 	OEQ,

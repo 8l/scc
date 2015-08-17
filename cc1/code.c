@@ -7,7 +7,7 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-static void emitbin(unsigned, void *),
+static void emitbin(unsigned, void *), emitswitcht(unsigned, void *),
             emitcast(unsigned, void *), emitswitch(unsigned, void *),
             emitsym(unsigned, void *),
             emitexp(unsigned, void *),
@@ -55,7 +55,7 @@ char *optxt[] = {
 	[OCOMMA] = ",",
 	[OLABEL] = "L%d\n",
 	[ODEFAULT] = "\tf\tL%d\n",
-	[OCASE] = "\tw\tL%d",
+	[OCASE] = "\tv\tL%d",
 	[OJUMP] = "\tj\tL%d\n",
 	[OBRANCH] = "\tj\tL%d",
 	[OEFUN] = "}",
@@ -121,6 +121,7 @@ void (*opcode[])(unsigned, void *) = {
 	[ORET] = emitret,
 	[ODECL] = emitdcl,
 	[OSWITCH] = emitswitch,
+	[OSWITCHT] = emitswitcht,
 	[OPAR] = emitbin,
 	[OCALL] = emitbin
 };
@@ -368,7 +369,25 @@ emitswitch(unsigned op, void *arg)
 {
 	Caselist *lcase = arg;
 
-	printf("\teI\t#%0x", lcase->nr);
+	printf("\ts\tL%u", lcase->ltable->id);
+	emitexp(OEXPR, lcase->expr);
+}
+
+static void
+emitswitcht(unsigned op, void *arg)
+{
+	Caselist *lcase = arg;
+	struct scase *p, *next;
+
+	printf("\tt\t#%0x\n", lcase->nr);
+	for (p = lcase->head; p; p = next) {
+		emitsymid(OCASE, p->label);
+		emitexp(OEXPR, p->expr);
+		next = p->next;
+		free(p);
+	}
+	if (lcase->deflabel)
+		emitsymid(ODEFAULT, lcase->deflabel);
 }
 
 Node *
