@@ -301,14 +301,10 @@ blockit(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	extern jmp_buf recover;
-
 	pushctx();
 	expect('{');
 
 	for (;;) {
-		setsafe(END_COMP);
-		setjmp(recover);
 		if (yytoken == '}')
 			break;
 		blockit(lbreak, lcont, lswitch);
