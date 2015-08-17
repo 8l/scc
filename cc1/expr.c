@@ -364,7 +364,7 @@ constconv(Node *np, Type *newtp)
 		}
 		break;
 	case FLOAT:
-		aux.u.f = (oldtp->sign) ? sym->u.i : sym->u.u;
+		aux.u.f = (oldtp->sign) ? osym->u.i : osym->u.u;
 		break;
 	default:
 		return NULL;
