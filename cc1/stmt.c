@@ -20,18 +20,8 @@ label(void)
 	switch (yytoken) {
 	case IDEN:
 	case TYPEIDEN:
-		/*
-		 * We cannot call to insert() because the call to lookup in
-		 * lex.c was done in NS_IDEN namespace, and it is impossibe
-		 * to fix this point, because an identifier at the beginning
-		 * of a statement may be part of an expression or part of a
-		 * label. This double call to lookup() is going to generate
-		 * an undefined symbol that is not going to be used ever.
-		 */
-		sym = lookup(NS_LABEL);
-		if (sym->flags & ISDECLARED)
+		if ((sym = install(NS_LABEL, yylval.sym)) == NULL)
 			error("label '%s' already defined", yytoken);
-		sym->flags |= ISDECLARED;
 		emit(OLABEL, sym);
 		next();
 		expect(':');
