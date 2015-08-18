@@ -55,12 +55,12 @@ hash(const char *s)
 }
 
 static Symbol *
-linkhash(Symbol *sym, char *name)
+linkhash(Symbol *sym, char *name, unsigned hval)
 {
 	Symbol **h, *p, *prev;
 
 	sym->name = xstrdup(name);
-	h = &htab[hash(name)];
+	h = &htab[hval];
 
 	for (prev = p = *h; p; prev = p, p = p->hash) {
 		if (p->ctx <= sym->ctx)
@@ -204,10 +204,11 @@ Symbol *
 lookup(unsigned ns)
 {
 	Symbol *sym, **h;
-	unsigned sns;
+	unsigned sns, v;
 	char *t, c;
 
-	h = &htab[hash(yytext)];
+	v = hash(yytext);
+	h = &htab[v];
 	c = *yytext;
 	for (sym = *h; sym; sym = sym->hash) {
 		t = sym->name;
@@ -220,7 +221,7 @@ lookup(unsigned ns)
 			continue;
 		return sym;
 	}
-	sym = linkhash(newsym(ns), yytext);
+	sym = linkhash(newsym(ns), yytext, v);
 	sym->flags &= ~ISDECLARED;
 
 	return sym;
@@ -254,7 +255,7 @@ nextsym(Symbol *sym, unsigned ns)
 		if (c == *t && !strcmp(s, t))
 			return sym;
 	}
-	new = linkhash(newsym(ns), s);
+	new = linkhash(newsym(ns), s, hash(s));
 	new->flags &= ~ISDECLARED;
 	return new;
 }
@@ -272,7 +273,7 @@ install(unsigned ns, Symbol *sym)
 			goto assign_id;
 		}
 	}
-	sym = linkhash(newsym(ns), sym->name);
+	sym = linkhash(newsym(ns), sym->name, hash(sym->name));
 
 assign_id:
 	if (sym->ns != NS_CPP || sym->ns != NS_LABEL)
