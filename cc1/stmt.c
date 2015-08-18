@@ -189,14 +189,13 @@ static void
 Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Caselist lcase = {.nr = 0, .head = NULL, .deflabel = NULL};
-	struct scase *p, *next;
 	Node *cond;
-	Symbol *lcond;
-	void free(void *ptr);
 
 	expect(SWITCH);
 	expect ('(');
-	cond = expr();
+	cond = eval(expr());
+	/* TODO: why can I not call directly to convert here? */
+
 	switch (BTYPE(cond)) {
 	case INT:
 	case ENUM:
@@ -207,22 +206,16 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	}
 	expect (')');
 
-	lbreak = newsym(NS_LABEL);
-	lcond = newsym(NS_LABEL);
-	emit(OJUMP, lcond);
-	stmt(lbreak, lcont, &lcase);
-	emit(OLABEL, lcond);
+	lcase.expr = cond;
+	lcase.lbreak = newsym(NS_LABEL);
+	lcase.ltable = newsym(NS_LABEL);
+
 	emit(OSWITCH, &lcase);
-	emit(OEXPR, cond);
-	for (p = lcase.head; p; p = next) {
-		emit(OCASE, p->label);
-		emit(OEXPR, p->expr);
-		next = p->next;
-		free(p);
-	}
-	if (lcase.deflabel)
-		emit(ODEFAULT, lcase.deflabel);
-	emit(OLABEL, lbreak);
+	stmt(lbreak, lcont, &lcase);
+	emit(OJUMP, lcase.lbreak);
+	emit(OLABEL, lcase.ltable);
+	emit(OSWITCHT, &lcase);
+	emit(OLABEL, lcase.lbreak);
 }
 
 static void
@@ -243,6 +236,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	emit(OLABEL, pcase->label = newsym(NS_LABEL));
 	lswitch->head = pcase;
 	++lswitch->nr;
+	stmt(lbreak, lcont, lswitch);
 }
 
 static void
@@ -254,6 +248,8 @@ Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(':');
 	emit(OLABEL, ldefault);
 	lswitch->deflabel = ldefault;
+	++lswitch->nr;
+	stmt(lbreak, lcont, lswitch);
 }
 
 static void

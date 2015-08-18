@@ -23,7 +23,7 @@ do
 	/^output:$/ {
 		copyon=1
 	}
-	/^\*/  {
+	/^\*\//  {
 		copyon=0
 	}
 	copyon==1 && !/^output:$/  {
