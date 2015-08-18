@@ -159,9 +159,9 @@ parameter(struct decl *dcl)
 	sym->type = tp;
 	sym->flags |= ISUSED;    /* avoid non used warnings in prototypes */
 
-	if (n++ == NR_FUNPARAM)
+	if (n == NR_FUNPARAM)
 		error("too much parameters in function definition");
-	funtp->p.pars = xrealloc(funtp->p.pars, n * sizeof(Type *));
+	funtp->p.pars = xrealloc(funtp->p.pars, ++n * sizeof(Type *));
 	funtp->p.pars[n-1] = tp;
 	funtp->n.elem = n;
 
@@ -441,7 +441,7 @@ enumdcl(void)
 {
 	Type *tp;
 	Symbol *sym, *tagsym;
-	int val;
+	int val, nctes;
 
 	tagsym = newtag();
 	tp = tagsym->type;
@@ -451,13 +451,15 @@ enumdcl(void)
 	if (tp->defined)
 		error("redefinition of enumeration '%s'", tagsym->name);
 	tp->defined = 1;
-	for (val = 0; yytoken != ')'; ++val) {
+	for (nctes = val = 0; yytoken != ')'; ++nctes, ++val) {
 		if (yytoken != IDEN)
 			unexpected();
 		if ((sym = install(NS_IDEN, yylval.sym)) == NULL) {
 			error("'%s' redeclared as different kind of symbol",
 			      yytext);
 		}
+		if (nctes == NR_ENUM_CTES)
+			error("too much enum constants in a single enum");
 		next();
 		sym->flags |= ISCONSTANT;
 		sym->type = inttype;
@@ -517,9 +519,9 @@ field(struct decl *dcl)
 	sym->type = tp;
 
 	sym->flags |= ISFIELD;
-	if (n++ == NR_FUNPARAM)
+	if (n == NR_FIELDS)
 		error("too much fields in struct/union");
-	structp->p.fields = xrealloc(structp->p.fields, n * sizeof(*sym));
+	structp->p.fields = xrealloc(structp->p.fields, ++n * sizeof(*sym));
 	structp->p.fields[n-1] = sym;
 	structp->n.elem = n;
 

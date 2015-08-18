@@ -226,7 +226,8 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	pcase->next = lswitch->head;
 	emit(OLABEL, pcase->label = newsym(NS_LABEL));
 	lswitch->head = pcase;
-	++lswitch->nr;
+	if (++lswitch->nr == NR_SWITCH)
+		error("too case labels for a switch statement");
 	stmt(lbreak, lcont, lswitch);
 }
 
