@@ -613,7 +613,7 @@ array(Node *lp, Node *rp)
 	lp = arithmetic(OADD, lp, rp);
 	tp = lp->type;
 	if (tp->op != PTR)
-		error("subscripted value is neither array nor pointer nor vector");
+		error("subscripted value is neither array nor pointer");
 	lp =  node(OPTR, tp->type, lp, NULL);
 	lp->lvalue = 1;
 	return lp;
