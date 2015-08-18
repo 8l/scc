@@ -311,13 +311,14 @@ extern Type *duptype(Type *base);
 
 /* symbol.c */
 extern void dumpstab(char *msg);
-extern Symbol *lookup(unsigned ns);
+extern Symbol *lookup(unsigned ns, char *name);
 extern Symbol *nextsym(Symbol *sym, unsigned ns);
 extern Symbol *install(unsigned ns, Symbol *sym);
 extern Symbol *newsym(unsigned ns);
 extern void pushctx(void), popctx(void);
 extern void ikeywords(void);
 extern void delmacro(Symbol *sym);
+extern Symbol *newlabel(void);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);

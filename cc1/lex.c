@@ -378,7 +378,7 @@ iden(void)
 		/* nothing */;
 	input->p = p;
 	tok2str();
-	sym = lookup(lex_ns);
+	sym = lookup(lex_ns, yytext);
 	if (sym->ns == NS_CPP) {
 		if (!disexpand && expand(begin, sym))
 			return next();

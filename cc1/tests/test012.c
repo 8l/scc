@@ -2,6 +2,7 @@
 name: TEST012
 description: Basic switch test
 output:
+test012.c:39: warning: 'foo' defined but not used
 F1
 G1	F1	main
 {
@@ -70,7 +71,7 @@ L21
 }
 */
 
-
+#line 1
 
 int
 main()

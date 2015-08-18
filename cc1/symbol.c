@@ -110,9 +110,9 @@ popctx(void)
 		for (sym = labels; sym; sym = next) {
 			next = sym->next;
 			f = sym->flags;
-			if ((f & (ISUSED|ISDECLARED)) == ISDECLARED)
+			if ((f & (ISUSED|ISDEFINED)) == ISDEFINED)
 				warn("'%s' defined but not used", sym->name);
-			if ((f & ISDECLARED) == 0)
+			if ((f & ISDEFINED) == 0)
 				printerr("label '%s' is not defined", sym->name);
 			free(sym->name);
 			free(sym);
@@ -171,7 +171,7 @@ newsym(unsigned ns)
 	sym->ns = ns;
 	sym->ctx = (ns == NS_CPP) ? UCHAR_MAX : curctx;
 	sym->token = IDEN;
-	sym->flags = ISDECLARED;
+	sym->flags = ISDECLARED | ISUSED;
 	sym->u.s = sym->name = NULL;
 	sym->type = NULL;
 	sym->next = sym->hash = NULL;
@@ -180,7 +180,6 @@ newsym(unsigned ns)
 		return sym;
 	if (ns == NS_LABEL) {
 		sym->next = labels;
-		sym->id = newid();
 		return labels = sym;
 	}
 
@@ -201,18 +200,27 @@ newsym(unsigned ns)
 }
 
 Symbol *
-lookup(unsigned ns)
+newlabel(void)
+{
+	Symbol *sym = newsym(NS_LABEL);
+	sym->id = newid();
+	sym->flags |= ISDEFINED;
+	return sym;
+}
+
+Symbol *
+lookup(unsigned ns, char *name)
 {
 	Symbol *sym, **h;
 	unsigned sns, v;
 	char *t, c;
 
-	v = hash(yytext);
+	v = hash(name);
 	h = &htab[v];
-	c = *yytext;
+	c = *name;
 	for (sym = *h; sym; sym = sym->hash) {
 		t = sym->name;
-		if (*t != c || strcmp(t, yytext))
+		if (*t != c || strcmp(t, name))
 			continue;
 		sns = sym->ns;
 		if (sns == NS_KEYWORD || sns == NS_CPP)
@@ -221,8 +229,8 @@ lookup(unsigned ns)
 			continue;
 		return sym;
 	}
-	sym = linkhash(newsym(ns), yytext, v);
-	sym->flags &= ~ISDECLARED;
+	sym = linkhash(newsym(ns), name, v);
+	sym->flags &= ~(ISDECLARED | ISUSED);
 
 	return sym;
 }
@@ -263,21 +271,19 @@ nextsym(Symbol *sym, unsigned ns)
 Symbol *
 install(unsigned ns, Symbol *sym)
 {
-	if (sym->ctx == curctx) {
-		if (sym->flags & ISDECLARED) {
-			if (ns == sym->ns)
-				return NULL;
-		} else {
-			sym->flags |= ISDECLARED;
-			sym->ns = ns;
-			goto assign_id;
-		}
+	if (sym->ctx == curctx && ns == sym->ns) {
+		if (sym->flags & ISDECLARED)
+			return NULL;
+	} else {
+		sym = lookup(ns, sym->name);
+		if (sym->flags & ISDECLARED)
+			return sym;
 	}
-	sym = linkhash(newsym(ns), sym->name, hash(sym->name));
 
-assign_id:
-	if (sym->ns != NS_CPP || sym->ns != NS_LABEL)
-		sym->id = newid();
+	sym->flags |= ISDECLARED;
+	if (ns == NS_CPP)
+		return sym;
+	sym->id = newid();
 
 	return sym;
 }
@@ -348,8 +354,7 @@ ikeywords(void)
 
 	for (lp = list; *lp; ++lp) {
 		for (bp = *lp; bp->str; ++bp) {
-			strcpy(yytext, bp->str);
-			sym = lookup(ns);
+			sym = lookup(ns, bp->str);
 			sym->token = bp->token;
 			sym->u.token = bp->value;
 		}

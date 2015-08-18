@@ -22,6 +22,7 @@ label(void)
 	case TYPEIDEN:
 		if ((sym = install(NS_LABEL, yylval.sym)) == NULL)
 			error("label '%s' already defined", yytoken);
+		sym->flags |= ISDEFINED;
 		emit(OLABEL, sym);
 		next();
 		expect(':');
@@ -51,9 +52,9 @@ While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *np;
 
-	begin = newsym(NS_LABEL);
-	end = newsym(NS_LABEL);
-	cond = newsym(NS_LABEL);
+	begin = newlabel();
+	end = newlabel();
+	cond = newlabel();
 
 	expect(WHILE);
 	np = condition();
@@ -74,9 +75,9 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *cond, *end;
 	Node *econd, *einc, *einit;
 
-	begin = newsym(NS_LABEL);
-	end = newsym(NS_LABEL);
-	cond = newsym(NS_LABEL);
+	begin = newlabel();
+	end = newlabel();
+	cond = newlabel();
 
 	expect(FOR);
 	expect('(');
@@ -106,8 +107,8 @@ Dowhile(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *begin, *end;
 	Node *np;
 
-	begin = newsym(NS_LABEL);
-	end = newsym(NS_LABEL);
+	begin = newlabel();
+	end = newlabel();
 	expect(DO);
 	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
@@ -166,12 +167,17 @@ Continue(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
+	Symbol *sym;
+
 	setnamespace(NS_LABEL);
 	next();
 	if (yytoken != IDEN)
 		unexpected();
-	yylval.sym->flags |= ISUSED;
-	emit(OJUMP, yylval.sym);
+	sym = yylval.sym;
+	if ((sym->flags & ISDECLARED) == 0)
+		sym = install(NS_LABEL, sym);
+	sym->flags |= ISUSED;
+	emit(OJUMP, sym);
 	next();
 	expect(';');
 }
@@ -198,8 +204,8 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect (')');
 
 	lcase.expr = cond;
-	lcase.lbreak = newsym(NS_LABEL);
-	lcase.ltable = newsym(NS_LABEL);
+	lcase.lbreak = newlabel();
+	lcase.ltable = newlabel();
 
 	emit(OSWITCH, &lcase);
 	stmt(lbreak, lcont, &lcase);
@@ -224,7 +230,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	pcase = xmalloc(sizeof(*pcase));
 	pcase->expr = np;
 	pcase->next = lswitch->head;
-	emit(OLABEL, pcase->label = newsym(NS_LABEL));
+	emit(OLABEL, pcase->label = newlabel());
 	lswitch->head = pcase;
 	if (++lswitch->nr == NR_SWITCH)
 		error("too case labels for a switch statement");
@@ -234,7 +240,7 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 static void
 Default(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
-	Symbol *ldefault = newsym(NS_LABEL);
+	Symbol *ldefault = newlabel();
 
 	expect(DEFAULT);
 	expect(':');
@@ -250,14 +256,14 @@ If(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Symbol *end, *lelse;
 	Node *np;
 
-	lelse = newsym(NS_LABEL);
+	lelse = newlabel();
 	expect(IF);
 	np = condition();
 	emit(OBRANCH, lelse);
 	emit(OEXPR, negate(np));
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
-		end = newsym(NS_LABEL);
+		end = newlabel();
 		emit(OJUMP, end);
 		emit(OLABEL, lelse);
 		stmt(lbreak, lcont, lswitch);
