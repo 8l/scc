@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "../inc/cc.h"
+#include "../inc/sizes.h"
 #include "cc1.h"
 
 Symbol *curfun;
@@ -297,14 +298,21 @@ blockit(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 void
 compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
+	static int nested;
+
 	pushctx();
 	expect('{');
 
+	if (nested == NR_BLOCK)
+		error("too nesting levels of compound statements");
+
+	++nested;
 	for (;;) {
 		if (yytoken == '}')
 			break;
 		blockit(lbreak, lcont, lswitch);
 	}
+	--nested;
 
 	popctx();
 	/*

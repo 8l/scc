@@ -207,9 +207,14 @@ static void
 directdcl(struct declarators *dp, unsigned ns)
 {
 	Symbol *sym;
+	static int nested;
 
 	if (accept('(')) {
+		if (nested == NR_SUBTYPE)
+			error("too declarators nested by parentheses");
+		++nested;
 		declarator(dp, ns);
+		--nested;
 		expect(')');
 	} else {
 		if (yytoken == IDEN || yytoken == TYPEIDEN) {
@@ -409,6 +414,7 @@ structdcl(void)
 {
 	Symbol *sym;
 	Type *tp;
+	static int nested;
 
 	sym = newtag();
 	tp = sym->type;
@@ -419,8 +425,14 @@ structdcl(void)
 		error("redefinition of struct/union '%s'", sym->name);
 	tp->defined = 1;
 
+	if (nested == NR_STRUCT_LEVEL)
+		error("too levels of nested structure or union definitions");
+
+	++nested;
 	while (!accept('}'))
 		fieldlist(tp);
+	--nested;
+
 	return tp;
 }
 

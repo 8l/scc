@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "../inc/cc.h"
+#include "../inc/sizes.h"
 #include "cc1.h"
 
 
@@ -870,6 +871,7 @@ cast(void)
 {
 	Node *lp, *rp;
 	Type *tp;
+	static int nested;
 
 	if (!accept('('))
 		return unary();
@@ -893,6 +895,8 @@ cast(void)
 		}
 		break;
 	default:
+		if (nested == NR_SUBEXPR)
+			error("too expressions nested by parentheses");
 		rp = expr();
 		expect(')');
 		rp = postfix(rp);
