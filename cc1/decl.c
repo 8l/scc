@@ -128,7 +128,8 @@ parameter(struct decl *dcl)
 	case STATIC:
 	case EXTERN:
 	case AUTO:
-		error("bad storage class in function parameter");
+		errorp("bad storage class in function parameter");
+		break;
 	case REGISTER:
 		sym->flags |= ISREGISTER;
 		break;
@@ -266,7 +267,7 @@ specifier(int *sclass)
 			break;
 		case TQUALIFIER:
 			if (qlf && qlf != RESTRICT)
-				goto invalid_type;
+				errorp("invalid type specification");
 			qlf |= yylval.token;
 			next();
 			continue;
@@ -314,11 +315,11 @@ specifier(int *sclass)
 			goto return_type;
 		}
 		if (*p)
-			goto invalid_type;
+			errorp("invalid type specification");
 		*p = yylval.token;
 		if (dcl) {
 			if (size || sign)
-				goto invalid_type;
+				errorp("invalid type specification");
 			tp = (*dcl)();
 			goto return_type;
 		} else {
@@ -341,9 +342,6 @@ return_type:
 		}
 	}
 	return tp;
-
-invalid_type:
-	error("invalid type specification");
 }
 
 /* TODO: check correctness of the initializator  */
@@ -514,6 +512,14 @@ field(struct decl *dcl)
 	return sym;
 }
 
+static void
+bad_storage(Type *tp, char *name)
+{
+	if (tp->op != FTN)
+		errorp("incorrect storage class for file-scope declaration");
+	errorp("invalid storage class for function '%s'", name);
+}
+
 static Symbol *
 identifier(struct decl *dcl)
 {
@@ -557,7 +563,6 @@ identifier(struct decl *dcl)
 
 	if (sym == NULL) {
 		sym = dcl->sym;
-		flags = sym->flags;
 		if (!eqtype(sym->type, tp))
 			error("conflicting types for '%s'", name);
 		if (sym->token == TYPEIDEN && sclass != TYPEDEF ||
@@ -568,32 +573,49 @@ identifier(struct decl *dcl)
 			if (!(sym->flags & ISEXTERN) || sclass != EXTERN)
 				goto redeclaration;
 		} else {
+			sym->u.pars = dcl->pars;
+			flags = sym->flags;
+
 			switch (sclass) {
 			case REGISTER:
 			case AUTO:
-				goto bad_storage;
+				bad_storage(tp, name);
+				break;
 			case NOSCLASS:
-				if (flags & ISPRIVATE)
-					goto non_after_static;
-				flags &= ~ISEXTERN;
-				flags |= ISGLOBAL;
+				if ((flags & ISPRIVATE) == 0) {
+					flags &= ~ISEXTERN;
+					flags |= ISGLOBAL;
+					break;
+				}
+				errorp("non-static declaration of '%s' follows static declaration",
+				       name);
+				break;
 			case TYPEDEF:
 			case EXTERN:
 				break;
 			case STATIC:
-				if (flags & (ISGLOBAL|ISEXTERN))
-					goto static_after_non;
-				flags |= ISPRIVATE;
+				if ((flags & (ISGLOBAL|ISEXTERN)) == 0) {
+					flags |= ISPRIVATE;
+					break;
+				}
+				errorp("static declaration of '%s' follows non-static declaration",
+				       name);
 				break;
 			}
 		}
+		sym->flags = flags;
 	} else {
+		sym->type = tp;
+		sym->u.pars = dcl->pars;
 		flags = sym->flags;
+
 		switch (sclass) {
 		case REGISTER:
 		case AUTO:
-			if (curctx == GLOBALCTX || tp->op == FTN)
-				goto bad_storage;
+			if (curctx == GLOBALCTX || tp->op == FTN) {
+				bad_storage(tp, name);
+				break;
+			}
 			flags |= (sclass == REGISTER) ? ISREGISTER : ISAUTO;
 			break;
 		case NOSCLASS:
@@ -609,11 +631,8 @@ identifier(struct decl *dcl)
 			sym->token = TYPEIDEN;
 			break;
 		}
+		sym->flags = flags;
 	}
-
-	sym->u.pars = dcl->pars;
-	sym->flags = flags;
-	sym->type = tp;
 
 	if (accept('='))
 		initializer(sym);
@@ -625,21 +644,8 @@ identifier(struct decl *dcl)
 	return sym;
 
 redeclaration:
-	error("redeclaration of '%s'", name);
-
-bad_storage:
-	if (tp->op != FTN)
-		error("incorrect storage class for file-scope declaration");
-bad_function:
-	error("invalid storage class for function '%s'", name);
-
-non_after_static:
-	error("non-static declaration of '%s' follows static declaration",
-	      name);
-
-static_after_non:
-	error("static declaration of '%s' follows non-static declaration",
-	      name);
+	errorp("redeclaration of '%s'", name);
+	return sym;
 }
 
 static Symbol *
@@ -714,6 +720,7 @@ decl(void)
 		prototype:
 			emit(ODECL, sym);
 			free(sym->u.pars);
+			sym->u.pars = NULL;
 			popctx();
 		}
 	}
