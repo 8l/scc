@@ -628,7 +628,7 @@ cpp(void)
 	popctx();               /* the symbols freed at the  end        */
 
 	if (yytoken != EOFTOK && !cppoff)
-		printerr("trailing characters after preprocessor directive");
+		errorp("trailing characters after preprocessor directive");
 	disexpand = 0;
 	lexmode = CCMODE;
 

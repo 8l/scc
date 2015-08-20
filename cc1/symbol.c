@@ -113,7 +113,7 @@ popctx(void)
 			if ((f & (ISUSED|ISDECLARED)) == ISDECLARED)
 				warn("'%s' defined but not used", sym->name);
 			if ((f & ISDECLARED) == 0)
-				printerr("label '%s' is not defined", sym->name);
+				errorp("label '%s' is not defined", sym->name);
 			free(sym->name);
 			free(sym);
 		}

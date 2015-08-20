@@ -56,7 +56,7 @@ error(char *fmt, ...)
 }
 
 void
-printerr(char *fmt, ...)
+errorp(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
