@@ -285,7 +285,7 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 
 	for (;;) {
 		ispar = 0;
-		if (yytoken == IDEN) {
+		if (yytoken == IDEN && nargs >= 0) {
 			for (argp = args; argp < &args[nargs]; ++argp) {
 				if (*argp == yylval.sym)
 					break;
