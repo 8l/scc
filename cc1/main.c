@@ -13,6 +13,7 @@ int warnings;
 jmp_buf recover;
 
 static char *output;
+static int onlycpp;
 
 static void
 clean(void)
@@ -46,6 +47,9 @@ main(int argc, char *argv[])
 			case 'w':
 				warnings = 1;
 				break;
+			case 'E':
+				onlycpp = 1;
+				break;
 			case 'o':
 				if (!*++argv || argv[0][0] == '-')
 					usage();
@@ -67,8 +71,13 @@ main(int argc, char *argv[])
 	ikeywords();
 	ilex(*argv);
 
-	for (next(); yytoken != EOFTOK; decl())
-		/* nothing */;
+	if (onlycpp) {
+		for (next(); yytoken != EOFTOK; next())
+			printf("%s ", yytext);
+	} else {
+		for (next(); yytoken != EOFTOK; decl())
+			/* nothing */;
+	}
 
 	return 0;
 }
