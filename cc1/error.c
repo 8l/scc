@@ -24,6 +24,10 @@ warn_error(int flag, char *fmt, va_list va)
 	putc('\n', stderr);
 
 	if (flag < 0) {
+		if (!failure) {
+			failure = 1;
+			puts("????");
+		}
 		failure = 1;
 		if (nerrors++ == MAXERRNUM) {
 			fputs("too many errors\n", stderr);
@@ -56,7 +60,7 @@ error(char *fmt, ...)
 }
 
 void
-printerr(char *fmt, ...)
+errorp(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);

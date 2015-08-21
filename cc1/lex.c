@@ -550,9 +550,9 @@ expect(unsigned tok)
 {
 	if (yytoken != tok) {
 		if (isgraph(tok))
-			printerr("expected '%c' before '%s'", tok, yytext);
+			errorp("expected '%c' before '%s'", tok, yytext);
 		else
-			printerr("unexpected '%s'", yytext);
+			errorp("unexpected '%s'", yytext);
 	} else {
 		next();
 	}

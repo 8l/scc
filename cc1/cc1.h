@@ -300,7 +300,7 @@ enum op {
 extern void error(char *fmt, ...);
 extern void warn(char *fmt, ...);
 extern void unexpected(void);
-extern void printerr(char *fmt, ...);
+extern void errorp(char *fmt, ...);
 extern void cpperror(char *fmt, ...);
 
 /* types.c */
