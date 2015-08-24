@@ -18,12 +18,12 @@ Types are represented using upper case letters:
 * C -- char
 * I -- int
 * W -- long
-* Q -- long long
+* O -- long long
 * M -- unsigned char
 * N -- unsigned int
 * Z -- unsigned long
 * Q -- unsigned long long
-* O -- void
+* 0 -- void
 * P -- pointer
 * F -- function
 * V -- vector
@@ -31,8 +31,8 @@ Types are represented using upper case letters:
 * S -- struct
 * B -- bool
 * J -- float
-* D -- Double
-* H -- double
+* D -- double
+* H -- long double
 
 This list is built for the original Z80 backend, where 'int'
 had the same size than 'short'. Several types need an identifier
@@ -325,12 +325,12 @@ switch.
 * C -- char
 * I -- int
 * W -- long
-* Q -- long long
+* O -- long long
 * M -- unsigned char
 * N -- unsigned int
 * Z -- unsigned long
 * Q -- unsigned long long
-* O -- void
+* 0 -- void
 * P -- pointer
 * F -- function
 * V -- vector
@@ -338,8 +338,8 @@ switch.
 * S -- struct
 * B -- bool
 * J -- float
-* D -- Double
-* H -- double
+* D -- double
+* H -- long double
 * A -- automatic
 * R -- register
 * G -- public (global variable declared in the module)
