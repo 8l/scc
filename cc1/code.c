@@ -253,7 +253,7 @@ emittype(Type *tp)
 		emitletter(tp);
 		if ((tag = tp->tag->name) != NULL)
 			printf("\t%s", tag);
-		puts("\t(");
+		puts("\n(");
 		n = tp->n.elem;
 		for (sp = tp->p.fields; n-- > 0; ++sp)
 			emit(ODECL, *sp);

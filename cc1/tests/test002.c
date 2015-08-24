@@ -7,7 +7,8 @@ F1
 G6	F1	main
 {
 -
-S2	S	(
+S2	S
+(
 M5	I	i
 )
 A2	S2	y
