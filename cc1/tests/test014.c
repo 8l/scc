@@ -2,21 +2,21 @@
 name: TEST014
 description: Basic storage class test
 output:
-test014.c:22: warning: 'a' defined but not used
-test014.c:22: warning: 'k' defined but not used
-test014.c:22: warning: 'j' defined but not used
-test014.c:22: warning: 'i' defined but not used
-test014.c:22: warning: 'h' defined but not used
-test014.c:28: warning: 'par' defined but not used
-test014.c:28: warning: 'par' defined but not used
-test014.c:33: warning: 'par' defined but not used
-test014.c:35: error: incorrect storage class for file-scope declaration
-test014.c:35: error: invalid storage class for function 'd'
-test014.c:38: error: bad storage class in function parameter
-test014.c:39: error: invalid storage class for function 'func4'
-test014.c:40: error: invalid type specification
-test014.c:41: warning: 'f' defined but not used
-test014.c:44: error: conflicting types for 'd'
+test014.c:16: warning: 'a' defined but not used
+test014.c:16: warning: 'k' defined but not used
+test014.c:16: warning: 'j' defined but not used
+test014.c:16: warning: 'i' defined but not used
+test014.c:16: warning: 'h' defined but not used
+test014.c:22: warning: 'par' defined but not used
+test014.c:22: warning: 'par' defined but not used
+test014.c:27: warning: 'par' defined but not used
+test014.c:29: error: incorrect storage class for file-scope declaration
+test014.c:29: error: invalid storage class for function 'd'
+test014.c:32: error: bad storage class in function parameter
+test014.c:33: error: invalid storage class for function 'func4'
+test014.c:34: error: invalid type specification
+test014.c:35: warning: 'f' defined but not used
+test014.c:38: error: conflicting types for 'd'
 G1	I	a
 Y2	M	b
 X3	I	c
@@ -46,6 +46,7 @@ R1	I	par
 ????
 */
 
+#line 1
 int a;
 static char b;
 extern int c;

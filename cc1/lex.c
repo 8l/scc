@@ -18,7 +18,7 @@ unsigned short yylen;
 int cppoff;
 int lexmode = CCMODE;
 
-static unsigned lex_ns = NS_IDEN, saved_ns;
+int namespace = NS_IDEN;
 static int safe, eof;
 Input *input;
 
@@ -378,7 +378,7 @@ iden(void)
 		/* nothing */;
 	input->p = p;
 	tok2str();
-	sym = lookup(lex_ns, yytext);
+	sym = lookup(namespace, yytext);
 	if (sym->ns == NS_CPP) {
 		if (!disexpand && expand(begin, sym))
 			return next();
@@ -386,7 +386,7 @@ iden(void)
 		 * it is not a correct macro call, so try to find
 		 * another definition.
 		 */
-		sym = nextsym(sym, lex_ns);
+		sym = nextsym(sym, namespace);
 	}
 	yylval.sym = sym;
 	if (sym->flags & ISCONSTANT)
@@ -488,13 +488,7 @@ operator(void)
 	return t;
 }
 
-/* TODO: Ensure that lex_ns is NS_IDEN after a recovery */
-void
-setnamespace(int ns)
-{
-	saved_ns = (ns == NS_CPPCLAUSES) ? lex_ns : 0;
-	lex_ns = ns;
-}
+/* TODO: Ensure that namespace is NS_IDEN after a recovery */
 
 static void
 skipspaces(void)
@@ -518,8 +512,6 @@ next(void)
 	skipspaces();
 	c = *input->begin;
 	if ((eof || lexmode == CPPMODE) && c == '\0') {
-		if (lexmode == CPPMODE)
-			lex_ns = saved_ns;
 		strcpy(yytext, "<EOF>");
 		if (cppctx && eof)
 			error("#endif expected");
@@ -540,8 +532,6 @@ next(void)
 
 exit:
 	DBG(stderr, "TOKEN %s\n", yytext);
-	if (lexmode == CCMODE)
-		lex_ns = NS_IDEN;
 	return yytoken;
 }
 

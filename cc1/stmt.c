@@ -20,8 +20,11 @@ label(void)
 	switch (yytoken) {
 	case IDEN:
 	case TYPEIDEN:
-		if ((sym = install(NS_LABEL, yylval.sym)) == NULL)
+		sym = lookup(NS_LABEL, yytext);
+		if (sym->flags & ISDEFINED)
 			error("label '%s' already defined", yytoken);
+		if ((sym->flags & ISDECLARED) == 0)
+			sym = install(NS_LABEL, sym);
 		sym->flags |= ISDEFINED;
 		emit(OLABEL, sym);
 		next();
@@ -169,8 +172,10 @@ Goto(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	Symbol *sym;
 
-	setnamespace(NS_LABEL);
+	namespace = NS_LABEL;
 	next();
+	namespace = NS_IDEN;
+
 	if (yytoken != IDEN)
 		unexpected();
 	sym = yylval.sym;

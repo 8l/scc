@@ -22,7 +22,7 @@ typedef struct input Input;
  */
 struct type {
 	unsigned char op;           /* type builder operator */
-	unsigned char ns;           /* namespace for struct members */
+	char ns;                    /* namespace for struct members */
 	short id;                   /* type id, used in dcls */
 	char letter;                /* letter of the type */
 	bool defined : 1;           /* type defined */
@@ -48,7 +48,7 @@ struct symbol {
 	Type *type;
 	unsigned short id;
 	unsigned char ctx;
-	unsigned char ns;
+	char ns;
 	unsigned char token;
 	short flags;
 	union {
@@ -311,10 +311,10 @@ extern Type *duptype(Type *base);
 
 /* symbol.c */
 extern void dumpstab(char *msg);
-extern Symbol *lookup(unsigned ns, char *name);
-extern Symbol *nextsym(Symbol *sym, unsigned ns);
-extern Symbol *install(unsigned ns, Symbol *sym);
-extern Symbol *newsym(unsigned ns);
+extern Symbol *lookup(int ns, char *name);
+extern Symbol *nextsym(Symbol *sym, int ns);
+extern Symbol *install(int ns, Symbol *sym);
+extern Symbol *newsym(int ns);
 extern void pushctx(void), popctx(void);
 extern void ikeywords(void);
 extern void delmacro(Symbol *sym);
@@ -334,7 +334,6 @@ extern bool moreinput(void);
 extern void expect(unsigned tok);
 extern void discard(void);
 extern bool addinput(char *fname);
-extern void setnamespace(int ns);
 extern void setsafe(int type);
 extern void ilex(char *fname);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
@@ -369,7 +368,7 @@ extern unsigned short yylen;
 extern int cppoff, disexpand;
 extern unsigned cppctx;
 extern Input *input;
-extern int lexmode;
+extern int lexmode, namespace;
 extern unsigned curctx;
 extern Symbol *curfun, *zero, *one;
 

@@ -54,30 +54,6 @@ hash(const char *s)
 	return h & NR_SYM_HASH-1;
 }
 
-static Symbol *
-linkhash(Symbol *sym, char *name, unsigned hval)
-{
-	Symbol **h, *p, *prev;
-
-	sym->name = xstrdup(name);
-	h = &htab[hval];
-
-	for (prev = p = *h; p; prev = p, p = p->hash) {
-		if (p->ctx <= sym->ctx)
-			break;
-	}
-	if (p == prev) {
-		sym->hash = *h;
-		*h = sym;
-	} else {
-		p = prev->hash;
-		prev->hash = sym;
-		sym->hash = p;
-	}
-
-	return sym;
-}
-
 static void
 unlinkhash(Symbol *sym)
 {
@@ -99,41 +75,47 @@ pushctx(void)
 		error("too much nested blocks");
 }
 
+static void
+killsym(Symbol *sym)
+{
+	short f;
+	char *name;
+
+	f = sym->flags;
+	if (f & ISSTRING)
+		free(sym->u.s);
+	if (sym->ns == NS_TAG)
+		sym->type->defined = 0;
+	if ((name = sym->name) != NULL) {
+		unlinkhash(sym);
+		if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
+			warn("'%s' defined but not used", name);
+		if ((f & ISDEFINED) == 0 && sym->ns == NS_LABEL)
+			errorp("label '%s' is not defined", name);
+		free(name);
+	}
+	free(sym);
+}
+
 void
 popctx(void)
 {
 	Symbol *next, *sym;
+	char *name;
 	short f;
 
 	if (--curctx == GLOBALCTX) {
 		localcnt = 0;
 		for (sym = labels; sym; sym = next) {
 			next = sym->next;
-			f = sym->flags;
-			if ((f & (ISUSED|ISDEFINED)) == ISDEFINED)
-				warn("'%s' defined but not used", sym->name);
-			if ((f & ISDEFINED) == 0)
-				errorp("label '%s' is not defined", sym->name);
-			free(sym->name);
-			free(sym);
+			killsym(sym);
 		}
 		labels = NULL;
 	}
 
 	for (sym = head; sym && sym->ctx > curctx; sym = next) {
 		next = sym->next;
-		f = sym->flags;
-		if (sym->ns == NS_TAG)
-			sym->type->defined = 0;
-		if (sym->name) {
-			unlinkhash(sym);
-			if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
-				warn("'%s' defined but not used", sym->name);
-		}
-		free(sym->name);
-		if (f & ISSTRING)
-			free(sym->u.s);
-		free(sym);
+		killsym(sym);
 	}
 	head = sym;
 }
@@ -141,7 +123,7 @@ popctx(void)
 static unsigned short
 newid(void)
 {
-	unsigned id;
+	unsigned short id;
 
 	id = (curctx) ? ++localcnt : ++globalcnt;
 	if (id == 0) {
@@ -161,41 +143,86 @@ duptype(Type *base)
 	return tp;
 }
 
-Symbol *
-newsym(unsigned ns)
+static Symbol *
+allocsym(int ns, char *name)
 {
-	Symbol *sym, *p, *prev;
+	Symbol *sym;
 
-	sym = malloc(sizeof(*sym));
+	sym = xmalloc(sizeof(*sym));
+	if (name)
+		name = xstrdup(name);
+	sym->name = name;
 	sym->id = 0;
 	sym->ns = ns;
 	sym->ctx = (ns == NS_CPP) ? UCHAR_MAX : curctx;
 	sym->token = IDEN;
-	sym->flags = ISDECLARED | ISUSED;
-	sym->u.s = sym->name = NULL;
+	sym->flags = 0;
+	sym->u.s = NULL;
 	sym->type = NULL;
 	sym->next = sym->hash = NULL;
+	return sym;
+}
 
-	if (ns == NS_CPP)
+static Symbol *
+linksym(Symbol *sym)
+{
+	Symbol *p, *prev;
+
+	sym->flags |= ISDECLARED;
+	switch (sym->ns) {
+	case NS_CPP:
 		return sym;
-	if (ns == NS_LABEL) {
+	case NS_LABEL:
 		sym->next = labels;
 		return labels = sym;
+	default:
+		for (prev = p = head; p; prev = p, p = p->next) {
+			if (p->ctx <= sym->ctx)
+				break;
+		}
+		if (p == prev) {
+			sym->next = head;
+			head = sym;
+		} else {
+			p = prev->next;
+			prev->next = sym;
+			sym->next = p;
+		}
+		return sym;
 	}
+}
 
-	for (prev = p = head; p; prev = p, p = p->next) {
+static Symbol *
+linkhash(Symbol *sym)
+{
+	Symbol **h, *p, *prev;
+
+	h = &htab[hash(sym->name)];
+
+	for (prev = p = *h; p; prev = p, p = p->hash) {
 		if (p->ctx <= sym->ctx)
 			break;
 	}
 	if (p == prev) {
-		sym->next = head;
-		head = sym;
+		sym->hash = *h;
+		*h = sym;
 	} else {
-		p = prev->next;
-		prev->next = sym;
-		sym->next = p;
+		p = prev->hash;
+		prev->hash = sym;
+		sym->hash = p;
 	}
 
+	if (sym->ns != NS_CPP)
+		sym->id = newid();
+	return linksym(sym);
+}
+
+Symbol *
+newsym(int ns)
+{
+	Symbol *sym;
+
+	sym = linksym(allocsym(ns, NULL));
 	return sym;
 }
 
@@ -204,33 +231,26 @@ newlabel(void)
 {
 	Symbol *sym = newsym(NS_LABEL);
 	sym->id = newid();
-	sym->flags |= ISDEFINED;
 	return sym;
 }
 
 Symbol *
-lookup(unsigned ns, char *name)
+lookup(int ns, char *name)
 {
-	Symbol *sym, **h;
-	unsigned sns, v;
+	Symbol *sym;
+	int sns;
 	char *t, c;
 
-	v = hash(name);
-	h = &htab[v];
 	c = *name;
-	for (sym = *h; sym; sym = sym->hash) {
+	for (sym = htab[hash(name)]; sym; sym = sym->hash) {
 		t = sym->name;
 		if (*t != c || strcmp(t, name))
 			continue;
 		sns = sym->ns;
-		if (sns == NS_KEYWORD || sns == NS_CPP)
+		if (sns == NS_KEYWORD || sns == NS_CPP || sns == ns)
 			return sym;
-		if (sns != ns)
-			continue;
-		return sym;
 	}
-	sym = linkhash(newsym(ns), name, v);
-	sym->flags &= ~(ISDECLARED | ISUSED);
+	sym = allocsym(ns, name);
 
 	return sym;
 }
@@ -245,10 +265,10 @@ delmacro(Symbol *sym)
 }
 
 Symbol *
-nextsym(Symbol *sym, unsigned ns)
+nextsym(Symbol *sym, int ns)
 {
 	char *s, *t, c;
-	Symbol *new, *p;
+	Symbol *p;
 
 	/*
 	 * This function is only called when a macro with parameters
@@ -263,29 +283,18 @@ nextsym(Symbol *sym, unsigned ns)
 		if (c == *t && !strcmp(s, t))
 			return sym;
 	}
-	new = linkhash(newsym(ns), s, hash(s));
-	new->flags &= ~ISDECLARED;
-	return new;
+	return linkhash(allocsym(ns, s));
 }
 
 Symbol *
-install(unsigned ns, Symbol *sym)
+install(int ns, Symbol *sym)
 {
-	if (sym->ctx == curctx && ns == sym->ns) {
-		if (sym->flags & ISDECLARED)
+	if (sym->flags & ISDECLARED) {
+		if (sym->ctx == curctx && ns == sym->ns)
 			return NULL;
-	} else {
-		sym = lookup(ns, sym->name);
-		if (sym->flags & ISDECLARED)
-			return sym;
+		sym = allocsym(ns, sym->name);
 	}
-
-	sym->flags |= ISDECLARED;
-	if (ns == NS_CPP)
-		return sym;
-	sym->id = newid();
-
-	return sym;
+	return linkhash(sym);
 }
 
 void
@@ -354,7 +363,7 @@ ikeywords(void)
 
 	for (lp = list; *lp; ++lp) {
 		for (bp = *lp; bp->str; ++bp) {
-			sym = lookup(ns, bp->str);
+			sym = linkhash(allocsym(ns, bp->str));
 			sym->token = bp->token;
 			sym->u.token = bp->value;
 		}
@@ -362,8 +371,9 @@ ikeywords(void)
 	}
 	/*
 	 * Remove all the predefined symbols from * the symbol list. It
-	 * will make faster someoperations. There is no problem of memory
+	 * will make faster some operations. There is no problem of memory
 	 * leakeage because this memory is not ever freed
 	 */
+	globalcnt = 0;
 	head = NULL;
 }

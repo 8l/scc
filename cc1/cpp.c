@@ -327,8 +327,9 @@ define(void)
 	if (cppoff)
 		return;
 
-	setnamespace(NS_CPP);
+	namespace = NS_CPP;
 	next();
+
 	if (yytoken != IDEN) {
 		cpperror("macro names must be identifiers");
 		return;
@@ -342,7 +343,7 @@ define(void)
 		sym->flags |= ISDECLARED;
 	}
 
-	setnamespace(NS_IDEN);       /* Avoid polution in NS_CPP */
+	namespace = NS_IDEN;       /* Avoid polution in NS_CPP */
 	next();
 	if ((n = getpars(args)) == NR_MACROARG)
 		goto delete;
@@ -371,7 +372,7 @@ include(void)
 	if (cppoff)
 		return;
 
-	setnamespace(NS_IDEN);
+	namespace = NS_IDEN;
 	next();
 
 	switch (*yytext) {
@@ -488,7 +489,7 @@ ifclause(int negate, int isifdef)
 		error("too much nesting levels of conditional inclusion");
 
 	n = cppctx++;
-	setnamespace(NS_CPP);
+	namespace = NS_CPP;
 	next();
 
 	if (isifdef) {
@@ -578,7 +579,7 @@ undef(void)
 	if (cppoff)
 		return;
 
-	setnamespace(NS_CPP);
+	namespace = NS_CPP;
 	next();
 	if (yytoken != IDEN) {
 		error("no macro name given in #undef directive");
@@ -609,6 +610,7 @@ cpp(void)
 		{ERROR, usererr},
 		{0, NULL}
 	};
+	int ns;
 
 	if (*input->p != '#')
 		return 0;
@@ -616,8 +618,11 @@ cpp(void)
 
 	disexpand = 1;
 	lexmode = CPPMODE;
-	setnamespace(NS_CPPCLAUSES);
+	ns = namespace;
+	namespace = NS_CPPCLAUSES;
 	next();
+	namespace = NS_IDEN;
+
 	for (bp = clauses; bp->token && bp->token != yytoken; ++bp)
 		/* nothing */;
 	if (!bp->token)
@@ -629,8 +634,10 @@ cpp(void)
 
 	if (yytoken != EOFTOK && !cppoff)
 		errorp("trailing characters after preprocessor directive");
+
 	disexpand = 0;
 	lexmode = CCMODE;
+	namespace = ns;
 
 	return 1;
 }

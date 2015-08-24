@@ -588,8 +588,10 @@ field(Node *np)
 	switch (BTYPE(np)) {
 	case STRUCT:
 	case UNION:
-		setnamespace(np->type->ns);
+		namespace = np->type->ns;
 		next();
+		namespace = NS_IDEN;
+
 		if (yytoken != IDEN)
 			unexpected();
 		if ((sym = yylval.sym) == NULL)
@@ -710,7 +712,7 @@ primary(void)
 		next();
 		break;
 	case IDEN:
-		if (!(yylval.sym->flags & ISDECLARED)) {
+		if ((yylval.sym->flags & ISDECLARED) == 0) {
 			yylval.sym->type = inttype;
 			yylval.sym->flags |= ISDECLARED;
 			error("'%s' undeclared", yytext);

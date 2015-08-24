@@ -372,14 +372,16 @@ newtag(void)
 	int op, tag = yylval.token;
 	static unsigned ns = NS_STRUCTS;
 
-	setnamespace(NS_TAG);
+	namespace = NS_TAG;
 	next();
+
 	switch (yytoken) {
 	case IDEN:
 	case TYPEIDEN:
 		sym = yylval.sym;
 		if ((sym->flags & ISDECLARED) == 0)
 			install(NS_TAG, yylval.sym);
+		namespace = NS_IDEN;
 		next();
 		break;
 	default:
@@ -413,15 +415,20 @@ structdcl(void)
 	Symbol *sym;
 	Type *tp;
 	static int nested;
+	int ns;
 
+	ns = namespace;
 	sym = newtag();
 	tp = sym->type;
+	namespace = tp->ns;
+
 	if (!accept('{'))
-		return tp;
+		goto restore_name;
 
 	if (tp->defined)
 		error("redefinition of struct/union '%s'", sym->name);
 	tp->defined = 1;
+	namespace = tp->ns;
 
 	if (nested == NR_STRUCT_LEVEL)
 		error("too levels of nested structure or union definitions");
@@ -431,6 +438,8 @@ structdcl(void)
 		fieldlist(tp);
 	--nested;
 
+restore_name:
+	namespace = ns;
 	return tp;
 }
 
@@ -439,16 +448,19 @@ enumdcl(void)
 {
 	Type *tp;
 	Symbol *sym, *tagsym;
-	int val, nctes;
+	int ns, val, nctes;
 
+	ns = namespace;
 	tagsym = newtag();
 	tp = tagsym->type;
 
 	if (!accept('{'))
-		return tp;
+		goto restore_name;
 	if (tp->defined)
 		error("redefinition of enumeration '%s'", tagsym->name);
 	tp->defined = 1;
+	namespace = NS_IDEN;
+
 	for (nctes = val = 0; yytoken != ')'; ++nctes, ++val) {
 		if (yytoken != IDEN)
 			unexpected();
@@ -475,6 +487,8 @@ enumdcl(void)
 	}
 	expect('}');
 
+restore_name:
+	namespace = ns;
 	return tp;
 }
 
