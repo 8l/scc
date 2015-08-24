@@ -99,14 +99,15 @@ will generate a type declaration and a variable declaration:
 > X6	F3	printf
 
 After the type specification of the function (F and an identifier),
-is described the type of all the parameters of the function.
+the types of the function parameters are described.
 A '{' in the first column begins the body for the previously
 declared function: For example:
 
-> int printf(char *p) {}
+> int printf(char *cmd) {}
 
 will generate
 
+> F3	P
 > G6	F3	printf
 > {
 > A7	P	cmd
@@ -117,10 +118,11 @@ Again, the front end must ensure that '{' appears only after the
 declaration of a function. The character '-' marks the separation
 between parameters and local variables:
 
-> int printf(register char *p) {int i;};
+> int printf(register char *cmd) {int i;};
 
 will generate
 
+> F3	P
 > G6	F3	printf
 > {
 > R7	P	cmd
@@ -181,7 +183,15 @@ Assignation has some suboperators:
 * ;+ -- post increment
 * ;- -- post decrement
 
-Every operator in an expression has a type descriptor. Example:
+Every operator in an expression has a type descriptor.
+
+#### Constants ####
+
+Constants are introduced by the character '#'. For example 10 is
+translated to #IA (all the constants are emitted in hexadecimal),
+where I indicates that is an integer constant. Strings represent
+a special case because they are represented with the " character.
+The constant "hello" is emiited as "68656C6C6F. Example:
 
 > int
 > main(void)
@@ -205,14 +215,6 @@ A special case of expressions are casts, which are indicated using
 two type descriptors together. For example a cast from char to int
 is indicated with CI.
 
-#### Constants ####
-
-constants are introduced by the character '#'. For example 10 is
-translated to #IA (all the constant are emitted in hexadecimal),
-where I indicates that is an integer constant. Strings represent
-a special case because they are represented with the " character.
-The constant "hello" is emiited as "68656C6C6F,
-
 ### Statements ###
 #### Jumps #####
 
@@ -222,13 +224,13 @@ Jumps have the next form:
 
 the optional expression field indicates some condition which
 must be satisfied to jump. Example:
-> 
+
 > int
 > main(void)
 > {
 > 	int i;
 > 	goto    label;
-> label:  i -= i;;
+> label:  i -= i;
 > }
 
 generates:
@@ -244,7 +246,8 @@ generates:
 > }
 
 Another form of jump is the return statement, which uses the
-letter 'y' and an optional expression. For example:
+letter 'y' with a return type and an optional expression.
+For example:
 
 > int
 > main(void)
@@ -273,11 +276,11 @@ of a loop:
 
 #### Switch statement ####
 
-Switches are represented using a table, where it is indicated
-the label where jump for every case. Common cases are represented
-by 'v', meanwhile default is represented by 'f'. The switch
-statement itself is represented is represented by 's' followed
-by the label where the jump table is located and the expression
+Switches are represented using a table, in which the labels
+where to jump for each case are indicated. Common cases are
+represented by 'v', meanwhile default is represented by 'f'.
+The switch statement itself is represented by 's' followed by
+the label where the jump table is located, and the expression
 of the switch. For example:
 
 > int
