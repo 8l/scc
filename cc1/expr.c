@@ -413,11 +413,11 @@ convert(Node *np, Type *newtp, char iscast)
 		break;
 	case PTR:
 		switch (newtp->op) {
-		case ENUM:  /* TODO: allow p = 0 */
+		case ENUM:
 		case INT:
 		case VOID:
 			if (!iscast)
-				return NULL;;
+				return NULL;
 			break;
 		case PTR:
 			if (iscast ||
@@ -627,8 +627,12 @@ assignop(char op, Node *lp, Node *rp)
 	lp = eval(lp);
 	rp = eval(rp);
 
-	if ((rp = convert(rp, lp->type, 0)) == NULL)
-		error("incompatible types when assigning");
+	if (BTYPE(rp) == INT && BTYPE(lp) == PTR &&
+	    rp->constant && SYMICMP(rp->sym, 0)) {
+		rp = node(OCAST, pvoidtype, rp, NULL);
+	} else if ((rp = convert(rp, lp->type, 0)) == NULL) {
+		errorp("incompatible types when assigning");
+	}
 
 	return node(op, lp->type, lp, rp);
 }
