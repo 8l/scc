@@ -500,7 +500,7 @@ pcompare(char op, Node *lp, Node *rp)
 {
 	switch (BTYPE(rp)) {
 	case INT:
-		if (rp->symbol && rp->sym->u.i == 0)
+		if (rp->constant && SYMICMP(rp->sym, 0))
 			rp = node(OCAST, pvoidtype, rp, NULL);
 		break;
 	case PTR:
