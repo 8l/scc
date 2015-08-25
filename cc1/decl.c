@@ -731,9 +731,9 @@ decl(void)
 		case TQUALIFIER:
 		case SCLASS:
 			if (sym->token == TYPEIDEN)
-				error("function definition declared 'typedef'");
+				errorp("function definition declared 'typedef'");
 			if (sym->flags & ISDEFINED)
-				error("redefinition of '%s'", sym->name);
+				errorp("redefinition of '%s'", sym->name);
 			if (sym->flags & ISEXTERN) {
 				sym->flags &= ~ISEXTERN;
 				sym->flags |= ISGLOBAL;

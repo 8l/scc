@@ -508,10 +508,10 @@ pcompare(char op, Node *lp, Node *rp)
 			warn("comparision between different pointer types");
 		break;
 	default:
-		error("incompatibles type in comparision");
+		errorp("incompatibles type in comparision");
 	}
 
-	return node(op, lp->type, lp, rp);
+	return node(op, inttype, lp, rp);
 }
 
 static Node *
@@ -537,7 +537,7 @@ compare(char op, Node *lp, Node *rp)
 		return pcompare(op, lp, rp);
 	default:
 	nocompat:
-		error("incompatibles type in comparision");
+		errorp("incompatibles type in comparision");
 	}
 
 	return simplify(op, inttype, lp, rp);
