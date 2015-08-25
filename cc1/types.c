@@ -261,6 +261,46 @@ invalid_type:
 	error("invalid type specification");
 }
 
+/* TODO: define a type for sizes instead of using short */
+static short
+typesize(Type *tp)
+{
+	short align, size;
+	Symbol **sp;
+	int n;
+
+	switch (tp->op) {
+	case ARY:
+		return tp->n.elem * tp->type->size;
+	case PTR:
+		return pvoidtype->size;
+	case STRUCT:
+		size = 0;
+		n = tp->n.elem;
+		for (sp = tp->p.fields; n--; ++sp) {
+			tp = (*sp)->type;
+			size += tp->size;
+			if (n > 0) {
+				align = tp->align - 1;
+				size += align - (size & align);
+			}
+		}
+		return size;
+	case UNION:
+		size = 0;
+		n = tp->n.elem;
+		for (sp = tp->p.fields; n--; ++sp) {
+			tp = (*sp)->type;
+			if (tp->size > size)
+				size = tp->size;
+		}
+		return size;
+	case ENUM:
+		return inttype->size;
+	}
+	return 0;
+}
+
 Type *
 mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 {
@@ -321,6 +361,7 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 		}
 	}
 
+	type.size = typesize(&type);
 	bp = duptype(&type);
 	bp->next = *tbl;
 	return *tbl = bp;
