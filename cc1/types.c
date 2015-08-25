@@ -279,11 +279,9 @@ typesize(Type *tp)
 		n = tp->n.elem;
 		for (sp = tp->p.fields; n--; ++sp) {
 			tp = (*sp)->type;
+			align = tp->align-1;
+			size = size + align & ~align;
 			size += tp->size;
-			if (n > 0) {
-				align = tp->align - 1;
-				size += align - (size & align);
-			}
 		}
 		return size;
 	case UNION:
