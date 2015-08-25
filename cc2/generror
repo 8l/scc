@@ -3,7 +3,7 @@
 BEGIN {
 	print "char *errlist[] = {"
 }
-/^enum nerrors {/ {
+/^enum nerrors \{/ {
 	inhome = 1
 }
 inhome && /E[A-Z]*, / {
