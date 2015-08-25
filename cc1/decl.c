@@ -422,8 +422,10 @@ structdcl(void)
 	tp = sym->type;
 	namespace = tp->ns;
 
-	if (!accept('{'))
-		goto restore_name;
+	if (!accept('{')) {
+		namespace = ns;
+		return tp;
+	}
 
 	if (tp->defined)
 		error("redefinition of struct/union '%s'", sym->name);
@@ -434,12 +436,13 @@ structdcl(void)
 		error("too levels of nested structure or union definitions");
 
 	++nested;
-	while (!accept('}'))
+	while (yytoken != '}') {
 		fieldlist(tp);
+	}
 	--nested;
 
-restore_name:
 	namespace = ns;
+	expect('}');
 	return tp;
 }
 
