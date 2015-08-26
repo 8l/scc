@@ -583,7 +583,7 @@ arithmetic(char op, Node *lp, Node *rp)
 		return parithmetic(op, lp, rp);
 	default:
 	incorrect:
-		error("incorrect arithmetic operands");
+		errorp("incorrect arithmetic operands");
 	}
 
 	return simplify(op, lp->type, lp, rp);
@@ -709,7 +709,7 @@ array(Node *lp, Node *rp)
 	lp = arithmetic(OADD, lp, rp);
 	tp = lp->type;
 	if (tp->op != PTR)
-		error("subscripted value is neither array nor pointer");
+		errorp("subscripted value is neither array nor pointer");
 	lp =  node(OPTR, tp->type, lp, NULL);
 	lp->lvalue = 1;
 	return lp;
