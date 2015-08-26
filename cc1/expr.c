@@ -358,6 +358,12 @@ decay(Node *np)
 	switch (tp->op) {
 	case ARY:
 		tp = tp->type;
+		if (np->op == OPTR) {
+			Node *new = np->left;
+			free(np);
+			new->type = mktype(tp, PTR, 0, NULL);
+			return new;
+		}
 	case FTN:
 		break;
 	default:
@@ -539,14 +545,16 @@ parithmetic(char op, Node *lp, Node *rp)
 	}
 	if (BTYPE(rp) != INT)
 		goto incorrect;
-	rp = convert(promote(rp), sizettype, 0);
-	rp = node(OMUL, sizettype, rp, size);
-	rp = node(OCAST, tp, rp, NULL);
 
-	return node(OADD, tp, lp, rp);
+	rp = convert(promote(rp), sizettype, 0);
+	rp = simplify(OMUL, sizettype, rp, size);
+	rp = convert(rp, tp, 1);
+
+	return simplify(OADD, tp, lp, rp);
 
 incorrect:
-	error("incorrect arithmetic operands");
+	errorp("incorrect arithmetic operands");
+	return node(OADD, tp, lp, rp);
 }
 
 static Node *
@@ -752,6 +760,11 @@ address(char op, Node *np)
 		error("lvalue required in unary expression");
 	if (np->symbol && (np->sym->flags & ISREGISTER))
 		error("address of register variable '%s' requested", yytext);
+	if (np->op == OPTR) {
+		Node *new = np->left;
+		free(np);
+		return new;
+	}
 	return node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
 }
 
@@ -761,8 +774,12 @@ content(char op, Node *np)
 	switch (BTYPE(np)) {
 	case ARY:
 	case FTN:
-		np = decay(np);
 	case PTR:
+		if (np->op == OADDR) {
+			Node *new = np->left;
+			free(np);
+			return new;
+		}
 		np = node(op, np->type->type, np, NULL);
 		np->lvalue = 1;
 		return np;
