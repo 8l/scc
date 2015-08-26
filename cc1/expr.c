@@ -40,9 +40,19 @@ static Node *
 simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 {
 	Symbol *sym, *ls, *rs, aux;
+	int iszero, isone, noconst = 0;
 
-	if (!lp->constant || !rp->constant)
+	if (!lp->constant && !rp->constant)
 		goto no_simplify;
+	if (!rp->constant) {
+		Node *np;
+		np = lp;
+		lp = rp;
+		rp = np;
+	}
+	if (!lp->constant)
+		noconst = 1;
+
 	ls = lp->sym, rs = rp->sym;
 	aux.type = tp;
 
@@ -62,71 +72,143 @@ simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
 	}
 
 	switch (tp->op) {
+	case PTR:
 	case INT:
 	cmp_integers:
+		iszero = SYMICMP(rs, 0);
+		isone = SYMICMP(rs, 1);
 		switch (op) {
 		case OADD:
+			if (iszero)
+				return lp;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, +);
 			break;
 		case OSUB:
+			if (iszero)
+				return lp;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, -);
 			break;
 		case OMUL:
+			if (isone)
+				return lp;
+			if (iszero)
+				return constnode(zero);
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, *);
 			break;
 		case ODIV:
-			if (SYMICMP(&aux, 0))
+			if (isone)
+				return lp;
+			if (iszero)
 				goto division_by_0;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, /);
 			break;
 		case OMOD:
-			if (SYMICMP(&aux, 0))
+			if (iszero)
 				goto division_by_0;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, %);
 			break;
 		case OSHL:
+			if (iszero)
+				return lp;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, <<);
 			break;
 		case OSHR:
+			if (iszero)
+				return lp;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, >>);
 			break;
 		case OBAND:
+			if (SYMICMP(rs, ~0))
+				return lp;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, &);
 			break;
 		case OBXOR:
+			if (iszero)
+				return lp;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, ^);
 			break;
 		case OBOR:
+			if (iszero)
+				return lp;
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, |);
 			break;
 		case OAND:
+			if (!iszero)
+				return lp;
+			/* TODO: What happens with something like f(0) && 0? */
+			if (noconst)
+				goto no_simplify;
 			FOLDINT(&aux, ls, rs, &&);
 			break;
 		case OOR:
+			if (iszero)
+				return lp;
+			if (noconst)
+				goto no_simplify;
+			/* TODO: What happens with something like f(0) || 1? */
 			FOLDINT(&aux, ls, rs, ||);
 			break;
 		case OLT:
+			/* TODO: what happens with signess? */
+			if (noconst)
+				goto no_simplify;
 			aux.u.i = CMPISYM(&aux, ls, rs, <);
 			break;
 		case OGT:
+			/* TODO: what happens with signess? */
+			if (noconst)
+				goto no_simplify;
 			aux.u.i = CMPISYM(&aux, ls, rs, >);
 			break;
 		case OGE:
+			/* TODO: what happens with signess? */
+			if (noconst)
+				goto no_simplify;
 			aux.u.i = CMPISYM(&aux, ls, rs, >=);
 			break;
 		case OLE:
+			/* TODO: what happens with signess? */
+			if (noconst)
+				goto no_simplify;
 			aux.u.i = CMPISYM(&aux, ls, rs, <=);
 			break;
 		case OEQ:
+			/* TODO: what happens with signess? */
+			if (noconst)
+				goto no_simplify;
 			aux.u.i = CMPISYM(&aux, ls, rs, ==);
 			break;
 		case ONE:
+			/* TODO: what happens with signess? */
+			if (noconst)
+				goto no_simplify;
 			aux.u.i = CMPISYM(&aux, ls, rs, !=);
 			break;
 		}
 		break;
 	case FLOAT:
 	cmp_floats:
+		/* TODO: Add algebraic reductions for floats */
 		switch (op) {
 		case OADD:
 			aux.u.f = ls->u.f + rs->u.f;
