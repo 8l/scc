@@ -181,10 +181,14 @@ emitconst(Node *np)
 {
 	char *bp, c;
 	Symbol *sym = np->sym;
+	Type *tp = np->type;
+	TUINT u;
 
-	switch (BTYPE(np)) {
+	switch (tp->op) {
+	case PTR:
 	case INT:
-		printf("#%c%lX", np->type->letter, (long) sym->u.i);
+		u = (tp->sign) ? (TUINT) sym->u.i : sym->u.u;
+		printf("#%c%lX", np->type->letter, sym->u.i);
 		break;
 	case ARY:
 		/*
