@@ -457,9 +457,11 @@ parithmetic(char op, Node *lp, Node *rp)
 	}
 	if (BTYPE(rp) != INT)
 		goto incorrect;
-	rp = node(OCAST, tp, promote(rp), NULL);
-	rp = node(OMUL, tp, rp, size);
-	return node(op, tp, lp, rp);
+	rp = convert(promote(rp), sizettype, 0);
+	rp = node(OMUL, sizettype, rp, size);
+	rp = node(OCAST, tp, rp, NULL);
+
+	return node(OADD, tp, lp, rp);
 
 incorrect:
 	error("incorrect arithmetic operands");
