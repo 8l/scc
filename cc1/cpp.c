@@ -30,6 +30,7 @@ defmacro(char *s)
 
 	strcpy(yytext, s);
 	sym = lookup(NS_CPP, yytext);
+	/* FIXME: We have a problem here */
 	sym->flags |= ISDECLARED;
 	return sym;
 }

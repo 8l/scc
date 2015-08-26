@@ -423,6 +423,8 @@ integeruop(char op, Node *np)
 	return usimplify(op, np->type, np);
 }
 
+/* TODO: check validity of types */
+
 static Node *
 constconv(Node *np, Type *newtp)
 {
