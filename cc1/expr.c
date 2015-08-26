@@ -430,9 +430,11 @@ constconv(Node *np, Type *newtp)
 	Symbol aux, *sym, *osym = np->sym;
 
 	switch (newtp->op) {
+	case PTR:
 	case INT:
 	case ENUM:
 		switch (oldtp->op) {
+		case PTR:
 		case INT:
 		case ENUM:
 			if (newtp->sign == oldtp->sign)
