@@ -444,7 +444,7 @@ logic(int op, int equal, int logic)
 {
 	char c;
 
-	if ((c = *input->p++) == equal)
+	if ((c = *input->p++) == '=')
 		return equal;
 	if (c == op)
 		return logic;
