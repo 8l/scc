@@ -572,8 +572,8 @@ identifier(struct decl *dcl)
 	}
 
 	/* TODO: Add warning about ANSI limits */
-	if (!tp->defined && sclass != EXTERN)
-		error("declared variable '%s' of incomplete type", name);
+	if (!tp->defined && sclass != EXTERN && sclass != TYPEDEF)
+		errorp("declared variable '%s' of incomplete type", name);
 
 	if (tp->op == FTN) {
 		if (sclass == NOSCLASS)
