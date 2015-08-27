@@ -105,7 +105,16 @@ arydcl(struct declarators *dp)
 	}
 	expect(']');
 
-	n = (np == NULL) ? 0 : np->sym->u.i;
+	if (np != NULL) {
+		n = np->sym->u.i;
+		if (n  == 0 || n < 0) {
+			errorp("array size is not a positive number");
+			n = 1;
+		}
+	} else {
+		n = 0;
+	}
+
 	freetree(np);
 
 	push(dp, ARY, n);
