@@ -22,7 +22,7 @@ label(void)
 	case TYPEIDEN:
 		sym = lookup(NS_LABEL, yytext);
 		if (sym->flags & ISDEFINED)
-			error("label '%s' already defined", yytoken);
+			error("label '%s' already defined", yytext);
 		if ((sym->flags & ISDECLARED) == 0)
 			sym = install(NS_LABEL, sym);
 		sym->flags |= ISDEFINED;
