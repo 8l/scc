@@ -2,52 +2,58 @@
 name: TEST015
 description: Stress namespace mechanism
 output:
-test015.c:21: warning: 's1' defined but not used
-S7	s2
+test015.c:25: error: label 's' already defined
+S8	s2
 (
-M8	I	s
+M9	I	s
 )
-S4	s1
+S5	s1
 (
-M5	I	s
-M9	S7	s2
+M6	I	s
+M10	S8	s1
 )
 S2	s
 (
-M10	S4	s1
+M11	S5	s
 )
-G11	S2	s
+G12	S2	s2
 F1
-G12	F1	main
+G13	F1	main
 {
 -
 	j	L2
-A3	S2	s2
-L4
-	yI	G11	M10	.S4	M5	.I	G11	M10	.S4	M9	.S7	M8	.I	+I
+A3	S2	s
+A4	I	s
+	yI	A4
+	yI	A3	M11	.S5	M6	.I	A3	M11	.S5	M10	.S8	M9	.I	+I
 L2
-	yI	A3	M10	.S4	M9	.S7	M8	.I
-}
+????
 */
 
 #line 1
+typedef struct s s;
 
 struct s {
 	struct s1 {
 		int s;
 		struct s2 {
 			int s;
-		} s2;
-	} s1;
-} s;
+		} s1;
+	} s;
+} s2;
 
 int
 main(void)
 {
-	goto	s2;
-	struct s s2;
-	s1:
-	return s.s1.s + s.s1.s2.s;
-	s2:
-	return s2.s1.s2.s;
+	goto s;
+	struct s s;
+		{
+			int s;
+			return s;
+		}
+	return s.s.s + s.s.s1.s;
+	s:
+		{
+			s: return 0;
+		}
 }
