@@ -13,7 +13,7 @@ static void emitbin(unsigned, void *), emitswitcht(unsigned, void *),
             emitexp(unsigned, void *),
             emitsymid(unsigned, void *), emittext(unsigned, void *),
             emitfun(unsigned, void *),
-            emitret(unsigned, void *), emitdcl(unsigned, void *);
+            emitdcl(unsigned, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -58,9 +58,10 @@ char *optxt[] = {
 	[OCASE] = "\tv\tL%d",
 	[OJUMP] = "\tj\tL%d\n",
 	[OBRANCH] = "\tj\tL%d",
-	[OEFUN] = "}",
-	[OELOOP] = "\tb",
-	[OBLOOP] = "\td",
+	[OEFUN] = "}\n",
+	[OELOOP] = "\tb\n",
+	[OBLOOP] = "\td\n",
+	[ORET] = "\ty",
 	[OPAR] = "p",
 	[OCALL] = "c",
 	[OFIELD] = "."
@@ -118,7 +119,7 @@ void (*opcode[])(unsigned, void *) = {
 	[OELOOP] = emittext,
 	[OBLOOP] = emittext,
 	[OFUN] = emitfun,
-	[ORET] = emitret,
+	[ORET] = emittext,
 	[ODECL] = emitdcl,
 	[OSWITCH] = emitswitch,
 	[OSWITCHT] = emitswitcht,
@@ -347,18 +348,9 @@ emitfun(unsigned op, void *arg)
 }
 
 static void
-emitret(unsigned op, void *arg)
-{
-	Type *tp = arg;
-
-	fputs("\ty", stdout);
-	emitletter(tp);
-}
-
-static void
 emittext(unsigned op, void *arg)
 {
-	puts(optxt[op]);
+	fputs(optxt[op], stdout);
 }
 
 static void

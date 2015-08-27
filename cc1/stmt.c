@@ -143,7 +143,7 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 		else if ((np = convert(np, tp, 0)) == NULL)
 			error("incorrect type in return");
 	}
-	emit(ORET, tp);
+	emit(ORET, NULL);
 	emit(OEXPR, np);
 }
 

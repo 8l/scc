@@ -21,12 +21,12 @@ A3	S6	v
 	A3	M8	.P	@S2	M3	.I	#I1	:I
 	A3	M8	.P	@S2	M4	.I	#I2	:I
 	j	L4	A2	M3	.I	#I1	=I
-	yI	#I1
+	y	#I1
 L4
 	j	L5	A2	M4	.I	#I2	=I
-	yI	#I2
+	y	#I2
 L5
-	yI	#I0
+	y	#I0
 }
 */
 

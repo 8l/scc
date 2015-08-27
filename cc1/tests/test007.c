@@ -16,7 +16,7 @@ L5
 	j	L3	A2	#I0	!I
 	b
 L4
-	yI	A2
+	y	A2
 }
 */
 

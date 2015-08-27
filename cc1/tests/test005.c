@@ -13,9 +13,9 @@ A2	I	x
 	A2	A2	~I	:I
 	A2	A2	_I	:I
 	j	L3	A2	#I2	=I
-	yI	#I1
+	y	#I1
 L3
-	yI	#I0
+	y	#I0
 }
 */
 

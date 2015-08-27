@@ -16,14 +16,14 @@ A4	P	p
 	A4	A2	'P	:P
 	A4	@I	#I0	:I
 	j	L5	A2	#I0	=I
-	yI	#I1
+	y	#I1
 L5
 	A4	G1	'P	:P
 	A4	@I	#I0	:I
 	j	L6	A4	#I0	IP	!I
-	yI	#I1
+	y	#I1
 L6
-	yI	#I0
+	y	#I0
 }
 G3	F1	func2
 {
@@ -38,7 +38,7 @@ A4	P	pp
 	A4	@P	@I	#I0	:I
 L5
 	A2	#I0	IP	:P
-	yI	A1
+	y	A1
 }
 ????
 */

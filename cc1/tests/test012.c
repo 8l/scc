@@ -22,7 +22,7 @@ L8
 L11
 	j	L12
 L13
-	yI	#I1
+	y	#I1
 	j	L9
 L10
 	t	#2
@@ -34,11 +34,11 @@ L7
 	t	#1
 	v	L8	#I0
 L6
-	yI	#I2
+	y	#I2
 L12
 	s	L15	A2
 L16
-	yI	#I3
+	y	#I3
 	j	L14
 L15
 	t	#1
@@ -48,7 +48,7 @@ L14
 	A2	#I2	:I
 L19
 L20
-	yI	#I4
+	y	#I4
 	j	L17
 L18
 	t	#1
@@ -56,11 +56,11 @@ L18
 L17
 	s	L22	A2
 L23
-	yI	A2
+	y	A2
 L24
-	yI	#I1
+	y	#I1
 L25
-	yI	#I1
+	y	#I1
 	j	L21
 L22
 	t	#3

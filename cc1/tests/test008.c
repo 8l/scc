@@ -20,7 +20,7 @@ L5
 	j	L5	A2	#I14	<I
 	b
 L6
-	yI	A2	#I14	-I
+	y	A2	#I14	-I
 }
 */
 

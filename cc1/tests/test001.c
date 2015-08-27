@@ -9,7 +9,7 @@ G2	F1	main
 {
 -
 	X1	"68656C6C6F20776F726C640A	'P	pP	cI
-	yI	#I0
+	y	#I0
 }
 */
 

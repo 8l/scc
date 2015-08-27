@@ -24,8 +24,8 @@ G13	F1	main
 	j	L2
 A3	S2	s
 A4	I	s
-	yI	A4
-	yI	A3	M11	.S5	M6	.I	A3	M11	.S5	M10	.S8	M9	.I	+I
+	y	A4
+	y	A3	M11	.S5	M6	.I	A3	M11	.S5	M10	.S8	M9	.I	+I
 L2
 ????
 */
