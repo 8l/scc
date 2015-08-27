@@ -283,6 +283,7 @@ typesize(Type *tp)
 			size = size + align & ~align;
 			size += tp->size;
 		}
+		/* TODO: Add aligment of the first field */
 		return size;
 	case UNION:
 		size = 0;
@@ -292,6 +293,7 @@ typesize(Type *tp)
 			if (tp->size > size)
 				size = tp->size;
 		}
+		/* TODO: Add aligment of the worst field */
 		return size;
 	case ENUM:
 		return inttype->size;
@@ -325,6 +327,7 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 	type.p.pars = pars;
 	type.n.elem = nelem;
 	type.ns = 0;
+	/* TODO: Set aligment for new types */
 
 	switch (op) {
 	case ARY:
