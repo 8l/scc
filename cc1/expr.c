@@ -681,23 +681,26 @@ field(Node *np)
 {
 	Symbol *sym;
 
+	namespace = np->type->ns;
+	next();
+	namespace = NS_IDEN;
+
+	sym = yylval.sym;
+	if (yytoken != IDEN)
+		unexpected();
+	next();
+
 	switch (BTYPE(np)) {
 	case STRUCT:
 	case UNION:
-		namespace = np->type->ns;
-		next();
-		namespace = NS_IDEN;
-
-		if (yytoken != IDEN)
-			unexpected();
-		if ((sym = yylval.sym) == NULL)
+		if ((sym->flags & ISDECLARED) == 0)
 			error("incorrect field in struct/union");
-		next();
 		np = node(OFIELD, sym->type, np, varnode(sym));
 		np->lvalue = 1;
 		return np;
 	default:
-		error("struct or union expected");
+		error("request for member '%s' in something not a structure or union",
+		      yylval.sym->name);
 	}
 }
 
