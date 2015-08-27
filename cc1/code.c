@@ -7,11 +7,14 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-static void emitbin(unsigned, void *), emitswitcht(unsigned, void *),
-            emitcast(unsigned, void *), emitswitch(unsigned, void *),
+static void emitbin(unsigned, void *),
+            emitswitcht(unsigned, void *),
+            emitcast(unsigned, void *),
+            emitswitch(unsigned, void *),
             emitsym(unsigned, void *),
             emitexp(unsigned, void *),
-            emitsymid(unsigned, void *), emittext(unsigned, void *),
+            emitsymid(unsigned, void *),
+            emittext(unsigned, void *),
             emitfun(unsigned, void *),
             emitdcl(unsigned, void *);
 
