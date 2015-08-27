@@ -347,11 +347,17 @@ extern Node *sizeofnode(Type *tp);
 extern void freetree(Node *np);
 #define BTYPE(np) ((np)->type->op)
 
+/* fold.c */
+extern Node *simplify(unsigned char op, Type *tp, Node *lp, Node *rp);
+extern Node *usimplify(unsigned char op, Type *tp, Node *np);
+extern Node *constconv(Node *np, Type *newtp);
+
 /* expr.c */
 extern Node *expr(void), *negate(Node *np), *constexpr(void);
 extern Node *convert(Node *np, Type *tp1, char iscast);
 extern Node *eval(Node *np), *iconstexpr(void), *condition(void);
 extern Node *exp2cond(Node *np, char neg);
+extern bool isnodecmp(int op);
 
 /* cpp.c */
 extern void icpp(void);
