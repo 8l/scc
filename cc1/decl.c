@@ -430,7 +430,6 @@ structdcl(void)
 	if (tp->defined)
 		error("redefinition of struct/union '%s'", sym->name);
 	tp->defined = 1;
-	namespace = tp->ns;
 
 	if (nested == NR_STRUCT_LEVEL)
 		error("too levels of nested structure or union definitions");
