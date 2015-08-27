@@ -1013,7 +1013,9 @@ cast(void)
 	default:
 		if (nested == NR_SUBEXPR)
 			error("too expressions nested by parentheses");
+		++nested;
 		rp = expr();
+		--nested;
 		expect(')');
 		rp = postfix(rp);
 		break;
