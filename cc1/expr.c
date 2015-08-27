@@ -961,6 +961,8 @@ unary(void)
 	case SIZEOF:
 		next();
 		tp = (yytoken == '(') ? sizeexp() : typeof(unary());
+		if (!tp->defined)
+			errorp("sizeof applied to an incomplete type");
 		return sizeofnode(tp);
 	case INC:
 	case DEC:
