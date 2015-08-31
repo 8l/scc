@@ -13,8 +13,8 @@ typedef unsigned bool;
 #define DBG(...)
 #endif
 
-#define TINT    long
-#define TUINT   unsigned long
+#define TINT    long long
+#define TUINT   unsigned long long
 #define TFLOAT  double
 
 #define RANK_BOOL    0
