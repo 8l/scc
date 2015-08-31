@@ -407,7 +407,7 @@ newtag(void)
 		tp->p.fields = NULL;
 		sym->type = tp;
 		tp->tag = sym;
-		DBG(stderr, "declared tag '%s' with ns = %d\n",
+		DBG("declared tag '%s' with ns = %d\n",
 		    (sym->name) ? sym->name : "anonymous", tp->ns);
 	}
 
@@ -546,7 +546,7 @@ field(struct decl *dcl)
 	sym->flags |= ISFIELD;
 	if (n == NR_FIELDS)
 		error("too much fields in struct/union");
-	DBG(stderr, "New field '%s' in namespace %d\n", name, structp->ns);
+	DBG("New field '%s' in namespace %d\n", name, structp->ns);
 	structp->p.fields = xrealloc(structp->p.fields, ++n * sizeof(*sym));
 	structp->p.fields[n-1] = sym;
 	structp->n.elem = n;

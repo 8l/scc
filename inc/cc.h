@@ -8,7 +8,7 @@ typedef unsigned bool;
 #endif
 
 #ifndef NDEBUG
-#define DBG(...) fprintf(__VA_ARGS__)
+#define DBG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define DBG(...)
 #endif

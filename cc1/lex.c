@@ -531,7 +531,7 @@ next(void)
 		yytoken = operator();
 
 exit:
-	DBG(stderr, "TOKEN %s\n", yytext);
+	DBG("TOKEN %s\n", yytext);
 	return yytoken;
 }
 

@@ -218,12 +218,12 @@ expand(char *begin, Symbol *sym)
 	if (!parsepars(arguments, arglist, atoi(s)))
 		return 0;
 	for (n = 0; n < atoi(s); ++n)
-		DBG(stderr, "MACRO par%d:%s\n", n, arglist[n]);
+		DBG("MACRO par%d:%s\n", n, arglist[n]);
 
 	elen = copymacro(buffer, s+3, INPUTSIZ-1, arglist);
 
 substitute:
-	DBG(stderr, "MACRO '%s' expanded to :'%s'\n", macroname, buffer);
+	DBG("MACRO '%s' expanded to :'%s'\n", macroname, buffer);
 	rlen = strlen(input->p);      /* rigth length */
 	llen = begin - input->line;   /* left length */
 	ilen = input->p - begin;      /* invocation length */
@@ -352,7 +352,7 @@ define(void)
 	if (!getdefs(args, n, buff+3, LINESIZ-3))
 		goto delete;
 	sym->u.s = xstrdup(buff);
-	DBG(stderr, "MACRO '%s' defined as '%s'\n", sym->name, buff);
+	DBG("MACRO '%s' defined as '%s'\n", sym->name, buff);
 	return;
 
 delete:
