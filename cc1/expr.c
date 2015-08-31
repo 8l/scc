@@ -147,9 +147,6 @@ integeruop(char op, Node *np)
 	return usimplify(op, np->type, np);
 }
 
-/*
- * Convert a Node to a type
- */
 Node *
 convert(Node *np, Type *newtp, char iscast)
 {
