@@ -15,6 +15,19 @@ typedef struct caselist Caselist;
 typedef struct node Node;
 typedef struct input Input;
 
+struct limits {
+	union {
+		TINT i;
+		TUINT u;
+		TFLOAT f;
+	} max;
+	union {
+		TINT i;
+		TUINT u;
+		TFLOAT f;
+	} min;
+};
+
 /*
  * TODO: Some of the data stored in type is shared with
  *       cc2, so it should be stored in a table shared
@@ -236,7 +249,6 @@ enum tokens {
 
 /* operations */
 enum op {
-	OPTR,
 	OADD,
 	OMUL,
 	OSUB,
@@ -249,6 +261,16 @@ enum op {
 	OBAND,
 	OBXOR,
 	OBOR,
+	ONEG,
+	OCPL,
+	OAND,
+	OOR,
+	OEQ,
+	ONE,
+	OLT,
+	OGE,
+	OLE,
+	OGT,
 	OASSIGN,
 	OA_MUL,
 	OA_DIV,
@@ -261,11 +283,9 @@ enum op {
 	OA_XOR,
 	OA_OR,
 	OADDR,
-	ONEG,
-	OCPL,
-	OEXC,
 	OCOMMA,
 	OCAST,
+	OPTR,
 	OSYM,
 	OASK,
 	OCOLON,
@@ -285,15 +305,7 @@ enum op {
 	ORET,
 	ODECL,
 	OSWITCH,
-	OSWITCHT,
-	OAND,
-	OOR,
-	OEQ,
-	ONE,
-	OLT,
-	OGE,
-	OLE,
-	OGT
+	OSWITCHT
 };
 
 /* error.c */
@@ -308,6 +320,7 @@ extern bool eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(unsigned type, unsigned sign, unsigned size);
 extern Type *mktype(Type *tp, unsigned op, short nelem, Type *data[]);
 extern Type *duptype(Type *base);
+extern struct limits *getlimits(Type *tp);
 
 /* symbol.c */
 extern void dumpstab(char *msg);
@@ -348,8 +361,7 @@ extern void freetree(Node *np);
 #define BTYPE(np) ((np)->type->op)
 
 /* fold.c */
-extern Node *simplify(unsigned char op, Type *tp, Node *lp, Node *rp);
-extern Node *usimplify(unsigned char op, Type *tp, Node *np);
+extern Node *simplify(int op, Type *tp, Node *lp, Node *rp);
 extern Node *constconv(Node *np, Type *newtp);
 
 /* expr.c */
@@ -358,6 +370,7 @@ extern Node *convert(Node *np, Type *tp1, char iscast);
 extern Node *eval(Node *np), *iconstexpr(void), *condition(void);
 extern Node *exp2cond(Node *np, char neg);
 extern bool isnodecmp(int op);
+extern int negop(int op);
 
 /* cpp.c */
 extern void icpp(void);

@@ -132,7 +132,7 @@ numericaluop(char op, Node *np)
 	case FLOAT:
 		if (op == OADD)
 			return np;
-		return usimplify(op, np->type, np);
+		return simplify(op, np->type, np, NULL);
 	default:
 		error("unary operator requires integer operand");
 	}
@@ -144,7 +144,7 @@ integeruop(char op, Node *np)
 	np = eval(np);
 	if (BTYPE(np) != INT)
 		error("unary operator requires integer operand");
-	return usimplify(op, np->type, np);
+	return simplify(op, np->type, np, NULL);
 }
 
 Node *
@@ -312,23 +312,26 @@ compare(char op, Node *lp, Node *rp)
 	return simplify(op, inttype, lp, rp);
 }
 
+int
+negop(int op)
+{
+	switch (op) {
+	case OAND: return OOR;
+	case OOR:  return OAND;
+	case OEQ:  return ONE;
+	case ONE:  return OEQ;
+	case OLT:  return OGE;
+	case OGE:  return OLT;
+	case OLE:  return OGT;
+	case OGT:  return OLE;
+	}
+	return op;
+}
+
 Node *
 negate(Node *np)
 {
-	unsigned op;
-
-	switch (np->op) {
-	case OAND: op = OOR;  break;
-	case OOR:  op = OAND; break;
-	case OEQ:  op = ONE;  break;
-	case ONE:  op = OEQ;  break;
-	case OLT:  op = OGE;  break;
-	case OGE:  op = OLT;  break;
-	case OLE:  op = OGT;  break;
-	case OGT:  op = OLE;  break;
-	default:   return np;
-	}
-	np->op = op;
+	np->op = negop(np->op);
 	return np;
 }
 

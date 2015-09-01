@@ -11,6 +11,67 @@
 #define NR_TYPE_HASH 16
 
 /*
+ * Compiler can generate warnings here if the ranges of TINT,
+ * TUINT and TFLOAT are smaller than any of the constants in this
+ * array. Ignore them if you know that the target types are correct
+ */
+static struct limits limits[][4] = {
+	{
+		{	/* 0 = signed 1 byte */
+			.min.i = -127,
+			.max.i = 127
+		},
+		{	/* 1 = signed 2 byte */
+			.min.i = -32767,
+			.max.i = 327677
+		},
+		{	/* 2 = signed 4 byte */
+			.min.i = -2147483647L,
+			.max.i = 2147483647L
+		},
+		{	/* 3 = signed 8 byte */
+			.min.i = -9223372036854775807LL,
+			.max.i = 9223372036854775807LL,
+		}
+	},
+	{
+		{	/* 0 = unsigned 1 byte */
+			.min.u = 0,
+			.max.u = 255
+		},
+		{	/* 1 = unsigned 2 bytes */
+			.min.u = 0,
+			.max.u = 65535u
+		},
+		{	/* 2 = unsigned 4 bytes */
+			.min.u = 0,
+			.max.u = 4294967295u
+		},
+		{	/* 3 = unsigned 4 bytes */
+			.min.u = 0,
+			.max.u = 18446744073709551615u
+		}
+	},
+	{
+		{
+			/* 0 = float 4 bytes */
+			.min.f = -1,
+			.max.f = 2
+		},
+		{
+			/* 1 = float 8 bytes */
+			.min.f = -1,
+			.max.f = 2,
+		},
+		{
+			/* 2 = float 16 bytes */
+			.min.f = -1,
+			.max.f = 2,
+		}
+	}
+};
+
+/*
  * Initializaion of type pointers were done with
  * a C99 initilizator '... = &(Type) {...', but
  * c compiler in Plan9 gives error with this
@@ -196,6 +257,34 @@ static Symbol dummy0 = {.u.i = 0, .type = &types[9]},
               dummy1 = {.u.i = 1, .type = &types[9]};
 Symbol *zero = &dummy0, *one = &dummy1;
 
+
+struct limits *
+getlimits(Type *tp)
+{
+	int ntable, ntype;
+
+	switch (tp->op) {
+	case INT:
+		ntable = tp->sign;
+		switch (tp->size) {
+		case 1: ntype = 0; break;
+		case 2: ntype = 1; break;
+		case 4: ntype = 2; break;
+		case 8: ntype = 3; break;
+		}
+		break;
+	case FLOAT:
+		ntable = 2;
+		switch (tp->size) {
+		case 4:  ntype = 0; break;
+		case 8:  ntype = 1; break;
+		case 16: ntype = 2; break;
+		}
+		break;
+	}
+
+	return &limits[ntable][ntype];
+}
 
 Type *
 ctype(unsigned type, unsigned sign, unsigned size)

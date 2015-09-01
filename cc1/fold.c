@@ -4,287 +4,375 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
-
-#define SYMICMP(sym, val) (((sym)->type->sign) ?         \
-	(sym)->u.i == (val) : (sym)->u.u == (val))
-
-#define FOLDINT(sym, ls, rs, op) (((sym)->type->sign) ? \
-	((sym)->u.i = ((ls)->u.i op (rs)->u.i)) :       \
-	((sym)->u.u = ((ls)->u.u op (rs)->u.u)))
-
-#define CMPISYM(sym, ls, rs, op) (((sym)->type->sign) ? \
-	((ls)->u.i op (rs)->u.i) : ((ls)->u.u op (rs)->u.u))
-
-Node *
-simplify(unsigned char op, Type *tp, Node *lp, Node *rp)
+static bool
+addi(TINT l, TINT r, Type *tp)
 {
-	Symbol *sym, *ls, *rs, aux;
-	int iszero, isone, noconst = 0;
+	struct limits *lim = getlimits(tp);
+	TINT max = lim->max.i, min = lim->min.i;
 
-	if (!lp->constant && !rp->constant)
-		goto no_simplify;
-	if (!rp->constant) {
-		Node *np;
-		np = lp;
-		lp = rp;
-		rp = np;
+	if (l < 0 && r < 0 && l >= min - r ||
+	    l == 0 ||
+	    r == 0 ||
+	    l < 0 && r > 0 ||
+	    l > 0 && r < 0 ||
+	    l > 0 && r > 0 && l <= max - r) {
+		return 1;
 	}
-	if (!lp->constant)
-		noconst = 1;
+	warn("overflow in constant expression");
+	return 0;
+}
 
-	ls = lp->sym, rs = rp->sym;
-	aux.type = tp;
+static bool
+subi(TINT l, TINT r, Type *tp)
+{
+	return addi(l, -r, tp);
+}
 
-	/* TODO: Add overflow checkings */
+static bool
+muli(TINT l, TINT r, Type *tp)
+{
+	struct limits *lim = getlimits(tp);
+	TINT max = lim->max.i, min = lim->min.i;
 
-	if (isnodecmp(op)) {
-		/*
-		 * Comparision nodes have integer type
-		 * but the operands can have different
-		 * type.
-		 */
-		switch (BTYPE(lp)) {
-		case INT:   goto cmp_integers;
-		case FLOAT: goto cmp_floats;
-		default:    goto no_simplify;
-		}
+	if (l > -1 && l <= 1 ||
+	    r > -1 && r <= 1 ||
+	    l < 0 && r < 0 && -l <= max/-r ||
+	    l < 0 && r > 0 &&  l >= min/r  ||
+	    l > 0 && r < 0 &&  r >= min/l  ||
+	    l > 0 && r > 0 &&  l <= max/r) {
+			return 1;
 	}
+	warn("overflow in constant expression");
+	return 0;
+}
+
+static bool
+divi(TINT l, TINT r,  Type *tp)
+{
+	struct limits *lim = getlimits(tp);
+
+	if (r == 0) {
+		warn("division by 0");
+		return 0;
+	}
+	if (l == lim->min.i && r == -1) {
+		warn("overflow in constant expression");
+		return 0;
+	}
+	return 1;
+}
+
+static bool
+lshi(TINT l, TINT r, Type *tp)
+{
+	if (r < 0 || r >= tp->size * 8) {
+		warn("shifting %d bits is undefined", r);
+		return 0;
+	}
+	return muli(l, 1 << r, tp);
+}
+
+static bool
+rshi(TINT l, TINT r, Type *tp)
+{
+	if (r < 0 || r >= tp->size * 8) {
+		warn("shifting %d bits is undefined", r);
+		return 0;
+	}
+	return 1;
+}
+
+static bool
+foldint(int op, Symbol *res, TINT l, TINT r)
+{
+	TINT i;
+	bool (*validate)(TINT, TINT, Type *tp);
+
+	switch (op) {
+	case OADD: validate = addi; break;
+	case OSUB: validate = subi; break;
+	case OMUL: validate = muli; break;
+	case ODIV: validate = divi; break;
+	case OSHL: validate = lshi; break;
+	case OSHR: validate = rshi; break;
+	case OMOD: validate = divi; break;
+	default:   validate = NULL; break;
+	}
+
+	if (validate && !(*validate)(l, r, res->type))
+		return 0;
+
+	switch (op) {
+	case OADD:  i = l + r;  break;
+	case OSUB:  i = l - r;  break;
+	case OMUL:  i = l * r;  break;
+	case ODIV:  i = l / r;  break;
+	case OMOD:  i = l % r;  break;
+	case OSHL:  i = l << r; break;
+	case OSHR:  i = l >> r; break;
+	case OBAND: i = l & r;  break;
+	case OBXOR: i = l ^ r;  break;
+	case OBOR:  i = l | r;  break;
+	case OAND:  i = l && r; break;
+	case OOR:   i = l || r; break;
+	case OLT:   i = l < r;  break;
+	case OGT:   i = l > r;  break;
+	case OGE:   i = l >= r; break;
+	case OLE:   i = l <= r; break;
+	case OEQ:   i = l == r; break;
+	case ONE:   i = l != r; break;
+	case ONEG:  i = -l;     break;
+	case OCPL:  i = ~l;     break;
+	}
+	res->u.i = i;
+	return 1;
+}
+
+static bool
+folduint(int op, Symbol *res, TINT l, TINT r)
+{
+	TINT i;
+	TUINT u;
+
+	switch (op) {
+	case OADD:  u = l + r;  break;
+	case OSUB:  u = l - r;  break;
+	case OMUL:  u = l * r;  break;
+	case ODIV:  u = l / r;  break;
+	case OMOD:  u = l % r;  break;
+	case OSHL:  u = l << r; break;
+	case OSHR:  u = l >> r; break;
+	case OBAND: u = l & r;  break;
+	case OBXOR: u = l ^ r;  break;
+	case OBOR:  u = l | r;  break;
+	case ONEG:  u = -l;     break;
+	case OCPL:  u = ~l;     break;
+	case OAND:  i = l && r; goto unsign;
+	case OOR:   i = l || r; goto unsign;
+	case OLT:   i = l < r;  goto unsign;
+	case OGT:   i = l > r;  goto unsign;
+	case OGE:   i = l >= r; goto unsign;
+	case OLE:   i = l <= r; goto unsign;
+	case OEQ:   i = l == r; goto unsign;
+	case ONE:   i = l != r; goto unsign;
+	}
+
+sign:
+	res->u.u = u;
+	return 1;
+
+unsign:
+	res->u.i = i;
+	return 1;
+}
+
+static bool
+foldfloat(int op, Symbol *res, TFLOAT l, TFLOAT r)
+{
+	TFLOAT f;
+	TINT i;
+
+	switch (op) {
+	case OADD: f = l + r;  break;
+	case OSUB: f = l - r;  break;
+	case OMUL: f = l * r;  break;
+	case ODIV: f = l / r;  break;
+	case OLT:  i = l < r;  goto comparision;
+	case OGT:  i = l > r;  goto comparision;
+	case OGE:  i = l >= r; goto comparision;
+	case OLE:  i = l <= r; goto comparision;
+	case OEQ:  i = l == r; goto comparision;
+	case ONE:  i = l != r; goto comparision;
+	default:   return 0;
+	}
+	res->u.f = f;
+	return 1;
+
+comparision:
+	res->u.i = i;
+	return 1;
+}
+
+static Node *
+foldconst(int type, int op, Type *tp, Symbol *ls, Symbol *rs)
+{
+	Symbol *sym, aux;
+	TINT i;
+	TUINT u;
+	TFLOAT f;
+
+	aux.type = ls->type;
+	switch (type) {
+	case INT:
+		i = (rs) ? rs->u.i : 0;
+		if (!foldint(op, &aux, ls->u.i, i))
+			return NULL;
+		break;
+	case UNSIGNED:
+		u = (rs) ? rs->u.u : 0u;
+		if (!folduint(op, &aux, ls->u.u, u))
+			return NULL;
+		break;
+	case FLOAT:
+		f = (rs) ? rs->u.f : 0.0;
+		if (!foldfloat(op, &aux, ls->u.f, f))
+			return NULL;
+		break;
+	}
+	sym = newsym(NS_IDEN);
+	sym->type = tp;
+	sym->u = aux.u;
+	return constnode(sym);
+}
+
+static Node *
+fold(int op, Type *tp, Node *lp, Node *rp)
+{
+	Symbol *rs, *ls;
+	Node *np;
+	int type;
+
+	if (!lp->constant || rp && !rp->constant)
+		return NULL;
+	ls = lp->sym;
+	rs = (rp) ? rp->sym : NULL;
+
+	/*
+	 * Comparision nodes have integer type
+	 * but the operands can have different
+	 * type.
+	 */
+	type = (isnodecmp(op)) ? BTYPE(lp) : tp->op;
+	switch (type) {
+	case PTR:
+	case INT:
+		type = (tp->sign) ? INT : UNSIGNED;
+		break;
+	case FLOAT:
+		type = FLOAT;
+		break;
+	default:
+		return NULL;
+	}
+
+	if ((np = foldconst(type, op, tp, ls, rs)) == NULL)
+		return NULL;
+
+	freetree(lp);
+	freetree(rp);
+	return np;
+}
+
+static void
+commutative(int *op, Node **lp, Node **rp)
+{
+	Node *l = *lp, *r = *rp, *aux;
+
+	if (r == NULL || r->constant || !l->constant)
+		return;
+
+	switch (*op) {
+	case OLT:
+	case OGT:
+	case OGE:
+	case OLE:
+	case OEQ:
+	case ONE:
+		*op = negop(*op);
+	case OADD:
+	case OMUL:
+	case OBAND:
+	case OBXOR:
+	case OBOR:
+		aux = l;
+		l = r;
+		r = aux;
+		*rp = r;
+		*lp = l;
+		break;
+	default:
+		return;
+	}
+}
+
+static bool
+cmp(Node *np, int val)
+{
+	Symbol *sym;
+	Type *tp;
+
+	if (!np->constant)
+		return 0;
+	sym = np->sym;
+	tp = sym->type;
 
 	switch (tp->op) {
 	case PTR:
 	case INT:
-	cmp_integers:
-		iszero = SYMICMP(rs, 0);
-		isone = SYMICMP(rs, 1);
-		switch (op) {
-		case OADD:
-			if (iszero)
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, +);
-			break;
-		case OSUB:
-			if (iszero)
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, -);
-			break;
-		case OMUL:
-			if (isone)
-				return lp;
-			if (iszero)
-				return constnode(zero);
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, *);
-			break;
-		case ODIV:
-			if (isone)
-				return lp;
-			if (iszero)
-				goto division_by_0;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, /);
-			break;
-		case OMOD:
-			if (iszero)
-				goto division_by_0;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, %);
-			break;
-		case OSHL:
-			if (iszero)
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, <<);
-			break;
-		case OSHR:
-			if (iszero)
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, >>);
-			break;
-		case OBAND:
-			if (SYMICMP(rs, ~0))
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, &);
-			break;
-		case OBXOR:
-			if (iszero)
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, ^);
-			break;
-		case OBOR:
-			if (iszero)
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, |);
-			break;
-		case OAND:
-			if (!iszero)
-				return lp;
-			/* TODO: What happens with something like f(0) && 0? */
-			if (noconst)
-				goto no_simplify;
-			FOLDINT(&aux, ls, rs, &&);
-			break;
-		case OOR:
-			if (iszero)
-				return lp;
-			if (noconst)
-				goto no_simplify;
-			/* TODO: What happens with something like f(0) || 1? */
-			FOLDINT(&aux, ls, rs, ||);
-			break;
-		case OLT:
-			/* TODO: what happens with signess? */
-			if (noconst)
-				goto no_simplify;
-			aux.u.i = CMPISYM(&aux, ls, rs, <);
-			break;
-		case OGT:
-			/* TODO: what happens with signess? */
-			if (noconst)
-				goto no_simplify;
-			aux.u.i = CMPISYM(&aux, ls, rs, >);
-			break;
-		case OGE:
-			/* TODO: what happens with signess? */
-			if (noconst)
-				goto no_simplify;
-			aux.u.i = CMPISYM(&aux, ls, rs, >=);
-			break;
-		case OLE:
-			/* TODO: what happens with signess? */
-			if (noconst)
-				goto no_simplify;
-			aux.u.i = CMPISYM(&aux, ls, rs, <=);
-			break;
-		case OEQ:
-			/* TODO: what happens with signess? */
-			if (noconst)
-				goto no_simplify;
-			aux.u.i = CMPISYM(&aux, ls, rs, ==);
-			break;
-		case ONE:
-			/* TODO: what happens with signess? */
-			if (noconst)
-				goto no_simplify;
-			aux.u.i = CMPISYM(&aux, ls, rs, !=);
-			break;
-		}
-		break;
+		return ((tp->sign) ? sym->u.i : sym->u.u) == val;
 	case FLOAT:
-	cmp_floats:
-		/* TODO: Add algebraic reductions for floats */
-		switch (op) {
-		case OADD:
-			aux.u.f = ls->u.f + rs->u.f;
-			break;
-		case OSUB:
-			aux.u.f = ls->u.f - rs->u.f;
-			break;
-		case OMUL:
-			aux.u.f = ls->u.f * rs->u.f;
-			break;
-		case ODIV:
-			if (rs->u.f == 0.0)
-				goto division_by_0;
-			aux.u.f = ls->u.f / rs->u.f;
-			break;
-		case OLT:
-			aux.u.i = ls->u.f < rs->u.f;
-			break;
-		case OGT:
-			aux.u.i = ls->u.f > rs->u.f;
-			break;
-		case OGE:
-			aux.u.i = ls->u.f >= rs->u.f;
-			break;
-		case OLE:
-			aux.u.i = ls->u.f <= rs->u.f;
-			break;
-		case OEQ:
-			aux.u.i = ls->u.f == rs->u.f;
-			break;
-		case ONE:
-			aux.u.i = ls->u.f != rs->u.f;
-			break;
-		}
-		break;
-	default:
-		goto no_simplify;
+		return sym->u.f == val;
 	}
+	return 0;
+}
 
-	sym = newsym(NS_IDEN);
-	sym->type = tp;
-	sym->u = aux.u;
-	return constnode(sym);
+static TUINT
+ones(int n)
+{
+	TUINT v;
 
-division_by_0:
-	warn("division by 0");
+	for (v = 1; n--; v |= 1)
+		v <<= 1;
+	return v;
+}
 
-no_simplify:
+static bool
+identity(int op, Node *lp, Node *rp)
+{
+	int val;
+
+	switch (op) {
+	case OSHL:
+	case OSHR:
+	case OBXOR:
+	case OADD:
+	case OSUB:
+		val = 0;
+		break;
+	case ODIV:
+	case OMOD:
+	case OMUL:
+	case OBOR:
+		val = 1;
+		break;
+	case OBAND:
+		if (cmp(lp, ones(lp->type->size * 8)))
+			goto free_right;
+	default:
+		return 0;
+	}
+	if (!cmp(rp, val))
+		return 0;
+free_right:
+	freetree(rp);
+	return 1;
+}
+
+Node *
+simplify(int op, Type *tp, Node *lp, Node *rp)
+{
+	Node *np;
+
+	if ((np = fold(op, tp, lp, rp)) != NULL)
+		return np;
+	commutative(&op, &lp, &rp);
+	if (identity(op, lp, rp))
+		return lp;
 	return node(op, tp, lp, rp);
 }
 
-#define UFOLDINT(sym, ls, op) (((sym)->type->sign) ?     \
-	((sym)->u.i = (op (ls)->u.i)) :                  \
-	((sym)->u.u = (op (ls)->u.u)))
-
-Node *
-usimplify(unsigned char op, Type *tp, Node *np)
-{
-	Symbol *sym, *ns, aux;
-
-	if (!np->constant)
-		goto no_simplify;
-	ns = np->sym;
-	aux.type = tp;
-
-	switch (tp->op) {
-	case INT:
-		switch (op) {
-		case ONEG:
-			UFOLDINT(&aux, ns, -);
-			break;
-		case OCPL:
-			UFOLDINT(&aux, ns, ~);
-			break;
-		default:
-			goto no_simplify;
-		}
-		break;
-	case FLOAT:
-		if (op != ONEG)
-			goto no_simplify;
-		aux.u.f = -ns->u.f;
-		break;
-	default:
-		goto no_simplify;
-	}
-
-	sym = newsym(NS_IDEN);
-	sym->type = tp;
-	sym->u = aux.u;
-	return constnode(sym);
-
-no_simplify:
-	return node(op, tp, np, NULL);
-}
-
 /* TODO: check validity of types */
+/* TODO: Integrate it with simplify */
 
 Node *
 constconv(Node *np, Type *newtp)
