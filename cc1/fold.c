@@ -86,6 +86,7 @@ static bool
 foldint(int op, Symbol *res, TINT l, TINT r)
 {
 	TINT i;
+	Type *tp = res->type;
 	bool (*validate)(TINT, TINT, Type *tp);
 
 	switch (op) {
@@ -99,7 +100,7 @@ foldint(int op, Symbol *res, TINT l, TINT r)
 	default:   validate = NULL; break;
 	}
 
-	if (validate && !(*validate)(l, r, res->type))
+	if (validate && !(*validate)(l, r, tp))
 		return 0;
 
 	switch (op) {
@@ -123,6 +124,7 @@ foldint(int op, Symbol *res, TINT l, TINT r)
 	case ONE:   i = l != r; break;
 	case ONEG:  i = -l;     break;
 	case OCPL:  i = ~l;     break;
+	default:    return 0;
 	}
 	res->u.i = i;
 	return 1;
@@ -155,6 +157,7 @@ folduint(int op, Symbol *res, TINT l, TINT r)
 	case OLE:   i = l <= r; goto unsign;
 	case OEQ:   i = l == r; goto unsign;
 	case ONE:   i = l != r; goto unsign;
+	default:    return 0;
 	}
 
 sign:
@@ -201,7 +204,7 @@ foldconst(int type, int op, Type *tp, Symbol *ls, Symbol *rs)
 	TUINT u;
 	TFLOAT f;
 
-	aux.type = ls->type;
+	aux.type = tp;
 	switch (type) {
 	case INT:
 		i = (rs) ? rs->u.i : 0;
