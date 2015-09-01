@@ -130,11 +130,13 @@ numericaluop(char op, Node *np)
 	switch (BTYPE(np)) {
 	case INT:
 	case FLOAT:
+		if (op == ONEG && np->op == ONEG)
+			return np->left;
 		if (op == OADD)
 			return np;
 		return simplify(op, np->type, np, NULL);
 	default:
-		error("unary operator requires integer operand");
+		error("unary operator requires numerical operand");
 	}
 }
 
@@ -144,6 +146,8 @@ integeruop(char op, Node *np)
 	np = eval(np);
 	if (BTYPE(np) != INT)
 		error("unary operator requires integer operand");
+	if (op == OCPL && np->op == OCPL)
+		return np->left;
 	return simplify(op, np->type, np, NULL);
 }
 
