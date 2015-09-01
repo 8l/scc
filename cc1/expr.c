@@ -40,7 +40,7 @@ promote(Node *np)
 	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
 		return np;
 	tp = (r == RANK_UINT) ? uinttype : inttype;
-	return node(OCAST, tp, np, NULL);
+	return convert(np, tp, 1);
 }
 
 static void
@@ -57,9 +57,9 @@ typeconv(Node **p1, Node **p2)
 	tp2 = np2->type;
 	if (tp1 != tp2) {
 		if ((n = tp1->n.rank - tp2->n.rank) > 0)
-			np2 = node(OCAST, tp1, np2, NULL);
+			np2 = convert(np2, tp1, 1);
 		else if (n < 0)
-			np1 = node(OCAST, tp2, np1, NULL);
+			np1 = convert(np1, tp2, 1);
 	}
 	*p1 = np1;
 	*p2 = np2;
@@ -270,7 +270,7 @@ pcompare(char op, Node *lp, Node *rp)
 	switch (BTYPE(rp)) {
 	case INT:
 		if (rp->constant && SYMICMP(rp->sym, 0))
-			rp = node(OCAST, pvoidtype, rp, NULL);
+			rp = convert(rp, pvoidtype, 1);
 		break;
 	case PTR:
 		if (lp->type != rp->type)
@@ -279,8 +279,7 @@ pcompare(char op, Node *lp, Node *rp)
 	default:
 		errorp("incompatibles type in comparision");
 	}
-
-	return node(op, inttype, lp, rp);
+	return simplify(op, inttype, lp, rp);
 }
 
 static Node *
@@ -404,7 +403,7 @@ assignop(char op, Node *lp, Node *rp)
 
 	if (BTYPE(rp) == INT && BTYPE(lp) == PTR &&
 	    rp->constant && SYMICMP(rp->sym, 0)) {
-		rp = node(OCAST, pvoidtype, rp, NULL);
+		rp = convert(rp, pvoidtype, 1);
 	} else if ((rp = convert(rp, lp->type, 0)) == NULL) {
 		errorp("incompatible types when assigning");
 	}

@@ -20,7 +20,7 @@ A4	P	p
 L5
 	A4	G1	'P	:P
 	A4	@I	#I0	:I
-	j	L6	A4	#I0	IP	!I
+	j	L6	A4	#P0	!I
 	y	#I1
 L6
 	y	#I0
@@ -34,10 +34,10 @@ A4	P	pp
 	A1	#I1	:I
 	A2	A1	'P	:P
 	A4	A2	'P	:P
-	j	L5	A2	#I0	IP	=I
+	j	L5	A2	#P0	=I
 	A4	@P	@I	#I0	:I
 L5
-	A2	#I0	IP	:P
+	A2	#P0	:P
 	y	A1
 }
 ????
