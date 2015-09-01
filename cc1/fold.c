@@ -293,8 +293,6 @@ commutative(int *op, Node **lp, Node **rp)
 		*rp = r;
 		*lp = l;
 		break;
-	default:
-		return;
 	}
 }
 
@@ -329,7 +327,7 @@ ones(int n)
 	return v;
 }
 
-static bool
+static Node *
 identity(int op, Node *lp, Node *rp)
 {
 	int val;
@@ -352,13 +350,13 @@ identity(int op, Node *lp, Node *rp)
 		if (cmp(lp, ones(lp->type->size * 8)))
 			goto free_right;
 	default:
-		return 0;
+		return NULL;
 	}
 	if (!cmp(rp, val))
-		return 0;
+		return NULL;
 free_right:
 	freetree(rp);
-	return 1;
+	return lp;
 }
 
 Node *
@@ -369,8 +367,8 @@ simplify(int op, Type *tp, Node *lp, Node *rp)
 	if ((np = fold(op, tp, lp, rp)) != NULL)
 		return np;
 	commutative(&op, &lp, &rp);
-	if (identity(op, lp, rp))
-		return lp;
+	if ((np = identity(op, lp, rp)) != NULL)
+		return np;
 	return node(op, tp, lp, rp);
 }
 
