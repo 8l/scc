@@ -375,13 +375,15 @@ simplify(int op, Type *tp, Node *lp, Node *rp)
 }
 
 /* TODO: check validity of types */
-/* TODO: Integrate it with simplify */
 
 Node *
-constconv(Node *np, Type *newtp)
+castcode(Node *np, Type *newtp)
 {
 	Type *oldtp = np->type;
 	Symbol aux, *sym, *osym = np->sym;
+
+	if (!np->constant)
+		goto noconstant;
 
 	switch (newtp->op) {
 	case PTR:
@@ -405,14 +407,14 @@ constconv(Node *np, Type *newtp)
 				aux.u.u = osym->u.f;
 			break;
 		default:
-			return NULL;
+			goto noconstant;
 		}
 		break;
 	case FLOAT:
 		aux.u.f = (oldtp->sign) ? osym->u.i : osym->u.u;
 		break;
 	default:
-		return NULL;
+		goto noconstant;
 	}
 
 	sym = newsym(NS_IDEN);
@@ -421,4 +423,7 @@ constconv(Node *np, Type *newtp)
 	sym->u = aux.u;
 
 	return np;
+
+noconstant:
+	return node(OCAST, newtp, np, NULL);
 }

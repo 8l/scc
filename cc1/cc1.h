@@ -362,7 +362,7 @@ extern void freetree(Node *np);
 
 /* fold.c */
 extern Node *simplify(int op, Type *tp, Node *lp, Node *rp);
-extern Node *constconv(Node *np, Type *newtp);
+extern Node *castcode(Node *np, Type *newtp);
 
 /* expr.c */
 extern Node *expr(void), *negate(Node *np), *constexpr(void);

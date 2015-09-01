@@ -151,12 +151,9 @@ Node *
 convert(Node *np, Type *newtp, char iscast)
 {
 	Type *oldtp = np->type;
-	Node *p;
 
 	if (eqtype(newtp, oldtp))
 		return np;
-	if (np->constant && (p = constconv(np, newtp)) != NULL)
-		return p;
 
 	switch (oldtp->op) {
 	case ENUM:
@@ -202,7 +199,7 @@ convert(Node *np, Type *newtp, char iscast)
 	default:
 			return NULL;
 	}
-	return node(OCAST, newtp, np, NULL);
+	return castcode(np, newtp);
 }
 
 static Node *
