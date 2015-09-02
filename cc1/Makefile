@@ -12,6 +12,9 @@ $(OBJS) : cc1.h ../inc/cc.h ../inc/sizes.h
 cc1: $(OBJS) ../lib/libcc.a
 	$(CC) $(LDFLAGS) $(OBJS) ../lib/libcc.a -o $@
 
+test:
+	cd tests && ./chktest.sh
+
 clean:
 	rm -f $(OBJS)
 	rm -f cc1
