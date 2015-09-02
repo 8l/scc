@@ -7,11 +7,28 @@
 #include "../inc/sizes.h"
 #include "cc1.h"
 
-
-#define SYMICMP(sym, val) (((sym)->type->sign) ?         \
-	(sym)->u.i == (val) : (sym)->u.u == (val))
-
 Node *expr(void);
+
+bool
+cmpnode(Node *np, TUINT val)
+{
+	Symbol *sym;
+	Type *tp;
+
+	if (!np || !np->constant)
+		return 0;
+	sym = np->sym;
+	tp = sym->type;
+
+	switch (tp->op) {
+	case PTR:
+	case INT:
+		return ((tp->sign) ? sym->u.i : sym->u.u) == val;
+	case FLOAT:
+		return sym->u.f == val;
+	}
+	return 0;
+}
 
 bool
 isnodecmp(int op)
@@ -270,7 +287,7 @@ pcompare(char op, Node *lp, Node *rp)
 {
 	switch (BTYPE(rp)) {
 	case INT:
-		if (rp->constant && SYMICMP(rp->sym, 0))
+		if (cmpnode(rp, 0))
 			rp = convert(rp, pvoidtype, 1);
 		break;
 	case PTR:
@@ -402,12 +419,10 @@ assignop(char op, Node *lp, Node *rp)
 	lp = eval(lp);
 	rp = eval(rp);
 
-	if (BTYPE(rp) == INT && BTYPE(lp) == PTR &&
-	    rp->constant && SYMICMP(rp->sym, 0)) {
+	if (BTYPE(rp) == INT && BTYPE(lp) == PTR && cmpnode(rp, 0))
 		rp = convert(rp, pvoidtype, 1);
-	} else if ((rp = convert(rp, lp->type, 0)) == NULL) {
+	else if ((rp = convert(rp, lp->type, 0)) == NULL)
 		errorp("incompatible types when assigning");
-	}
 
 	return node(op, lp->type, lp, rp);
 }

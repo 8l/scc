@@ -371,6 +371,7 @@ extern Node *eval(Node *np), *iconstexpr(void), *condition(void);
 extern Node *exp2cond(Node *np, char neg);
 extern bool isnodecmp(int op);
 extern int negop(int op);
+extern bool cmpnode(Node *np, TUINT val);
 
 /* cpp.c */
 extern void icpp(void);

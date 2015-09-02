@@ -369,27 +369,6 @@ commutative(int *op, Node **lp, Node **rp)
 	}
 }
 
-static bool
-cmp(Node *np, int val)
-{
-	Symbol *sym;
-	Type *tp;
-
-	if (!np->constant)
-		return 0;
-	sym = np->sym;
-	tp = sym->type;
-
-	switch (tp->op) {
-	case PTR:
-	case INT:
-		return ((tp->sign) ? sym->u.i : sym->u.u) == val;
-	case FLOAT:
-		return sym->u.f == val;
-	}
-	return 0;
-}
-
 static TUINT
 ones(int n)
 {
@@ -420,12 +399,12 @@ identity(int op, Node *lp, Node *rp)
 		val = 1;
 		break;
 	case OBAND:
-		if (cmp(lp, ones(lp->type->size * 8)))
+		if (cmpnode(lp, ones(lp->type->size * 8)))
 			goto free_right;
 	default:
 		return NULL;
 	}
-	if (!cmp(rp, val))
+	if (!cmpnode(rp, val))
 		return NULL;
 free_right:
 	freetree(rp);
