@@ -106,12 +106,10 @@ decay(Node *np)
 			return new;
 		}
 	case FTN:
-		break;
+		np = node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
 	default:
 		return np;
 	}
-
-	return node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
 }
 
 Node *
