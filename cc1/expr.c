@@ -508,6 +508,7 @@ static Node *
 primary(void)
 {
 	Node *np;
+	Symbol *sym;
 
 	switch (yytoken) {
 	case CONSTANT:
@@ -515,13 +516,14 @@ primary(void)
 		next();
 		break;
 	case IDEN:
-		if ((yylval.sym->flags & ISDECLARED) == 0) {
-			yylval.sym->type = inttype;
-			yylval.sym->flags |= ISDECLARED;
-			error("'%s' undeclared", yytext);
+		sym = yylval.sym;
+		if ((sym->flags & ISDECLARED) == 0) {
+			errorp("'%s' undeclared", yytext);
+			sym->type = inttype;
+			install(sym->ns, yylval.sym);
 		}
-		yylval.sym->flags |= ISUSED;
-		np = varnode(yylval.sym);
+		sym->flags |= ISUSED;
+		np = varnode(sym);
 		next();
 		break;
 	default:
