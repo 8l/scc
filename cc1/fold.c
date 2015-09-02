@@ -23,9 +23,33 @@ addi(TINT l, TINT r, Type *tp)
 }
 
 static bool
+addf(TFLOAT l, TFLOAT r, Type *tp)
+{
+	struct limits *lim = getlimits(tp);
+	TFLOAT max = lim->max.f, min = lim->min.f;
+
+	if (l < 0 && r < 0 && l >= min - r ||
+	    l == 0 ||
+	    r == 0 ||
+	    l < 0 && r > 0 ||
+	    l > 0 && r < 0 ||
+	    l > 0 && r > 0 && l <= max - r) {
+		return 1;
+	}
+	warn("overflow in constant expression");
+	return 0;
+}
+
+static bool
 subi(TINT l, TINT r, Type *tp)
 {
 	return addi(l, -r, tp);
+}
+
+static bool
+subf(TFLOAT l, TFLOAT r, Type *tp)
+{
+	return addf(l, -r, tp);
 }
 
 static bool
@@ -33,6 +57,24 @@ muli(TINT l, TINT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
 	TINT max = lim->max.i, min = lim->min.i;
+
+	if (l > -1 && l <= 1 ||
+	    r > -1 && r <= 1 ||
+	    l < 0 && r < 0 && -l <= max/-r ||
+	    l < 0 && r > 0 &&  l >= min/r  ||
+	    l > 0 && r < 0 &&  r >= min/l  ||
+	    l > 0 && r > 0 &&  l <= max/r) {
+			return 1;
+	}
+	warn("overflow in constant expression");
+	return 0;
+}
+
+static bool
+mulf(TFLOAT l, TFLOAT r, Type *tp)
+{
+	struct limits *lim = getlimits(tp);
+	TFLOAT max = lim->max.i, min = lim->min.i;
 
 	if (l > -1 && l <= 1 ||
 	    r > -1 && r <= 1 ||
@@ -56,6 +98,25 @@ divi(TINT l, TINT r,  Type *tp)
 		return 0;
 	}
 	if (l == lim->min.i && r == -1) {
+		warn("overflow in constant expression");
+		return 0;
+	}
+	return 1;
+}
+
+static bool
+divf(TFLOAT l, TFLOAT r,  Type *tp)
+{
+	struct limits *lim = getlimits(tp);
+
+	if (l < 0) l = -l;
+	if (r < 0) r = -r;
+
+	if (r == 0.0) {
+		warn("division by 0");
+		return 0;
+	}
+	if (r < 1.0 && l > lim->max.f * r) {
 		warn("overflow in constant expression");
 		return 0;
 	}
@@ -174,6 +235,18 @@ foldfloat(int op, Symbol *res, TFLOAT l, TFLOAT r)
 {
 	TFLOAT f;
 	TINT i;
+	bool (*validate)(TFLOAT, TFLOAT, Type *tp);
+
+	switch (op) {
+	case OADD: validate = addf; break;
+	case OSUB: validate = subf; break;
+	case OMUL: validate = mulf; break;
+	case ODIV: validate = divf; break;
+	default:   validate = NULL; break;
+	}
+
+	if (validate && !(*validate)(l, r, res->type))
+		return 0;
 
 	switch (op) {
 	case OADD: f = l + r;  break;
