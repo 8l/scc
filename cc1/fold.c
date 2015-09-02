@@ -93,11 +93,7 @@ divi(TINT l, TINT r,  Type *tp)
 {
 	struct limits *lim = getlimits(tp);
 
-	if (r == 0) {
-		warn("division by 0");
-		return 0;
-	}
-	if (l == lim->min.i && r == -1) {
+	if (r == 0 || l == lim->min.i && r == -1) {
 		warn("overflow in constant expression");
 		return 0;
 	}
@@ -112,11 +108,7 @@ divf(TFLOAT l, TFLOAT r,  Type *tp)
 	if (l < 0) l = -l;
 	if (r < 0) r = -r;
 
-	if (r == 0.0) {
-		warn("division by 0");
-		return 0;
-	}
-	if (r < 1.0 && l > lim->max.f * r) {
+	if (r == 0.0 || r < 1.0 && l > lim->max.f * r) {
 		warn("overflow in constant expression");
 		return 0;
 	}
@@ -308,8 +300,13 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 	Node *np;
 	int type;
 
+	if ((op == ODIV || op == OMOD) && cmpnode(rp, 0)) {
+		warn("division by 0");
+		return NULL;
+	}
 	if (!lp->constant || rp && !rp->constant)
 		return NULL;
+
 	ls = lp->sym;
 	rs = (rp) ? rp->sym : NULL;
 
@@ -416,9 +413,9 @@ simplify(int op, Type *tp, Node *lp, Node *rp)
 {
 	Node *np;
 
+	commutative(&op, &lp, &rp);
 	if ((np = fold(op, tp, lp, rp)) != NULL)
 		return np;
-	commutative(&op, &lp, &rp);
 	if ((np = identity(op, lp, rp)) != NULL)
 		return np;
 	return node(op, tp, lp, rp);
