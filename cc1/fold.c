@@ -376,36 +376,81 @@ ones(int n)
 	return v;
 }
 
+/*
+ * i || 0 => i,0
+ * i || 1 => i
+ * i && 0 => i,0
+ * i && 1 => i
+ * i >> 0 => i
+ * i << 0 => i
+ * i + 0  => i
+ * i - 0  => i
+ * i | 0  => i
+ * i ^ 0  => i
+ * i * 0  => i,0
+ * i * 1  => i
+ * i / 1  => i
+ * i & ~0 => i
+ * i % 1  => i,1
+ */
 static Node *
-identity(int op, Node *lp, Node *rp)
+identity(int *op, Node *lp, Node *rp)
 {
-	int val;
+	int iszero, isone, istrue;
 
-	switch (op) {
+	if (!rp)
+		return NULL;
+
+	iszero = cmpnode(rp, 0);
+	isone = cmpnode(rp, 1),
+	istrue = !iszero && rp->constant;
+
+	switch (*op) {
+	case OOR:
+		if (istrue)
+			goto change_to_comma;
+		if (iszero)
+			break;
+		return NULL;
+	case OAND:
+		if (iszero)
+			goto change_to_comma;
+		if (istrue)
+			break;
+		return NULL;
 	case OSHL:
 	case OSHR:
 	case OBXOR:
 	case OADD:
-	case OSUB:
-		val = 0;
-		break;
-	case ODIV:
-	case OMOD:
-	case OMUL:
 	case OBOR:
-		val = 1;
-		break;
+	case OSUB:
+		if (iszero)
+			break;
+		return NULL;
+	case OMUL:
+		if (iszero)
+			goto change_to_comma;
+	case ODIV:
+		if (isone)
+			break;
+		return NULL;
 	case OBAND:
-		if (cmpnode(lp, ones(lp->type->size * 8)))
-			goto free_right;
+		if (cmpnode(rp, ones(lp->type->size * 8)))
+			break;
+		return NULL;
+	case OMOD:
+		if (isone)
+			goto change_to_comma;
 	default:
 		return NULL;
 	}
-	if (!cmpnode(rp, val))
-		return NULL;
-free_right:
+
 	freetree(rp);
 	return lp;
+
+change_to_comma:
+	*op = OCOMMA;
+	return NULL;
 }
 
 Node *
@@ -416,7 +461,7 @@ simplify(int op, Type *tp, Node *lp, Node *rp)
 	commutative(&op, &lp, &rp);
 	if ((np = fold(op, tp, lp, rp)) != NULL)
 		return np;
-	if ((np = identity(op, lp, rp)) != NULL)
+	if ((np = identity(&op, lp, rp)) != NULL)
 		return np;
 	return node(op, tp, lp, rp);
 }
