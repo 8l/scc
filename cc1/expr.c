@@ -50,6 +50,7 @@ static Node *
 promote(Node *np)
 {
 	Type *tp;
+	Node *new;
 	unsigned r;
 
 	tp = np->type;
@@ -57,7 +58,9 @@ promote(Node *np)
 	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
 		return np;
 	tp = (r == RANK_UINT) ? uinttype : inttype;
-	return convert(np, tp, 1);
+	if ((new = convert(np, tp, 1)) != NULL)
+		return new;
+	return np;
 }
 
 static void
