@@ -411,6 +411,7 @@ varnode(Symbol *sym)
 	Node *np;
 
 	np = node(OSYM, sym->type, NULL, NULL);
+	np->type = sym->type;
 	np->lvalue = 1;
 	np->constant = 0;
 	np->symbol = 1;
@@ -424,6 +425,7 @@ constnode(Symbol *sym)
 	Node *np;
 
 	np = node(OSYM, sym->type, NULL, NULL);
+	np->type = sym->type;
 	np->symbol = 1;
 	np->constant = 1;
 	np->sym = sym;
