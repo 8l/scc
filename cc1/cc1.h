@@ -367,10 +367,11 @@ extern Node *castcode(Node *np, Type *newtp);
 /* expr.c */
 extern Node *expr(void), *negate(Node *np), *constexpr(void);
 extern Node *convert(Node *np, Type *tp1, char iscast);
-extern Node *eval(Node *np), *iconstexpr(void), *condexpr(void);
+extern Node *iconstexpr(void), *condexpr(void);
 extern bool isnodecmp(int op);
 extern int negop(int op);
 extern bool cmpnode(Node *np, TUINT val);
+extern Node *decay(Node *np);
 
 /* cpp.c */
 extern void icpp(void);

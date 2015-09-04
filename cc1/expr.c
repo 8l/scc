@@ -94,7 +94,7 @@ chklvalue(Node *np, Type *tp)
 		error("invalid use of void expression");
 }
 
-static Node *
+Node *
 decay(Node *np)
 {
 	Type *tp = np->type;
@@ -115,26 +115,9 @@ decay(Node *np)
 	}
 }
 
-Node *
-eval(Node *np)
-{
-	Node *p;
-
-	if (!np)
-		return NULL;
-
-	np = decay(np);
-	if (!isnodecmp(np->op))
-		return np;
-	p = node(OCOLON, inttype, constnode(one), constnode(zero));
-	return node(OASK, inttype, np, p);
-}
-
 static Node *
 integerop(char op, Node *lp, Node *rp)
 {
-	lp = eval(lp);
-	rp = eval(rp);
 	if (BTYPE(lp) != INT || BTYPE(rp) != INT)
 		error("operator requires integer operands");
 	typeconv(&lp, &rp);
@@ -144,7 +127,6 @@ integerop(char op, Node *lp, Node *rp)
 static Node *
 numericaluop(char op, Node *np)
 {
-	np = eval(np);
 	switch (BTYPE(np)) {
 	case INT:
 	case FLOAT:
@@ -161,9 +143,9 @@ numericaluop(char op, Node *np)
 static Node *
 integeruop(char op, Node *np)
 {
-	np = eval(np);
 	if (BTYPE(np) != INT)
 		error("unary operator requires integer operand");
+	np = promote(np);
 	if (op == OCPL && np->op == OCPL)
 		return np->left;
 	return simplify(op, np->type, np, NULL);
@@ -256,8 +238,6 @@ incorrect:
 static Node *
 arithmetic(char op, Node *lp, Node *rp)
 {
-	lp = eval(lp);
-	rp = eval(rp);
 	switch (BTYPE(lp)) {
 	case INT:
 	case FLOAT:
@@ -304,8 +284,8 @@ pcompare(char op, Node *lp, Node *rp)
 static Node *
 compare(char op, Node *lp, Node *rp)
 {
-	lp = eval(lp);
-	rp = eval(rp);
+	lp = promote(decay(lp));
+	rp = promote(decay(rp));
 	switch (BTYPE(lp)) {
 	case INT:
 	case FLOAT:
@@ -401,6 +381,7 @@ field(Node *np)
 static Node *
 content(char op, Node *np)
 {
+	np = decay(np);
 	switch (BTYPE(np)) {
 	case ARY:
 	case FTN:
@@ -428,7 +409,7 @@ array(Node *lp, Node *rp)
 
 	if (BTYPE(lp) != INT && BTYPE(rp) != INT)
 		error("array subscript is not an integer");
-	np = arithmetic(OADD, lp, rp);
+	np = arithmetic(OADD, decay(lp), decay(rp));
 	tp = np->type;
 	if (tp->op != PTR)
 		errorp("subscripted value is neither array nor pointer");
@@ -438,13 +419,18 @@ array(Node *lp, Node *rp)
 static Node *
 assignop(char op, Node *lp, Node *rp)
 {
-	lp = eval(lp);
-	rp = eval(rp);
+	int force = 0;
+	Type *tp = lp->type;
 
-	if (BTYPE(rp) == INT && BTYPE(lp) == PTR && cmpnode(rp, 0))
-		rp = convert(rp, pvoidtype, 1);
-	else if ((rp = convert(rp, lp->type, 0)) == NULL)
+	rp = decay(rp);
+	if (BTYPE(rp) == INT && tp->op == PTR && cmpnode(rp, 0)) {
+		tp = pvoidtype;
+		force = 1;
+	}
+	if ((rp = convert(rp, tp, force)) == NULL) {
 		errorp("incompatible types when assigning");
+		return lp;
+	}
 
 	return node(op, lp->type, lp, rp);
 }
@@ -560,7 +546,7 @@ arguments(Node *np)
 	toomany = 0;
 
 	do {
-		arg = eval(assign());
+		arg = decay(assign());
 		if (--n < 0 && !toomany) {
 			errorp("too many arguments in function call");
 			toomany = 1;
@@ -704,9 +690,7 @@ cast(void)
 			error("cast specify a function type");
 		default:
 			expect(')');
-			if ((lp = eval(cast())) == NULL)
-				unexpected();
-			if ((rp = convert(lp,  tp, 1)) == NULL)
+			if ((rp = convert(cast(),  tp, 1)) == NULL)
 				error("bad type convertion requested");
 			rp->lvalue = lp->lvalue;
 		}

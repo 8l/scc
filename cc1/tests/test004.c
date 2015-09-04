@@ -18,10 +18,10 @@ A2	I	x
 	A2	A2	#IFF	|I	:I
 	A2	A2	#I3	&I	:I
 	A2	A2	#I1	^I	:I
-	A2	A2	A2	#I1	>I	#I1	#I0	?I	+I	:I
-	A2	A2	A2	#I3	<I	#I1	#I0	?I	+I	:I
-	A2	A2	A2	#I1	>I	#I1	#I0	?I	+I	:I
-	A2	A2	A2	#I4	<I	#I1	#I0	?I	+I	:I
+	A2	A2	A2	#I1	>I	+I	:I
+	A2	A2	A2	#I3	<I	+I	:I
+	A2	A2	A2	#I1	>I	+I	:I
+	A2	A2	A2	#I4	<I	+I	:I
 	j	L3	A2	#I4	=I
 	y	#I1
 L3

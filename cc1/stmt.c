@@ -143,7 +143,7 @@ Return(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	Type *tp = curfun->type->type;
 
 	expect(RETURN);
-	np = (yytoken != ';') ? eval(expr()) : NULL;
+	np = (yytoken != ';') ? decay(expr()) : NULL;
 	expect(';');
 	if (!np) {
 		if (tp != voidtype)
