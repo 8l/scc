@@ -195,16 +195,10 @@ Switch(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(SWITCH);
 	expect ('(');
-	cond = eval(expr());
-	/* TODO: why can I not call directly to convert here? */
 
-	switch (BTYPE(cond)) {
-	case INT:
-	case ENUM:
-		cond = convert(cond, inttype, 0);
-		break;
-	default:
-		error("incorrect type in switch statement");
+	if ((cond = convert(expr(), inttype, 0)) == NULL) {
+		errorp("incorrect type in switch statement");
+		cond = constnode(zero);
 	}
 	expect (')');
 
