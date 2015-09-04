@@ -129,6 +129,7 @@ numericaluop(char op, Node *np)
 {
 	switch (BTYPE(np)) {
 	case INT:
+		np = promote(np);
 	case FLOAT:
 		if (op == ONEG && np->op == ONEG)
 			return np->left;
