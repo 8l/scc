@@ -540,7 +540,7 @@ static Node *assign(void);
 static Node *
 arguments(Node *np)
 {
-	int n;
+	int n, toomany;;
 	Node *par = NULL, *arg;
 	Type **targs, *tp = np->type;
 
@@ -554,27 +554,32 @@ arguments(Node *np)
 
 	expect('(');
 
-	if ((n = tp->n.elem) > 0) {
-		do {
-			if ((arg = eval(assign())) == NULL)
-				unexpected();
-			if ((arg = convert(arg, *targs++, 0)) == NULL)
-				goto bad_type;
-			par = node(OPAR, arg->type, par, arg);
-		} while (--n && accept(','));
-	}
+	n = tp->n.elem;
+	if (yytoken == ')')
+		goto no_pars;
+	toomany = 0;
 
+	do {
+		arg = eval(assign());
+		if (--n < 0 && !toomany) {
+			errorp("too many arguments in function call");
+			toomany = 1;
+			continue;
+		}
+		if ((arg = convert(arg, *targs, 0)) != NULL) {
+			par = node(OPAR, arg->type, par, arg);
+			continue;
+		}
+		errorp("incompatible type for argument %d in function call",
+		      tp->n.elem - n + 1);
+	} while (accept(','));
+
+no_pars:
 	if (n > 0)
-		error("too few arguments in function call");
-	if (yytoken == ',')
-		error("too many arguments in function call");
+		errorp("too few arguments in function call");
 
 	expect(')');
 	return node(OCALL, np->type->type, np, par);
-
-bad_type:
-	error("incompatible type for argument %d in function call",
-	      tp->n.elem - n + 1);
 }
 
 static Node *
