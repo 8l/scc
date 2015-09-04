@@ -465,8 +465,7 @@ incdec(Node *np, char op)
 static Node *
 address(char op, Node *np)
 {
-	if (!np->lvalue)
-		error("lvalue required in unary expression");
+	chklvalue(np);
 	if (np->symbol && (np->sym->flags & ISREGISTER))
 		error("address of register variable '%s' requested", yytext);
 	if (np->op == OPTR) {
