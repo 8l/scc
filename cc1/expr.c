@@ -468,7 +468,8 @@ incdec(Node *np, char op)
 		inc = constnode(one);
 		break;
 	default:
-		error("incorrect type in arithmetic operation");
+		errorp("wrong type argument to increment or decrement");
+		return np;
 	}
 	return arithmetic(op, np, inc);
 }
