@@ -377,8 +377,10 @@ ones(int n)
 }
 
 /*
- * i || k => i,k
- * i && k => i,k
+ * 0 || i => i
+ * 1 || i => 1
+ * 0 && i => 0
+ * 1 && i => i
  * i >> 0 => i
  * i << 0 => i
  * i + 0  => i
@@ -394,7 +396,7 @@ ones(int n)
 static Node *
 identity(int *op, Node *lp, Node *rp)
 {
-	int iszero, isone, istrue;
+	int iszero, isone, istrue, val;
 
 	if (!rp)
 		return NULL;
@@ -404,11 +406,12 @@ identity(int *op, Node *lp, Node *rp)
 	istrue = !iszero && rp->constant;
 
 	switch (*op) {
-	case OAND:
 	case OOR:
-		if (rp->constant)
-			goto change_to_comma;
-		return NULL;
+		val = 1;
+		goto logic_operator;
+	case OAND:
+		val = 0;
+		goto logic_operator;
 	case OSHL:
 	case OSHR:
 	case OBXOR:
@@ -416,18 +419,18 @@ identity(int *op, Node *lp, Node *rp)
 	case OBOR:
 	case OSUB:
 		if (iszero)
-			break;
+			goto free_right;
 		return NULL;
 	case OMUL:
 		if (iszero)
 			goto change_to_comma;
 	case ODIV:
 		if (isone)
-			break;
+			goto free_right;
 		return NULL;
 	case OBAND:
 		if (cmpnode(rp, ones(lp->type->size * 8)))
-			break;
+			goto free_right;
 		return NULL;
 	case OMOD:
 		if (isone)
@@ -436,6 +439,17 @@ identity(int *op, Node *lp, Node *rp)
 		return NULL;
 	}
 
+logic_operator:
+	if (!lp->constant)
+		return NULL;
+	if (cmpnode(lp, val))
+		goto free_right;
+
+free_left:
+	freetree(lp);
+	return rp;
+
+free_right:
 	freetree(rp);
 	return lp;
 
