@@ -399,19 +399,40 @@ field(Node *np)
 }
 
 static Node *
+content(char op, Node *np)
+{
+	switch (BTYPE(np)) {
+	case ARY:
+	case FTN:
+	case PTR:
+		if (np->op == OADDR) {
+			Node *new = np->left;
+			new->type = np->type->type;
+			free(np);
+			np = new;
+		} else {
+			np = node(op, np->type->type, np, NULL);
+		}
+		np->lvalue = 1;
+		return np;
+	default:
+		error("invalid argument of memory indirection");
+	}
+}
+
+static Node *
 array(Node *lp, Node *rp)
 {
 	Type *tp;
+	Node *np;
 
 	if (BTYPE(lp) != INT && BTYPE(rp) != INT)
 		error("array subscript is not an integer");
-	lp = arithmetic(OADD, lp, rp);
-	tp = lp->type;
+	np = arithmetic(OADD, lp, rp);
+	tp = np->type;
 	if (tp->op != PTR)
 		errorp("subscripted value is neither array nor pointer");
-	lp =  node(OPTR, tp->type, lp, NULL);
-	lp->lvalue = 1;
-	return lp;
+	return content(OPTR, np);
 }
 
 static Node *
@@ -465,26 +486,6 @@ address(char op, Node *np)
 		return new;
 	}
 	return node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
-}
-
-static Node *
-content(char op, Node *np)
-{
-	switch (BTYPE(np)) {
-	case ARY:
-	case FTN:
-	case PTR:
-		if (np->op == OADDR) {
-			Node *new = np->left;
-			free(np);
-			return new;
-		}
-		np = node(op, np->type->type, np, NULL);
-		np->lvalue = 1;
-		return np;
-	default:
-		error("invalid argument of unary '*'");
-	}
 }
 
 static Node *
