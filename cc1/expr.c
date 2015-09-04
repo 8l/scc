@@ -284,12 +284,13 @@ pcompare(char op, Node *lp, Node *rp)
 static Node *
 compare(char op, Node *lp, Node *rp)
 {
-	lp = promote(decay(lp));
-	rp = promote(decay(rp));
+	lp = decay(lp);
+	rp = decay(rp);
+
 	switch (BTYPE(lp)) {
 	case INT:
 	case FLOAT:
-		switch (BTYPE(lp)) {
+		switch (BTYPE(rp)) {
 		case INT:
 		case FLOAT:
 			typeconv(&lp, &rp);
