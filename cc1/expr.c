@@ -86,7 +86,7 @@ typeconv(Node **p1, Node **p2)
 }
 
 static void
-chklvalue(Node *np, Type *tp)
+chklvalue(Node *np)
 {
 	if (!np->lvalue)
 		error("lvalue required in operation");
@@ -441,7 +441,7 @@ incdec(Node *np, char op)
 	Type *tp = np->type;
 	Node *inc;
 
-	chklvalue(np, np->type);
+	chklvalue(np);
 
 	switch (BTYPE(np)) {
 	case PTR:
@@ -911,7 +911,7 @@ assign(void)
 		case OR_EQ:  op = OA_OR;   fun = integerop;  break;
 		default: return np;
 		}
-		chklvalue(np, np->type);
+		chklvalue(np);
 		next();
 		np = (fun)(op, np, assign());
 	}
