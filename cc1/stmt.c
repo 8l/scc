@@ -49,6 +49,18 @@ stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect(';');
 }
 
+static Node *
+condition(void)
+{
+	Node *np;
+
+	expect('(');
+	np = condexpr();
+	expect(')');
+
+	return np;
+}
+
 static void
 While(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
@@ -86,7 +98,7 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	expect('(');
 	einit = (yytoken != ';') ? expr() : NULL;
 	expect(';');
-	econd = (yytoken != ';') ? exp2cond(expr(), 0) : NULL;
+	econd = (yytoken != ';') ? condexpr() : NULL;
 	expect(';');
 	einc = (yytoken != ')') ? expr() : NULL;
 	expect(')');

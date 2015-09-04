@@ -353,7 +353,7 @@ negate(Node *np)
 	return np;
 }
 
-Node *
+static Node *
 exp2cond(Node *np, char neg)
 {
 	np = decay(np);
@@ -977,15 +977,12 @@ expr(void)
 }
 
 Node *
-condition(void)
+condexpr(void)
 {
 	Node *np;
 
-	expect('(');
 	np = exp2cond(expr(), 0);
 	if (np->constant)
 		warn("conditional expression is constant");
-	expect(')');
-
 	return np;
 }
