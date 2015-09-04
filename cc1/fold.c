@@ -377,10 +377,8 @@ ones(int n)
 }
 
 /*
- * i || 0 => i,0
- * i || 1 => i
- * i && 0 => i,0
- * i && 1 => i
+ * i || k => i,k
+ * i && k => i,k
  * i >> 0 => i
  * i << 0 => i
  * i + 0  => i
@@ -406,17 +404,10 @@ identity(int *op, Node *lp, Node *rp)
 	istrue = !iszero && rp->constant;
 
 	switch (*op) {
-	case OOR:
-		if (istrue)
-			goto change_to_comma;
-		if (iszero)
-			break;
-		return NULL;
 	case OAND:
-		if (iszero)
+	case OOR:
+		if (rp->constant)
 			goto change_to_comma;
-		if (istrue)
-			break;
 		return NULL;
 	case OSHL:
 	case OSHR:
