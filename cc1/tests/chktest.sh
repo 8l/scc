@@ -31,7 +31,7 @@ do
 	}
 	END {
 		system("../cc1 -w " test " > " out " 2>&1")
-		cmd="diff -u " chk " " out " >> " err
+		cmd="diff -c " chk " " out " >> " err
 		print test >> err
 		print system(cmd) ? "[FAILED]" : "[OK]"
 	}' $i
