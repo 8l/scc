@@ -409,10 +409,11 @@ Node *
 varnode(Symbol *sym)
 {
 	Node *np;
+	Type *tp = sym->type;
 
 	np = node(OSYM, sym->type, NULL, NULL);
 	np->type = sym->type;
-	np->lvalue = 1;
+	np->lvalue = tp->op != FTN && tp->op != ARY;
 	np->constant = 0;
 	np->symbol = 1;
 	np->sym = sym;
