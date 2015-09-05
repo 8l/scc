@@ -423,13 +423,20 @@ identity(int *op, Node *lp, Node *rp)
 		return NULL;
 	case OSHL:
 	case OSHR:
+		/*
+		 * i >> 0 => i    (free right)
+		 * i << 0 => i    (free right)
+		 * 0 >> i => 0    (free right)
+		 * 0 << i => 0    (free right)
+		 */
+		if (iszeror | iszerol)
+			goto free_right;
+		return NULL;
 	case OBXOR:
 	case OADD:
 	case OBOR:
 	case OSUB:
 		/*
-		 * i >> 0 => i
-		 * i << 0 => i
 		 * i + 0  => i
 		 * i - 0  => i
 		 * i | 0  => i
