@@ -461,7 +461,8 @@ enumdcl(void)
 {
 	Type *tp;
 	Symbol *sym, *tagsym;
-	int ns, val, nctes;
+	int ns, val, toomany;
+	unsigned nctes;
 
 	ns = namespace;
 	tagsym = newtag();
@@ -470,31 +471,37 @@ enumdcl(void)
 	if (!accept('{'))
 		goto restore_name;
 	if (tp->defined)
-		error("redefinition of enumeration '%s'", tagsym->name);
+		errorp("redefinition of enumeration '%s'", tagsym->name);
 	tp->defined = 1;
 	namespace = NS_IDEN;
 
-	for (nctes = val = 0; yytoken != ')'; ++nctes, ++val) {
+	/* TODO: check incorrect values in val */
+	for (nctes = val = 0; yytoken != '}'; ++nctes, ++val) {
 		if (yytoken != IDEN)
 			unexpected();
-		if ((sym = install(NS_IDEN, yylval.sym)) == NULL) {
-			error("'%s' redeclared as different kind of symbol",
-			      yytext);
-		}
-		if (nctes == NR_ENUM_CTES)
-			error("too much enum constants in a single enum");
+		sym = yylval.sym;
 		next();
-		sym->flags |= ISCONSTANT;
-		sym->type = inttype;
+		if (nctes == NR_ENUM_CTES && !toomany) {
+			errorp("too many enum constants in a single enum");
+			toomany = 1;
+		}
 		if (accept('=')) {
 			Node *np = iconstexpr();
 
 			if (np == NULL)
-				error("invalid enumeration value");
-			val = np->sym->u.i;
+				errorp("invalid enumeration value");
+			else
+				val = np->sym->u.i;
 			freetree(np);
 		}
-		sym->u.i = val;
+		if ((sym = install(NS_IDEN, sym)) == NULL) {
+			errorp("'%s' redeclared as different kind of symbol",
+			       yytext);
+		} else {
+			sym->u.i = val;
+			sym->flags |= ISCONSTANT;
+			sym->type = inttype;
+		}
 		if (!accept(','))
 			break;
 	}
