@@ -376,82 +376,103 @@ ones(int n)
 	return v;
 }
 
-/*
- * 0 || i => i
- * 1 || i => 1
- * 0 && i => 0
- * 1 && i => i
- * i >> 0 => i
- * i << 0 => i
- * i + 0  => i
- * i - 0  => i
- * i | 0  => i
- * i ^ 0  => i
- * i * 0  => i,0
- * i * 1  => i
- * i / 1  => i
- * i & ~0 => i
- * i % 1  => i,1
- */
 static Node *
 identity(int *op, Node *lp, Node *rp)
 {
-	int iszero, isone, istrue, val;
+	int iszeror, isoner, istruer, val;
+	int iszerol, isonel, istruel;
 
 	if (!rp)
 		return NULL;
 
-	iszero = cmpnode(rp, 0);
-	isone = cmpnode(rp, 1),
-	istrue = !iszero && rp->constant;
+	iszeror = cmpnode(rp, 0);
+	isoner = cmpnode(rp, 1),
+	istruer = !iszeror && rp->constant;
+	iszerol = cmpnode(lp, 0);
+	isonel = cmpnode(lp, 1),
+	istruel = !iszerol && lp->constant;
 
 	switch (*op) {
 	case OOR:
-		val = 1;
-		goto logic_operator;
+		/*
+		 * 1 || i => 1    (free right)
+		 * i || 0 => i    (free right)
+		 * 0 || i => i    (free left)
+		 * i || 1 => i,1  (comma)
+		 */
+		if (isonel | iszeror)
+			goto free_right;
+		if (iszerol)
+			goto free_left;
+		if (isoner)
+			goto change_to_comma;
+		return NULL;
 	case OAND:
-		val = 0;
-		goto logic_operator;
+		/*
+		 * 0 && i => 0    (free right)
+		 * i && 1 => i    (free right)
+		 * 1 && i => i    (free left)
+		 * i && 0 => i,0  (comma)
+		 */
+		if (iszerol | isoner)
+			goto free_right;
+		if (isonel)
+			goto free_left;
+		if (iszeror)
+			goto change_to_comma;
+		return NULL;
 	case OSHL:
 	case OSHR:
 	case OBXOR:
 	case OADD:
 	case OBOR:
 	case OSUB:
-		if (iszero)
+		/*
+		 * i >> 0 => i
+		 * i << 0 => i
+		 * i + 0  => i
+		 * i - 0  => i
+		 * i | 0  => i
+		 * i ^ 0  => i
+		 */
+		if (iszeror)
 			goto free_right;
 		return NULL;
 	case OMUL:
-		if (iszero)
+		/*
+		 * i * 0  => i,0
+		 * i * 1  => i
+		 */
+		if (iszeror)
 			goto change_to_comma;
+		if (isoner)
+			goto free_right;
+		return NULL;
 	case ODIV:
-		if (isone)
+		/* i / 1  => i */
+		if (isoner)
 			goto free_right;
 		return NULL;
 	case OBAND:
+		/* i & ~0 => i */
 		if (cmpnode(rp, ones(lp->type->size * 8)))
 			goto free_right;
 		return NULL;
 	case OMOD:
-		if (isone)
+		/* i % 1  => i,1 */
+		if (isoner)
 			goto change_to_comma;
 	default:
 		return NULL;
 	}
 
-logic_operator:
-	if (!lp->constant)
-		return NULL;
-	if (cmpnode(lp, val))
-		goto free_right;
+free_right:
+	freetree(rp);
+	return lp;
 
 free_left:
 	freetree(lp);
 	return rp;
-
-free_right:
-	freetree(rp);
-	return lp;
 
 change_to_comma:
 	*op = OCOMMA;
