@@ -553,7 +553,7 @@ arguments(Node *np)
 			toomany = 1;
 			continue;
 		}
-		if ((arg = convert(arg, *targs, 0)) != NULL) {
+		if ((arg = convert(arg, *targs++, 0)) != NULL) {
 			par = node(OPAR, arg->type, par, arg);
 			continue;
 		}
