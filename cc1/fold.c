@@ -135,6 +135,16 @@ rshi(TINT l, TINT r, Type *tp)
 	return 1;
 }
 
+static TUINT
+ones(int n)
+{
+	TUINT v;
+
+	for (v = 1; n--; v |= 1)
+		v <<= 1;
+	return v;
+}
+
 static bool
 foldint(int op, Symbol *res, TINT l, TINT r)
 {
@@ -360,20 +370,10 @@ commutative(int *op, Node **lp, Node **rp)
 		aux = l;
 		l = r;
 		r = aux;
-		*rp = r;
-		*lp = l;
 		break;
 	}
-}
-
-static TUINT
-ones(int n)
-{
-	TUINT v;
-
-	for (v = 1; n--; v |= 1)
-		v <<= 1;
-	return v;
+	*rp = r;
+	*lp = l;
 }
 
 static Node *
@@ -462,7 +462,7 @@ identity(int *op, Node *lp, Node *rp)
 		return NULL;
 	case OBAND:
 		/* i & ~0 => i */
-		if (cmpnode(rp, ones(lp->type->size * 8)))
+		if (cmpnode(rp, ~0))
 			goto free_right;
 		return NULL;
 	case OMOD:
