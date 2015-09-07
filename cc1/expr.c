@@ -14,6 +14,7 @@ cmpnode(Node *np, TUINT val)
 {
 	Symbol *sym;
 	Type *tp;
+	TUINT mask, nodeval;
 
 	if (!np || !np->constant)
 		return 0;
@@ -23,7 +24,9 @@ cmpnode(Node *np, TUINT val)
 	switch (tp->op) {
 	case PTR:
 	case INT:
-		return ((tp->sign) ? sym->u.i : sym->u.u) == val;
+		mask = (val > 1) ? ones(np->type->size) : -1;
+		nodeval = (tp->sign) ? sym->u.i : sym->u.u;
+		return (nodeval & mask) == (val & mask);
 	case FLOAT:
 		return sym->u.f == val;
 	}

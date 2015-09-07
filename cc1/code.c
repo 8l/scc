@@ -192,7 +192,7 @@ emitconst(Node *np)
 	case PTR:
 	case INT:
 		u = (tp->sign) ? (TUINT) sym->u.i : sym->u.u;
-		printf("#%c%lX", np->type->letter, sym->u.i);
+		printf("#%c%lX", np->type->letter, sym->u.i & ones(tp->size));
 		break;
 	case ARY:
 		/*

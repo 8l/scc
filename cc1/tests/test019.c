@@ -22,8 +22,8 @@ A2	I	i
 	A2	#I4	:I
 	A2	#IC	:I
 	A2	#I8	:I
-	A2	#IFFFFFFFD	:I
-	A2	#IFFFFFFF3	:I
+	A2	#IFFFD	:I
+	A2	#IFFF3	:I
 	A2	#I1	:I
 	A2	#I0	:I
 	A2	#I0	:I

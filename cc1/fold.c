@@ -4,6 +4,19 @@
 #include "../inc/cc.h"
 #include "cc1.h"
 
+
+/* TODO: Add ENUM in the cases */
+
+TUINT
+ones(int nbytes)
+{
+	TUINT v;
+
+	for (v = 0; nbytes--; v |= 255)
+		v <<= 8;
+	return v;
+}
+
 static bool
 addi(TINT l, TINT r, Type *tp)
 {
@@ -133,16 +146,6 @@ rshi(TINT l, TINT r, Type *tp)
 		return 0;
 	}
 	return 1;
-}
-
-static TUINT
-ones(int n)
-{
-	TUINT v;
-
-	for (v = 1; n--; v |= 1)
-		v <<= 1;
-	return v;
 }
 
 static bool
@@ -462,7 +465,7 @@ identity(int *op, Node *lp, Node *rp)
 		return NULL;
 	case OBAND:
 		/* i & ~0 => i */
-		if (cmpnode(rp, ~0))
+		if (cmpnode(rp, -1))
 			goto free_right;
 		return NULL;
 	case OMOD:
