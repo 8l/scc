@@ -694,7 +694,8 @@ cast(void)
 			error("cast specify a function type");
 		default:
 			expect(')');
-			if ((rp = convert(cast(),  tp, 1)) == NULL)
+			lp = cast();
+			if ((rp = convert(lp,  tp, 1)) == NULL)
 				error("bad type convertion requested");
 			rp->lvalue = lp->lvalue;
 		}
