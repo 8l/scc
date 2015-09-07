@@ -211,9 +211,9 @@ readint(char *s, int base, Symbol *sym)
 
 	max = (tp->sign) ? lim->max.u : lim->max.i;
 
-	for (u = 0; isxdigit(c = *s++); u = u * base + val) {
+	for (u = 0; isxdigit(c = *s++); u = u*base + val) {
 		val = (c <= '9') ? c - '0' :  10 + c - 'A';
-		if (u <= max/base + val)
+		if (u <= max/base && u*base <= max - val)
 			continue;
 		if (tp->sign) {
 			if (tp == inttype) {
@@ -235,6 +235,7 @@ readint(char *s, int base, Symbol *sym)
 			}
 		}
 		sym->type = tp;
+		max = (tp->sign) ? lim->max.u : lim->max.i;
 	}
 
 	if (tp->sign)
