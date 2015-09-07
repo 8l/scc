@@ -17,24 +17,6 @@
  */
 static struct limits limits[][4] = {
 	{
-		{	/* 0 = signed 1 byte */
-			.min.i = -127,
-			.max.i = 127
-		},
-		{	/* 1 = signed 2 byte */
-			.min.i = -32767,
-			.max.i = 327677
-		},
-		{	/* 2 = signed 4 byte */
-			.min.i = -2147483647L,
-			.max.i = 2147483647L
-		},
-		{	/* 3 = signed 8 byte */
-			.min.i = -9223372036854775807LL,
-			.max.i = 9223372036854775807LL,
-		}
-	},
-	{
 		{	/* 0 = unsigned 1 byte */
 			.min.u = 0,
 			.max.u = 255
@@ -50,6 +32,24 @@ static struct limits limits[][4] = {
 		{	/* 3 = unsigned 4 bytes */
 			.min.u = 0,
 			.max.u = 18446744073709551615u
+		}
+	},
+	{
+		{	/* 0 = signed 1 byte */
+			.min.i = -127,
+			.max.i = 127
+		},
+		{	/* 1 = signed 2 byte */
+			.min.i = -32767,
+			.max.i = 32767
+		},
+		{	/* 2 = signed 4 byte */
+			.min.i = -2147483647L,
+			.max.i = 2147483647L
+		},
+		{	/* 3 = signed 8 byte */
+			.min.i = -9223372036854775807LL,
+			.max.i = 9223372036854775807LL,
 		}
 	},
 	{

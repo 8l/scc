@@ -201,6 +201,55 @@ tok2str(void)
 	input->begin = input->p;
 }
 
+static Symbol *
+readint(char *s, int base, Symbol *sym)
+{
+	Type *tp = sym->type;
+	struct limits *lim = getlimits(tp);
+	TUINT u, val, max, factor = 1;
+	int c;
+
+	max = (tp->sign) ? lim->max.u : lim->max.i;
+	switch (*s++) {
+	case '-': factor = -1; break;
+	default: --s;
+	case '+': factor = 1; break;
+	}
+
+	for (u = 0; isxdigit(c = *s++); u = u * base + val) {
+		val = (c <= '9') ? c - '0' :  10 + c - 'A';
+		if (u <= max/base + val)
+			continue;
+		if (tp->sign) {
+			if (tp == inttype)
+				tp = longtype;
+			else if (tp == longtype)
+				tp == llongtype;
+			else {
+				errorp("overflow in integer constant");
+				break;
+			}
+		} else {
+			if (tp == uinttype)
+				tp = ulongtype;
+			else if (tp == ulongtype)
+				tp == ullongtype;
+			else {
+				errorp("overflow in integer constant");
+				break;
+			}
+		}
+		sym->type = tp;
+	}
+
+	if (tp->sign)
+		sym->u.i = u * factor;
+	else
+		sym->u.u = u;
+
+	return sym;
+}
+
 static unsigned
 integer(char *s, char base)
 {
@@ -233,10 +282,7 @@ convert:
 	sym = newsym(NS_IDEN);
 	sym->type = tp;
 	sym->flags |= ISCONSTANT;
-	v = strtol(s, NULL, base);
-	if (tp == inttype)
-		sym->u.i = v;
-	yylval.sym = sym;
+	yylval.sym = readint(s, base, sym);
 	return CONSTANT;
 }
 

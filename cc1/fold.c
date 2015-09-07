@@ -507,6 +507,7 @@ simplify(int op, Type *tp, Node *lp, Node *rp)
 Node *
 castcode(Node *np, Type *newtp)
 {
+	TUINT mask;
 	Type *oldtp = np->type;
 	Symbol aux, *sym, *osym = np->sym;
 
@@ -517,6 +518,7 @@ castcode(Node *np, Type *newtp)
 	case PTR:
 	case INT:
 	case ENUM:
+		mask = ones(newtp->size);
 		switch (oldtp->op) {
 		case PTR:
 		case INT:
@@ -524,21 +526,25 @@ castcode(Node *np, Type *newtp)
 			if (newtp->sign == oldtp->sign)
 				aux.u = osym->u;
 			if (newtp->sign && !oldtp->sign)
-				aux.u.i = osym->u.u;
+				aux.u.i = osym->u.u & mask;
 			else if (!newtp->sign && oldtp->sign)
-				aux.u.u = osym->u.u;
+				aux.u.u = osym->u.u & mask;
 			break;
 		case FLOAT:
-			if (newtp->sign)
+			if (newtp->sign) {
 				aux.u.i = osym->u.f;
-			else
+				aux.u.i &= mask;
+			} else {
 				aux.u.u = osym->u.f;
+				aux.u.u &= mask;
+			}
 			break;
 		default:
 			goto noconstant;
 		}
 		break;
 	case FLOAT:
+		/* FIXME: The cast can be from another floar type */
 		aux.u.f = (oldtp->sign) ? osym->u.i : osym->u.u;
 		break;
 	default:
