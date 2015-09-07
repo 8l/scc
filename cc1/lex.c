@@ -351,7 +351,7 @@ escape(void)
 		return ' ';
 	}
 	errno = 0;
-	c = strtoul(input->p, &input->p, base);
+	c = strtoul(++input->p, &input->p, base);
 	if (errno || c > 255)
 		warn("character constant out of range");
 	return c;
@@ -365,9 +365,12 @@ character(void)
 
 	if ((c = *++input->p) == '\\')
 		c = escape();
+	else
+		c = *input->p++;
 	if (*input->p != '\'')
 		error("invalid character constant");
-	++input->p;
+	else
+		++input->p;
 
 	sym = newsym(NS_IDEN);
 	sym->u.i = c;
