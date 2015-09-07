@@ -197,7 +197,7 @@ foldint(int op, Symbol *res, TINT l, TINT r)
 }
 
 static bool
-folduint(int op, Symbol *res, TINT l, TINT r)
+folduint(int op, Symbol *res, TUINT l, TUINT r)
 {
 	TINT i;
 	TUINT u;
@@ -215,22 +215,21 @@ folduint(int op, Symbol *res, TINT l, TINT r)
 	case OBOR:  u = l | r;  break;
 	case ONEG:  u = -l;     break;
 	case OCPL:  u = ~l;     break;
-	case OAND:  i = l && r; goto unsign;
-	case OOR:   i = l || r; goto unsign;
-	case OLT:   i = l < r;  goto unsign;
-	case OGT:   i = l > r;  goto unsign;
-	case OGE:   i = l >= r; goto unsign;
-	case OLE:   i = l <= r; goto unsign;
-	case OEQ:   i = l == r; goto unsign;
-	case ONE:   i = l != r; goto unsign;
+	case OAND:  i = l && r; goto sign;
+	case OOR:   i = l || r; goto sign;
+	case OLT:   i = l < r;  goto sign;
+	case OGT:   i = l > r;  goto sign;
+	case OGE:   i = l >= r; goto sign;
+	case OLE:   i = l <= r; goto sign;
+	case OEQ:   i = l == r; goto sign;
+	case ONE:   i = l != r; goto sign;
 	default:    return 0;
 	}
 
-sign:
 	res->u.u = u;
 	return 1;
 
-unsign:
+sign:
 	res->u.i = i;
 	return 1;
 }
@@ -311,6 +310,7 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 {
 	Symbol *rs, *ls;
 	Node *np;
+	Type *optype;
 	int type;
 
 	if ((op == ODIV || op == OMOD) && cmpnode(rp, 0)) {
@@ -319,30 +319,21 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 	}
 	if (!lp->constant || rp && !rp->constant)
 		return NULL;
-
+	optype = lp->type;
 	ls = lp->sym;
 	rs = (rp) ? rp->sym : NULL;
 
-	/*
-	 * Comparision nodes have integer type
-	 * but the operands can have different
-	 * type.
-	 */
-	type = (isnodecmp(op)) ? BTYPE(lp) : tp->op;
-	switch (type) {
-	case PTR:
+	switch (type = optype->op) {
 	case INT:
-		type = (tp->sign) ? INT : UNSIGNED;
-		break;
+		if (!optype->sign)
+			type = UNSIGNED;
+	case PTR:
 	case FLOAT:
-		type = FLOAT;
-		break;
+		if ((np = foldconst(type, op, tp, ls, rs)) != NULL)
+			break;
 	default:
 		return NULL;
 	}
-
-	if ((np = foldconst(type, op, tp, ls, rs)) == NULL)
-		return NULL;
 
 	freetree(lp);
 	freetree(rp);
