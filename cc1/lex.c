@@ -206,35 +206,30 @@ readint(char *s, int base, Symbol *sym)
 {
 	Type *tp = sym->type;
 	struct limits *lim = getlimits(tp);
-	TUINT u, val, max, factor = 1;
+	TUINT u, val, max;
 	int c;
 
 	max = (tp->sign) ? lim->max.u : lim->max.i;
-	switch (*s++) {
-	case '-': factor = -1; break;
-	default: --s;
-	case '+': factor = 1; break;
-	}
 
 	for (u = 0; isxdigit(c = *s++); u = u * base + val) {
 		val = (c <= '9') ? c - '0' :  10 + c - 'A';
 		if (u <= max/base + val)
 			continue;
 		if (tp->sign) {
-			if (tp == inttype)
+			if (tp == inttype) {
 				tp = longtype;
-			else if (tp == longtype)
+			} else if (tp == longtype) {
 				tp == llongtype;
-			else {
+			} else {
 				errorp("overflow in integer constant");
 				break;
 			}
 		} else {
-			if (tp == uinttype)
+			if (tp == uinttype) {
 				tp = ulongtype;
-			else if (tp == ulongtype)
+			} else if (tp == ulongtype) {
 				tp == ullongtype;
-			else {
+			} else {
 				errorp("overflow in integer constant");
 				break;
 			}
@@ -243,7 +238,7 @@ readint(char *s, int base, Symbol *sym)
 	}
 
 	if (tp->sign)
-		sym->u.i = u * factor;
+		sym->u.i = u;
 	else
 		sym->u.u = u;
 
