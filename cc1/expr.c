@@ -433,7 +433,9 @@ assignop(char op, Node *lp, Node *rp)
 		force = 1;
 	}
 	if ((rp = convert(rp, tp, force)) == NULL) {
-		errorp("incompatible types when assigning");
+		errorp((op == OINIT) ?
+		        "incorrect initiliazer" :
+		        "incompatible types when assigning");
 		return lp;
 	}
 

@@ -372,16 +372,11 @@ initializer(Symbol *sym)
 		return;
 	}
 	np = expr();
-	if ((np = convert(np, tp, 0)) == NULL)
-		goto bad_initializer;
 	if ((sym->flags & ISLOCAL) == 0) {
-		emit(OEXPR, assignop(OASSIGN, varnode(sym), np));
+		emit(OEXPR, assignop(OINIT, varnode(sym), np));
 		return;
 	}
 	return;
-
-bad_initializer:
-	errorp("invalid initializer");
 }
 
 static Symbol *

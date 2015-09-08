@@ -305,7 +305,8 @@ enum op {
 	ORET,
 	ODECL,
 	OSWITCH,
-	OSWITCHT
+	OSWITCHT,
+	OINIT
 };
 
 /* error.c */
