@@ -363,11 +363,15 @@ return_type:
 static void
 initializer(Symbol *sym)
 {
-	Type *tp = sym->type;
 	Node *np;
 
 	if (accept('{')) {
-		initializer(sym);
+		do {
+			if (yytoken == '}')
+				break;
+			initializer(sym);
+		} while (accept(',');
+
 		expect('}');
 		return;
 	}
@@ -376,7 +380,6 @@ initializer(Symbol *sym)
 		emit(OEXPR, assignop(OINIT, varnode(sym), np));
 		return;
 	}
-	return;
 }
 
 static Symbol *
