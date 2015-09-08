@@ -421,7 +421,7 @@ array(Node *lp, Node *rp)
 	return content(OPTR, np);
 }
 
-static Node *
+Node *
 assignop(char op, Node *lp, Node *rp)
 {
 	int force = 0;

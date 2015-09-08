@@ -360,18 +360,28 @@ return_type:
 
 /* TODO: check correctness of the initializator  */
 /* TODO: emit initializer */
-static struct node *
+static void
 initializer(Symbol *sym)
 {
+	Type *tp = sym->type;
+	Node *np;
+
 	if (accept('{')) {
 		initializer(sym);
 		expect('}');
-	} else {
-		do {
-			expr();
-		} while (accept(','));
+		return;
 	}
-	return NULL;
+	np = expr();
+	if ((np = convert(np, tp, 0)) == NULL)
+		goto bad_initializer;
+	if ((sym->flags & ISLOCAL) == 0) {
+		emit(OEXPR, assignop(OASSIGN, varnode(sym), np));
+		return;
+	}
+	return;
+
+bad_initializer:
+	errorp("invalid initializer");
 }
 
 static Symbol *
@@ -683,13 +693,13 @@ identifier(struct decl *dcl)
 		sym->flags = flags;
 	}
 
-	if (accept('='))
-		initializer(sym);
 	/* TODO: disallow initializators in functions */
 	/* TODO: check if typedef has initializer */
 	/* TODO: check if the variable is extern and has initializer */
 	if (sym->token == IDEN && sym->type->op != FTN)
 		emit(ODECL, sym);
+	if (accept('='))
+		initializer(sym);
 	return sym;
 
 redeclaration:
