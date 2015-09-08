@@ -431,7 +431,8 @@ iden(void)
 		 * it is not a correct macro call, so try to find
 		 * another definition.
 		 */
-		sym = nextsym(sym, namespace);
+		if (lexmode != CPPMODE)
+			sym = nextsym(sym, namespace);
 	}
 	yylval.sym = sym;
 	if (sym->flags & ISCONSTANT)

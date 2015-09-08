@@ -340,7 +340,7 @@ define(void)
 		warn("'%s' redefined", yytext);
 		free(sym->u.s);
 	} else {
-		sym = lookup(NS_CPP, yytext);
+		sym = install(NS_CPP, sym);
 		sym->flags |= ISDECLARED;
 	}
 

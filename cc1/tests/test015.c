@@ -2,7 +2,7 @@
 name: TEST015
 description: Stress namespace mechanism
 output:
-test015.c:25: error: label 's' already defined
+test015.c:60: error: label 's' already defined
 S8	s2
 (
 M9	I	s
@@ -30,7 +30,6 @@ L2
 ????
 */
 
-#line 1
 typedef struct s s;
 
 struct s {
@@ -42,9 +41,12 @@ struct s {
 	} s;
 } s2;
 
+#define s s
+
 int
 main(void)
 {
+#undef s
 	goto s;
 	struct s s;
 		{
