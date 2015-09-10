@@ -252,7 +252,6 @@ integer(char *s, char base)
 	Type *tp;
 	Symbol *sym;
 	unsigned size, sign;
-	long v;
 
 	for (size = sign = 0; ; ++input->p) {
 		switch (toupper(*input->p)) {
