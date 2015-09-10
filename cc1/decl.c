@@ -358,30 +358,6 @@ return_type:
 	return tp;
 }
 
-/* TODO: check correctness of the initializator  */
-/* TODO: emit initializer */
-static void
-initializer(Symbol *sym)
-{
-	Node *np;
-
-	if (accept('{')) {
-		do {
-			if (yytoken == '}')
-				break;
-			initializer(sym);
-		} while (accept(',');
-
-		expect('}');
-		return;
-	}
-	np = expr();
-	if ((sym->flags & ISLOCAL) == 0) {
-		emit(OEXPR, assignop(OINIT, varnode(sym), np));
-		return;
-	}
-}
-
 static Symbol *
 newtag(void)
 {

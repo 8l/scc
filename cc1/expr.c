@@ -421,7 +421,7 @@ array(Node *lp, Node *rp)
 	return content(OPTR, np);
 }
 
-Node *
+static Node *
 assignop(char op, Node *lp, Node *rp)
 {
 	int force = 0;
@@ -976,4 +976,28 @@ condexpr(void)
 	if (np->constant)
 		warn("conditional expression is constant");
 	return np;
+}
+
+/* TODO: check correctness of the initializator  */
+/* TODO: emit initializer */
+void
+initializer(Symbol *sym)
+{
+	Node *np;
+
+	if (accept('{')) {
+		do {
+			if (yytoken == '}')
+				break;
+			initializer(sym);
+		} while (accept(','));
+
+		expect('}');
+		return;
+	}
+	np = expr();
+	if ((sym->flags & ISLOCAL) == 0) {
+		emit(OEXPR, assignop(OINIT, varnode(sym), np));
+		return;
+	}
 }
