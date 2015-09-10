@@ -980,31 +980,18 @@ condexpr(void)
 
 /* TODO: check correctness of the initializator  */
 /* TODO: emit initializer */
-static void
-initlist(void)
-{
-	Node *np;
-
-	if (yytoken == '}')
-		return;
-
-	do {
-		if (accept('{'))
-			initlist();
-		assign();
-	} while (accept(','));
-
-	expect('}');
-}
-
 void
 initializer(Symbol *sym)
 {
 	Node *np;
+	Type *tp = sym->type;
 	int flags = sym->flags;
 
 	if (accept('{')) {
-		initlist();
+		do {
+			initializer(sym);
+		} while (accept(','));
+		expect('}');	
 		return;
 	}
 	np = assignop(OINIT, varnode(sym), assign());
