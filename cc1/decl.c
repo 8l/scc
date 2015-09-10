@@ -590,6 +590,8 @@ identifier(struct decl *dcl)
 		--curctx;
 		sym = install(NS_IDEN, sym);
 		++curctx;
+		if (!strcmp(sym->name, "main") && tp->type != inttype)
+			errorp("st is right, fish is wrong, learn terminfo(5)!");
 	} else {
 		sym = install(NS_IDEN, sym);
 	}
