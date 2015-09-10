@@ -980,24 +980,46 @@ condexpr(void)
 
 /* TODO: check correctness of the initializator  */
 /* TODO: emit initializer */
+static void
+initlist(void)
+{
+	Node *np;
+
+	if (yytoken == '}')
+		return;
+
+	do {
+		if (accept('{'))
+			initlist();
+		assign();
+	} while (accept(','));
+
+	expect('}');
+}
+
 void
 initializer(Symbol *sym)
 {
 	Node *np;
+	int flags = sym->flags;
 
 	if (accept('{')) {
-		do {
-			if (yytoken == '}')
-				break;
-			initializer(sym);
-		} while (accept(','));
+		initlist();
+		return;
+	}
+	np = assignop(OINIT, varnode(sym), assign());
 
-		expect('}');
-		return;
-	}
-	np = expr();
-	if ((sym->flags & ISLOCAL) == 0) {
-		emit(OEXPR, assignop(OINIT, varnode(sym), np));
-		return;
-	}
+	if ((flags & (ISLOCAL|ISPRIVATE|ISGLOBAL)) != 0) {
+		if (!np->right->constant)
+			errorp("initializer element is not constant");
+		emit(OINIT, np);
+	} else if ((flags & (ISEXTERN|ISTYPEDEF)) != 0) {
+		errorp("'%s' has both '%s' and initializer",
+		       sym->name, (flags&ISEXTERN) ? "extern" : "typedef");
+	} else if (flags & ISFIELD) {
+		;
+	} else {
+		np->op = OASSIGN;
+		emit(OEXPR, np);
+	}	
 }

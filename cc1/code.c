@@ -16,7 +16,8 @@ static void emitbin(unsigned, void *),
             emitsymid(unsigned, void *),
             emittext(unsigned, void *),
             emitfun(unsigned, void *),
-            emitdcl(unsigned, void *);
+            emitdcl(unsigned, void *),
+            emitinit(unsigned, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -39,7 +40,6 @@ char *optxt[] = {
 	[OBXOR]  = "^",
 	[OBOR] = "|",
 	[OASSIGN] = ":",
-	[OINIT] = ":",
 	[OA_MUL] = ":*",
 	[OA_DIV] = ":/",
 	[OA_MOD] = ":%",
@@ -92,7 +92,6 @@ void (*opcode[])(unsigned, void *) = {
 	[OBXOR]  = emitbin,
 	[OBOR] = emitbin,
 	[OASSIGN] = emitbin,
-	[OINIT] = emitbin,
 	[OA_MUL] = emitbin,
 	[OA_DIV] = emitbin,
 	[OA_MOD] = emitbin,
@@ -129,7 +128,8 @@ void (*opcode[])(unsigned, void *) = {
 	[OSWITCH] = emitswitch,
 	[OSWITCHT] = emitswitcht,
 	[OPAR] = emitbin,
-	[OCALL] = emitbin
+	[OCALL] = emitbin,
+	[OINIT] = emitinit
 };
 
 void
@@ -281,6 +281,18 @@ emittype(Type *tp)
 	default:
 		abort();
 	}
+}
+
+static void
+emitinit(unsigned op, void *arg)
+{
+	Node *np = arg;
+
+	puts("(");
+	emitexp(OEXPR, np->right);
+	puts(")");
+	np->right = NULL;
+	freetree(np);
 }
 
 static void

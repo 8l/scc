@@ -661,6 +661,7 @@ identifier(struct decl *dcl)
 			flags |= (curctx == GLOBALCTX) ? ISPRIVATE : ISLOCAL;
 			break;
 		case TYPEDEF:
+			flags |= ISTYPEDEF;
 			sym->token = TYPEIDEN;
 			break;
 		}
@@ -668,8 +669,6 @@ identifier(struct decl *dcl)
 	}
 
 	/* TODO: disallow initializators in functions */
-	/* TODO: check if typedef has initializer */
-	/* TODO: check if the variable is extern and has initializer */
 	if (sym->token == IDEN && sym->type->op != FTN)
 		emit(ODECL, sym);
 	if (accept('='))
@@ -732,7 +731,7 @@ decl(void)
 		case TYPE:
 		case TQUALIFIER:
 		case SCLASS:
-			if (sym->token == TYPEIDEN)
+			if (sym->flags & ISTYPEDEF)
 				errorp("function definition declared 'typedef'");
 			if (sym->flags & ISDEFINED)
 				errorp("redefinition of '%s'", sym->name);

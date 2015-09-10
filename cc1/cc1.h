@@ -158,7 +158,8 @@ enum {
 	ISLOCAL    =     512,
 	ISEMITTED  =    1024,
 	ISDEFINED  =    2048,
-	ISSTRING   =    4096
+	ISSTRING   =    4096,
+	ISTYPEDEF =     8192
 };
 
 
