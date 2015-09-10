@@ -985,7 +985,19 @@ initializer(Symbol *sym)
 {
 	Node *np;
 	Type *tp = sym->type;
-	int flags = sym->flags;
+	int flags = sym->flags, scalar;
+
+	switch (tp->op) {
+	case FTN:
+		error("function '%s' is initialized like a variable", sym->name);
+	case PTR:
+	case INT:
+		scalar = 1;
+		break;
+	default:
+		scalar = 0;
+		break;
+	}
 
 	if (accept('{')) {
 		do {
