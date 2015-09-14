@@ -978,13 +978,95 @@ condexpr(void)
 	return np;
 }
 
+struct designator {
+	TINT pos;
+	struct designator *next;
+};
+
+static TINT
+arydesig(Type *tp)
+{
+	TINT npos;
+	Node *np;
+
+	if (tp->op != ARY)
+		errorp("array index in non-array initializer");
+	next();
+	np = iconstexpr();
+	npos = np->sym->u.i;
+	freetree(np);
+	expect(']');
+	return npos;
+}
+
+static TINT
+fielddesig(Type *tp)
+{
+	TINT npos;
+	int ons;
+	Symbol *sym, **p;
+
+	if (tp->op != STRUCT || tp->op != UNION)
+		errorp("field name not in record or union initializer");
+	ons = namespace;
+	namespace = tp->ns;
+	next();
+	namespace = ons;
+	if (yytoken != IDEN)
+		unexpected();
+	sym = yylval.sym;
+	if ((sym->flags & ISDECLARED) == 0) {
+		errorp(" unknown field '%s' specified in initializer",
+		      sym->name);
+		return 0;
+	}
+	for (p = tp->p.fields; *p != sym; ++p)
+		/* nothing */;
+	return p - tp->p.fields;
+}
+
+static struct designator *
+designation(Type *tp)
+{
+	struct designator *des = NULL, *d;
+	TINT (*fun)(Type *);
+
+	for (;;) {
+		switch (yytoken) {
+		case '[': fun = arydesig;   break;
+		case '.': fun = fielddesig; break;
+		default:
+			if (des)
+				expect('=');
+			return des;
+		}
+		d = xmalloc(sizeof(*d));
+		d->next = NULL;
+
+		if (!des) {
+			des = d;
+		} else {
+			des->next = d;
+			des = d;
+		}
+		des->pos  = (*fun)(tp);
+	}
+}
+
 static void
 initlist(Symbol *sym, Type *tp)
 {
+	struct designator *des;
 	int n, toomany = 0;
 	Type *newtp;
 
 	for (n = 0; ; ++n) {
+		if ((des = designation(tp)) == NULL) {
+			des = xmalloc(sizeof(*des));
+			des->pos = n;
+		} else {
+			n = des->pos;
+		}
 		switch (tp->op) {
 		case ARY:
 			if (tp->defined && n >= tp->n.elem && !toomany) {
@@ -1043,6 +1125,9 @@ initializer(Symbol *sym, Type *tp, int nelem)
 	/* if !sym it means there are too much initializers */
 	if (!sym)
 		return;
+	if (nelem >= 0)
+		return;
+
 	np = assignop(OINIT, varnode(sym), np);
 
 	if ((flags & (ISEXTERN|ISTYPEDEF)) != 0) {
@@ -1052,8 +1137,6 @@ initializer(Symbol *sym, Type *tp, int nelem)
 	} else if ((flags & (ISEXTERN|ISTYPEDEF)) != 0) {
 		errorp("'%s' has both '%s' and initializer",
 		       sym->name, (flags&ISEXTERN) ? "extern" : "typedef");
-	} else if (flags & ISFIELD) {
-		;
 	} else {
 		np->op = OASSIGN;
 		emit(OEXPR, np);

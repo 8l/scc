@@ -52,7 +52,7 @@ struct type {
 	} p;
 	union {
 		unsigned char rank;     /* convertion rank */
-		short elem;             /* number of type parameters */
+		TINT elem;             /* number of type parameters */
 	} n;
 };
 
