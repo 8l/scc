@@ -375,7 +375,7 @@ extern bool isnodecmp(int op);
 extern int negop(int op);
 extern bool cmpnode(Node *np, TUINT val);
 extern Node *decay(Node *np);
-extern void initializer(Symbol *sym);
+extern void initializer(Symbol *sym, Type *tp, int nelem);
 
 /* cpp.c */
 extern void icpp(void);

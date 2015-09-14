@@ -978,37 +978,74 @@ condexpr(void)
 	return np;
 }
 
-/* TODO: check correctness of the initializator  */
-/* TODO: emit initializer */
+static void
+initlist(Symbol *sym, Type *tp)
+{
+	int n, toomany = 0;
+	Type *newtp;
+
+	for (n = 0; ; ++n) {
+		switch (tp->op) {
+		case ARY:
+			if (tp->defined && n >= tp->n.elem && !toomany) {
+				toomany = 1;
+				warn("excess elements in array initializer");
+				sym = NULL;
+			}
+			newtp = tp->type;
+			break;
+		case STRUCT:
+			if (n >= tp->n.elem && !toomany) {
+				toomany = 1;
+				warn("excess elements in struct initializer");
+				sym = NULL;
+			} else {
+				sym = tp->p.fields[n];
+				newtp = sym->type;
+			}
+			break;
+		default:
+			newtp = tp;
+			warn("braces around scalar initializer");
+			if (n > 0 && !toomany) {
+				toomany = 1;
+				warn("excess elements in scalar initializer");
+			}
+			break;
+		}
+		initializer(sym, newtp, n);
+		if (!accept(','))
+			break;
+	}
+	expect('}');
+
+	if (tp->op == ARY && !tp->defined) {
+		tp->n.elem = n + 1;
+		tp->defined = 1;
+	}
+}
+
 void
-initializer(Symbol *sym)
+initializer(Symbol *sym, Type *tp, int nelem)
 {
 	Node *np;
-	Type *tp = sym->type;
-	int flags = sym->flags, scalar;
+	int flags = sym->flags;
 
-	switch (tp->op) {
-	case FTN:
+	if (tp->op == FTN)
 		error("function '%s' is initialized like a variable", sym->name);
-	case PTR:
-	case INT:
-		scalar = 1;
-		break;
-	default:
-		scalar = 0;
-		break;
-	}
 
 	if (accept('{')) {
-		do {
-			initializer(sym);
-		} while (accept(','));
-		expect('}');	
+		initlist(sym, tp);
 		return;
 	}
-	np = assignop(OINIT, varnode(sym), assign());
+	np = assign();
 
-	if ((flags & (ISLOCAL|ISPRIVATE|ISGLOBAL)) != 0) {
+	/* if !sym it means there are too much initializers */
+	if (!sym)
+		return;
+	np = assignop(OINIT, varnode(sym), np);
+
+	if ((flags & (ISEXTERN|ISTYPEDEF)) != 0) {
 		if (!np->right->constant)
 			errorp("initializer element is not constant");
 		emit(OINIT, np);

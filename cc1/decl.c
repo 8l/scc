@@ -674,7 +674,7 @@ identifier(struct decl *dcl)
 	if (sym->token == IDEN && sym->type->op != FTN)
 		emit(ODECL, sym);
 	if (accept('='))
-		initializer(sym);
+		initializer(sym, sym->type, -1);
 	return sym;
 
 redeclaration:
