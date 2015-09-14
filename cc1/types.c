@@ -350,13 +350,11 @@ invalid_type:
 	error("invalid type specification");
 }
 
-/* TODO: define a type for sizes instead of using short */
-static short
+static TINT
 typesize(Type *tp)
 {
-	short align, size;
 	Symbol **sp;
-	int n;
+	TINT n, size, align;
 
 	switch (tp->op) {
 	case ARY:
@@ -391,7 +389,7 @@ typesize(Type *tp)
 }
 
 Type *
-mktype(Type *tp, unsigned op, short nelem, Type *pars[])
+mktype(Type *tp, int op, TINT nelem, Type *pars[])
 {
 	static Type *typetab[NR_TYPE_HASH];
 	Type **tbl, type;
@@ -460,7 +458,7 @@ mktype(Type *tp, unsigned op, short nelem, Type *pars[])
 bool
 eqtype(Type *tp1, Type *tp2)
 {
-	int n;
+	TINT n;
 	Type **p1, **p2;
 
 	if (!tp1 || !tp2)
@@ -490,8 +488,5 @@ eqtype(Type *tp1, Type *tp2)
 	case INT:
 	case FLOAT:
 		return tp1->letter == tp2->letter;
-	default:
-		fputs("internal type error, aborting\n", stderr);
-		abort();
 	}
 }

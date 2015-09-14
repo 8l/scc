@@ -235,7 +235,7 @@ emitletter(Type *tp)
 static void
 emittype(Type *tp)
 {
-	int n;
+	TINT n;
 	Type **vp;
 	Symbol **sp;
 	char *tag;
@@ -350,7 +350,7 @@ static void
 emitfun(unsigned op, void *arg)
 {
 	Symbol *sym = arg, **sp;
-	int n;
+	TINT n;
 
 	emitdcl(op, arg);
 	puts("\n{");

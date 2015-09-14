@@ -532,7 +532,8 @@ static Node *assign(void);
 static Node *
 arguments(Node *np)
 {
-	int n, toomany;;
+	int toomany;;
+	TINT n;
 	Node *par = NULL, *arg;
 	Type **targs, *tp = np->type;
 
@@ -1057,7 +1058,8 @@ static void
 initlist(Symbol *sym, Type *tp)
 {
 	struct designator *des;
-	int n, toomany = 0;
+	int toomany = 0;
+	TINT n;
 	Type *newtp;
 
 	for (n = 0; ; ++n) {

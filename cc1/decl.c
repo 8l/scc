@@ -16,7 +16,7 @@ struct declarators {
 	unsigned char nr;
 	struct declarator {
 		unsigned char op;
-		unsigned short nelem;
+		TINT  nelem;
 		Symbol *sym;
 		Type **tpars;
 		Symbol **pars;
@@ -33,7 +33,7 @@ struct decl {
 };
 
 static void
-push(struct declarators *dp, unsigned op, ...)
+push(struct declarators *dp, int op, ...)
 {
 	va_list va;
 	unsigned n;
@@ -49,10 +49,10 @@ push(struct declarators *dp, unsigned op, ...)
 
 	switch (op) {
 	case ARY:
-		p->nelem = va_arg(va, unsigned);
+		p->nelem = va_arg(va, TINT);
 		break;
 	case FTN:
-		p->nelem = va_arg(va, unsigned);
+		p->nelem = va_arg(va, TINT);
 		p->tpars = va_arg(va, Type **);
 		p->pars = va_arg(va, Symbol **);
 		break;
@@ -125,7 +125,7 @@ parameter(struct decl *dcl)
 {
 	Symbol *sym = dcl->sym;
 	Type *funtp = dcl->parent, *tp = dcl->type;
-	size_t n = funtp->n.elem;
+	TINT n = funtp->n.elem;
 	char *name = sym->name;
 
 	sym->type = tp;
@@ -188,7 +188,7 @@ fundcl(struct declarators *dp)
 {
 	Type type = {.n = {.elem = -1}, .p = {.pars= NULL}};
 	Symbol *syms[NR_FUNPARAM], **sp;
-	size_t size;
+	TINT size;
 	Symbol *pars = NULL;
 
 	pushctx();
@@ -516,7 +516,7 @@ field(struct decl *dcl)
 	Symbol *sym = dcl->sym;
 	char *name = sym->name;
 	Type *structp = dcl->parent, *tp = dcl->type;
-	size_t n = structp->n.elem;
+	TINT n = structp->n.elem;
 
 	if (!name) {
 		sym->type = tp;

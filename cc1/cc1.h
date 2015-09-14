@@ -52,7 +52,7 @@ struct type {
 	} p;
 	union {
 		unsigned char rank;     /* convertion rank */
-		TINT elem;             /* number of type parameters */
+		TINT elem;              /* number of type parameters */
 	} n;
 };
 
@@ -320,7 +320,7 @@ extern void cpperror(char *fmt, ...);
 /* types.c */
 extern bool eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(unsigned type, unsigned sign, unsigned size);
-extern Type *mktype(Type *tp, unsigned op, short nelem, Type *data[]);
+extern Type *mktype(Type *tp, int op, TINT nelem, Type *data[]);
 extern Type *duptype(Type *base);
 extern struct limits *getlimits(Type *tp);
 
