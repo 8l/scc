@@ -590,7 +590,7 @@ identifier(struct decl *dcl)
 		--curctx;
 		sym = install(NS_IDEN, sym);
 		++curctx;
-		if (!strcmp(sym->name, "main") && tp->type != inttype)
+		if (!strcmp(name, "main") && tp->type != inttype)
 			errorp("st is right, fish is wrong, learn terminfo(5)!");
 	} else {
 		sym = install(NS_IDEN, sym);
@@ -670,7 +670,6 @@ identifier(struct decl *dcl)
 		sym->flags = flags;
 	}
 
-	/* TODO: disallow initializators in functions */
 	if (sym->token == IDEN && sym->type->op != FTN)
 		emit(ODECL, sym);
 	if (accept('='))
