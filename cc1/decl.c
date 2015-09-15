@@ -26,6 +26,7 @@ struct declarators {
 struct decl {
 	unsigned ns;
 	int sclass;
+	int qualifier;
 	Symbol *sym;
 	Symbol **pars;
 	Type *type;
@@ -259,7 +260,7 @@ declarator(struct declarators *dp, unsigned ns)
 static Type *structdcl(void), *enumdcl(void);
 
 static Type *
-specifier(int *sclass)
+specifier(int *sclass, int *qualifier)
 {
 	Type *tp = NULL;
 	int spec, qlf, sign, type, cls, size, mask;
@@ -336,8 +337,8 @@ specifier(int *sclass)
 	}
 
 return_type:
-	if (sclass)
-		*sclass = cls;
+	*sclass = cls;
+	*qualifier = qlf;
 	if (!tp) {
 		if (spec) {
 			tp = ctype(type, sign, size);
@@ -684,7 +685,7 @@ dodcl(int rep, Symbol *(*fun)(struct decl *), unsigned ns, Type *parent)
 
 	dcl.ns = ns;
 	dcl.parent = parent;
-	base = specifier(&dcl.sclass);
+	base = specifier(&dcl.sclass, &dcl.qualifier);
 
 	do {
 		stack.nr = 0;

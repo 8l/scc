@@ -321,6 +321,7 @@ ikeywords(void)
 		{"for", FOR, FOR},
 		{"goto", GOTO, GOTO},
 		{"if", IF, IF},
+		{"inline", TQUALIFIER, INLINE},
 		{"int", TYPE, INT},
 		{"long", TYPE, LONG},
 		{"register", SCLASS, REGISTER},

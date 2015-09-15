@@ -173,6 +173,7 @@ enum tokens {
 	CONST      =       1,      /* type qualifier tokens are used as flags */
 	RESTRICT   =       2,
 	VOLATILE   =       4,
+	INLINE     =       8,
 	TQUALIFIER =     128,
 	TYPE,
 	IDEN,
