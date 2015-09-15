@@ -159,9 +159,8 @@ enum {
 	ISEMITTED  =    1024,
 	ISDEFINED  =    2048,
 	ISSTRING   =    4096,
-	ISTYPEDEF =     8192
+	ISTYPEDEF  =    8192
 };
-
 
 /* lexer mode, compiler or preprocessor directive */
 enum {
@@ -171,7 +170,10 @@ enum {
 
 /* input tokens */
 enum tokens {
-	TQUALIFIER = 128,
+	CONST      =       1,      /* type qualifier tokens are used as flags */
+	RESTRICT   =       2,
+	VOLATILE   =       4,
+	TQUALIFIER =     128,
 	TYPE,
 	IDEN,
 	SCLASS,
@@ -220,9 +222,6 @@ enum tokens {
 	LONG,
 	LLONG,
 	COMPLEX,
-	CONST,
-	VOLATILE,
-	RESTRICT,
 	TYPEDEF,
 	EXTERN,
 	STATIC,

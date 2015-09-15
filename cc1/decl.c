@@ -262,7 +262,7 @@ static Type *
 specifier(int *sclass)
 {
 	Type *tp = NULL;
-	unsigned spec, qlf, sign, type, cls, size;
+	int spec, qlf, sign, type, cls, size, mask;
 
 	spec = qlf = sign = type = cls = size = 0;
 
@@ -275,8 +275,6 @@ specifier(int *sclass)
 			p = &cls;
 			break;
 		case TQUALIFIER:
-			if (qlf && qlf != RESTRICT)
-				errorp("invalid type specification");
 			qlf |= yylval.token;
 			next();
 			continue;
