@@ -96,26 +96,21 @@ static void
 arydcl(struct declarators *dp)
 {
 	Node *np = NULL;
-	TINT n;
+	TINT n = 0;
 
 	expect('[');
 	if (yytoken != ']') {
-		if ((np = iconstexpr()) == NULL)
-			error("invalid storage size");
+		if ((np = iconstexpr()) == NULL) {
+			errorp("invalid storage size");
+		} else {
+			if ((n = np->sym->u.i) <= 0) {
+				errorp("array size is not a positive number");
+				n = 1;
+			}
+			freetree(np);
+		}
 	}
 	expect(']');
-
-	if (np != NULL) {
-		n = np->sym->u.i;
-		if (n  == 0 || n < 0) {
-			errorp("array size is not a positive number");
-			n = 1;
-		}
-	} else {
-		n = 0;
-	}
-
-	freetree(np);
 
 	push(dp, ARY, n);
 }
