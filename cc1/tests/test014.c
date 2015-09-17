@@ -11,12 +11,6 @@ test014.c:22: warning: 'par' defined but not used
 test014.c:22: warning: 'par' defined but not used
 test014.c:27: warning: 'par' defined but not used
 test014.c:29: error: incorrect storage class for file-scope declaration
-test014.c:29: error: invalid storage class for function 'd'
-test014.c:32: error: bad storage class in function parameter
-test014.c:33: error: invalid storage class for function 'func4'
-test014.c:34: error: invalid type specification
-test014.c:35: warning: 'f' defined but not used
-test014.c:38: error: conflicting types for 'd'
 G1	I	a
 Y2	M	b
 X3	I	c
@@ -43,7 +37,12 @@ T7	F2	func3
 R1	I	par
 -
 }
-????
+test014.c:29: error: invalid storage class for function 'd'
+test014.c:32: error: bad storage class in function parameter
+test014.c:33: error: invalid storage class for function 'func4'
+test014.c:34: error: invalid type specification
+test014.c:35: warning: 'f' defined but not used
+test014.c:38: error: conflicting types for 'd'
 */
 
 #line 1

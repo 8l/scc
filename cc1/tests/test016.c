@@ -3,7 +3,6 @@ name: TEST016
 description: Basic pointer test
 output:
 test016.c:43: error: redefinition of 'func2'
-test016.c:47: error: incompatible types when assigning
 G1	I	g
 F1
 G2	F1	func1
@@ -40,7 +39,7 @@ L5
 	A2	#P0	:P
 	y	A1
 }
-????
+test016.c:47: error: incompatible types when assigning
 */
 
 #line 1
