@@ -10,7 +10,7 @@ The language is composed by lines, which represent statements,
 and fields in statements are separated by tabulators. Declaration
 statements begin in column 0, meanwhile expressions and control
 flow begin with a tabulator. When the front end detects an error
-it emits ???? and stop of emitting anything else.
+it closes the output stream.
 
 ## Types ##
 

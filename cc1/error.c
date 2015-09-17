@@ -26,7 +26,7 @@ warn_error(int flag, char *fmt, va_list va)
 	if (flag < 0) {
 		if (!failure) {
 			failure = 1;
-			puts("????");
+			fclose(stdout);
 		}
 		failure = 1;
 		if (nerrors++ == MAXERRNUM) {
