@@ -12,14 +12,14 @@ test014.c:22: warning: 'par' defined but not used
 test014.c:27: warning: 'par' defined but not used
 test014.c:29: error: incorrect storage class for file-scope declaration
 G1	I	a
-Y2	M	b
+Y2	K	b
 X3	I	c
 F1
 G5	F1	func1
 {
 -
 A2	I	h
-T3	M	i
+T3	K	i
 R4	W	j
 X5	I	k
 T6	Z	a

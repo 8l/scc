@@ -7,9 +7,9 @@ comments: This test depends of the configuration in the type system.
 output:
 G1	I	a
 G2	N	b
-G3	M	c
+G3	K	c
 G4	C	d
-G5	M	e
+G5	K	e
 G6	W	f
 G7	Z	g
 G8	Q	h
@@ -21,9 +21,9 @@ G12	F1	main
 {
 -
 	G1	G2	NI	:I
-	G1	G3	MI	:I
+	G1	G3	KI	:I
 	G1	G4	CI	:I
-	G1	G5	MI	:I
+	G1	G5	KI	:I
 	G1	G6	WI	:I
 	G1	G7	ZI	:I
 	G1	G8	QI	:I
@@ -31,50 +31,50 @@ G12	F1	main
 	G1	G10	:I
 	G1	G11	NI	:I
 	G2	G1	IN	:N
-	G2	G3	MN	:N
+	G2	G3	KN	:N
 	G2	G4	CN	:N
-	G2	G5	MN	:N
+	G2	G5	KN	:N
 	G2	G6	WN	:N
 	G2	G7	ZN	:N
 	G2	G8	QN	:N
 	G2	G9	ON	:N
 	G2	G10	IN	:N
 	G2	G11	:N
-	G3	G1	IM	:M
-	G3	G2	NM	:M
-	G3	G4	CM	:M
-	G3	G5	:M
-	G3	G6	WM	:M
-	G3	G7	ZM	:M
-	G3	G8	QM	:M
-	G3	G9	OM	:M
-	G3	G10	IM	:M
-	G3	G11	NM	:M
+	G3	G1	IK	:K
+	G3	G2	NK	:K
+	G3	G4	CK	:K
+	G3	G5	:K
+	G3	G6	WK	:K
+	G3	G7	ZK	:K
+	G3	G8	QK	:K
+	G3	G9	OK	:K
+	G3	G10	IK	:K
+	G3	G11	NK	:K
 	G4	G1	IC	:C
 	G4	G2	NC	:C
-	G4	G3	MC	:C
-	G4	G5	MC	:C
+	G4	G3	KC	:C
+	G4	G5	KC	:C
 	G4	G6	WC	:C
 	G4	G7	ZC	:C
 	G4	G8	QC	:C
 	G4	G9	OC	:C
 	G4	G10	IC	:C
 	G4	G11	NC	:C
-	G5	G1	IM	:M
-	G5	G2	NM	:M
-	G5	G3	:M
-	G5	G4	CM	:M
-	G5	G6	WM	:M
-	G5	G7	ZM	:M
-	G5	G8	QM	:M
-	G5	G9	OM	:M
-	G5	G10	IM	:M
-	G5	G11	NM	:M
+	G5	G1	IK	:K
+	G5	G2	NK	:K
+	G5	G3	:K
+	G5	G4	CK	:K
+	G5	G6	WK	:K
+	G5	G7	ZK	:K
+	G5	G8	QK	:K
+	G5	G9	OK	:K
+	G5	G10	IK	:K
+	G5	G11	NK	:K
 	G6	G1	IW	:W
 	G6	G2	NW	:W
-	G6	G3	MW	:W
+	G6	G3	KW	:W
 	G6	G4	CW	:W
-	G6	G5	MW	:W
+	G6	G5	KW	:W
 	G6	G7	ZW	:W
 	G6	G8	QW	:W
 	G6	G9	OW	:W
@@ -82,9 +82,9 @@ G12	F1	main
 	G6	G11	NW	:W
 	G7	G1	IZ	:Z
 	G7	G2	NZ	:Z
-	G7	G3	MZ	:Z
+	G7	G3	KZ	:Z
 	G7	G4	CZ	:Z
-	G7	G5	MZ	:Z
+	G7	G5	KZ	:Z
 	G7	G6	WZ	:Z
 	G7	G8	QZ	:Z
 	G7	G9	OZ	:Z
@@ -92,9 +92,9 @@ G12	F1	main
 	G7	G11	NZ	:Z
 	G8	G1	IQ	:Q
 	G8	G2	NQ	:Q
-	G8	G3	MQ	:Q
+	G8	G3	KQ	:Q
 	G8	G4	CQ	:Q
-	G8	G5	MQ	:Q
+	G8	G5	KQ	:Q
 	G8	G6	WQ	:Q
 	G8	G7	ZQ	:Q
 	G8	G9	OQ	:Q
@@ -102,9 +102,9 @@ G12	F1	main
 	G8	G11	NQ	:Q
 	G9	G1	IO	:O
 	G9	G2	NO	:O
-	G9	G3	MO	:O
+	G9	G3	KO	:O
 	G9	G4	CO	:O
-	G9	G5	MO	:O
+	G9	G5	KO	:O
 	G9	G6	WO	:O
 	G9	G7	ZO	:O
 	G9	G8	QO	:O
@@ -112,9 +112,9 @@ G12	F1	main
 	G9	G11	NO	:O
 	G10	G1	:I
 	G10	G2	NI	:I
-	G10	G3	MI	:I
+	G10	G3	KI	:I
 	G10	G4	CI	:I
-	G10	G5	MI	:I
+	G10	G5	KI	:I
 	G10	G6	WI	:I
 	G10	G7	ZI	:I
 	G10	G8	QI	:I
@@ -122,9 +122,9 @@ G12	F1	main
 	G10	G11	NI	:I
 	G11	G1	IN	:N
 	G11	G2	:N
-	G11	G3	MN	:N
+	G11	G3	KN	:N
 	G11	G4	CN	:N
-	G11	G5	MN	:N
+	G11	G5	KN	:N
 	G11	G6	WN	:N
 	G11	G7	ZN	:N
 	G11	G8	QN	:N

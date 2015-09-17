@@ -8,13 +8,13 @@ F1
 G1	F1	main
 {
 -
-A2	M	uc
+A2	K	uc
 A3	C	sc
-	A2	#MFF	:M
-	A2	#M23	:M
-	A2	#M1	:M
-	A2	#M1	:M
-	A2	#M41	:M
+	A2	#KFF	:K
+	A2	#K23	:K
+	A2	#K1	:K
+	A2	#K1	:K
+	A2	#K41	:K
 	A3	#CFF	:C
 	A3	#C23	:C
 	A3	#C1	:C

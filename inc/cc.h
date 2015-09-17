@@ -37,7 +37,7 @@ typedef unsigned bool;
 #define L_INT16     'I'
 #define L_INT32     'W'
 #define L_INT64     'Q'
-#define L_UINT8     'M'
+#define L_UINT8     'K'
 #define L_UINT16    'N'
 #define L_UINT32    'Z'
 #define L_UINT64    'O'

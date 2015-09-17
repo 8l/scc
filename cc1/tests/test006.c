@@ -5,7 +5,7 @@ output:
 test006.c:6: warning: conditional expression is constant
 test006.c:8: warning: conditional expression is constant
 test006.c:11: warning: conditional expression is constant
-G1	M	c
+G1	K	c
 F1
 G2	F1	main
 {
@@ -18,7 +18,7 @@ L2
 	j	L5
 L4
 	j	L6	#I1
-	j	L7	G1	MI	#I0	=I
+	j	L7	G1	KI	#I0	=I
 	y	#I1
 	j	L8
 L7

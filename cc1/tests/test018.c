@@ -6,7 +6,7 @@ F1
 G1	F1	main
 {
 -
-V2	M	#4
+V2	K	#4
 V3	V2	#2
 A4	V3	arr
 A6	P	p
@@ -15,15 +15,15 @@ V9	I	#4
 A10	V9	v
 	A6	A4	'P	:P
 	A8	A4	'P	#P4	+P	#P3	+P	:P
-	A4	'P	#P4	+P	#P3	+P	@M	#M2	:M
+	A4	'P	#P4	+P	#P3	+P	@K	#K2	:K
 	A10	#I2	:I
-	j	L12	A4	'P	#P4	+P	#P3	+P	@M	MI	#I2	=I
+	j	L12	A4	'P	#P4	+P	#P3	+P	@K	KI	#I2	=I
 	y	#I1
 L12
-	j	L13	A6	#P4	+P	#P3	+P	@M	MI	#I2	=I
+	j	L13	A6	#P4	+P	#P3	+P	@K	KI	#I2	=I
 	y	#I1
 L13
-	j	L14	A8	@M	MI	#I2	=I
+	j	L14	A8	@K	KI	#I2	=I
 	y	#I1
 L14
 	j	L15	A10	#I2	=I
