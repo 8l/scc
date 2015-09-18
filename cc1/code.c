@@ -318,7 +318,8 @@ emitcast(unsigned op, void *arg)
 	Node *np = arg, *lp = np->left;
 
 	emitnode(lp);
-	printf("\t%c%c", lp->type->letter, np->type->letter);
+	if (np->type != voidtype)
+		printf("\t%c%c", lp->type->letter, np->type->letter);
 }
 
 static void
