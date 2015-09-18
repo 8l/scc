@@ -65,10 +65,8 @@ name, a type and the name of the variable:
 ### Type declarations ###
 
 Some declarations need a previous declaration of the types involved
-in the variable declaration. In the case of structs and unions
-a '(' means that begins a list of members of the last type declaration
-(the front end must ensure that '(; only can follow struct/union
-declarations).
+in the variable declaration. In the case of members, they form part
+of the last struct or union declared.
 
 For example the next code:
 
@@ -80,10 +78,8 @@ For example the next code:
 will generate the next output:
 
 > S2	foo
-> (
 > M3	I	i
 > M4	W	c
-> )
 > G5	S2	var1
 
 
@@ -351,8 +347,6 @@ switch.
 * T -- local (function scopped static variable)
 * M -- member (struct/union member)
 * L -- label
-* ( -- begin of struct/enum definition
-* ) -- end of struct/enum definition
 * { -- end of function body
 * } -- end of fucntion body
 * - -- end of function parameters

@@ -7,15 +7,11 @@ G9	F1	main
 {
 -
 S2	s1
-(
 M3	I	y
 M4	I	z
-)
 A2	S2	nested
 S6	s2
-(
 M8	P	p
-)
 A3	S6	v
 	A3	M8	.P	A2	'P	:P
 	A3	M8	.P	@S2	M3	.I	#I1	:I

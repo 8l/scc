@@ -8,10 +8,8 @@ G7	F1	main
 {
 -
 S2	S
-(
 M5	I	i
 M6	P	next
-)
 A2	S2	y
 A3	P	p
 A4	N	n

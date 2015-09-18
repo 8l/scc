@@ -2,20 +2,14 @@
 name: TEST015
 description: Stress namespace mechanism
 output:
-test015.c:58: error: label 's' already defined
+test015.c:52: error: label 's' already defined
 S8	s2
-(
 M9	I	s
-)
 S5	s1
-(
 M6	I	s
 M10	S8	s1
-)
 S2	s
-(
 M11	S5	s
-)
 G12	S2	s2
 F1
 G13	F1	main
