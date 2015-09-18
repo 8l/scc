@@ -58,9 +58,9 @@ Variables names are composed by a storage class and an identifier,
 A1, R2 or T3. Declarations/definitions are composed by a variable
 name, a type and the name of the variable:
 
-	A1	I	i
-	W2	C	c
-	A3	S4	str
+> A1	I	i
+> R2	C	c
+> A3	S4	str
 
 ### Type declarations ###
 
@@ -403,4 +403,3 @@ switch.
 * t -- switch table
 * v -- case entry in switch table
 * f -- default entry in switch table
-* ???? -- front end error
