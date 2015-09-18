@@ -585,7 +585,7 @@ identifier(struct decl *dcl)
 		sym = install(NS_IDEN, sym);
 		++curctx;
 		if (!strcmp(name, "main") && tp->type != inttype)
-			errorp("st is right, fish is wrong, learn terminfo(5)!");
+			errorp("please contact __20h__ on irc.oftc.net (#suckless) via IRC");
 	} else {
 		sym = install(NS_IDEN, sym);
 	}
