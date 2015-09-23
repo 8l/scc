@@ -107,11 +107,11 @@ will generate
 > G6	F3	printf
 > {
 > A7	P	cmd
-> -
+> \
 > }
 
 Again, the front end must ensure that '{' appears only after the
-declaration of a function. The character '-' marks the separation
+declaration of a function. The character '\' marks the separation
 between parameters and local variables:
 
 > int printf(register char *cmd) {int i;};
@@ -122,7 +122,7 @@ will generate
 > G6	F3	printf
 > {
 > R7	P	cmd
-> -
+> \
 > A8	I	i
 > }
 
@@ -187,7 +187,7 @@ Constants are introduced by the character '#'. For example 10 is
 translated to #IA (all the constants are emitted in hexadecimal),
 where I indicates that is an integer constant. Strings represent
 a special case because they are represented with the " character.
-The constant "hello" is emiited as "68656C6C6F. Example:
+The constant "hello" is emitted as "68656C6C6F. Example:
 
 > int
 > main(void)
@@ -201,15 +201,14 @@ generates:
 > F1
 > G1	F1	main
 > {
-> -
+> \
 > A2      I	i
 > A3      I	j
 > 	A2	A3	#I6	+I	:I
 > }
 
-A special case of expressions are casts, which are indicated using
-two type descriptors together. For example a cast from char to int
-is indicated with CI.
+Casting are expressed with the letter 'g' followed of the type
+involved in the cast.
 
 ### Statements ###
 #### Jumps #####
@@ -234,7 +233,7 @@ generates:
 > F1
 > G1      F1      main
 > {
-> -
+> \
 > A2	I	i
 > 	j	L3
 > L3
@@ -256,7 +255,7 @@ produces:
 > F1
 > G1	F1	main
 > {
-> -
+> \
 > 	r	#I10
 > }
 
@@ -297,7 +296,7 @@ generates:
 > G1	F2	func
 > {
 > A1	I	n
-> -
+> \
 > 	s	L4	A1	#I1	+
 > L5
 > L6
@@ -349,7 +348,7 @@ switch.
 * L -- label
 * { -- end of function body
 * } -- end of fucntion body
-* - -- end of function parameters
+* \ -- end of function parameters
 * + -- addition
 * - -- substraction
 * * -- multiplication
@@ -375,6 +374,7 @@ switch.
 * , -- comma operator
 * ? -- ternary operator
 * ' -- take address
+* g -- casting
 * a -- logical shortcut and
 * o -- logical shortcut or
 * @ -- content of pointer
