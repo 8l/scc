@@ -55,7 +55,7 @@ L16
 	j	L14	#I1
 	b
 L15
-	y	A2	#IF	-I
+	r	A2	#IF	-I
 }
 */
 

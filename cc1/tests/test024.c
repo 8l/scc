@@ -24,7 +24,7 @@ A3	O	u
 	A3	#OFFFFFFFF	:O
 	A3	#O3	:O
 	A3	#O0	:O
-	y	#I0
+	r	#I0
 }
 */
 

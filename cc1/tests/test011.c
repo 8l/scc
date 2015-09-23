@@ -10,13 +10,13 @@ G1	F1	main
 -
 L2
 	j	L3
-	y	#I1
+	r	#I1
 L4
-	y	#I0
+	r	#I0
 L3
 L5
 	j	L4
-	y	#I1
+	r	#I1
 }
 */
 

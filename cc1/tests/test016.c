@@ -15,14 +15,14 @@ A4	P	p
 	A4	A2	'P	:P
 	A4	@I	#I0	:I
 	j	L5	A2	#I0	=I
-	y	#I1
+	r	#I1
 L5
 	A4	G1	'P	:P
 	A4	@I	#I0	:I
 	j	L6	A4	#P0	!I
-	y	#I1
+	r	#I1
 L6
-	y	#I0
+	r	#I0
 }
 G3	F1	func2
 {
@@ -37,7 +37,7 @@ A4	P	pp
 	A4	@P	@I	#I0	:I
 L5
 	A2	#P0	:P
-	y	A1
+	r	A1
 }
 test016.c:47: error: incompatible types when assigning
 */

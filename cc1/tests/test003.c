@@ -6,17 +6,17 @@ F1
 G1	F1	foo
 {
 -
-	y	#I2A
+	r	#I2A
 }
 G2	F1	bar
 {
 -
-	y	#I18
+	r	#I18
 }
 G3	F1	main
 {
 -
-	y	G1	cI
+	r	G1	cI
 }
 */
 

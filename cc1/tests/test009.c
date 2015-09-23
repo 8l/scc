@@ -17,9 +17,9 @@ L5
 	b
 L4
 	j	L6	A2	#IA	=I
-	y	#I1
+	r	#I1
 L6
-	y	#I0
+	r	#I0
 }
 */
 

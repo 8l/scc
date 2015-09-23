@@ -18,8 +18,8 @@ G13	F1	main
 	j	L2
 A3	S2	s
 A4	I	s
-	y	A4
-	y	A3	M11	.S5	M6	.I	A3	M11	.S5	M10	.S8	M9	.I	+I
+	r	A4
+	r	A3	M11	.S5	M6	.I	A3	M11	.S5	M10	.S8	M9	.I	+I
 L2
 */
 

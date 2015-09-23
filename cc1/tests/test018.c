@@ -18,18 +18,18 @@ A10	V9	v
 	A4	'P	#P4	+P	#P3	+P	@K	#K2	:K
 	A10	#I2	:I
 	j	L12	A4	'P	#P4	+P	#P3	+P	@K	KI	#I2	=I
-	y	#I1
+	r	#I1
 L12
 	j	L13	A6	#P4	+P	#P3	+P	@K	KI	#I2	=I
-	y	#I1
+	r	#I1
 L13
 	j	L14	A8	@K	KI	#I2	=I
-	y	#I1
+	r	#I1
 L14
 	j	L15	A10	#I2	=I
-	y	#I1
+	r	#I1
 L15
-	y	#I0
+	r	#I0
 }
 */
 

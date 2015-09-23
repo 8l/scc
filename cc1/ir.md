@@ -242,7 +242,7 @@ generates:
 > }
 
 Another form of jump is the return statement, which uses the
-letter 'y' with an optional expression.
+letter 'r' with an optional expression.
 For example:
 
 > int
@@ -257,7 +257,7 @@ produces:
 > G1	F1	main
 > {
 > -
-> 	y	#I10
+> 	r	#I10
 > }
 
 

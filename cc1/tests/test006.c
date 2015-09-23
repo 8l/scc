@@ -11,7 +11,7 @@ G2	F1	main
 {
 -
 	j	L2	#I0
-	y	#I1
+	r	#I1
 	j	L3
 L2
 	j	L4	#I0
@@ -19,18 +19,18 @@ L2
 L4
 	j	L6	#I1
 	j	L7	G1	KI	#I0	=I
-	y	#I1
+	r	#I1
 	j	L8
 L7
-	y	#I0
+	r	#I0
 L8
 	j	L9
 L6
-	y	#I1
+	r	#I1
 L9
 L5
 L3
-	y	#I1
+	r	#I1
 }
 */
 

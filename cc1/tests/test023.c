@@ -26,7 +26,7 @@ A3	Z	u
 	A3	#Z3	:Z
 	A3	#Z1	:Z
 	A3	#Z0	:Z
-	y	#I0
+	r	#I0
 }
 */
 

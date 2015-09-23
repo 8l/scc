@@ -23,7 +23,7 @@ T3	K	i
 R4	W	j
 X5	I	k
 T6	Z	a
-	y	#I0
+	r	#I0
 }
 F2	I
 G6	F2	func2
