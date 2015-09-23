@@ -7,7 +7,7 @@ test011.c:14: warning: 'start' defined but not used
 F1
 G1	F1	main
 {
--
+\
 L2
 	j	L3
 	r	#I1

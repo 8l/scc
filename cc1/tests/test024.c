@@ -7,7 +7,7 @@ output:
 F1
 G1	F1	main
 {
--
+\
 A2	Q	i
 A3	O	u
 	A2	#Q1	:Q

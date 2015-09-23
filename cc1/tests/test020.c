@@ -8,7 +8,7 @@ test020.c:82: warning: division by 0
 F1
 G1	F1	main
 {
--
+\
 A2	I	i
 	A2	A2	#I0	!I	:I
 	A2	A2	#I0	!I	#I1	,I	:I

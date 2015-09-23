@@ -6,7 +6,7 @@ test012.c:39: warning: 'foo' defined but not used
 F1
 G1	F1	main
 {
--
+\
 A2	I	x
 	A2	#I0	:I
 	s	L4	A2

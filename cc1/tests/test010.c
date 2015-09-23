@@ -8,7 +8,7 @@ test010.c:31: warning: conditional expression is constant
 F1
 G1	F1	main
 {
--
+\
 A2	I	x
 	A2	#I0	:I
 	j	L5

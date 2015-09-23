@@ -17,7 +17,7 @@ X3	I	c
 F1
 G5	F1	func1
 {
--
+\
 A2	I	h
 T3	K	i
 R4	W	j
@@ -29,13 +29,13 @@ F2	I
 G6	F2	func2
 {
 R1	I	par
--
+\
 A3	I	par
 }
 T7	F2	func3
 {
 R1	I	par
--
+\
 }
 test014.c:29: error: invalid storage class for function 'd'
 test014.c:32: error: bad storage class in function parameter

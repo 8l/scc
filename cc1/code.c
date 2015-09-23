@@ -361,7 +361,7 @@ emitfun(unsigned op, void *arg)
 		(*sp)->flags &= ~ISUSED;
 		emit(ODECL, *sp);
 	}
-	puts("-");
+	puts("\\");
 }
 
 static void

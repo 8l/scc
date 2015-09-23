@@ -7,7 +7,7 @@ G1	I	g
 F1
 G2	F1	func1
 {
--
+\
 A2	I	x
 A4	P	p
 	G1	#I1	:I
@@ -26,7 +26,7 @@ L6
 }
 G3	F1	func2
 {
--
+\
 A1	I	x
 A2	P	p
 A4	P	pp

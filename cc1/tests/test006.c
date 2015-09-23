@@ -9,7 +9,7 @@ G1	K	c
 F1
 G2	F1	main
 {
--
+\
 	j	L2	#I0
 	r	#I1
 	j	L3
