@@ -176,8 +176,8 @@ Assignation has some suboperators:
 * :& -- bitwise and and assign
 * :^ -- bitwise xor and assign
 * :| -- bitwise or and assign
-* ;+ -- post increment
-* ;- -- post decrement
+* :i -- post increment
+* :d -- post decrement
 
 Every operator in an expression has a type descriptor.
 
@@ -267,7 +267,7 @@ to the backend that the next statements are part of the body
 of a loop:
 
 * b -- begin of loop
-* d -- end of loop
+* e -- end of loop
 
 #### Switch statement ####
 
