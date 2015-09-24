@@ -12,8 +12,7 @@
 #define NR_SYM_HASH 64
 
 unsigned curctx;
-static unsigned short localcnt;
-static unsigned short globalcnt;
+static unsigned short counterid;
 
 static Symbol *head, *labels;
 static Symbol *htab[NR_SYM_HASH];
@@ -105,7 +104,6 @@ popctx(void)
 	short f;
 
 	if (--curctx == GLOBALCTX) {
-		localcnt = 0;
 		for (sym = labels; sym; sym = next) {
 			next = sym->next;
 			killsym(sym);
@@ -125,7 +123,7 @@ newid(void)
 {
 	unsigned short id;
 
-	id = (curctx) ? ++localcnt : ++globalcnt;
+	id = ++counterid;
 	if (id == 0) {
 		die("Overflow in %s identifiers",
 		    (curctx) ? "internal" : "external");
@@ -375,6 +373,6 @@ ikeywords(void)
 	 * will make faster some operations. There is no problem of memory
 	 * leakeage because this memory is not ever freed
 	 */
-	globalcnt = 0;
+	counterid = 0;
 	head = NULL;
 }
