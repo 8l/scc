@@ -6,29 +6,29 @@ output:
 test019.c:13: warning: division by 0
 test019.c:14: warning: division by 0
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	i
-	A2	#I3	:I
-	A2	#I1	:I
-	A2	#I12	:I
-	A2	#I2	:I
-	A2	#I0	:I
-	A2	A2	#I0	%I	:I
-	A2	A2	#I0	%I	:I
-	A2	#I8	:I
-	A2	#I2	:I
-	A2	#I4	:I
-	A2	#IC	:I
-	A2	#I8	:I
-	A2	#IFFFD	:I
-	A2	#IFFF3	:I
-	A2	#I1	:I
-	A2	#I0	:I
-	A2	#I0	:I
-	A2	#I1	:I
-	A2	#I0	:I
+A3	I	i
+	A3	#I3	:I
+	A3	#I1	:I
+	A3	#I12	:I
+	A3	#I2	:I
+	A3	#I0	:I
+	A3	A3	#I0	%I	:I
+	A3	A3	#I0	%I	:I
+	A3	#I8	:I
+	A3	#I2	:I
+	A3	#I4	:I
+	A3	#IC	:I
+	A3	#I8	:I
+	A3	#IFFFD	:I
+	A3	#IFFF3	:I
+	A3	#I1	:I
+	A3	#I0	:I
+	A3	#I0	:I
+	A3	#I1	:I
+	A3	#I0	:I
 }
 */
 

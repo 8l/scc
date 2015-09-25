@@ -3,28 +3,28 @@ name: TEST004
 description: Test integer operations
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	x
-	A2	#I0	:I
-	A2	A2	#I2	+I	:I
-	A2	A2	#I1	-I	:I
-	A2	A2	#I6	*I	:I
-	A2	A2	#I2	/I	:I
-	A2	A2	#I2	%I	:I
-	A2	A2	#I2	lI	:I
-	A2	A2	#I1	rI	:I
-	A2	A2	#IFF	|I	:I
-	A2	A2	#I3	&I	:I
-	A2	A2	#I1	^I	:I
-	A2	A2	A2	#I1	>I	+I	:I
-	A2	A2	A2	#I3	<I	+I	:I
-	A2	A2	A2	#I1	>I	+I	:I
-	A2	A2	A2	#I4	<I	+I	:I
-	j	L3	A2	#I4	=I
+A3	I	x
+	A3	#I0	:I
+	A3	A3	#I2	+I	:I
+	A3	A3	#I1	-I	:I
+	A3	A3	#I6	*I	:I
+	A3	A3	#I2	/I	:I
+	A3	A3	#I2	%I	:I
+	A3	A3	#I2	lI	:I
+	A3	A3	#I1	rI	:I
+	A3	A3	#IFF	|I	:I
+	A3	A3	#I3	&I	:I
+	A3	A3	#I1	^I	:I
+	A3	A3	A3	#I1	>I	+I	:I
+	A3	A3	A3	#I3	<I	+I	:I
+	A3	A3	A3	#I1	>I	+I	:I
+	A3	A3	A3	#I4	<I	+I	:I
+	j	L4	A3	#I4	=I
 	r	#I1
-L3
+L4
 	r	#I0
 }
 */

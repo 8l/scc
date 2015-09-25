@@ -3,12 +3,12 @@ name: TEST001
 description: Basic hello world test
 output:
 F3	P
-X1	F3	printf
-F1
-G2	F1	main
+X4	F3	printf
+F5
+G6	F5	main
 {
 \
-	X1	"68656C6C6F20776F726C640A	'P	pP	cI
+	X4	"68656C6C6F20776F726C640A	'P	pP	cI
 	r	#I0
 }
 */

@@ -11,16 +11,16 @@ M10	S8	s1
 S2	s
 M11	S5	s
 G12	S2	s2
-F1
-G13	F1	main
+F13
+G14	F13	main
 {
 \
-	j	L2
-A3	S2	s
-A4	I	s
-	r	A4
-	r	A3	M11	.S5	M6	.I	A3	M11	.S5	M10	.S8	M9	.I	+I
-L2
+	j	L15
+A16	S2	s
+A17	I	s
+	r	A17
+	r	A16	M11	.S5	M6	.I	A16	M11	.S5	M10	.S8	M9	.I	+I
+L15
 */
 
 typedef struct s s;

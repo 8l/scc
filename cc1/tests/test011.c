@@ -5,17 +5,17 @@ output:
 test011.c:14: warning: 'foo' defined but not used
 test011.c:14: warning: 'start' defined but not used
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-L2
-	j	L3
-	r	#I1
-L4
-	r	#I0
 L3
-L5
 	j	L4
+	r	#I1
+L5
+	r	#I0
+L4
+L6
+	j	L5
 	r	#I1
 }
 */

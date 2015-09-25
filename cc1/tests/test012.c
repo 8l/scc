@@ -4,70 +4,70 @@ description: Basic switch test
 output:
 test012.c:39: warning: 'foo' defined but not used
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	x
-	A2	#I0	:I
-	s	L4	A2
-L5
-	j	L3
-L4
-	t	#1
-	v	L5	#I0
-L3
-	s	L7	A2
-L8
-	s	L10	A2
-L11
-	j	L12
-L13
-	r	#I1
-	j	L9
-L10
-	t	#2
-	v	L11	#I0
-	f	L13
-L9
-	j	L6
-L7
-	t	#1
-	v	L8	#I0
+A3	I	x
+	A3	#I0	:I
+	s	L5	A3
 L6
-	r	#I2
+	j	L4
+L5
+	t	#1
+	v	L6	#I0
+L4
+	s	L8	A3
+L9
+	s	L11	A3
 L12
-	s	L15	A2
-L16
-	r	#I3
-	j	L14
-L15
-	t	#1
-	v	L16	#I1
+	j	L13
 L14
-	s	L18	A2
-	A2	#I2	:I
-L19
-L20
-	r	#I4
-	j	L17
-L18
-	t	#1
-	v	L20	#I1
-L17
-	s	L22	A2
-L23
-	r	A2
-L24
 	r	#I1
+	j	L10
+L11
+	t	#2
+	v	L12	#I0
+	f	L14
+L10
+	j	L7
+L8
+	t	#1
+	v	L9	#I0
+L7
+	r	#I2
+L13
+	s	L16	A3
+L17
+	r	#I3
+	j	L15
+L16
+	t	#1
+	v	L17	#I1
+L15
+	s	L19	A3
+	A3	#I2	:I
+L20
+L21
+	r	#I4
+	j	L18
+L19
+	t	#1
+	v	L21	#I1
+L18
+	s	L23	A3
+L24
+	r	A3
 L25
 	r	#I1
-	j	L21
-L22
+L26
+	r	#I1
+	j	L22
+L23
 	t	#3
-	v	L24	#I1
-	v	L23	#I0
-	f	L25
-L21
+	v	L25	#I1
+	v	L24	#I0
+	f	L26
+L22
 }
 */
 

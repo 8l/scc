@@ -3,32 +3,32 @@ name: TEST018
 description: Basic test for arrays
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-V2	K	#4
-V3	V2	#2
-A4	V3	arr
-A6	P	p
-A8	P	q
-V9	I	#4
-A10	V9	v
-	A6	A4	'P	:P
-	A8	A4	'P	#P4	+P	#P3	+P	:P
-	A4	'P	#P4	+P	#P3	+P	@K	#K2	:K
-	A10	#I2	:I
-	j	L12	A4	'P	#P4	+P	#P3	+P	@K	KI	#I2	=I
-	r	#I1
-L12
-	j	L13	A6	#P4	+P	#P3	+P	@K	KI	#I2	=I
+V3	K	#4
+V4	V3	#2
+A5	V4	arr
+A7	P	p
+A9	P	q
+V10	I	#4
+A11	V10	v
+	A7	A5	'P	:P
+	A9	A5	'P	#P4	+P	#P3	+P	:P
+	A5	'P	#P4	+P	#P3	+P	@K	#K2	:K
+	A11	#I2	:I
+	j	L13	A5	'P	#P4	+P	#P3	+P	@K	gK	#I2	=I
 	r	#I1
 L13
-	j	L14	A8	@K	KI	#I2	=I
+	j	L14	A7	#P4	+P	#P3	+P	@K	gK	#I2	=I
 	r	#I1
 L14
-	j	L15	A10	#I2	=I
+	j	L15	A9	@K	gK	#I2	=I
 	r	#I1
 L15
+	j	L16	A11	#I2	=I
+	r	#I1
+L16
 	r	#I0
 }
 */

@@ -5,21 +5,21 @@ description: Basic test for char constants
 comments: This test is done for z80 implementation
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	K	uc
-A3	C	sc
-	A2	#KFF	:K
-	A2	#K23	:K
-	A2	#K1	:K
-	A2	#K1	:K
-	A2	#K41	:K
-	A3	#CFF	:C
-	A3	#C23	:C
-	A3	#C1	:C
-	A3	#C1	:C
-	A3	#C41	:C
+A3	K	uc
+A4	C	sc
+	A3	#KFF	:K
+	A3	#K23	:K
+	A3	#K1	:K
+	A3	#K1	:K
+	A3	#K41	:K
+	A4	#CFF	:C
+	A4	#C23	:C
+	A4	#C1	:C
+	A4	#C1	:C
+	A4	#C41	:C
 }
 */
 

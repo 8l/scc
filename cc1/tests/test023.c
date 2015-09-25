@@ -5,27 +5,27 @@ description: Basic test for long constants
 comments: This test is done for z80 data types
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	W	i
-A3	Z	u
-	A2	#W1	:W
-	A2	#WFFFFFFFF	:W
-	A2	#WFFFFFFFF	:W
-	A2	#WFFFFFFFF	:W
-	A2	#WFFFFFFFF	:W
-	A2	#W3	:W
-	A2	#W1	:W
-	A2	#W0	:W
-	A3	#Z1	:Z
-	A3	#ZFFFFFFFF	:Z
-	A3	#ZFFFFFFFF	:Z
-	A3	#ZFFFFFFFF	:Z
-	A3	#ZFFFFFFFF	:Z
-	A3	#Z3	:Z
-	A3	#Z1	:Z
-	A3	#Z0	:Z
+A3	W	i
+A4	Z	u
+	A3	#W1	:W
+	A3	#WFFFFFFFF	:W
+	A3	#WFFFFFFFF	:W
+	A3	#WFFFFFFFF	:W
+	A3	#WFFFFFFFF	:W
+	A3	#W3	:W
+	A3	#W1	:W
+	A3	#W0	:W
+	A4	#Z1	:Z
+	A4	#ZFFFFFFFF	:Z
+	A4	#ZFFFFFFFF	:Z
+	A4	#ZFFFFFFFF	:Z
+	A4	#ZFFFFFFFF	:Z
+	A4	#Z3	:Z
+	A4	#Z1	:Z
+	A4	#Z0	:Z
 	r	#I0
 }
 */

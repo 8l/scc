@@ -14,27 +14,27 @@ test014.c:29: error: incorrect storage class for file-scope declaration
 G1	I	a
 Y2	K	b
 X3	I	c
-F1
-G5	F1	func1
+F5
+G6	F5	func1
 {
 \
-A2	I	h
-T3	K	i
-R4	W	j
-X5	I	k
-T6	Z	a
+A7	I	h
+T8	K	i
+R9	W	j
+X10	I	k
+T11	Z	a
 	r	#I0
 }
-F2	I
-G6	F2	func2
+F13	I
+G14	F13	func2
 {
-R1	I	par
+R12	I	par
 \
-A3	I	par
+A15	I	par
 }
-T7	F2	func3
+T17	F13	func3
 {
-R1	I	par
+R16	I	par
 \
 }
 test014.c:29: error: invalid storage class for function 'd'

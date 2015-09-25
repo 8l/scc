@@ -6,56 +6,56 @@ test010.c:9: warning: conditional expression is constant
 test010.c:11: warning: conditional expression is constant
 test010.c:31: warning: conditional expression is constant
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	x
-	A2	#I0	:I
-	j	L5
-	d
-L3
-	j	L4
-L5
-	j	L3	#I1
-	b
+A3	I	x
+	A3	#I0	:I
+	j	L6
+	e
 L4
-	j	L8
-	d
+	j	L5
 L6
-	j	L9	A2	#I5	!I
+	j	L4	#I1
+	b
+L5
+	j	L9
+	e
+L7
+	j	L10	A3	#I5	!I
+	j	L8
+L10
+	A3	A3	#I1	+I	:I
 	j	L7
 L9
-	A2	A2	#I1	+I	:I
-	j	L6
+	j	L7	#I1
+	b
 L8
-	j	L6	#I1
-	b
-L7
 
-	j	L12
-	d
-L10
-	j	L13	A2	#IA	!I
-	j	L11
-L13
-	A2	A2	#I1	+I	:I
-	j	L10
-
-L12
-	j	L10
-	b
+	j	L13
+	e
 L11
-	d
+	j	L14	A3	#IA	!I
+	j	L12
 L14
-	j	L16	A2	#IF	!I
-	j	L15
-L16
-	A2	A2	#I1	+I	:I
-	j	L14
-	j	L14	#I1
+	A3	A3	#I1	+I	:I
+	j	L11
+
+L13
+	j	L11
 	b
+L12
+	e
 L15
-	r	A2	#IF	-I
+	j	L17	A3	#IF	!I
+	j	L16
+L17
+	A3	A3	#I1	+I	:I
+	j	L15
+	j	L15	#I1
+	b
+L16
+	r	A3	#IF	-I
 }
 */
 

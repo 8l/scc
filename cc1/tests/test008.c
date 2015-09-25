@@ -3,24 +3,24 @@ name: TEST008
 description: Basic do while loop
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	x
-	A2	#I0	:I
-	d
-L3
-	A2	A2	#I1	+I	:I
-	j	L3	A2	#IA	<I
-	b
+A3	I	x
+	A3	#I0	:I
+	e
 L4
-	d
-L5
-	A2	A2	#I1	+I	:I
-	j	L5	A2	#I14	<I
+	A3	A3	#I1	+I	:I
+	j	L4	A3	#IA	<I
 	b
+L5
+	e
 L6
-	r	A2	#I14	-I
+	A3	A3	#I1	+I	:I
+	j	L6	A3	#I14	<I
+	b
+L7
+	r	A3	#I14	-I
 }
 */
 

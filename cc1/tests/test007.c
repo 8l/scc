@@ -3,20 +3,20 @@ name: TEST007
 description: basic while test
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	x
-	A2	#IA	:I
-	j	L5
-	d
-L3
-	A2	A2	#I1	-I	:I
-L5
-	j	L3	A2	#I0	!I
-	b
+A3	I	x
+	A3	#IA	:I
+	j	L6
+	e
 L4
-	r	A2
+	A3	A3	#I1	-I	:I
+L6
+	j	L4	A3	#I0	!I
+	b
+L5
+	r	A3
 }
 */
 

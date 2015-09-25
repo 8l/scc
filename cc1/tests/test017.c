@@ -2,26 +2,26 @@
 name: TEST017
 description: Basic test about pointers and structs
 output:
-F1
-G9	F1	main
+F9
+G10	F9	main
 {
 \
 S2	s1
 M3	I	y
 M4	I	z
-A2	S2	nested
+A11	S2	nested
 S6	s2
 M8	P	p
-A3	S6	v
-	A3	M8	.P	A2	'P	:P
-	A3	M8	.P	@S2	M3	.I	#I1	:I
-	A3	M8	.P	@S2	M4	.I	#I2	:I
-	j	L4	A2	M3	.I	#I1	=I
+A12	S6	v
+	A12	M8	.P	A11	'P	:P
+	A12	M8	.P	@S2	M3	.I	#I1	:I
+	A12	M8	.P	@S2	M4	.I	#I2	:I
+	j	L13	A11	M3	.I	#I1	=I
 	r	#I1
-L4
-	j	L5	A2	M4	.I	#I2	=I
+L13
+	j	L14	A11	M4	.I	#I2	=I
 	r	#I2
-L5
+L14
 	r	#I0
 }
 */

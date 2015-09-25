@@ -5,27 +5,27 @@ description: Basic test for int constants
 comments: This test is done for z80 data types
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	i
-A3	N	u
-	A2	#I1	:I
-	A2	#IFFFF	:I
-	A2	#IFFFF	:I
-	A2	#IFFFF	:I
-	A2	#IFFFF	:I
-	A2	#I3	:I
-	A2	#I1	:I
-	A2	#I0	:I
-	A3	#N1	:N
-	A3	#NFFFF	:N
-	A3	#NFFFF	:N
-	A3	#NFFFF	:N
-	A3	#NFFFF	:N
-	A3	#N0	:N
-	A3	#N3	:N
-	A3	#N0	:N
+A3	I	i
+A4	N	u
+	A3	#I1	:I
+	A3	#IFFFF	:I
+	A3	#IFFFF	:I
+	A3	#IFFFF	:I
+	A3	#IFFFF	:I
+	A3	#I3	:I
+	A3	#I1	:I
+	A3	#I0	:I
+	A4	#N1	:N
+	A4	#NFFFF	:N
+	A4	#NFFFF	:N
+	A4	#NFFFF	:N
+	A4	#NFFFF	:N
+	A4	#N0	:N
+	A4	#N3	:N
+	A4	#N0	:N
 	r	#I0
 }
 */

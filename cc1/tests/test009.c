@@ -3,22 +3,22 @@ name: TEST009
 description: Basic test for loops
 output:
 F1
-G1	F1	main
+G2	F1	main
 {
 \
-A2	I	x
-	A2	#I0	:I
-	j	L5
-	d
-L3
-	A2	A2	#I1	+I	:I
-L5
-	j	L3	A2	#IA	<I
-	b
+A3	I	x
+	A3	#I0	:I
+	j	L6
+	e
 L4
-	j	L6	A2	#IA	=I
-	r	#I1
+	A3	A3	#I1	+I	:I
 L6
+	j	L4	A3	#IA	<I
+	b
+L5
+	j	L7	A3	#IA	=I
+	r	#I1
+L7
 	r	#I0
 }
 */
