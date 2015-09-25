@@ -1,4 +1,6 @@
 
+#include "arch.h"
+
 #define INPUTSIZ LINESIZ
 #ifndef PREFIX
 #define PREFIX "/usr/"
@@ -28,11 +30,7 @@ struct limits {
 	} min;
 };
 
-/*
- * TODO: Some of the data stored in type is shared with
- *       cc2, so it should be stored in a table shared
- *       between both programs, and dependant of the target.
- */
+
 struct type {
 	unsigned char op;           /* type builder operator */
 	char ns;                    /* namespace for struct members */
@@ -397,7 +395,7 @@ extern unsigned curctx;
 extern Symbol *curfun, *zero, *one;
 
 extern Type *voidtype, *pvoidtype, *booltype,
-            *uchartype,   *chartype,
+            *uchartype,   *chartype, *schartype,
             *uinttype,    *inttype,     *sizettype,
             *ushortype,   *shortype,
             *longtype,    *ulongtype,

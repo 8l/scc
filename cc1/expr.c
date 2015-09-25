@@ -54,13 +54,13 @@ promote(Node *np)
 {
 	Type *tp;
 	Node *new;
-	unsigned r;
+	unsigned r, ur = uinttype->n.rank;
 
 	tp = np->type;
 	r = tp->n.rank;
-	if  (r > RANK_UINT || tp == inttype || tp == uinttype)
+	if  (r > ur || tp == inttype || tp == uinttype)
 		return np;
-	tp = (r == RANK_UINT) ? uinttype : inttype;
+	tp = (r == ur) ? uinttype : inttype;
 	if ((new = convert(np, tp, 1)) != NULL)
 		return new;
 	return np;
