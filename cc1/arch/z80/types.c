@@ -37,67 +37,6 @@
 #define L_LDOUBLE   'H'
 
 /*
- * Compiler can generate warnings here if the ranges of TINT,
- * TUINT and TFLOAT are smaller than any of the constants in this
- * array. Ignore them if you know that the target types are correct
- */
-struct limits limits[][4] = {
-	{
-		{	/* 0 = unsigned 1 byte */
-			.min.u = 0,
-			.max.u = 255
-		},
-		{	/* 1 = unsigned 2 bytes */
-			.min.u = 0,
-			.max.u = 65535u
-		},
-		{	/* 2 = unsigned 4 bytes */
-			.min.u = 0,
-			.max.u = 4294967295u
-		},
-		{	/* 3 = unsigned 4 bytes */
-			.min.u = 0,
-			.max.u = 18446744073709551615u
-		}
-	},
-	{
-		{	/* 0 = signed 1 byte */
-			.min.i = -127,
-			.max.i = 127
-		},
-		{	/* 1 = signed 2 byte */
-			.min.i = -32767,
-			.max.i = 32767
-		},
-		{	/* 2 = signed 4 byte */
-			.min.i = -2147483647L,
-			.max.i = 2147483647L
-		},
-		{	/* 3 = signed 8 byte */
-			.min.i = -9223372036854775807LL,
-			.max.i = 9223372036854775807LL,
-		}
-	},
-	{
-		{
-			/* 0 = float 4 bytes */
-			.min.f = -1,
-			.max.f = 2
-		},
-		{
-			/* 1 = float 8 bytes */
-			.min.f = -1,
-			.max.f = 2,
-		},
-		{
-			/* 2 = float 16 bytes */
-			.min.f = -1,
-			.max.f = 2,
-		}
-	}
-};
-
-/*
  * Initializaion of type pointers were done with
  * a C99 initilizator '... = &(Type) {...', but
  * c compiler in Plan9 gives error with this
