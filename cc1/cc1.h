@@ -416,4 +416,5 @@ extern Type *voidtype, *pvoidtype, *booltype,
             *ushortype,   *shortype,
             *longtype,    *ulongtype,
             *ullongtype,  *llongtype,
-            *floattype,   *doubletype,  *ldoubletype;
+            *floattype,   *doubletype,  *ldoubletype,
+            *ellipsistype;

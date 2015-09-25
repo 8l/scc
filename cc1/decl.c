@@ -116,6 +116,18 @@ arydcl(struct declarators *dp)
 	push(dp, ARY, n);
 }
 
+static void
+newpar(Type *fun, Type *par)
+{
+	TINT n = fun->n.elem;
+
+	if (n == NR_FUNPARAM)
+		error("too much parameters in function definition");
+	fun->p.pars = xrealloc(fun->p.pars, ++n * sizeof(Type *));
+	fun->p.pars[n-1] = par;
+	fun->n.elem = n;
+}
+
 static Symbol *
 parameter(struct decl *dcl)
 {
@@ -164,12 +176,7 @@ parameter(struct decl *dcl)
 	}
 	sym->type = tp;
 	sym->flags |= ISUSED;    /* avoid non used warnings in prototypes */
-
-	if (n == NR_FUNPARAM)
-		error("too much parameters in function definition");
-	funtp->p.pars = xrealloc(funtp->p.pars, ++n * sizeof(Type *));
-	funtp->p.pars[n-1] = tp;
-	funtp->n.elem = n;
+	newpar(funtp, tp);
 
 	return sym;
 }
@@ -193,9 +200,15 @@ fundcl(struct declarators *dp)
 	if (!accept(')')) {
 		type.n.elem = 0;
 		sp = syms;
-		do
-			*sp++ = dodcl(0, parameter, NS_IDEN, &type);
-		while (accept(','));
+		do {
+			if (!accept(ELLIPSIS)) {
+				*sp++ = dodcl(0, parameter, NS_IDEN, &type);
+			} else {
+				newpar(&type, ellipsistype);
+				*sp++ = NULL;
+				break;
+			}
+		} while (accept(','));
 
 		expect(')');
 
