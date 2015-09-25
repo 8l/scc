@@ -5,7 +5,7 @@ description: Basic test for integer algebraic identities
 output:
 test020.c:81: warning: division by 0
 test020.c:82: warning: division by 0
-F1
+F1	I
 G2	F1	main
 {
 \

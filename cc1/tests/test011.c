@@ -4,7 +4,7 @@ description: Basic test for goto
 output:
 test011.c:14: warning: 'foo' defined but not used
 test011.c:14: warning: 'start' defined but not used
-F1
+F1	I
 G2	F1	main
 {
 \

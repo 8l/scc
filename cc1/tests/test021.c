@@ -4,7 +4,7 @@ name: TEST021
 description: Basic test for char constants
 comments: This test is done for z80 implementation
 output:
-F1
+F1	I
 G2	F1	main
 {
 \

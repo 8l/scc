@@ -2,7 +2,7 @@
 name: TEST004
 description: Test integer operations
 output:
-F1
+F1	I
 G2	F1	main
 {
 \

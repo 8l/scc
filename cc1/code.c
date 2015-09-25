@@ -270,6 +270,8 @@ emittype(Type *tp)
 		break;
 	case FTN:
 		emitletter(tp);
+		putchar('\t');
+		emitletter(tp->type);
 		n = tp->n.elem;
 		for (vp = tp->p.pars; n-- > 0; ++vp) {
 			putchar('\t');

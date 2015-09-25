@@ -4,7 +4,7 @@ description: Basic pointer test
 output:
 test016.c:43: error: redefinition of 'func2'
 G1	I	g
-F2
+F2	I
 G3	F2	func1
 {
 \

@@ -14,7 +14,7 @@ test014.c:29: error: incorrect storage class for file-scope declaration
 G1	I	a
 Y2	K	b
 X3	I	c
-F5
+F5	I
 G6	F5	func1
 {
 \
@@ -25,7 +25,7 @@ X10	I	k
 T11	Z	a
 	r	#I0
 }
-F13	I
+F13	0	I
 G14	F13	func2
 {
 R12	I	par

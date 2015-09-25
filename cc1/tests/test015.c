@@ -11,7 +11,7 @@ M10	S8	s1
 S2	s
 M11	S5	s
 G12	S2	s2
-F13
+F13	I
 G14	F13	main
 {
 \

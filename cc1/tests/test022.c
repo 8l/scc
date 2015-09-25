@@ -4,7 +4,7 @@ name: TEST022
 description: Basic test for int constants
 comments: This test is done for z80 data types
 output:
-F1
+F1	I
 G2	F1	main
 {
 \

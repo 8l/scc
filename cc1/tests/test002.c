@@ -3,7 +3,7 @@ name: TEST002
 description: Test forward references before definition of types
 output:
 G4	P	x
-F7
+F7	I
 G8	F7	main
 {
 \

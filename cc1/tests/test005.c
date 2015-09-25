@@ -2,7 +2,7 @@
 name: TEST005
 description: Test unary integer operations
 output:
-F1
+F1	I
 G2	F1	main
 {
 \

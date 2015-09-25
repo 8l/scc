@@ -5,7 +5,7 @@ output:
 test010.c:9: warning: conditional expression is constant
 test010.c:11: warning: conditional expression is constant
 test010.c:31: warning: conditional expression is constant
-F1
+F1	I
 G2	F1	main
 {
 \
