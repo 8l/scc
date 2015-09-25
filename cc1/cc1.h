@@ -8,6 +8,22 @@
 
 #define GLOBALCTX 0
 
+#define RANK_BOOL    0
+#define RANK_SCHAR   1
+#define RANK_UCHAR   2
+#define RANK_CHAR    3
+#define RANK_SHORT   4
+#define RANK_USHORT  5
+#define RANK_INT     6
+#define RANK_UINT    7
+#define RANK_LONG    8
+#define RANK_ULONG   9
+#define RANK_LLONG   10
+#define RANK_ULLONG  11
+#define RANK_FLOAT   12
+#define RANK_DOUBLE  13
+#define RANK_LDOUBLE 15
+
 /*
  * Definition of structures
  */
