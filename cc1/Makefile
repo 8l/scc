@@ -7,7 +7,7 @@ all: cc1
 
 .POSIX:
 
-$(OBJS) : cc1.h ../inc/cc.h ../inc/sizes.h
+$(OBJS) : cc1.h ../inc/cc.h ../inc/sizes.h arch/$(ARCH)/arch.h
 
 cc1: $(OBJS) ../lib/libcc.a
 	$(CC) $(LDFLAGS) $(OBJS) ../lib/libcc.a -o $@
