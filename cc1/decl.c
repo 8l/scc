@@ -189,17 +189,20 @@ static Symbol *dodcl(int rep,
 static void
 fundcl(struct declarators *dp)
 {
-	Type type = {.n = {.elem = -1}, .p = {.pars= NULL}};
-	Symbol *syms[NR_FUNPARAM], **sp;
+	Type type;
+	Symbol *syms[NR_FUNPARAM], **sp = syms;
 	TINT size;
 	Symbol *pars = NULL;
 
 	pushctx();
 	expect('(');
+	type.n.elem = 0;
+	type.p.pars = NULL;
 
-	if (!accept(')')) {
-		type.n.elem = 0;
-		sp = syms;
+	if (accept(')')) {
+		newpar(&type, ellipsistype);
+		*sp++ = NULL;
+	} else {
 		do {
 			if (!accept(ELLIPSIS)) {
 				*sp++ = dodcl(0, parameter, NS_IDEN, &type);
@@ -211,11 +214,10 @@ fundcl(struct declarators *dp)
 		} while (accept(','));
 
 		expect(')');
-
-		if (type.n.elem != -1) {
-			size = type.n.elem * sizeof(Symbol *);
-			pars = memcpy(xmalloc(size), syms, size);
-		}
+	}
+	if (type.n.elem != -1) {
+		size = type.n.elem * sizeof(Symbol *);
+		pars = memcpy(xmalloc(size), syms, size);
 	}
 	push(dp, FTN, type.n.elem, type.p.pars, pars);
 }

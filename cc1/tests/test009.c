@@ -2,7 +2,7 @@
 name: TEST009
 description: Basic test for loops
 output:
-F1
+F1	E
 G2	F1	main
 {
 \

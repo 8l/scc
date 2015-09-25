@@ -2,7 +2,7 @@
 name: TEST018
 description: Basic test for arrays
 output:
-F1
+F1	E
 G2	F1	main
 {
 \
