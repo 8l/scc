@@ -554,8 +554,9 @@ arguments(Node *np)
 
 	do {
 		arg = decay(assign());
-		if (--n < 0 && !toomany) {
-			errorp("too many arguments in function call");
+		if (--n < 0) {
+			if (!toomany)
+				errorp("too many arguments in function call");
 			toomany = 1;
 			continue;
 		}
@@ -1071,17 +1072,19 @@ initlist(Symbol *sym, Type *tp)
 		}
 		switch (tp->op) {
 		case ARY:
-			if (tp->defined && n >= tp->n.elem && !toomany) {
+			if (tp->defined && n >= tp->n.elem) {
+				if (!toomany)
+					warn("excess elements in array initializer");
 				toomany = 1;
-				warn("excess elements in array initializer");
 				sym = NULL;
 			}
 			newtp = tp->type;
 			break;
 		case STRUCT:
-			if (n >= tp->n.elem && !toomany) {
+			if (n >= tp->n.elem) {
+				if (!toomany)
+					warn("excess elements in struct initializer");
 				toomany = 1;
-				warn("excess elements in struct initializer");
 				sym = NULL;
 			} else {
 				sym = tp->p.fields[n];
@@ -1091,9 +1094,11 @@ initlist(Symbol *sym, Type *tp)
 		default:
 			newtp = tp;
 			warn("braces around scalar initializer");
-			if (n > 0 && !toomany) {
+			if (n > 0) {
+				if (!toomany)
+					warn("excess elements in scalar initializer");
 				toomany = 1;
-				warn("excess elements in scalar initializer");
+				sym = NULL;
 			}
 			break;
 		}
