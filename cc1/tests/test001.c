@@ -2,7 +2,7 @@
 name: TEST001
 description: Basic hello world test
 output:
-F3	P
+F3	P	E
 X4	F3	printf
 F5
 G6	F5	main
@@ -13,7 +13,7 @@ G6	F5	main
 }
 */
 
-int printf(char *fmt);
+int printf(char *fmt, ...);
 
 int
 main(void)

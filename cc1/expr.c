@@ -587,7 +587,7 @@ arguments(Node *np)
 	} while (accept(','));
 
 no_pars:
-	if (n > 0)
+	if (n > 0 && *targs != ellipsistype)
 		errorp("too few arguments in function call");
 
 	expect(')');
