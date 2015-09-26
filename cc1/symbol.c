@@ -58,6 +58,8 @@ unlinkhash(Symbol *sym)
 {
 	Symbol **h, *p, *prev;
 
+	if ((sym->flags & ISDECLARED) == 0)
+		return;
 	h = &htab[hash(sym->name)];
 	for (prev = p = *h; p != sym; prev = p, p = p->hash)
 		/* nothing */;
