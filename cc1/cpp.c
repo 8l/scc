@@ -26,13 +26,7 @@ int disexpand;
 static Symbol *
 defmacro(char *s)
 {
-	Symbol *sym;
-
-	strcpy(yytext, s);
-	sym = lookup(NS_CPP, yytext);
-	/* FIXME: We have a problem here */
-	sym->flags |= ISDECLARED;
-	return sym;
+	return install(NS_CPP, lookup(NS_CPP, s));
 }
 
 void
