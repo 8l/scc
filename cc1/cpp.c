@@ -67,6 +67,8 @@ nextcpp(void)
 	if (yylen + 1 > arglen)
 		error("argument overflow invoking macro \"%s\"",
 		      macroname);
+	if (yytoken == IDEN)
+		yylval.sym->flags |= ISUSED;
 	memcpy(argp, yytext, yylen);
 	argp += yylen;
 	*argp++ = ' ';
