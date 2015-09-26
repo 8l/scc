@@ -3,18 +3,18 @@
 name: TEST026
 descritpion: Test of predefined cpp macros
 output:
-F1
-G2	F1	main
+F2
+G3	F2	main
 {
 \
-A3	I	y
-A5	P	p
-	A5	"746573743032362E63	'P	:P
-	A3	#I1E	:I
-	A3	#I1	:I
-	A3	#I1	:I
-	A3	#I1	:I
-	A3	A3	:I
+A4	I	y
+A6	P	p
+	A6	"746573743032362E63	'P	:P
+	A4	#I1E	:I
+	A4	#I1	:I
+	A4	#I1	:I
+	A4	#I1	:I
+	A4	#I1	:I
 }
 */
 

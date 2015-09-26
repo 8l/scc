@@ -247,6 +247,7 @@ static int
 getpars(Symbol *args[NR_MACROARG])
 {
 	int n = -1;
+	Symbol *sym;
 
 	if (!accept('('))
 		return n;
@@ -263,7 +264,9 @@ getpars(Symbol *args[NR_MACROARG])
 			cpperror("macro arguments must be identifiers");
 			return NR_MACROARG;
 		}
-		args[n++] = yylval.sym;
+		sym = install(NS_IDEN, yylval.sym);
+		sym->flags |= ISUSED;
+		args[n++] = sym;
 		next();
 	} while (accept(','));
 	expect(')');
