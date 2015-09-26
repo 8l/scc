@@ -4,8 +4,7 @@ include config.mk
 
 SUBDIRS  = \
 	lib \
-	cc1 \
-	cc2
+	cc1
 
 all clean:
 	@echo scc build options:
