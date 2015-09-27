@@ -29,15 +29,15 @@ dumpstab(char *msg)
 			continue;
 		fprintf(stderr, "%d", (int) (bp - htab));
 		for (sym = *bp; sym; sym = sym->hash)
-			fprintf(stderr, "->[%d,%d:%s]",
-			        sym->ns, sym->ctx, sym->name);
+			fprintf(stderr, "->[%d,%d:'%s'=%p]",
+			        sym->ns, sym->ctx, sym->name, (void *) sym);
 		putc('\n', stderr);
 	}
 	fputs("head:", stderr);
 	for (sym = head; sym; sym = sym->next) {
-		fprintf(stderr, "->[%d,%d:'%s']",
+		fprintf(stderr, "->[%d,%d:'%s'=%p]",
 		        sym->ns, sym->ctx,
-		        (sym->name) ? sym->name : "");
+		        (sym->name) ? sym->name : "", (void *) sym);
 	}
 	putc('\n', stderr);
 }
