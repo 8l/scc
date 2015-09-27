@@ -281,9 +281,9 @@ nextsym(Symbol *sym, int ns)
 	for (p = sym->hash; p; p = p->hash) {
 		t = p->name;
 		if (c == *t && !strcmp(s, t))
-			return sym;
+			return p;
 	}
-	return linkhash(allocsym(ns, s));
+	return allocsym(ns, s);
 }
 
 Symbol *
