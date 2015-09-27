@@ -250,9 +250,7 @@ lookup(int ns, char *name)
 		if (sns == NS_KEYWORD || sns == NS_CPP || sns == ns)
 			return sym;
 	}
-	sym = allocsym(ns, name);
-
-	return sym;
+	return allocsym(ns, name);
 }
 
 void
