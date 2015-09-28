@@ -19,6 +19,8 @@ static char *argp, *macroname;
 static unsigned arglen;
 static Symbol *symline, *symfile;
 static unsigned char ifstatus[NR_COND];
+static int ninclude;
+static char **dirinclude;
 
 unsigned cppctx;
 int disexpand;
@@ -358,16 +360,51 @@ delete:
 	delmacro(sym);
 }
 
+void
+incdir(char *dir)
+{
+	if (!dir || *dir == '\0')
+		die("incorrect -I flag");
+	++ninclude;
+	dirinclude = xrealloc(dirinclude, sizeof(*dirinclude) * ninclude);
+	dirinclude[ninclude-1] = dir;
+}
+
+static bool
+includefile(char *dir, char *file, size_t filelen)
+{
+	size_t dirlen;
+	char path[FILENAME_MAX];
+
+	if (!dir) {
+		dirlen = 0;
+		if (filelen > FILENAME_MAX-1)
+			return 0;
+	} else {
+		dirlen = strlen(dir);
+		if (dirlen + filelen > FILENAME_MAX-2)
+			return 0;
+		memcpy(path, dir, dirlen);
+		if (dir[dirlen-1] != '/')
+			path[dirlen++] = '/';
+	}
+	memcpy(path+dirlen, file, filelen);
+	path[dirlen + filelen] = '\0';
+
+	return addinput(path);
+}
+
 static void
 include(void)
 {
-	char **bp, *p, file[FILENAME_MAX], path[FILENAME_MAX];
+	char *file, *p, **bp;
+	size_t filelen;
 	static char *sysinclude[] = {
 		PREFIX"/include/",
 		PREFIX"/local/include/",
 		NULL
 	};
-	size_t filelen, dirlen;
+	int n;
 
 	if (cppoff)
 		return;
@@ -380,48 +417,40 @@ include(void)
 		if ((p = strchr(input->begin, '>')) == NULL)
 			goto bad_include;
 		*p = '\0';
-		if (p - input->begin >= FILENAME_MAX)
-			goto too_long;
-		strcpy(file, input->begin);
+		file = input->begin;
+		filelen = strlen(file);
 		input->begin = input->p = p+1;
-		next();
 		break;
 	case '"':
 		if ((p = strchr(yytext + 1, '"')) == NULL)
 			goto bad_include;
 		*p = '\0';
-		if (p - yytext + 1 >= FILENAME_MAX)
-			goto too_long;
-		strcpy(file, yytext + 1);
-		next();
-		if (addinput(file))
-			return;
+		file = yytext+1;
+		filelen = strlen(file);
+		if (includefile(NULL, file, filelen))
+			goto its_done;
 		break;
 	default:
 		goto bad_include;
 	}
 
-	filelen = strlen(file);
-	for (bp = sysinclude; *bp; ++bp) {
-		dirlen = strlen(*bp);
-		if (dirlen + filelen > FILENAME_MAX-1)
-			continue;
-		memcpy(path, *bp, dirlen);
-		memcpy(path+dirlen, file, filelen);
-		if (addinput(path))
-			break;
+	n = ninclude;
+	for (bp = dirinclude; n--; ++bp) {
+		if (includefile(*bp, file, filelen))
+			goto its_done;
 	}
+	for (bp = sysinclude; *bp; ++bp) {
+		if (includefile(*bp, file, filelen))
+			goto its_done;
+	}
+	cpperror("included file '%s' not found", file);
 
-	if (*bp)
-		cpperror("included file '%s' not found", file);
-
+its_done:
+	next();
 	return;
 
 bad_include:
 	cpperror("#include expects \"FILENAME\" or <FILENAME>");
-	return;
-too_long:
-	cpperror("#include FILENAME too long");
 	return;
 }
 

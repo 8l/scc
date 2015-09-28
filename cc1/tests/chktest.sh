@@ -30,7 +30,7 @@ do
 		print $0 >> chk
 	}
 	END {
-		system("../cc1 -w " test " > " out " 2>&1")
+		system("../cc1 -I. -w " test " > " out " 2>&1")
 		cmd="diff -c " chk " " out " >> " err
 		print test >> err
 		print system(cmd) ? "[FAILED]" : "[OK]"

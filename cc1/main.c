@@ -39,6 +39,7 @@ main(int argc, char *argv[])
 	atexit(clean);
 
 	for (;;) {
+	nextiter:
 		--argc, ++argv;
 		if (!*argv || argv[0][0] != '-' || argv[0][1] == '-')
 			break;
@@ -50,6 +51,9 @@ main(int argc, char *argv[])
 			case 'E':
 				onlycpp = 1;
 				break;
+			case 'I':
+				incdir(cp+1);
+				goto nextiter;
 			case 'o':
 				if (!*++argv || argv[0][0] == '-')
 					usage();

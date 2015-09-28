@@ -395,6 +395,7 @@ extern void initializer(Symbol *sym, Type *tp, int nelem);
 extern void icpp(void);
 extern bool cpp(void);
 extern bool expand(char *begin, Symbol *sym);
+extern void incdir(char *dir);
 
 /*
  * Definition of global variables

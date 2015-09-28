@@ -13,7 +13,7 @@ G6	F5	main
 }
 */
 
-int printf(char *fmt, ...);
+#include <stdio.h>
 
 int
 main(void)
