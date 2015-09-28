@@ -3,7 +3,7 @@ name: TEST012
 description: Basic switch test
 output:
 test012.c:39: warning: 'foo' defined but not used
-F1	I
+F1	I	E
 G2	F1	main
 {
 \

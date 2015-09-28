@@ -359,9 +359,11 @@ emitfun(unsigned op, void *arg)
 
 	n = sym->type->n.elem;
 	for (sp = sym->u.pars; n-- > 0; ++sp) {
+		if ((sym = *sp) == NULL)
+			continue;
 		/* enable non used warnings in parameters */
-		(*sp)->flags &= ~ISUSED;
-		emit(ODECL, *sp);
+		sym->flags &= ~ISUSED;
+		emit(ODECL, sym);
 	}
 	puts("\\");
 }

@@ -2,7 +2,7 @@
 name: TEST008
 description: Basic do while loop
 output:
-F1	I
+F1	I	E
 G2	F1	main
 {
 \

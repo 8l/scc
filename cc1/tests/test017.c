@@ -2,7 +2,7 @@
 name: TEST017
 description: Basic test about pointers and structs
 output:
-F9	I
+F9	I	E
 G10	F9	main
 {
 \

@@ -535,7 +535,7 @@ arguments(Node *np)
 	int toomany;;
 	TINT n;
 	Node *par = NULL, *arg;
-	Type **targs, *tp = np->type;
+	Type *argtype, **targs, *tp = np->type;
 
 	if (tp->op == PTR && tp->type->op == FTN) {
 		np = content(OPTR, np);
@@ -554,21 +554,40 @@ arguments(Node *np)
 
 	do {
 		arg = decay(assign());
-		if (--n < 0 && !toomany) {
-			errorp("too many arguments in function call");
+		argtype = *targs;
+		if (argtype == ellipsistype) {
+			n = 0;
+			switch (arg->type->op) {
+			case INT:
+				arg = promote(arg);
+				break;
+			case FLOAT:
+				if (arg->type == floattype)
+					arg = convert(arg, doubletype, 1);
+				break;
+			}
+			if (arg->type->op == INT)
+				arg = promote(arg);
+			par = node(OPAR, arg->type, par, arg);
+			continue;
+		}
+		if (--n < 0) {
+			if (!toomany)
+				errorp("too many arguments in function call");
 			toomany = 1;
 			continue;
 		}
-		if ((arg = convert(arg, *targs++, 0)) != NULL) {
+		++targs;
+		if ((arg = convert(arg, argtype, 0)) != NULL) {
 			par = node(OPAR, arg->type, par, arg);
 			continue;
 		}
 		errorp("incompatible type for argument %d in function call",
-		      tp->n.elem - n + 1);
+		       tp->n.elem - n + 1);
 	} while (accept(','));
 
 no_pars:
-	if (n > 0)
+	if (n > 0 && *targs != ellipsistype)
 		errorp("too few arguments in function call");
 
 	expect(')');
@@ -1071,17 +1090,19 @@ initlist(Symbol *sym, Type *tp)
 		}
 		switch (tp->op) {
 		case ARY:
-			if (tp->defined && n >= tp->n.elem && !toomany) {
+			if (tp->defined && n >= tp->n.elem) {
+				if (!toomany)
+					warn("excess elements in array initializer");
 				toomany = 1;
-				warn("excess elements in array initializer");
 				sym = NULL;
 			}
 			newtp = tp->type;
 			break;
 		case STRUCT:
-			if (n >= tp->n.elem && !toomany) {
+			if (n >= tp->n.elem) {
+				if (!toomany)
+					warn("excess elements in struct initializer");
 				toomany = 1;
-				warn("excess elements in struct initializer");
 				sym = NULL;
 			} else {
 				sym = tp->p.fields[n];
@@ -1091,9 +1112,11 @@ initlist(Symbol *sym, Type *tp)
 		default:
 			newtp = tp;
 			warn("braces around scalar initializer");
-			if (n > 0 && !toomany) {
+			if (n > 0) {
+				if (!toomany)
+					warn("excess elements in scalar initializer");
 				toomany = 1;
-				warn("excess elements in scalar initializer");
+				sym = NULL;
 			}
 			break;
 		}

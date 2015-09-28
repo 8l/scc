@@ -21,6 +21,7 @@ typedef unsigned bool;
 #define L_UINT16    'N'
 #define L_UINT32    'Z'
 #define L_UINT64    'O'
+#define L_ELLIPSIS  'E'
 
 #define L_VOID      '0'
 #define L_POINTER   'P'

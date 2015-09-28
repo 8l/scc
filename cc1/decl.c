@@ -126,9 +126,6 @@ parameter(struct decl *dcl)
 
 	sym->type = tp;
 
-	if (n == -1)
-		error("'void' must be the only parameter");
-
 	switch (dcl->sclass) {
 	case STATIC:
 	case EXTERN:
@@ -145,31 +142,30 @@ parameter(struct decl *dcl)
 
 	switch (tp->op) {
 	case VOID:
-		if (n != 0)
-			error("incorrect void parameter");
-		if (dcl->sclass)
-			error("void as unique parameter may not be qualified");
+		if (n != 0) {
+			errorp("incorrect void parameter");
+			return NULL;
+		}
 		funtp->n.elem = -1;
+		if (dcl->sclass)
+			errorp("void as unique parameter may not be qualified");
 		return NULL;
 	case ARY:
 		tp = mktype(tp->type, PTR, 0, NULL);
 		break;
 	case FTN:
-		error("incorrect function type for a function parameter");
+		errorp("incorrect function type for a function parameter");
+		return NULL;
 	}
 
 	if (name) {
-		if ((sym = install(NS_IDEN, sym)) == NULL)
-			error("redefinition of parameter '%s'", name);
+		if ((sym = install(NS_IDEN, sym)) == NULL) {
+			errorp("redefinition of parameter '%s'", name);
+			return NULL;
+		}
 	}
 	sym->type = tp;
 	sym->flags |= ISUSED;    /* avoid non used warnings in prototypes */
-
-	if (n == NR_FUNPARAM)
-		error("too much parameters in function definition");
-	funtp->p.pars = xrealloc(funtp->p.pars, ++n * sizeof(Type *));
-	funtp->p.pars[n-1] = tp;
-	funtp->n.elem = n;
 
 	return sym;
 }
@@ -182,27 +178,62 @@ static Symbol *dodcl(int rep,
 static void
 fundcl(struct declarators *dp)
 {
-	Type type = {.n = {.elem = -1}, .p = {.pars= NULL}};
-	Symbol *syms[NR_FUNPARAM], **sp;
+	Type type, *types[NR_FUNPARAM], *tp;
+	Symbol *syms[NR_FUNPARAM], *sym;
 	TINT size;
-	Symbol *pars = NULL;
+	Symbol *pars;
+	int toomany = 0, toovoid = 0;
 
 	pushctx();
 	expect('(');
+	type.n.elem = 0;
 
-	if (!accept(')')) {
-		type.n.elem = 0;
-		sp = syms;
-		do
-			*sp++ = dodcl(0, parameter, NS_IDEN, &type);
-		while (accept(','));
-
-		expect(')');
-
-		if (type.n.elem != -1) {
-			size = type.n.elem * sizeof(Symbol *);
-			pars = memcpy(xmalloc(size), syms, size);
+	if (yytoken == ')') {
+		++type.n.elem;
+		syms[0] = NULL;
+		types[0] = ellipsistype;
+		goto end_params;
+	}
+	do {
+		if (type.n.elem == -1) {
+			if (!toovoid)
+				errorp("'void' must be the only parameter");
+			toovoid = 1;
 		}
+		if (!accept(ELLIPSIS)) {
+			sym = dodcl(0, parameter, NS_IDEN, &type);
+			if (!sym)
+				continue;
+			tp = sym->type;
+		} else {
+			if (type.n.elem == 0)
+				errorp("a named argument is requiered before '...'");
+			tp = ellipsistype;
+			sym = NULL;
+		}
+		if (type.n.elem == NR_FUNPARAM) {
+			if (toomany)
+				continue;
+			errorp("too much parameters in function definition");
+			toomany = 1;
+		} else if (type.n.elem >= 0) {
+			syms[type.n.elem] = sym;
+			types[type.n.elem] = tp;
+			++type.n.elem;
+		}
+	} while (tp != ellipsistype && accept(','));
+
+end_params:
+	expect(')');
+
+	if (type.n.elem > 0) {
+		size = type.n.elem * sizeof(Symbol *);
+		pars = memcpy(xmalloc(size), syms, size);
+		size = type.n.elem * sizeof(Type *);
+		type.p.pars = memcpy(xmalloc(size), types, size);
+	} else {
+		pars = NULL;
+		type.p.pars = NULL;
 	}
 	push(dp, FTN, type.n.elem, type.p.pars, pars);
 }

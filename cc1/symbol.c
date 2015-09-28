@@ -29,15 +29,15 @@ dumpstab(char *msg)
 			continue;
 		fprintf(stderr, "%d", (int) (bp - htab));
 		for (sym = *bp; sym; sym = sym->hash)
-			fprintf(stderr, "->[%d,%d:%s]",
-			        sym->ns, sym->ctx, sym->name);
+			fprintf(stderr, "->[%d,%d:'%s'=%p]",
+			        sym->ns, sym->ctx, sym->name, (void *) sym);
 		putc('\n', stderr);
 	}
 	fputs("head:", stderr);
 	for (sym = head; sym; sym = sym->next) {
-		fprintf(stderr, "->[%d,%d:'%s']",
+		fprintf(stderr, "->[%d,%d:'%s'=%p]",
 		        sym->ns, sym->ctx,
-		        (sym->name) ? sym->name : "");
+		        (sym->name) ? sym->name : "", (void *) sym);
 	}
 	putc('\n', stderr);
 }
@@ -58,6 +58,8 @@ unlinkhash(Symbol *sym)
 {
 	Symbol **h, *p, *prev;
 
+	if ((sym->flags & ISDECLARED) == 0)
+		return;
 	h = &htab[hash(sym->name)];
 	for (prev = p = *h; p != sym; prev = p, p = p->hash)
 		/* nothing */;
@@ -248,9 +250,7 @@ lookup(int ns, char *name)
 		if (sns == NS_KEYWORD || sns == NS_CPP || sns == ns)
 			return sym;
 	}
-	sym = allocsym(ns, name);
-
-	return sym;
+	return allocsym(ns, name);
 }
 
 void
@@ -279,9 +279,9 @@ nextsym(Symbol *sym, int ns)
 	for (p = sym->hash; p; p = p->hash) {
 		t = p->name;
 		if (c == *t && !strcmp(s, t))
-			return sym;
+			return p;
 	}
-	return linkhash(allocsym(ns, s));
+	return allocsym(ns, s);
 }
 
 Symbol *

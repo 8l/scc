@@ -26,13 +26,7 @@ int disexpand;
 static Symbol *
 defmacro(char *s)
 {
-	Symbol *sym;
-
-	strcpy(yytext, s);
-	sym = lookup(NS_CPP, yytext);
-	/* FIXME: We have a problem here */
-	sym->flags |= ISDECLARED;
-	return sym;
+	return install(NS_CPP, lookup(NS_CPP, s));
 }
 
 void
@@ -73,6 +67,8 @@ nextcpp(void)
 	if (yylen + 1 > arglen)
 		error("argument overflow invoking macro \"%s\"",
 		      macroname);
+	if (yytoken == IDEN)
+		yylval.sym->flags |= ISUSED;
 	memcpy(argp, yytext, yylen);
 	argp += yylen;
 	*argp++ = ' ';
@@ -253,6 +249,7 @@ static int
 getpars(Symbol *args[NR_MACROARG])
 {
 	int n = -1;
+	Symbol *sym;
 
 	if (!accept('('))
 		return n;
@@ -269,7 +266,9 @@ getpars(Symbol *args[NR_MACROARG])
 			cpperror("macro arguments must be identifiers");
 			return NR_MACROARG;
 		}
-		args[n++] = yylval.sym;
+		sym = install(NS_IDEN, yylval.sym);
+		sym->flags |= ISUSED;
+		args[n++] = sym;
 		next();
 	} while (accept(','));
 	expect(')');

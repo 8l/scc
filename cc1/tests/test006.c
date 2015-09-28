@@ -6,7 +6,7 @@ test006.c:6: warning: conditional expression is constant
 test006.c:8: warning: conditional expression is constant
 test006.c:11: warning: conditional expression is constant
 G1	K	c
-F2	I
+F2	I	E
 G3	F2	main
 {
 \
