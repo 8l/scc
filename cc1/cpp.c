@@ -241,7 +241,7 @@ substitute:
 	input->p = input->begin = begin;
 
 	if (!(sym->flags & ISDECLARED))
-		delmacro(sym);
+		killsym(sym);
 
 	return 1;
 }
@@ -342,7 +342,7 @@ define(void)
 		free(sym->u.s);
 	} else {
 		sym = install(NS_CPP, sym);
-		sym->flags |= ISDECLARED;
+		sym->flags |= ISDECLARED|ISSTRING;
 	}
 
 	namespace = NS_IDEN;       /* Avoid polution in NS_CPP */
@@ -357,7 +357,7 @@ define(void)
 	return;
 
 delete:
-	delmacro(sym);
+	killsym(sym);
 }
 
 void
@@ -531,7 +531,7 @@ ifclause(int negate, int isifdef)
 		next();
 		status = (sym->flags & ISDECLARED) != 0;
 		if (!status)
-			delmacro(sym);
+			killsym(sym);
 	} else {
 		/* TODO: catch recovery here */
 		if ((expr = iconstexpr()) == NULL) {
@@ -614,7 +614,7 @@ undef(void)
 		error("no macro name given in #undef directive");
 		return;
 	}
-	delmacro(yylval.sym);
+	killsym(yylval.sym);
 	next();
 }
 

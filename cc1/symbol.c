@@ -76,7 +76,7 @@ pushctx(void)
 		error("too much nested blocks");
 }
 
-static void
+void
 killsym(Symbol *sym)
 {
 	short f;
@@ -87,14 +87,14 @@ killsym(Symbol *sym)
 		free(sym->u.s);
 	if (sym->ns == NS_TAG)
 		sym->type->defined = 0;
-	if ((name = sym->name) != NULL) {
-		unlinkhash(sym);
+	unlinkhash(sym);
+	if ((name = sym->name) != NULL && sym->ns != NS_CPP) {
 		if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
 			warn("'%s' defined but not used", name);
 		if ((f & ISDEFINED) == 0 && sym->ns == NS_LABEL)
 			errorp("label '%s' is not defined", name);
-		free(name);
 	}
+	free(name);
 	free(sym);
 }
 
@@ -168,7 +168,6 @@ linksym(Symbol *sym)
 {
 	Symbol *p, *prev;
 
-	sym->flags |= ISDECLARED;
 	switch (sym->ns) {
 	case NS_CPP:
 		return sym;
@@ -198,7 +197,6 @@ linkhash(Symbol *sym)
 	Symbol **h, *p, *prev;
 
 	h = &htab[hash(sym->name)];
-
 	for (prev = p = *h; p; prev = p, p = p->hash) {
 		if (p->ctx <= sym->ctx)
 			break;
@@ -214,16 +212,14 @@ linkhash(Symbol *sym)
 
 	if (sym->ns != NS_CPP)
 		sym->id = newid();
+	sym->flags |= ISDECLARED;
 	return linksym(sym);
 }
 
 Symbol *
 newsym(int ns)
 {
-	Symbol *sym;
-
-	sym = linksym(allocsym(ns, NULL));
-	return sym;
+	return linksym(allocsym(ns, NULL));
 }
 
 Symbol *
@@ -251,15 +247,6 @@ lookup(int ns, char *name)
 			return sym;
 	}
 	return allocsym(ns, name);
-}
-
-void
-delmacro(Symbol *sym)
-{
-	unlinkhash(sym);
-	free(sym->name);
-	free(sym->u.s);
-	free(sym);
 }
 
 Symbol *

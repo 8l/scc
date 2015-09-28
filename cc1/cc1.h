@@ -346,7 +346,7 @@ extern Symbol *install(int ns, Symbol *sym);
 extern Symbol *newsym(int ns);
 extern void pushctx(void), popctx(void);
 extern void ikeywords(void);
-extern void delmacro(Symbol *sym);
+extern void killsym(Symbol *sym);
 extern Symbol *newlabel(void);
 
 /* stmt.c */
