@@ -13,7 +13,7 @@ extern int debug;
 #define DBGON() (debug = 1)
 #else
 #define DBG(...)
-#define DBGON
+#define DBGON()
 #endif
 
 #define L_INT8      'C'
