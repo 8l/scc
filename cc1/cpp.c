@@ -145,28 +145,39 @@ parsepars(char *buffer, char **listp, int nargs)
 	return 1;
 }
 
+/* FIXME: characters in the definition break the macro definition */
 static size_t
 copymacro(char *buffer, char *s, size_t bufsiz, char *arglist[])
 {
-	char prevc, c, *arg, *bp = buffer;
+	char prevc, c, *p, *arg, *bp = buffer;
+	size_t size;
 
 	for (prevc = '\0'; c = *s; prevc = c, ++s) {
 		if (c != '@') {
-			if (c == '#')
-				continue;
-			if (c == '$') {
+			switch (c) {
+			case '$':
 				while (bp[-1] == ' ')
 					--bp, ++bufsiz;
 				while (s[1] == ' ')
 					++s;
+			case '#':
 				continue;
+			case '\"':
+				for (p = s; *++s != '"'; )
+					/* nothing */;
+				size = s - p + 1;
+				if (size > bufsiz)
+					goto expansion_too_long;
+				memcpy(bp, p, size);
+				bufsiz -= size;
+				bp += size;
+				continue;
+			// case '\'';
 			}
 			if (bufsiz-- == 0)
 				goto expansion_too_long;
 			*bp++ = c;
 		} else {
-			size_t size;
-
 			if (prevc == '#')
 				bufsiz -= 2;
 			arg = arglist[atoi(++s)];
