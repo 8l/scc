@@ -577,7 +577,7 @@ next(void)
 		yytoken = operator();
 
 exit:
-	DBG("TOKEN %s\n", yytext);
+	DBG("TOKEN %s", yytext);
 	return yytoken;
 }
 

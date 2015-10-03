@@ -8,9 +8,12 @@ typedef unsigned bool;
 #endif
 
 #ifndef NDEBUG
-#define DBG(...) fprintf(stderr, __VA_ARGS__)
+extern int debug;
+#define DBG(fmt, ...) dbg(fmt, __VA_ARGS__)
+#define DBGON() (debug = 1)
 #else
 #define DBG(...)
+#define DBGON
 #endif
 
 #define L_INT8      'C'
@@ -39,8 +42,8 @@ typedef unsigned bool;
 #define L_EXTERN    'X'
 
 extern void die(const char *fmt, ...);
+extern void dbg(const char *fmt, ...);
 extern void *xmalloc(size_t size);
 extern void *xcalloc(size_t nmemb, size_t size);
 extern char *xstrdup(const char *s);
 extern void *xrealloc(void *buff, register size_t size);
-

@@ -27,7 +27,7 @@ clean(void)
 static void
 usage(void)
 {
-	fputs("usage: cc1 [-w] [-o output] [input]\n", stderr);
+	fputs("usage: cc1 [-w] [-d] [-o output] [input]\n", stderr);
 	exit(1);
 }
 
@@ -50,6 +50,9 @@ main(int argc, char *argv[])
 				break;
 			case 'E':
 				onlycpp = 1;
+				break;
+			case 'd':
+				DBGON();
 				break;
 			case 'I':
 				incdir(cp+1);
