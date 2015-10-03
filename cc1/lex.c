@@ -525,6 +525,7 @@ operator(void)
 	case '*': t = follow('=', MUL_EQ, '*'); break;
 	case '/': t = follow('=', DIV_EQ, '/'); break;
 	case '!': t = follow('=', NE, '!'); break;
+	case '#': t = follow('#', '$', '#'); break;
 	case '-': t = minus(); break;
 	case '+': t = plus(); break;
 	case '.': t = dot(); break;

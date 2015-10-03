@@ -154,6 +154,13 @@ copymacro(char *buffer, char *s, size_t bufsiz, char *arglist[])
 		if (c != '@') {
 			if (c == '#')
 				continue;
+			if (c == '$') {
+				while (bp[-1] == ' ')
+					--bp, ++bufsiz;
+				while (s[1] == ' ')
+					++s;
+				continue;
+			}
 			if (bufsiz-- == 0)
 				goto expansion_too_long;
 			*bp++ = c;
@@ -285,6 +292,11 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 	size_t len;
 	int prevc = 0, ispar;
 
+	if (yytoken == '$') {
+		cpperror("'##' cannot appear at either end of a macro expansion");
+		return 0;
+	}
+
 	for (;;) {
 		ispar = 0;
 		if (yytoken == IDEN && nargs >= 0) {
@@ -308,10 +320,15 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 			cpperror("too long macro");
 			return 0;
 		}
-		memcpy(bp, yytext, len);
-		bp += len;
-		bufsiz -= len;
-		if ((prevc = yytoken) != '#')
+		if (yytoken == '$') {
+			*bp++ = '$';
+			 --bufsiz;
+		} else {
+			memcpy(bp, yytext, len);
+			bp += len;
+			bufsiz -= len;
+		}
+		if ((prevc  = yytoken) != '#')
 			*bp++ = ' ';
 		next();
 	}
