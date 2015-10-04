@@ -282,13 +282,34 @@ install(int ns, Symbol *sym)
 	return linkhash(sym);
 }
 
+struct keyword {
+	char *str;
+	unsigned char token, value;
+};
+
+void
+keywords(struct keyword *key, int ns)
+{
+	Symbol *sym;
+
+	for ( ; key->str; ++key) {
+		sym = linkhash(allocsym(ns, key->str));
+		sym->token = key->token;
+		sym->u.token = key->value;
+	}
+	/*
+	 * Remove all the predefined symbols from * the symbol list. It
+	 * will make faster some operations. There is no problem of memory
+	 * leakeage because this memory is not ever freed
+	 */
+	counterid = 0;
+	head = NULL;
+}
+
 void
 ikeywords(void)
 {
-	static struct {
-		char *str;
-		unsigned char token, value;
-	} *bp, keywords[] = {
+	static struct keyword ckeywords[] = {
 		{"auto", SCLASS, AUTO},
 		{"break", BREAK, BREAK},
 		{"_Bool", TYPE, BOOL},
@@ -339,27 +360,7 @@ ikeywords(void)
 		{"pragma", PRAGMA, PRAGMA},
 		{"error", ERROR, ERROR},
 		{NULL, 0, 0}
-	}, *list[] = {
-		keywords,
-		cppclauses,
-		NULL
-	}, **lp;
-	Symbol *sym;
-	int ns = NS_KEYWORD;
-
-	for (lp = list; *lp; ++lp) {
-		for (bp = *lp; bp->str; ++bp) {
-			sym = linkhash(allocsym(ns, bp->str));
-			sym->token = bp->token;
-			sym->u.token = bp->value;
-		}
-		ns = NS_CPPCLAUSES;
-	}
-	/*
-	 * Remove all the predefined symbols from * the symbol list. It
-	 * will make faster some operations. There is no problem of memory
-	 * leakeage because this memory is not ever freed
-	 */
-	counterid = 0;
-	head = NULL;
+	};
+	keywords(ckeywords, NS_KEYWORD);
+	keywords(cppclauses, NS_CPPCLAUSES);
 }
