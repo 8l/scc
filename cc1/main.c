@@ -75,7 +75,6 @@ main(int argc, char *argv[])
 		usage();
 
 	icpp();
-	ikeywords();
 	ilex(*argv);
 
 	if (onlycpp) {

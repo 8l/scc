@@ -46,6 +46,10 @@ struct limits {
 	} min;
 };
 
+struct keyword {
+	char *str;
+	unsigned char token, value;
+};
 
 struct type {
 	unsigned char op;           /* type builder operator */
@@ -345,9 +349,9 @@ extern Symbol *nextsym(Symbol *sym, int ns);
 extern Symbol *install(int ns, Symbol *sym);
 extern Symbol *newsym(int ns);
 extern void pushctx(void), popctx(void);
-extern void ikeywords(void);
 extern void killsym(Symbol *sym);
 extern Symbol *newlabel(void);
+extern void keywords(struct keyword *key, int ns);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);

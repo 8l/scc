@@ -37,11 +37,26 @@ icpp(void)
 	static char sdate[17], stime[14];
 	struct tm *tm;
 	time_t t;
-	char **bp, *list[] = {
+	static char **bp, *list[] = {
 		"__STDC__",
 		"__STDC_HOSTED__",
 		"__SCC__",
 		NULL
+	};
+	static struct keyword keys[] = {
+		{"define", DEFINE, DEFINE},
+		{"include", INCLUDE, INCLUDE},
+		{"line", LINE, LINE},
+		{"ifdef", IFDEF, IFDEF},
+		{"if", IF, IF},
+		{"elif", ELIF, ELIF},
+		{"else", ELSE, ELSE},
+		{"ifndef", IFNDEF, IFNDEF},
+		{"endif", ENDIF, ENDIF},
+		{"undef", UNDEF, UNDEF},
+		{"pragma", PRAGMA, PRAGMA},
+		{"error", ERROR, ERROR},
+		{NULL, 0, 0}
 	};
 
 	t = time(NULL);
@@ -57,6 +72,7 @@ icpp(void)
 
 	for (bp = list; *bp; ++bp)
 		defmacro(*bp)->u.s = "-1#1";
+	keywords(keys, NS_CPPCLAUSES);
 }
 
 static void
