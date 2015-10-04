@@ -566,8 +566,6 @@ arguments(Node *np)
 					arg = convert(arg, doubletype, 1);
 				break;
 			}
-			if (arg->type->op == INT)
-				arg = promote(arg);
 			par = node(OPAR, arg->type, par, arg);
 			continue;
 		}
