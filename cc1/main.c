@@ -27,7 +27,7 @@ clean(void)
 static void
 usage(void)
 {
-	fputs("usage: cc1 [-w] [-d] [-o output] [input]\n", stderr);
+	fputs("usage: cc1 [-E] [-Idir] [-w] [-d] [-o output] [input]\n", stderr);
 	exit(1);
 }
 
