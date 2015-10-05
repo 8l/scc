@@ -496,6 +496,32 @@ negation(char op, Node *np)
 	}
 }
 
+static Symbol *
+notdefined(Symbol *sym)
+{
+	int isdef;
+
+	if (namespace == NS_CPP && !strcmp(sym->name, "defined")) {
+		disexpand = 1;
+		next();
+		expect('(');
+		sym = yylval.sym;
+		expect(IDEN);
+		expect(')');
+
+		isdef = (sym->flags & ISDEFINED) != 0;
+		sym = newsym(NS_IDEN);
+		sym->type = inttype;
+		sym->flags |= ISCONSTANT;
+		sym->u.i = isdef;
+		disexpand = 0;
+		return sym;
+	}
+	errorp("'%s' undeclared", yytext);
+	sym->type = inttype;
+	return install(sym->ns, yylval.sym);
+}
+
 /*************************************************************
  * grammar functions                                         *
  *************************************************************/
@@ -505,18 +531,18 @@ primary(void)
 	Node *np;
 	Symbol *sym;
 
+	sym = yylval.sym;
 	switch (yytoken) {
 	case CONSTANT:
-		np = constnode(yylval.sym);
+	constant:
+		np = constnode(sym);
 		next();
 		break;
 	case IDEN:
-		sym = yylval.sym;
-		if ((sym->flags & ISDECLARED) == 0) {
-			errorp("'%s' undeclared", yytext);
-			sym->type = inttype;
-			install(sym->ns, yylval.sym);
-		}
+		if ((sym->flags & ISDECLARED) == 0)
+			sym = notdefined(sym);
+		if (sym->flags & ISCONSTANT)
+			goto constant;
 		sym->flags |= ISUSED;
 		np = varnode(sym);
 		next();

@@ -228,7 +228,9 @@ expand(char *begin, Symbol *sym)
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
 	macroname = sym->name;
-	if (!(sym->flags & ISDECLARED)) {
+	if ((sym->flags & ISDECLARED) == 0) {
+		if (namespace == NS_CPP && !strcmp(sym->name, "defined"))
+			return 0;  /* we found a 'defined in an #if */
 		/*
 		 * This case happens in #if were macro not defined must
 		 * be expanded to 0
