@@ -411,7 +411,7 @@ extern unsigned short yylen;
 extern int cppoff, disexpand;
 extern unsigned cppctx;
 extern Input *input;
-extern int lexmode, namespace;
+extern int lexmode, namespace, onlycpp;
 extern unsigned curctx;
 extern Symbol *curfun, *zero, *one;
 

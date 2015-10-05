@@ -226,6 +226,8 @@ repeat:
 		goto repeat;
 	}
 
+	if (onlycpp)
+		putchar('\n');
 	input->begin = input->p;
 	return 1;
 }

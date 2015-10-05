@@ -13,7 +13,7 @@ int warnings;
 jmp_buf recover;
 
 static char *output;
-static int onlycpp;
+int onlycpp;
 
 static void
 clean(void)
