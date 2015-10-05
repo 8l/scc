@@ -38,6 +38,8 @@ main(int argc, char *argv[])
 
 	atexit(clean);
 
+	if (!strcmp(*argv, "cpp"))
+		onlycpp = 1;
 	for (;;) {
 	nextiter:
 		--argc, ++argv;
