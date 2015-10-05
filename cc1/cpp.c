@@ -28,11 +28,17 @@ int disexpand;
 Symbol *
 defmacro(char *s)
 {
-	char *p;
+	char *p, *q;
 	Symbol *sym;
+	size_t len;
 
-	if ((p = strchr(s, '=')) != NULL)
+	if ((p = strchr(s, '=')) != NULL) {
 		*p++='\0';
+		len = strlen(p);
+		q = xmalloc(len+4);
+		sprintf(q, "-1#%s", p);
+		p = q;
+	}
 	sym = install(NS_CPP, lookup(NS_CPP, s));
 	sym->u.s = p;
 	return sym;
