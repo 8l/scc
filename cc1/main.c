@@ -78,8 +78,7 @@ main(int argc, char *argv[])
 	ilex(*argv);
 
 	if (onlycpp) {
-		for (next(); yytoken != EOFTOK; next())
-			printf("%s ", yytext);
+		outcpp();
 	} else {
 		for (next(); yytoken != EOFTOK; decl())
 			/* nothing */;

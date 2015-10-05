@@ -717,3 +717,46 @@ cpp(void)
 
 	return 1;
 }
+
+void
+outcpp(void)
+{
+	char c, *s, *t;
+
+	for (next(); yytoken != EOFTOK; next()) {
+		if (yytoken != CONSTANT || *yytext != '"') {
+			printf("%s ", yytext);
+			continue;
+		}
+		for (s = yylval.sym->u.s; c = *s; ++s) {
+			switch (c) {
+			case '\n':
+				t = "\\n";
+				goto print_str;
+			case '\v':
+				t = "\\v";
+				goto print_str;
+			case '\b':
+				t = "\\b";
+				goto print_str;
+			case '\t':
+				t = "\\t";
+				goto print_str;
+			case '\a':
+				t = "\\a";
+			print_str:
+				fputs(t, stdout);
+				break;
+			case '\\':
+				putchar('\\');
+			default:
+				if (!isprint(c))
+					printf("\\x%x", c);
+				else
+					putchar(c);
+				break;
+			}
+		}
+	}
+}
+

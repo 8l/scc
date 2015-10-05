@@ -400,6 +400,7 @@ extern void icpp(void);
 extern bool cpp(void);
 extern bool expand(char *begin, Symbol *sym);
 extern void incdir(char *dir);
+extern void outcpp(void);
 
 /*
  * Definition of global variables
