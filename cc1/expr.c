@@ -534,15 +534,16 @@ primary(void)
 	sym = yylval.sym;
 	switch (yytoken) {
 	case CONSTANT:
-	constant:
 		np = constnode(sym);
 		next();
 		break;
 	case IDEN:
 		if ((sym->flags & ISDECLARED) == 0)
 			sym = notdefined(sym);
-		if (sym->flags & ISCONSTANT)
-			goto constant;
+		if (sym->flags & ISCONSTANT) {
+			np = constnode(sym);
+			break;
+		}
 		sym->flags |= ISUSED;
 		np = varnode(sym);
 		next();
