@@ -12,7 +12,7 @@
 int warnings;
 jmp_buf recover;
 
-static char *output;
+static char *output, *arg0;
 int onlycpp;
 
 static void
@@ -27,7 +27,9 @@ clean(void)
 static void
 usage(void)
 {
-	fputs("usage: cc1 [-E] [-Idir] [-w] [-d] [-o output] [input]\n", stderr);
+	fprintf(stderr,
+	        "usage: %s [-E] [-Idir] [-w] [-d] [-o output] [input]\n",
+	        arg0);
 	exit(1);
 }
 
@@ -38,7 +40,8 @@ main(int argc, char *argv[])
 
 	atexit(clean);
 
-	if (!strcmp(*argv, "cpp"))
+	arg0 = (cp = strrchr(*argv, '/')) ? cp+1 : *argv;
+	if (!strcmp(arg0, "cpp"))
 		onlycpp = 1;
 	for (;;) {
 	nextiter:
