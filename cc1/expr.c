@@ -509,7 +509,7 @@ notdefined(Symbol *sym)
 		expect(IDEN);
 		expect(')');
 
-		isdef = (sym->flags & ISDEFINED) != 0;
+		isdef = (sym->flags & ISDECLARED) != 0;
 		sym = newsym(NS_IDEN);
 		sym->type = inttype;
 		sym->flags |= ISCONSTANT;
