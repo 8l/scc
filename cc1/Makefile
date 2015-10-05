@@ -13,7 +13,7 @@ cc1: $(OBJS) ../lib/libcc.a
 	$(CC) $(LDFLAGS) $(OBJS) ../lib/libcc.a -o $@
 
 cpp: cc1
-	ln cc1 ccp
+	ln cc1 cpp
 
 test:
 	cd tests && ./chktest.sh
