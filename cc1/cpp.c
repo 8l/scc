@@ -635,6 +635,7 @@ static void
 elif(void)
 {
 	elseclause();
+	--cppctx;
 	cppif();
 }
 
