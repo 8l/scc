@@ -758,5 +758,6 @@ outcpp(void)
 			}
 		}
 	}
+	putchar('\n');
 }
 

@@ -215,6 +215,10 @@ repeat:
 bool
 moreinput(void)
 {
+	static char file[FILENAME_MAX];
+	static unsigned nline;
+	char *s;
+
 repeat:
 	if (!readline())
 		return 0;
@@ -226,8 +230,19 @@ repeat:
 		goto repeat;
 	}
 
-	if (onlycpp)
+	if (onlycpp) {
 		putchar('\n');
+		if (strcmp(file, input->fname)) {
+			strcpy(file, input->fname);
+			s = "#line %u %s\n";
+		} else if (nline+1 != input->nline) {
+			s = "#line %u\n";
+		} else {
+			s = "";
+		}
+		nline = input->nline;
+		printf(s, nline, file);
+	}
 	input->begin = input->p;
 	return 1;
 }
