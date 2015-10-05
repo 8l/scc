@@ -28,7 +28,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	        "usage: %s [-E] [-Idir] [-w] [-d] [-o output] [input]\n",
+	        "usage: %s [-E] [-Dmacro[=value]] [-Idir] [-w] [-d] [-o output] [input]\n",
 	        arg0);
 	exit(1);
 }
@@ -43,6 +43,7 @@ main(int argc, char *argv[])
 	arg0 = (cp = strrchr(*argv, '/')) ? cp+1 : *argv;
 	if (!strcmp(arg0, "cpp"))
 		onlycpp = 1;
+
 	for (;;) {
 	nextiter:
 		--argc, ++argv;
@@ -56,6 +57,9 @@ main(int argc, char *argv[])
 			case 'E':
 				onlycpp = 1;
 				break;
+			case 'D':
+				defmacro(cp+1);
+				goto nextiter;
 			case 'd':
 				DBGON();
 				break;

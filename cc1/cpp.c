@@ -25,10 +25,17 @@ static char **dirinclude;
 unsigned cppctx;
 int disexpand;
 
-static Symbol *
+Symbol *
 defmacro(char *s)
 {
-	return install(NS_CPP, lookup(NS_CPP, s));
+	char *p;
+	Symbol *sym;
+
+	if ((p = strchr(s, '=')) != NULL)
+		*p++='\0';
+	sym = install(NS_CPP, lookup(NS_CPP, s));
+	sym->u.s = p;
+	return sym;
 }
 
 void

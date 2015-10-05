@@ -401,6 +401,7 @@ extern bool cpp(void);
 extern bool expand(char *begin, Symbol *sym);
 extern void incdir(char *dir);
 extern void outcpp(void);
+extern Symbol *defmacro(char *s);
 
 /*
  * Definition of global variables
