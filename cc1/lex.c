@@ -258,40 +258,44 @@ tok2str(void)
 }
 
 static Symbol *
-readint(char *s, int base, Symbol *sym)
+readint(char *s, int base, int sign, Symbol *sym)
 {
 	Type *tp = sym->type;
-	struct limits *lim = getlimits(tp);
+	struct limits *lim;
 	TUINT u, val, max;
 	int c;
 
+	lim = getlimits(tp);
 	max = (tp->sign) ? lim->max.u : lim->max.i;
+	if (*s == '0')
+		++s;
+	if (toupper(*s) == 'X')
+		++s;
 
 	for (u = 0; isxdigit(c = *s++); u = u*base + val) {
 		val = (c <= '9') ? c - '0' :  10 + c - 'A';
+	repeat:
 		if (u <= max/base && u*base <= max - val)
 			continue;
 		if (tp->sign) {
-			if (tp == inttype) {
-				tp = longtype;
-			} else if (tp == longtype) {
-				tp == llongtype;
-			} else {
-				errorp("overflow in integer constant");
-				break;
-			}
+			if (tp == inttype)
+				tp = (base==10) ? longtype : uinttype;
+			else if (tp == longtype)
+				tp = (base==10) ? llongtype : ulongtype;
+			else
+				goto overflow;
 		} else {
-			if (tp == uinttype) {
-				tp = ulongtype;
-			} else if (tp == ulongtype) {
-				tp == ullongtype;
-			} else {
-				errorp("overflow in integer constant");
-				break;
-			}
+			if (tp == uinttype)
+				tp = (sign==UNSIGNED) ? ulongtype : longtype;
+			else if (tp == ulongtype)
+				tp = (sign==UNSIGNED) ? ullongtype : llongtype;
+			else
+				goto overflow;
 		}
 		sym->type = tp;
+		lim = getlimits(tp);
 		max = (tp->sign) ? lim->max.u : lim->max.i;
+		goto repeat;
 	}
 
 	if (tp->sign)
@@ -299,6 +303,10 @@ readint(char *s, int base, Symbol *sym)
 	else
 		sym->u.u = u;
 
+	return sym;
+
+overflow:
+	errorp("overflow in integer constant");
 	return sym;
 }
 
@@ -333,7 +341,7 @@ convert:
 	sym = newsym(NS_IDEN);
 	sym->type = tp;
 	sym->flags |= ISCONSTANT;
-	yylval.sym = readint(s, base, sym);
+	yylval.sym = readint(s, base, sign, sym);
 	return CONSTANT;
 }
 
