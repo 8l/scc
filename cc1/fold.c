@@ -480,6 +480,11 @@ change_to_comma:
 	return NULL;
 }
 
+/*
+ * TODO: transform simplify in a recursivity
+ * function, because we are losing optimization
+ * chances
+ */
 Node *
 simplify(int op, Type *tp, Node *lp, Node *rp)
 {

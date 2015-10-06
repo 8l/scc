@@ -39,6 +39,44 @@ allocinput(char *fname, FILE *fp)
 void
 ilex(char *fname)
 {
+	static struct keyword keys[] = {
+		{"auto", SCLASS, AUTO},
+		{"break", BREAK, BREAK},
+		{"_Bool", TYPE, BOOL},
+		{"case", CASE, CASE},
+		{"char", TYPE, CHAR},
+		{"const", TQUALIFIER, CONST},
+		{"continue", CONTINUE, CONTINUE},
+		{"default", DEFAULT, DEFAULT},
+		{"do", DO, DO},
+		{"double", TYPE, DOUBLE},
+		{"else", ELSE, ELSE},
+		{"enum", TYPE, ENUM},
+		{"extern", SCLASS, EXTERN},
+		{"float", TYPE, FLOAT},
+		{"for", FOR, FOR},
+		{"goto", GOTO, GOTO},
+		{"if", IF, IF},
+		{"inline", TQUALIFIER, INLINE},
+		{"int", TYPE, INT},
+		{"long", TYPE, LONG},
+		{"register", SCLASS, REGISTER},
+		{"restrict", TQUALIFIER, RESTRICT},
+		{"return", RETURN, RETURN},
+		{"short", TYPE, SHORT},
+		{"signed", TYPE, SIGNED},
+		{"sizeof", SIZEOF, SIZEOF},
+		{"static", SCLASS, STATIC},
+		{"struct", TYPE, STRUCT},
+		{"switch", SWITCH, SWITCH},
+		{"typedef", SCLASS, TYPEDEF},
+		{"union", TYPE, UNION},
+		{"unsigned", TYPE, UNSIGNED},
+		{"void", TYPE, VOID},
+		{"volatile", TQUALIFIER, VOLATILE},
+		{"while", WHILE, WHILE},
+		{NULL, 0, 0},
+	};
 	FILE *fp;
 
 	if (!fname) {
@@ -52,6 +90,7 @@ ilex(char *fname)
 	}
 	allocinput(fname, fp);
 	*input->begin = '\0';
+	keywords(keys, NS_KEYWORD);
 }
 
 bool
@@ -176,6 +215,10 @@ repeat:
 bool
 moreinput(void)
 {
+	static char file[FILENAME_MAX];
+	static unsigned nline;
+	char *s;
+
 repeat:
 	if (!readline())
 		return 0;
@@ -187,6 +230,19 @@ repeat:
 		goto repeat;
 	}
 
+	if (onlycpp) {
+		putchar('\n');
+		if (strcmp(file, input->fname)) {
+			strcpy(file, input->fname);
+			s = "#line %u %s\n";
+		} else if (nline+1 != input->nline) {
+			s = "#line %u\n";
+		} else {
+			s = "";
+		}
+		nline = input->nline;
+		printf(s, nline, file);
+	}
 	input->begin = input->p;
 	return 1;
 }
@@ -525,6 +581,7 @@ operator(void)
 	case '*': t = follow('=', MUL_EQ, '*'); break;
 	case '/': t = follow('=', DIV_EQ, '/'); break;
 	case '!': t = follow('=', NE, '!'); break;
+	case '#': t = follow('#', '$', '#'); break;
 	case '-': t = minus(); break;
 	case '+': t = plus(); break;
 	case '.': t = dot(); break;
@@ -576,7 +633,7 @@ next(void)
 		yytoken = operator();
 
 exit:
-	DBG("TOKEN %s\n", yytext);
+	DBG("TOKEN %s", yytext);
 	return yytoken;
 }
 

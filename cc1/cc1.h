@@ -46,6 +46,10 @@ struct limits {
 	} min;
 };
 
+struct keyword {
+	char *str;
+	unsigned char token, value;
+};
 
 struct type {
 	unsigned char op;           /* type builder operator */
@@ -345,9 +349,9 @@ extern Symbol *nextsym(Symbol *sym, int ns);
 extern Symbol *install(int ns, Symbol *sym);
 extern Symbol *newsym(int ns);
 extern void pushctx(void), popctx(void);
-extern void ikeywords(void);
-extern void delmacro(Symbol *sym);
+extern void killsym(Symbol *sym);
 extern Symbol *newlabel(void);
+extern void keywords(struct keyword *key, int ns);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
@@ -396,6 +400,8 @@ extern void icpp(void);
 extern bool cpp(void);
 extern bool expand(char *begin, Symbol *sym);
 extern void incdir(char *dir);
+extern void outcpp(void);
+extern Symbol *defmacro(char *s);
 
 /*
  * Definition of global variables
@@ -407,7 +413,7 @@ extern unsigned short yylen;
 extern int cppoff, disexpand;
 extern unsigned cppctx;
 extern Input *input;
-extern int lexmode, namespace;
+extern int lexmode, namespace, onlycpp;
 extern unsigned curctx;
 extern Symbol *curfun, *zero, *one;
 

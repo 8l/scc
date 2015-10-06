@@ -76,7 +76,7 @@ pushctx(void)
 		error("too much nested blocks");
 }
 
-static void
+void
 killsym(Symbol *sym)
 {
 	short f;
@@ -87,14 +87,14 @@ killsym(Symbol *sym)
 		free(sym->u.s);
 	if (sym->ns == NS_TAG)
 		sym->type->defined = 0;
-	if ((name = sym->name) != NULL) {
-		unlinkhash(sym);
+	unlinkhash(sym);
+	if ((name = sym->name) != NULL && sym->ns != NS_CPP) {
 		if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
 			warn("'%s' defined but not used", name);
 		if ((f & ISDEFINED) == 0 && sym->ns == NS_LABEL)
 			errorp("label '%s' is not defined", name);
-		free(name);
 	}
+	free(name);
 	free(sym);
 }
 
@@ -168,7 +168,6 @@ linksym(Symbol *sym)
 {
 	Symbol *p, *prev;
 
-	sym->flags |= ISDECLARED;
 	switch (sym->ns) {
 	case NS_CPP:
 		return sym;
@@ -198,7 +197,6 @@ linkhash(Symbol *sym)
 	Symbol **h, *p, *prev;
 
 	h = &htab[hash(sym->name)];
-
 	for (prev = p = *h; p; prev = p, p = p->hash) {
 		if (p->ctx <= sym->ctx)
 			break;
@@ -214,16 +212,14 @@ linkhash(Symbol *sym)
 
 	if (sym->ns != NS_CPP)
 		sym->id = newid();
+	sym->flags |= ISDECLARED;
 	return linksym(sym);
 }
 
 Symbol *
 newsym(int ns)
 {
-	Symbol *sym;
-
-	sym = linksym(allocsym(ns, NULL));
-	return sym;
+	return linksym(allocsym(ns, NULL));
 }
 
 Symbol *
@@ -251,15 +247,6 @@ lookup(int ns, char *name)
 			return sym;
 	}
 	return allocsym(ns, name);
-}
-
-void
-delmacro(Symbol *sym)
-{
-	unlinkhash(sym);
-	free(sym->name);
-	free(sym->u.s);
-	free(sym);
 }
 
 Symbol *
@@ -296,77 +283,14 @@ install(int ns, Symbol *sym)
 }
 
 void
-ikeywords(void)
+keywords(struct keyword *key, int ns)
 {
-	static struct {
-		char *str;
-		unsigned char token, value;
-	} *bp, keywords[] = {
-		{"auto", SCLASS, AUTO},
-		{"break", BREAK, BREAK},
-		{"_Bool", TYPE, BOOL},
-		{"case", CASE, CASE},
-		{"char", TYPE, CHAR},
-		{"const", TQUALIFIER, CONST},
-		{"continue", CONTINUE, CONTINUE},
-		{"default", DEFAULT, DEFAULT},
-		{"do", DO, DO},
-		{"double", TYPE, DOUBLE},
-		{"else", ELSE, ELSE},
-		{"enum", TYPE, ENUM},
-		{"extern", SCLASS, EXTERN},
-		{"float", TYPE, FLOAT},
-		{"for", FOR, FOR},
-		{"goto", GOTO, GOTO},
-		{"if", IF, IF},
-		{"inline", TQUALIFIER, INLINE},
-		{"int", TYPE, INT},
-		{"long", TYPE, LONG},
-		{"register", SCLASS, REGISTER},
-		{"restrict", TQUALIFIER, RESTRICT},
-		{"return", RETURN, RETURN},
-		{"short", TYPE, SHORT},
-		{"signed", TYPE, SIGNED},
-		{"sizeof", SIZEOF, SIZEOF},
-		{"static", SCLASS, STATIC},
-		{"struct", TYPE, STRUCT},
-		{"switch", SWITCH, SWITCH},
-		{"typedef", SCLASS, TYPEDEF},
-		{"union", TYPE, UNION},
-		{"unsigned", TYPE, UNSIGNED},
-		{"void", TYPE, VOID},
-		{"volatile", TQUALIFIER, VOLATILE},
-		{"while", WHILE, WHILE},
-		{NULL, 0, 0},
-	}, cppclauses[] = {
-		{"define", DEFINE, DEFINE},
-		{"include", INCLUDE, INCLUDE},
-		{"line", LINE, LINE},
-		{"ifdef", IFDEF, IFDEF},
-		{"if", IF, IF},
-		{"elif", ELIF, ELIF},
-		{"else", ELSE, ELSE},
-		{"ifndef", IFNDEF, IFNDEF},
-		{"endif", ENDIF, ENDIF},
-		{"undef", UNDEF, UNDEF},
-		{"pragma", PRAGMA, PRAGMA},
-		{"error", ERROR, ERROR},
-		{NULL, 0, 0}
-	}, *list[] = {
-		keywords,
-		cppclauses,
-		NULL
-	}, **lp;
 	Symbol *sym;
-	int ns = NS_KEYWORD;
 
-	for (lp = list; *lp; ++lp) {
-		for (bp = *lp; bp->str; ++bp) {
-			sym = linkhash(allocsym(ns, bp->str));
-			sym->token = bp->token;
-			sym->u.token = bp->value;
-		}
-		ns = NS_CPPCLAUSES;
+	for ( ; key->str; ++key) {
+		sym = linkhash(allocsym(ns, key->str));
+		sym->token = key->token;
+		sym->u.token = key->value;
 	}
 	/*
 	 * Remove all the predefined symbols from * the symbol list. It

@@ -12,8 +12,8 @@
 int warnings;
 jmp_buf recover;
 
-static char *output;
-static int onlycpp;
+static char *output, *arg0;
+int onlycpp;
 
 static void
 clean(void)
@@ -27,7 +27,9 @@ clean(void)
 static void
 usage(void)
 {
-	fputs("usage: cc1 [-w] [-o output] [input]\n", stderr);
+	fprintf(stderr,
+	        "usage: %s [-E] [-Dmacro[=value]] [-Idir] [-w] [-d] [-o output] [input]\n",
+	        arg0);
 	exit(1);
 }
 
@@ -37,6 +39,10 @@ main(int argc, char *argv[])
 	char c, *cp;
 
 	atexit(clean);
+
+	arg0 = (cp = strrchr(*argv, '/')) ? cp+1 : *argv;
+	if (!strcmp(arg0, "cpp"))
+		onlycpp = 1;
 
 	for (;;) {
 	nextiter:
@@ -50,6 +56,12 @@ main(int argc, char *argv[])
 				break;
 			case 'E':
 				onlycpp = 1;
+				break;
+			case 'D':
+				defmacro(cp+1);
+				goto nextiter;
+			case 'd':
+				DBGON();
 				break;
 			case 'I':
 				incdir(cp+1);
@@ -72,12 +84,10 @@ main(int argc, char *argv[])
 		usage();
 
 	icpp();
-	ikeywords();
 	ilex(*argv);
 
 	if (onlycpp) {
-		for (next(); yytoken != EOFTOK; next())
-			printf("%s ", yytext);
+		outcpp();
 	} else {
 		for (next(); yytoken != EOFTOK; decl())
 			/* nothing */;

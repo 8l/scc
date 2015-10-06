@@ -25,10 +25,23 @@ static char **dirinclude;
 unsigned cppctx;
 int disexpand;
 
-static Symbol *
+Symbol *
 defmacro(char *s)
 {
-	return install(NS_CPP, lookup(NS_CPP, s));
+	char *p, *q;
+	Symbol *sym;
+	size_t len;
+
+	if ((p = strchr(s, '=')) != NULL) {
+		*p++='\0';
+		len = strlen(p);
+		q = xmalloc(len+4);
+		sprintf(q, "-1#%s", p);
+		p = q;
+	}
+	sym = install(NS_CPP, lookup(NS_CPP, s));
+	sym->u.s = p;
+	return sym;
 }
 
 void
@@ -37,11 +50,26 @@ icpp(void)
 	static char sdate[17], stime[14];
 	struct tm *tm;
 	time_t t;
-	char **bp, *list[] = {
+	static char **bp, *list[] = {
 		"__STDC__",
 		"__STDC_HOSTED__",
 		"__SCC__",
 		NULL
+	};
+	static struct keyword keys[] = {
+		{"define", DEFINE, DEFINE},
+		{"include", INCLUDE, INCLUDE},
+		{"line", LINE, LINE},
+		{"ifdef", IFDEF, IFDEF},
+		{"if", IF, IF},
+		{"elif", ELIF, ELIF},
+		{"else", ELSE, ELSE},
+		{"ifndef", IFNDEF, IFNDEF},
+		{"endif", ENDIF, ENDIF},
+		{"undef", UNDEF, UNDEF},
+		{"pragma", PRAGMA, PRAGMA},
+		{"error", ERROR, ERROR},
+		{NULL, 0, 0}
 	};
 
 	t = time(NULL);
@@ -57,6 +85,7 @@ icpp(void)
 
 	for (bp = list; *bp; ++bp)
 		defmacro(*bp)->u.s = "-1#1";
+	keywords(keys, NS_CPPCLAUSES);
 }
 
 static void
@@ -145,21 +174,39 @@ parsepars(char *buffer, char **listp, int nargs)
 	return 1;
 }
 
+/* FIXME: characters in the definition break the macro definition */
 static size_t
 copymacro(char *buffer, char *s, size_t bufsiz, char *arglist[])
 {
-	char prevc, c, *arg, *bp = buffer;
+	char prevc, c, *p, *arg, *bp = buffer;
+	size_t size;
 
 	for (prevc = '\0'; c = *s; prevc = c, ++s) {
 		if (c != '@') {
-			if (c == '#')
+			switch (c) {
+			case '$':
+				while (bp[-1] == ' ')
+					--bp, ++bufsiz;
+				while (s[1] == ' ')
+					++s;
+			case '#':
 				continue;
+			case '\"':
+				for (p = s; *++s != '"'; )
+					/* nothing */;
+				size = s - p + 1;
+				if (size > bufsiz)
+					goto expansion_too_long;
+				memcpy(bp, p, size);
+				bufsiz -= size;
+				bp += size;
+				continue;
+			// case '\'';
+			}
 			if (bufsiz-- == 0)
 				goto expansion_too_long;
 			*bp++ = c;
 		} else {
-			size_t size;
-
 			if (prevc == '#')
 				bufsiz -= 2;
 			arg = arglist[atoi(++s)];
@@ -194,7 +241,9 @@ expand(char *begin, Symbol *sym)
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
 	macroname = sym->name;
-	if (!(sym->flags & ISDECLARED)) {
+	if ((sym->flags & ISDECLARED) == 0) {
+		if (namespace == NS_CPP && !strcmp(sym->name, "defined"))
+			return 0;  /* we found a 'defined in an #if */
 		/*
 		 * This case happens in #if were macro not defined must
 		 * be expanded to 0
@@ -216,12 +265,12 @@ expand(char *begin, Symbol *sym)
 	if (!parsepars(arguments, arglist, atoi(s)))
 		return 0;
 	for (n = 0; n < atoi(s); ++n)
-		DBG("MACRO par%d:%s\n", n, arglist[n]);
+		DBG("MACRO par%d:%s", n, arglist[n]);
 
 	elen = copymacro(buffer, s+3, INPUTSIZ-1, arglist);
 
 substitute:
-	DBG("MACRO '%s' expanded to :'%s'\n", macroname, buffer);
+	DBG("MACRO '%s' expanded to :'%s'", macroname, buffer);
 	rlen = strlen(input->p);      /* rigth length */
 	llen = begin - input->line;   /* left length */
 	ilen = input->p - begin;      /* invocation length */
@@ -241,7 +290,7 @@ substitute:
 	input->p = input->begin = begin;
 
 	if (!(sym->flags & ISDECLARED))
-		delmacro(sym);
+		killsym(sym);
 
 	return 1;
 }
@@ -285,6 +334,11 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 	size_t len;
 	int prevc = 0, ispar;
 
+	if (yytoken == '$') {
+		cpperror("'##' cannot appear at either end of a macro expansion");
+		return 0;
+	}
+
 	for (;;) {
 		ispar = 0;
 		if (yytoken == IDEN && nargs >= 0) {
@@ -308,10 +362,15 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 			cpperror("too long macro");
 			return 0;
 		}
-		memcpy(bp, yytext, len);
-		bp += len;
-		bufsiz -= len;
-		if ((prevc = yytoken) != '#')
+		if (yytoken == '$') {
+			*bp++ = '$';
+			 --bufsiz;
+		} else {
+			memcpy(bp, yytext, len);
+			bp += len;
+			bufsiz -= len;
+		}
+		if ((prevc  = yytoken) != '#')
 			*bp++ = ' ';
 		next();
 	}
@@ -342,7 +401,7 @@ define(void)
 		free(sym->u.s);
 	} else {
 		sym = install(NS_CPP, sym);
-		sym->flags |= ISDECLARED;
+		sym->flags |= ISDECLARED|ISSTRING;
 	}
 
 	namespace = NS_IDEN;       /* Avoid polution in NS_CPP */
@@ -353,11 +412,11 @@ define(void)
 	if (!getdefs(args, n, buff+3, LINESIZ-3))
 		goto delete;
 	sym->u.s = xstrdup(buff);
-	DBG("MACRO '%s' defined as '%s'\n", sym->name, buff);
+	DBG("MACRO '%s' defined as '%s'", sym->name, buff);
 	return;
 
 delete:
-	delmacro(sym);
+	killsym(sym);
 }
 
 void
@@ -531,7 +590,7 @@ ifclause(int negate, int isifdef)
 		next();
 		status = (sym->flags & ISDECLARED) != 0;
 		if (!status)
-			delmacro(sym);
+			killsym(sym);
 	} else {
 		/* TODO: catch recovery here */
 		if ((expr = iconstexpr()) == NULL) {
@@ -589,6 +648,7 @@ static void
 elif(void)
 {
 	elseclause();
+	--cppctx;
 	cppif();
 }
 
@@ -614,7 +674,7 @@ undef(void)
 		error("no macro name given in #undef directive");
 		return;
 	}
-	delmacro(yylval.sym);
+	killsym(yylval.sym);
 	next();
 }
 
@@ -670,3 +730,47 @@ cpp(void)
 
 	return 1;
 }
+
+void
+outcpp(void)
+{
+	char c, *s, *t;
+
+	for (next(); yytoken != EOFTOK; next()) {
+		if (yytoken != CONSTANT || *yytext != '"') {
+			printf("%s ", yytext);
+			continue;
+		}
+		for (s = yylval.sym->u.s; c = *s; ++s) {
+			switch (c) {
+			case '\n':
+				t = "\\n";
+				goto print_str;
+			case '\v':
+				t = "\\v";
+				goto print_str;
+			case '\b':
+				t = "\\b";
+				goto print_str;
+			case '\t':
+				t = "\\t";
+				goto print_str;
+			case '\a':
+				t = "\\a";
+			print_str:
+				fputs(t, stdout);
+				break;
+			case '\\':
+				putchar('\\');
+			default:
+				if (!isprint(c))
+					printf("\\x%x", c);
+				else
+					putchar(c);
+				break;
+			}
+		}
+	}
+	putchar('\n');
+}
+
