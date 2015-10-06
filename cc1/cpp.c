@@ -741,7 +741,7 @@ outcpp(void)
 			printf("%s ", yytext);
 			continue;
 		}
-		for (s = yylval.sym->u.s; c = *s; ++s) {
+		for (s = yytext; c = *s; ++s) {
 			switch (c) {
 			case '\n':
 				t = "\\n";
@@ -770,6 +770,7 @@ outcpp(void)
 				break;
 			}
 		}
+		putchar(' ');
 	}
 	putchar('\n');
 }
