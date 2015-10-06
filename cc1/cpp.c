@@ -30,12 +30,10 @@ defmacro(char *s)
 {
 	char *p, *q;
 	Symbol *sym;
-	size_t len;
 
 	if ((p = strchr(s, '=')) != NULL) {
 		*p++='\0';
-		len = strlen(p);
-		q = xmalloc(len+4);
+		q = xmalloc(strlen(p) + 4);
 		sprintf(q, "-1#%s", p);
 		p = q;
 	}
