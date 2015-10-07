@@ -470,13 +470,15 @@ incdec(Node *np, char op)
 static Node *
 address(char op, Node *np)
 {
-	chklvalue(np);
-	if (np->symbol && (np->sym->flags & ISREGISTER))
-		error("address of register variable '%s' requested", yytext);
-	if (np->op == OPTR) {
-		Node *new = np->left;
-		free(np);
-		return new;
+	if (BTYPE(np) != FTN) {
+		chklvalue(np);
+		if (np->symbol && (np->sym->flags & ISREGISTER))
+			errorp("address of register variable '%s' requested", yytext);
+		if (np->op == OPTR) {
+			Node *new = np->left;
+			free(np);
+			return new;
+		}
 	}
 	return node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
 }
