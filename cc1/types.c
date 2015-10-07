@@ -30,7 +30,7 @@ static struct limits limits[][4] = {
 			.min.u = 0,
 			.max.u = 4294967295u
 		},
-		{	/* 3 = unsigned 4 bytes */
+		{	/* 3 = unsigned 8 bytes */
 			.min.u = 0,
 			.max.u = 18446744073709551615u
 		}
