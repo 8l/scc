@@ -273,7 +273,7 @@ readint(char *s, int base, int sign, Symbol *sym)
 		++s;
 
 	for (u = 0; isxdigit(c = *s++); u = u*base + val) {
-		val = (c <= '9') ? c - '0' :  10 + toupper(c) - 'A';
+		val = (isdigit(c)) ? c - '0' :  10 + toupper(c) - 'A';
 	repeat:
 		if (u <= max/base && u*base <= max - val)
 			continue;
