@@ -226,7 +226,7 @@ folduint(int op, Symbol *res, TUINT l, TUINT r)
 	default:    return 0;
 	}
 
-	res->u.u = u;
+	res->u.u = u & ones(res->type->size);
 	return 1;
 
 sign:
@@ -521,6 +521,7 @@ castcode(Node *np, Type *newtp)
 			u = (oldtp->sign) ? osym->u.i : osym->u.u;
 			break;
 		case FLOAT:
+			oldtp = newtp;
 			u = osym->u.f;
 			break;
 		default:
@@ -529,7 +530,6 @@ castcode(Node *np, Type *newtp)
 		mask = ones(newtp->size);
 		if (newtp->sign) {
 			negmask = ~mask;
-			u &= mask;
 			if (u & (negmask >> 1) & mask)
 				u |= negmask;
 			aux.u.i = u;
