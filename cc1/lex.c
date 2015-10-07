@@ -273,7 +273,8 @@ readint(char *s, int base, int sign, Symbol *sym)
 		++s;
 
 	for (u = 0; isxdigit(c = *s++); u = u*base + val) {
-		val = (isdigit(c)) ? c - '0' :  10 + toupper(c) - 'A';
+		static char letters[] = "0123456789ABCDEF";
+		val = strchr(letters, c) - letters;
 	repeat:
 		if (u <= max/base && u*base <= max - val)
 			continue;
