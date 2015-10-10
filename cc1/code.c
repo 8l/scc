@@ -324,7 +324,7 @@ emitcast(unsigned op, void *arg)
 
 	emitnode(lp);
 	if (np->type != voidtype)
-		printf("\tg%c", lp->type->letter, np->type->letter);
+		printf("\tg%c", np->type->letter);
 }
 
 static void
