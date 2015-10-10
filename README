@@ -15,7 +15,7 @@ unnecessary complexity to the compiler (and increased compilation time):
 	  allocate variables in ROM rather than error detection. This
 	  implememtation will not warn about these modifications and
 	  the compiler will treat them like normal variables (the standard
-	  specifies that a diagnosic message must be printed).
+	  specifies that a diagnostic message must be printed).
 
 	- volatile: The definition of volatile is not concrete, because
 	  it is defined as 'remove all optimizations applied to the

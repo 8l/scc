@@ -453,7 +453,7 @@ incdec(Node *np, char op)
 	switch (BTYPE(np)) {
 	case PTR:
 		if (!tp->defined)
-			error("invalid use of indefined type");
+			error("invalid use of undefined type");
 		inc = sizeofnode(tp->type);
 		break;
 	case INT:
