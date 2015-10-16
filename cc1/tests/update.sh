@@ -7,20 +7,15 @@ update()
 	printf ".\nw\n") | ed -s $1
 }
 
-
 case $# in
-1)
-	update $1
-	exit
-	;;
-*)
-	echo "usage: update.sh [test]" >&2
+0)
+	echo "usage: update.sh test ..." >&2
 	exit 1
 	;;
+1)
+	for i
+	do
+		update $1
+	done
+	;;
 esac
-
-
-for i in *.c
-do
-	update $i
-done
