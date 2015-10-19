@@ -12,10 +12,10 @@ case $# in
 	echo "usage: update.sh test ..." >&2
 	exit 1
 	;;
-1)
+*)
 	for i
 	do
-		update $1
+		update $i
 	done
 	;;
 esac
