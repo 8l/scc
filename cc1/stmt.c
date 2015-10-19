@@ -40,7 +40,7 @@ stmtexp(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	if (accept(';'))
 		return;
-	if (ahead() == ':') {
+	if (yytoken == IDEN && ahead() == ':') {
 		label();
 		stmt(lbreak, lcont, lswitch);
 		return;
