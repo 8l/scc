@@ -18,7 +18,7 @@ L4
 	j	L7
 L6
 	j	L8	#I1
-	j	L9	G1	gK	#I0	=I
+	j	L9	G1	gI	#I0	=I
 	r	#I1
 	j	L10
 L9
