@@ -398,16 +398,16 @@ escape(void)
 	int c, base;
 
 	switch (*++input->p) {
-	case '\\': return '\\';
-	case 'a':  return '\a';
-	case 'f':  return '\f';
-	case 'n':  return '\n';
-	case 'r':  return '\r';
-	case 't':  return '\t';
-	case 'v':  return '\v';
-	case '\'': return '\\';
-	case '"':  return'"';
-	case '?':  return '?';
+	case '\\': c = '\\'; goto escape_letter;
+	case 'a':  c = '\a'; goto escape_letter;
+	case 'f':  c = '\f'; goto escape_letter;
+	case 'n':  c = '\n'; goto escape_letter;
+	case 'r':  c = '\r'; goto escape_letter;
+	case 't':  c = '\t'; goto escape_letter;
+	case 'v':  c = '\v'; goto escape_letter;
+	case '\'': c = '\\'; goto escape_letter;
+	case '"':  c = '"'; goto escape_letter;
+	case '?':  c = '?'; goto escape_letter;
 	case 'u':  base = 10; break;
 	case 'x':  base = 16; break;
 	case '0':  base = 8; break;
@@ -419,6 +419,10 @@ escape(void)
 	c = strtoul(++input->p, &input->p, base);
 	if (errno || c > 255)
 		warn("character constant out of range");
+	return c;
+
+escape_letter:
+	++input->p;
 	return c;
 }
 
