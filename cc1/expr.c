@@ -561,22 +561,26 @@ static Node *assign(void);
 static Node *
 arguments(Node *np)
 {
-	int toomany;;
-	TINT n;
+	int toomany, n;
 	Node *par = NULL, *arg;
-	Type *argtype, **targs, *tp = np->type;
+	Type *argtype, **targs, *tp = np->type, *rettype;
 
 	if (tp->op == PTR && tp->type->op == FTN) {
 		np = content(OPTR, np);
 		tp = np->type;
 	}
-	if (tp->op != FTN)
-		error("function or function pointer expected");
-	targs = tp->p.pars;
+	if (tp->op != FTN) {
+		targs = (Type *[]) {ellipsistype};
+		n = 1;
+		rettype = inttype;
+		errorp("function or function pointer expected");
+	} else {
+		targs = tp->p.pars;
+		n = tp->n.elem;
+		rettype = tp->type;
+	}
 
 	expect('(');
-
-	n = tp->n.elem;
 	if (yytoken == ')')
 		goto no_pars;
 	toomany = 0;
@@ -618,7 +622,7 @@ no_pars:
 		errorp("too few arguments in function call");
 
 	expect(')');
-	return node(OCALL, np->type->type, np, par);
+	return node(OCALL, rettype, np, par);
 }
 
 static Node *
