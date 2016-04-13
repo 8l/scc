@@ -1,21 +1,21 @@
 /*
 name: TEST005
 description: Test unary integer operations
+error:
 output:
-F1	I	E
-G2	F1	main
+G2	F	"main
 {
 \
-A3	I	x
+A3	I	"x
 	A3	#I3	:I
 	A3	A3	#I0	=I	:I
 	A3	A3	#I0	=I	:I
 	A3	A3	~I	:I
 	A3	A3	_I	:I
-	j	L4	A3	#I2	=I
-	r	#I1
+	y	L4	A3	#I2	=I
+	h	#I1
 L4
-	r	#I0
+	h	#I0
 }
 */
 

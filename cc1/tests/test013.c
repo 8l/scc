@@ -4,20 +4,20 @@ description: Basic test of integer types and integer conversions
 comments: This test depends of the configuration in the type system.
           With the current configuration char is equal to unsigned char,
           short is equal to int, and unsigned short is equal to unsigned.
+error:
 output:
-G1	I	a
-G2	N	b
-G3	K	c
-G4	C	d
-G5	K	e
-G6	W	f
-G7	Z	g
-G8	Q	h
-G9	O	i
-G10	I	j
-G11	N	k
-F12	I
-G13	F12	main
+G1	I	"a
+G2	N	"b
+G3	K	"c
+G4	C	"d
+G5	K	"e
+G6	W	"f
+G7	Z	"g
+G8	Q	"h
+G9	O	"i
+G10	I	"j
+G11	N	"k
+G13	F	"main
 {
 \
 	G1	G2	gI	:I

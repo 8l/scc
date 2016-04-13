@@ -1,7 +1,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +8,7 @@
 
 #include "../inc/sizes.h"
 #include "../inc/cc.h"
+#include "arch.h"
 #include "cc1.h"
 
 unsigned yytoken;
@@ -266,7 +266,7 @@ readint(char *s, int base, int sign, Symbol *sym)
 	int c;
 
 	lim = getlimits(tp);
-	max = (tp->sign) ? lim->max.u : lim->max.i;
+	max = lim->max.i;
 	if (*s == '0')
 		++s;
 	if (toupper(*s) == 'X')
@@ -295,7 +295,7 @@ readint(char *s, int base, int sign, Symbol *sym)
 		}
 		sym->type = tp;
 		lim = getlimits(tp);
-		max = (tp->sign) ? lim->max.u : lim->max.i;
+		max = lim->max.i;
 		goto repeat;
 	}
 
@@ -398,31 +398,43 @@ escape(void)
 	int c, base;
 
 	switch (*++input->p) {
-	case '\\': c = '\\'; goto escape_letter;
-	case 'a':  c = '\a'; goto escape_letter;
-	case 'f':  c = '\f'; goto escape_letter;
-	case 'n':  c = '\n'; goto escape_letter;
-	case 'r':  c = '\r'; goto escape_letter;
-	case 't':  c = '\t'; goto escape_letter;
-	case 'v':  c = '\v'; goto escape_letter;
-	case '\'': c = '\\'; goto escape_letter;
-	case '"':  c = '"'; goto escape_letter;
-	case '?':  c = '?'; goto escape_letter;
-	case 'u':  base = 10; break;
-	case 'x':  base = 16; break;
-	case '0':  base = 8; break;
+	case 'a':  return '\a';
+	case 'f':  return '\f';
+	case 'n':  return '\n';
+	case 'r':  return '\r';
+	case 't':  return '\t';
+	case 'v':  return '\v';
+	case '"':  return '"';
+	case '\'': return '\'';
+	case '\\': return '\\';
+	case '\?': return '\?';
+	case 'u':
+		/*
+		 * FIXME: universal constants are not correctly handled
+		 */
+		if (!isdigit(*++input->p))
+			warn("incorrect digit for numerical character constant");
+		base = 10;
+		break;
+	case 'x':
+		if (!isxdigit(*++input->p))
+			warn("\\x used with no following hex digits");
+		base = 16;
+		break;
+	case '0':
+		if (!strchr("01234567", *++input->p))
+			warn("\\0 used with no following octal digits");
+		base = 8;
+		break;
 	default:
 		warn("unknown escape sequence");
 		return ' ';
 	}
 	errno = 0;
-	c = strtoul(++input->p, &input->p, base);
+	c = strtoul(input->p, &input->p, base);
 	if (errno || c > 255)
 		warn("character constant out of range");
-	return c;
-
-escape_letter:
-	++input->p;
+	--input->p;
 	return c;
 }
 
@@ -435,7 +447,8 @@ character(void)
 	if ((c = *++input->p) == '\\')
 		c = escape();
 	else
-		c = *input->p++;
+		c = *input->p;
+	++input->p;
 	if (*input->p != '\'')
 		error("invalid character constant");
 	else
@@ -471,13 +484,10 @@ repeat:
 	*bp = '\0';
 
 	yylen = bp - yytext + 1;
-	yylval.sym = newsym(NS_IDEN);
-	yylval.sym->flags |= ISSTRING | ISCONSTANT;
-	yylval.sym->u.s = xstrdup(yytext+1);
-	yylval.sym->type = mktype(chartype, ARY, yylen - 2, NULL);
+	yylval.sym = newstring(yytext+1, yylen-1);
 	*bp++ = '"';
 	*bp = '\0';
-	return CONSTANT;
+	return STRING;
 }
 
 static unsigned

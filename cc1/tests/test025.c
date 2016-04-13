@@ -2,17 +2,18 @@
 /*
 name: TEST025
 descritpion: Test of ifdef and ifndef
+error:
 output:
-G1	I	a
-G2	I	b
-G3	I	c
-G4	I	d
-G5	I	_1
-G6	I	_2
-G7	I	e_
-G8	I	f_
-G9	I	h
-G10	I	i
+G1	I	"a
+G2	I	"b
+G3	I	"c
+G4	I	"d
+G5	I	"_1
+G6	I	"_2
+G7	I	"e_
+G8	I	"f_
+G9	I	"h
+G10	I	"i
 */
 
 #define FOO

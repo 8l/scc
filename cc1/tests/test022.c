@@ -3,13 +3,13 @@
 name: TEST022
 description: Basic test for int constants
 comments: This test is done for z80 data types
+error:
 output:
-F1	I
-G2	F1	main
+G2	F	"main
 {
 \
-A3	I	i
-A4	N	u
+A3	I	"i
+A4	N	"u
 	A3	#I1	:I
 	A3	#IFFFF	:I
 	A3	#IFFFF	:I
@@ -26,7 +26,7 @@ A4	N	u
 	A4	#N0	:N
 	A4	#N3	:N
 	A4	#N0	:N
-	r	#I0
+	h	#I0
 }
 */
 

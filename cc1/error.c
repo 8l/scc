@@ -2,9 +2,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
 
 #include "../inc/cc.h"
+#include "arch.h"
 #include "cc1.h"
 
 #define MAXERRNUM 10

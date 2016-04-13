@@ -1,41 +1,41 @@
 /*
 name: TEST010
 description: Test for continue and break statements
+error:
+test010.c:8: warning: conditional expression is constant
+test010.c:10: warning: conditional expression is constant
+test010.c:30: warning: conditional expression is constant
 output:
-test010.c:9: warning: conditional expression is constant
-test010.c:11: warning: conditional expression is constant
-test010.c:31: warning: conditional expression is constant
-F1	I	E
-G2	F1	main
+G2	F	"main
 {
 \
-A3	I	x
+A3	I	"x
 	A3	#I0	:I
 	j	L6
 	e
 L4
 	j	L5
 L6
-	j	L4	#I1
+	y	L4	#I1
 	b
 L5
 	j	L9
 	e
 L7
-	j	L10	A3	#I5	!I
+	y	L10	A3	#I5	!I
 	j	L8
 L10
 	A3	A3	#I1	+I	:I
 	j	L7
 L9
-	j	L7	#I1
+	y	L7	#I1
 	b
 L8
 
 	j	L13
 	e
 L11
-	j	L14	A3	#IA	!I
+	y	L14	A3	#IA	!I
 	j	L12
 L14
 	A3	A3	#I1	+I	:I
@@ -43,19 +43,20 @@ L14
 
 L13
 	j	L11
+
 	b
 L12
 	e
 L15
-	j	L17	A3	#IF	!I
+	y	L17	A3	#IF	!I
 	j	L16
 L17
 	A3	A3	#I1	+I	:I
 	j	L15
-	j	L15	#I1
+	y	L15	#I1
 	b
 L16
-	r	A3	#IF	-I
+	h	A3	#IF	-I
 }
 */
 

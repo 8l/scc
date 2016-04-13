@@ -1,0 +1,61 @@
+diff --git a/cc2/cgen.c b/cc2/cgen.c
+index be4ff41..8839505 100644
+--- a/cc2/cgen.c
++++ b/cc2/cgen.c
+@@ -449,16 +449,50 @@ cast(Node *np)
+ {
+ 	Node *lp = np->left;
+ 	uint8_t reg;
++	int8_t delta;
+ 
+-	if (lp->type.size != np->type.size)
++	swtich (lp->type.size) {
++	case 1:
++		switch (np->type.size) {
++		case 1:
++			break;
++		case 2:
++			if (lp->op != REG)
++				move(lp, np);
++			np->reg = reg = lp->reg;
++			if (lp->sign && np->sign) {
++				code(BIT, lp, imm(7));
++				code(JRZ, .., ..);
++				code(LDI, regs[upper[reg]], imm(-1));
++				code(JR, ..., ...);
++			}
++			reguse[pair[reg]] = reguse[reg] = np;
++			code(LDI, regs[lower[reg]], imm(0));
++			break;
++		default:
++			abort();
++		}
++		break;
++	case 2:
++		switch (np->type.size) {
++		case 1:
++			if (lp->op == REG) {
++				reguse[upper[reg]] = NULL;
++				reg = lower[reg];
++				np->reg = reg;
++				reguse[pair[reg]] = reguse[reg] = np;
++			}
++			break;
++		case 2:
++			break;
++		default:
++			abort();
++		}
++	default:
+ 		abort();
++	}
+ 	lp->used = 1;
+ 	np->sym = lp->sym;
+-	if ((np->op = lp->op) == REG) {
+-		reg = lp->reg;
+-		np->reg = reg;
+-		reguse[pair[reg]] = reguse[reg] = np;
+-	}
+ }
+ 
+ static void (*opnodes[])(Node *) = {

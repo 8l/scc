@@ -1,11 +1,13 @@
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "../inc/cc.h"
 #include "../inc/sizes.h"
+#include "arch.h"
 #include "cc1.h"
+
+#define XCHG(lp, rp, np) (np = lp, lp = rp, rp = np)
 
 Node *expr(void);
 
@@ -16,7 +18,7 @@ cmpnode(Node *np, TUINT val)
 	Type *tp;
 	TUINT mask, nodeval;
 
-	if (!np || !np->constant)
+	if (!np || !np->constant || !np->sym)
 		return 0;
 	sym = np->sym;
 	tp = sym->type;
@@ -54,65 +56,167 @@ promote(Node *np)
 {
 	Type *tp;
 	Node *new;
-	unsigned r, ur = uinttype->n.rank;
+	unsigned r;
+	struct limits *lim, *ilim;
 
 	tp = np->type;
-	r = tp->n.rank;
-	if  (r > ur || tp == inttype || tp == uinttype)
-		return np;
-	tp = (r == ur) ? uinttype : inttype;
+
+	switch (tp->op) {
+	case ENUM:
+	case INT:
+		if (tp->n.rank >= inttype->n.rank)
+			return np;
+		lim = getlimits(tp);
+		ilim = getlimits(inttype);
+		tp = (lim->max.i <= ilim->max.i) ? inttype : uinttype;
+		break;
+	case FLOAT:
+		/* TODO: Add support for C99 float math */
+		tp = doubletype;
+		break;
+	default:
+		abort();
+	}
 	if ((new = convert(np, tp, 1)) != NULL)
 		return new;
 	return np;
 }
 
 static void
-typeconv(Node **p1, Node **p2)
+arithconv(Node **p1, Node **p2)
 {
+	int n, to = 0, s1, s2;
+	unsigned r1, r2;
 	Type *tp1, *tp2;
 	Node *np1, *np2;
-	int n;
+	struct limits *lp1, *lp2;
 
 	np1 = promote(*p1);
 	np2 = promote(*p2);
 
 	tp1 = np1->type;
 	tp2 = np2->type;
-	if (tp1 != tp2) {
-		if ((n = tp1->n.rank - tp2->n.rank) > 0)
-			np2 = convert(np2, tp1, 1);
-		else if (n < 0)
-			np1 = convert(np1, tp2, 1);
+
+	if (tp1 == tp2)
+		goto set_p1_p2;
+
+	s1 = tp1->sign, r1 = tp1->n.rank, lp1 = getlimits(tp1);
+	s2 = tp2->sign, r2 = tp2->n.rank, lp2 = getlimits(tp2);
+
+	if (s1 == s2 || tp1->op == FLOAT || tp2->op == FLOAT) {
+		to = r1 - r2;
+	} else if (!s1) {
+		if (r1 >= r2 || lp1->max.i >= lp2->max.i)
+			to = 1;
+		else
+			to = -1;
+	} else {
+		if (r2 >= r1 || lp2->max.i >= lp1->max.i)
+			to = -1;
+		else
+			to = 1;
 	}
+
+	if (to > 0)
+		np2 = convert(np2, tp1, 1);
+	else if (to < 0)
+		np1 = convert(np1, tp2, 1);
+		
+set_p1_p2:
 	*p1 = np1;
 	*p2 = np2;
+}
+
+static int
+null(Node *np)
+{
+	if (!np->constant || np->type != pvoidtype)
+		return 0;
+	return cmpnode(np, 0);
+}
+
+static Node *
+chkternary(Node *yes, Node *no)
+{
+	yes = decay(yes);
+	no = decay(no);
+
+	/*
+	 * FIXME:
+	 * We are ignoring type qualifiers here,
+	 * but the standard has strong rules about this.
+	 * take a look to 6.5.15
+	 */
+
+	if (!eqtype(yes->type, no->type)) {
+		if (yes->type->arith && no->type->arith) {
+			arithconv(&yes, &no);
+		} else if (yes->type->op != PTR && no->type->op != PTR) {
+			goto wrong_type;
+		} else {
+			/* convert integer 0 to NULL */
+			if (yes->type->integer && cmpnode(yes, 0))
+				yes = convert(yes, pvoidtype, 0);
+			if (no->type->integer && cmpnode(no, 0))
+				no = convert(no, pvoidtype, 0);
+			/*
+			 * At this point the type of both should be
+			 * a pointer to something, or we have don't
+			 * compatible types
+			 */
+			if (yes->type->op != PTR || no->type->op != PTR)
+				goto wrong_type;
+			/*
+			 * If we have a null pointer constant then
+			 * convert to the another type
+			 */
+			if (null(yes))
+				yes = convert(yes, no->type, 0);
+			if (null(no))
+				no = convert(no, yes->type, 0);
+
+			if (!eqtype(yes->type, no->type))
+				goto wrong_type;
+		}
+	}
+	return node(OCOLON, yes->type, yes, no);
+
+wrong_type:
+	errorp("type mismatch in conditional expression");
+	freetree(yes);
+	freetree(no);
+	return constnode(zero);
 }
 
 static void
 chklvalue(Node *np)
 {
 	if (!np->lvalue)
-		error("lvalue required in operation");
+		errorp("lvalue required in operation");
 	if (np->type == voidtype)
-		error("invalid use of void expression");
+		errorp("invalid use of void expression");
 }
 
 Node *
 decay(Node *np)
 {
+	Node *new;
 	Type *tp = np->type;
 
 	switch (tp->op) {
 	case ARY:
 		tp = tp->type;
 		if (np->op == OPTR) {
-			Node *new = np->left;
+			new = np->left;
 			free(np);
 			new->type = mktype(tp, PTR, 0, NULL);
 			return new;
 		}
 	case FTN:
-		np = node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
+		new = node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
+		if (np->sym && np->sym->flags & (ISGLOBAL|ISLOCAL|ISPRIVATE))
+			new->constant = 1;
+		return new;
 	default:
 		return np;
 	}
@@ -121,37 +225,33 @@ decay(Node *np)
 static Node *
 integerop(char op, Node *lp, Node *rp)
 {
-	if (BTYPE(lp) != INT || BTYPE(rp) != INT)
+	if (!lp->type->integer || !rp->type->integer)
 		error("operator requires integer operands");
-	typeconv(&lp, &rp);
+	arithconv(&lp, &rp);
 	return simplify(op, lp->type, lp, rp);
-}
-
-static Node *
-numericaluop(char op, Node *np)
-{
-	switch (BTYPE(np)) {
-	case INT:
-		np = promote(np);
-	case FLOAT:
-		if (op == ONEG && np->op == ONEG)
-			return np->left;
-		if (op == OADD)
-			return np;
-		return simplify(op, np->type, np, NULL);
-	default:
-		error("unary operator requires numerical operand");
-	}
 }
 
 static Node *
 integeruop(char op, Node *np)
 {
-	if (BTYPE(np) != INT)
+	if (!np->type->integer)
 		error("unary operator requires integer operand");
 	np = promote(np);
 	if (op == OCPL && np->op == OCPL)
 		return np->left;
+	return simplify(op, np->type, np, NULL);
+}
+
+static Node *
+numericaluop(char op, Node *np)
+{
+	if (!np->type->arith)
+		error("unary operator requires numerical operand");
+	np = promote(np);
+	if (op == ONEG && np->op == ONEG)
+		return np->left;
+	if (op == OADD)
+		return np;
 	return simplify(op, np->type, np, NULL);
 }
 
@@ -169,13 +269,12 @@ convert(Node *np, Type *newtp, char iscast)
 	case FLOAT:
 		switch (newtp->op) {
 		case PTR:
-			if (!iscast || oldtp->op == FLOAT)
+			if (oldtp->op == FLOAT || !cmpnode(np, 0) && !iscast)
 				return NULL;
 			/* PASSTHROUGH */
 		case INT:
 		case FLOAT:
 		case ENUM:
-		case VOID:
 			break;
 		default:
 			return NULL;
@@ -191,13 +290,7 @@ convert(Node *np, Type *newtp, char iscast)
 			break;
 		case PTR:
 			if (iscast ||
-			    newtp == pvoidtype ||
-			    oldtp == pvoidtype) {
-				/* TODO:
-				 * we assume conversion between pointers
-				 * do not need any operation, but due to
-				 * alignment problems that may be false
-				 */
+			    newtp == pvoidtype || oldtp == pvoidtype) {
 				np->type = newtp;
 				return np;
 			}
@@ -205,7 +298,7 @@ convert(Node *np, Type *newtp, char iscast)
 			return NULL;
 		}
 	default:
-			return NULL;
+		return NULL;
 	}
 	return castcode(np, newtp);
 }
@@ -214,7 +307,10 @@ static Node *
 parithmetic(char op, Node *lp, Node *rp)
 {
 	Type *tp;
-	Node *size;
+	Node *size, *np;
+
+	if (lp->type->op != PTR)
+		XCHG(lp, rp, np);
 
 	tp = lp->type;
 	size = sizeofnode(tp->type);
@@ -222,10 +318,10 @@ parithmetic(char op, Node *lp, Node *rp)
 	if (op == OSUB && BTYPE(rp) == PTR) {
 		if (tp != rp->type)
 			goto incorrect;
-		lp = node(OSUB, inttype, lp, rp);
+		lp = node(OSUB, pdifftype, lp, rp);
 		return node(ODIV, inttype, lp, size);
 	}
-	if (BTYPE(rp) != INT)
+	if (!rp->type->integer)
 		goto incorrect;
 
 	rp = convert(promote(rp), sizettype, 0);
@@ -242,77 +338,65 @@ incorrect:
 static Node *
 arithmetic(char op, Node *lp, Node *rp)
 {
-	switch (BTYPE(lp)) {
-	case INT:
-	case FLOAT:
-		switch (BTYPE(rp)) {
-		case INT:
-		case FLOAT:
-			typeconv(&lp, &rp);
-			break;
-		case PTR:
-			if (op == OADD || op == OSUB)
-				return parithmetic(op, rp, lp);
-		default:
-			goto incorrect;
-		}
-		break;
-	case PTR:
-		return parithmetic(op, lp, rp);
-	default:
-	incorrect:
+	Type *ltp = lp->type, *rtp = rp->type;
+
+	if (ltp->arith && rtp->arith) {
+		arithconv(&lp, &rp);
+	} else if ((ltp->op == PTR || rtp->op == PTR) &&
+	           (op == OADD || op == OSUB)) {
+		return parithmetic(op, rp, lp);
+	} else if (op != OINC && op != ODEC) {
 		errorp("incorrect arithmetic operands");
 	}
-
 	return simplify(op, lp->type, lp, rp);
 }
 
 static Node *
 pcompare(char op, Node *lp, Node *rp)
 {
-	switch (BTYPE(rp)) {
-	case INT:
-		if (cmpnode(rp, 0))
-			rp = convert(rp, pvoidtype, 1);
-		break;
-	case PTR:
-		if (lp->type != rp->type)
-			warn("comparision between different pointer types");
-		break;
-	default:
-		errorp("incompatibles type in comparision");
+	Node *np;
+	int err = 0;
+
+	if (lp->type->integer)
+		XCHG(lp, rp, np);
+
+	if (rp->type->integer) {
+		if (!cmpnode(rp, 0))
+			err = 1;
+		rp = convert(rp, pvoidtype, 1);
+	} else if (rp->type->op == PTR) {
+		if (!eqtype(lp->type, rp->type))
+			err = 1;
+	} else {
+		err = 1;
 	}
+	if (err)
+		errorp("incompatibles type in comparision");
 	return simplify(op, inttype, lp, rp);
 }
 
 static Node *
 compare(char op, Node *lp, Node *rp)
 {
+	Type *ltp, *rtp;
+
 	lp = decay(lp);
 	rp = decay(rp);
 
-	switch (BTYPE(lp)) {
-	case INT:
-	case FLOAT:
-		switch (BTYPE(rp)) {
-		case INT:
-		case FLOAT:
-			typeconv(&lp, &rp);
-			break;
-		case PTR:
-			return pcompare(op, rp, lp);
-		default:
-			goto nocompat;
-		}
-		break;
-	case PTR:
-		return pcompare(op, lp, rp);
-	default:
-	nocompat:
-		errorp("incompatibles type in comparision");
-	}
+	ltp = lp->type;
+	rtp = rp->type;
 
-	return simplify(op, inttype, lp, rp);
+	if (ltp->op == PTR || rtp->op == PTR) {
+		return pcompare(op, rp, lp);
+	} else if (ltp->arith && rtp->arith) {
+		arithconv(&lp, &rp);
+		return simplify(op, inttype, lp, rp);
+	} else {
+		errorp("incompatibles type in comparision");
+		freetree(lp);
+		freetree(rp);
+		return constnode(zero);
+	}
 }
 
 int
@@ -342,6 +426,10 @@ static Node *
 exp2cond(Node *np, char neg)
 {
 	np = decay(np);
+	if (np->type->aggreg) {
+		errorp("used struct/union type value where scalar is required");
+		np = constnode(zero);
+	}
 	if (isnodecmp(np->op))
 		return (neg) ? negate(np) : np;
 	return compare((neg) ?  OEQ : ONE, np, constnode(zero));
@@ -369,18 +457,22 @@ field(Node *np)
 		unexpected();
 	next();
 
-	switch (BTYPE(np)) {
-	case STRUCT:
-	case UNION:
-		if ((sym->flags & ISDECLARED) == 0)
-			error("incorrect field in struct/union");
-		np = node(OFIELD, sym->type, np, varnode(sym));
-		np->lvalue = 1;
-		return np;
-	default:
-		error("request for member '%s' in something not a structure or union",
+	if (!np->type->aggreg) {
+		errorp("request for member '%s' in something not a structure or union",
 		      yylval.sym->name);
+		goto free_np;
 	}
+	if ((sym->flags & ISDECLARED) == 0) {
+		errorp("incorrect field in struct/union");
+		goto free_np;
+	}
+	np = node(OFIELD, sym->type, np, varnode(sym));
+	np->lvalue = 1;
+	return np;
+
+free_np:
+	freetree(np);
+	return constnode(zero);
 }
 
 static Node *
@@ -412,7 +504,7 @@ array(Node *lp, Node *rp)
 	Type *tp;
 	Node *np;
 
-	if (BTYPE(lp) != INT && BTYPE(rp) != INT)
+	if (!lp->type->integer && !rp->type->integer)
 		error("array subscript is not an integer");
 	np = arithmetic(OADD, decay(lp), decay(rp));
 	tp = np->type;
@@ -424,18 +516,8 @@ array(Node *lp, Node *rp)
 static Node *
 assignop(char op, Node *lp, Node *rp)
 {
-	int force = 0;
-	Type *tp = lp->type;
-
-	rp = decay(rp);
-	if (BTYPE(rp) == INT && tp->op == PTR && cmpnode(rp, 0)) {
-		tp = pvoidtype;
-		force = 1;
-	}
-	if ((rp = convert(rp, tp, force)) == NULL) {
-		errorp((op == OINIT) ?
-		        "incorrect initiliazer" :
-		        "incompatible types when assigning");
+	if ((rp = convert(decay(rp), lp->type, 0)) == NULL) {
+		errorp("incompatible types when assigning");
 		return lp;
 	}
 
@@ -450,17 +532,14 @@ incdec(Node *np, char op)
 
 	chklvalue(np);
 
-	switch (BTYPE(np)) {
-	case PTR:
-		if (!tp->defined)
-			error("invalid use of undefined type");
-		inc = sizeofnode(tp->type);
-		break;
-	case INT:
-	case FLOAT:
+	if (!tp->defined) {
+		errorp("invalid use of undefined type");
+		return np;
+	} else if (tp->arith) {
 		inc = constnode(one);
-		break;
-	default:
+	} else if (tp->op == PTR) {
+		inc = sizeofnode(tp->type);
+	} else {
 		errorp("wrong type argument to increment or decrement");
 		return np;
 	}
@@ -470,9 +549,11 @@ incdec(Node *np, char op)
 static Node *
 address(char op, Node *np)
 {
+	Node *new;
+
 	if (BTYPE(np) != FTN) {
 		chklvalue(np);
-		if (np->symbol && (np->sym->flags & ISREGISTER))
+		if (np->sym && (np->sym->flags & ISREGISTER))
 			errorp("address of register variable '%s' requested", yytext);
 		if (np->op == OPTR) {
 			Node *new = np->left;
@@ -480,22 +561,23 @@ address(char op, Node *np)
 			return new;
 		}
 	}
-	return node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
+	new = node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
+
+	if (np->sym && np->sym->flags & (ISGLOBAL|ISLOCAL|ISPRIVATE))
+		new->constant = 1;
+	return new;
 }
 
 static Node *
 negation(char op, Node *np)
 {
-	switch (BTYPE(np)) {
-	case FTN:
-	case ARY:
-	case INT:
-	case FLOAT:
-	case PTR:
-		return exp2cond(np, 1);
-	default:
-		error("invalid argument of unary '!'");
+	np = decay(np);
+	if (!np->type->arith && np->type->op != PTR) {
+		errorp("invalid argument of unary '!'");
+		freetree(np);
+		return constnode(zero);
 	}
+	return exp2cond(np, 1);
 }
 
 static Symbol *
@@ -535,6 +617,14 @@ primary(void)
 
 	sym = yylval.sym;
 	switch (yytoken) {
+	case STRING:
+		np = constnode(sym);
+		sym->flags |= HASINIT;
+		emit(ODECL, sym);
+		emit(OINIT, np);
+		np = decay(varnode(sym));
+		next();
+		break;
 	case CONSTANT:
 		np = constnode(sym);
 		next();
@@ -555,8 +645,6 @@ primary(void)
 	}
 	return np;
 }
-
-static Node *assign(void);
 
 static Node *
 arguments(Node *np)
@@ -618,10 +706,10 @@ arguments(Node *np)
 	} while (accept(','));
 
 no_pars:
+	expect(')');
 	if (n > 0 && *targs != ellipsistype)
 		errorp("too few arguments in function call");
 
-	expect(')');
 	return node(OCALL, rettype, np, par);
 }
 
@@ -740,13 +828,15 @@ cast(void)
 	case TQUALIFIER:
 	case TYPE:
 		tp = typename();
+		expect(')');
+
+		if (yytoken == '{')
+			return initlist(tp);
+
 		switch (tp->op) {
 		case ARY:
 			error("cast specify an array type");
-		case FTN:
-			error("cast specify a function type");
 		default:
-			expect(')');
 			lp = cast();
 			if ((rp = convert(lp,  tp, 1)) == NULL)
 				error("bad type convertion requested");
@@ -925,29 +1015,16 @@ ternary(void)
 		Node *ifyes, *ifno, *np;
 
 		cond = exp2cond(cond, 0);
-		ifyes = promote(expr());
+		ifyes = expr();
 		expect(':');
-		ifno = promote(ternary());
-		typeconv(&ifyes, &ifno);
-		if (cond->constant) {
-			TINT i = cond->sym->u.i;
-
-			freetree(cond);
-			if (i == 0) {
-				freetree(ifyes);
-				return ifno;
-			} else {
-				freetree(ifno);
-				return ifyes;
-			}
-		}
-		np = node(OCOLON, ifyes->type, ifyes, ifno);
-		cond = node(OASK, np->type, cond, np);
+		ifno = ternary();
+		np = chkternary(ifyes, ifno);
+		cond = simplify(OASK, np->type, cond, np);
 	}
 	return cond;
 }
 
-static Node *
+Node *
 assign(void)
 {
 	Node *np, *(*fun)(char , Node *, Node *);
@@ -1027,174 +1104,4 @@ condexpr(void)
 	if (np->constant)
 		warn("conditional expression is constant");
 	return np;
-}
-
-struct designator {
-	TINT pos;
-	struct designator *next;
-};
-
-static TINT
-arydesig(Type *tp)
-{
-	TINT npos;
-	Node *np;
-
-	if (tp->op != ARY)
-		errorp("array index in non-array initializer");
-	next();
-	np = iconstexpr();
-	npos = np->sym->u.i;
-	freetree(np);
-	expect(']');
-	return npos;
-}
-
-static TINT
-fielddesig(Type *tp)
-{
-	TINT npos;
-	int ons;
-	Symbol *sym, **p;
-
-	if (tp->op != STRUCT || tp->op != UNION)
-		errorp("field name not in record or union initializer");
-	ons = namespace;
-	namespace = tp->ns;
-	next();
-	namespace = ons;
-	if (yytoken != IDEN)
-		unexpected();
-	sym = yylval.sym;
-	if ((sym->flags & ISDECLARED) == 0) {
-		errorp(" unknown field '%s' specified in initializer",
-		      sym->name);
-		return 0;
-	}
-	for (p = tp->p.fields; *p != sym; ++p)
-		/* nothing */;
-	return p - tp->p.fields;
-}
-
-static struct designator *
-designation(Type *tp)
-{
-	struct designator *des = NULL, *d;
-	TINT (*fun)(Type *);
-
-	for (;;) {
-		switch (yytoken) {
-		case '[': fun = arydesig;   break;
-		case '.': fun = fielddesig; break;
-		default:
-			if (des)
-				expect('=');
-			return des;
-		}
-		d = xmalloc(sizeof(*d));
-		d->next = NULL;
-
-		if (!des) {
-			des = d;
-		} else {
-			des->next = d;
-			des = d;
-		}
-		des->pos  = (*fun)(tp);
-	}
-}
-
-static void
-initlist(Symbol *sym, Type *tp)
-{
-	struct designator *des;
-	int toomany = 0;
-	TINT n;
-	Type *newtp;
-
-	for (n = 0; ; ++n) {
-		if ((des = designation(tp)) == NULL) {
-			des = xmalloc(sizeof(*des));
-			des->pos = n;
-		} else {
-			n = des->pos;
-		}
-		switch (tp->op) {
-		case ARY:
-			if (tp->defined && n >= tp->n.elem) {
-				if (!toomany)
-					warn("excess elements in array initializer");
-				toomany = 1;
-				sym = NULL;
-			}
-			newtp = tp->type;
-			break;
-		case STRUCT:
-			if (n >= tp->n.elem) {
-				if (!toomany)
-					warn("excess elements in struct initializer");
-				toomany = 1;
-				sym = NULL;
-			} else {
-				sym = tp->p.fields[n];
-				newtp = sym->type;
-			}
-			break;
-		default:
-			newtp = tp;
-			warn("braces around scalar initializer");
-			if (n > 0) {
-				if (!toomany)
-					warn("excess elements in scalar initializer");
-				toomany = 1;
-				sym = NULL;
-			}
-			break;
-		}
-		initializer(sym, newtp, n);
-		if (!accept(','))
-			break;
-	}
-	expect('}');
-
-	if (tp->op == ARY && !tp->defined) {
-		tp->n.elem = n + 1;
-		tp->defined = 1;
-	}
-}
-
-void
-initializer(Symbol *sym, Type *tp, int nelem)
-{
-	Node *np;
-	int flags = sym->flags;
-
-	if (tp->op == FTN)
-		error("function '%s' is initialized like a variable", sym->name);
-
-	if (accept('{')) {
-		initlist(sym, tp);
-		return;
-	}
-	np = assign();
-
-	/* if !sym it means there are too much initializers */
-	if (!sym)
-		return;
-	if (nelem >= 0)
-		return;
-
-	np = assignop(OINIT, varnode(sym), np);
-
-	if ((flags & (ISEXTERN|ISTYPEDEF)) != 0) {
-		if (!np->right->constant)
-			errorp("initializer element is not constant");
-		emit(OINIT, np);
-	} else if ((flags & (ISEXTERN|ISTYPEDEF)) != 0) {
-		errorp("'%s' has both '%s' and initializer",
-		       sym->name, (flags&ISEXTERN) ? "extern" : "typedef");
-	} else {
-		np->op = OASSIGN;
-		emit(OEXPR, np);
-	}	
 }

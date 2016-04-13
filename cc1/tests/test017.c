@@ -1,28 +1,28 @@
 /*
 name: TEST017
 description: Basic test about pointers and structs
+error:
 output:
-F9	I	E
-G10	F9	main
+G10	F	"main
 {
 \
-S2	s1
-M3	I	y
-M4	I	z
-A11	S2	nested
-S6	s2
-M8	P	p
-A12	S6	v
+S2	"s1	#N4	#N1
+M3	I	"y	#N0
+M4	I	"z	#N2
+A11	S2	"nested
+S6	"s2	#N4	#N2
+M8	P	"p	#N0
+A12	S6	"v
 	A12	M8	.P	A11	'P	:P
 	A12	M8	.P	@S2	M3	.I	#I1	:I
 	A12	M8	.P	@S2	M4	.I	#I2	:I
-	j	L13	A11	M3	.I	#I1	=I
-	r	#I1
+	y	L13	A11	M3	.I	#I1	=I
+	h	#I1
 L13
-	j	L14	A11	M4	.I	#I2	=I
-	r	#I2
+	y	L14	A11	M4	.I	#I2	=I
+	h	#I2
 L14
-	r	#I0
+	h	#I0
 }
 */
 

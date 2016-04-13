@@ -1,28 +1,9 @@
 
-#include "arch.h"
 
 #define INPUTSIZ LINESIZ
-#ifndef PREFIX
-#define PREFIX "/usr/"
-#endif
 
 #define GLOBALCTX 0
 
-#define RANK_BOOL    0
-#define RANK_SCHAR   1
-#define RANK_UCHAR   2
-#define RANK_CHAR    3
-#define RANK_SHORT   4
-#define RANK_USHORT  5
-#define RANK_INT     6
-#define RANK_UINT    7
-#define RANK_LONG    8
-#define RANK_ULONG   9
-#define RANK_LLONG   10
-#define RANK_ULLONG  11
-#define RANK_FLOAT   12
-#define RANK_DOUBLE  13
-#define RANK_LDOUBLE 15
 
 /*
  * Definition of structures
@@ -35,13 +16,11 @@ typedef struct input Input;
 
 struct limits {
 	union {
-		TINT i;
-		TUINT u;
+		TUINT i;
 		TFLOAT f;
 	} max;
 	union {
-		TINT i;
-		TUINT u;
+		TUINT i;
 		TFLOAT f;
 	} min;
 };
@@ -59,8 +38,12 @@ struct type {
 	bool defined : 1;           /* type defined */
 	bool sign : 1;              /* signess of the type */
 	bool printed : 1;           /* the type already was printed */
-	size_t size;                /* sizeof the type */
-	size_t align;               /* align of the type */
+	bool integer : 1;           /* this type is INT or enum */
+	bool arith : 1;             /* this type is INT, ENUM, FLOAT */
+	bool aggreg : 1;            /* this type is struct or union */
+	bool k_r : 1;               /* This is a k&r function */
+	TSIZE size;                 /* sizeof the type */
+	TSIZE align;                /* align of the type */
 	Type *type;                 /* base type */
 	Symbol *tag;                /* symbol of the strug tag */
 	Type *next;                 /* next element in the hash */
@@ -88,6 +71,7 @@ struct symbol {
 		TFLOAT f;
 		char *s;
 		unsigned char token;
+		Node **init;
 		Symbol **pars;
 	} u;
 	struct symbol *next;
@@ -99,7 +83,6 @@ struct node {
 	Type *type;
 	Symbol *sym;
 	bool lvalue : 1;
-	bool symbol: 1;
 	bool constant : 1;
 	struct node *left, *right;
 };
@@ -136,6 +119,31 @@ struct input {
  * Definition of enumerations
  */
 
+/* data type letters */
+enum {
+	L_INT8      = 'C',
+	L_INT16     = 'I',
+	L_INT32     = 'W',
+	L_INT64     = 'Q',
+	L_UINT8     = 'K',
+	L_UINT16    = 'N',
+	L_UINT32    = 'Z',
+	L_UINT64    = 'O',
+	L_BOOL      = 'B',
+
+	L_FLOAT     = 'J',
+	L_DOUBLE    = 'D',
+	L_LDOUBLE   = 'H',
+
+	L_ELLIPSIS  = 'E',
+	L_VOID      = '0',
+	L_POINTER   = 'P',
+	L_FUNCTION  = 'F',
+	L_ARRAY     = 'V',
+	L_UNION     = 'U',
+	L_STRUCT    = 'S',
+};
+
 /* recovery points */
 enum {
 	END_DECL,
@@ -148,7 +156,8 @@ enum {
 enum {
 	FTN = 1,
 	PTR,
-	ARY
+	ARY,
+	KRFTN
 };
 
 /* namespaces */
@@ -177,7 +186,9 @@ enum {
 	ISEMITTED  =    1024,
 	ISDEFINED  =    2048,
 	ISSTRING   =    4096,
-	ISTYPEDEF  =    8192
+	ISTYPEDEF  =    8192,
+	ISINITLST  =   16384,
+	HASINIT    =   32768
 };
 
 /* lexer mode, compiler or preprocessor directive */
@@ -197,6 +208,7 @@ enum tokens {
 	IDEN,
 	SCLASS,
 	CONSTANT,
+	STRING,
 	SIZEOF,
 	INDIR,
 	INC,
@@ -341,6 +353,7 @@ extern Type *ctype(unsigned type, unsigned sign, unsigned size);
 extern Type *mktype(Type *tp, int op, TINT nelem, Type *data[]);
 extern Type *duptype(Type *base);
 extern struct limits *getlimits(Type *tp);
+extern void typesize(Type *tp);
 
 /* symbol.c */
 extern void dumpstab(char *msg);
@@ -352,6 +365,7 @@ extern void pushctx(void), popctx(void);
 extern void killsym(Symbol *sym);
 extern Symbol *newlabel(void);
 extern void keywords(struct keyword *key, int ns);
+extern Symbol *newstring(char *s, size_t len);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
@@ -386,14 +400,16 @@ extern Node *castcode(Node *np, Type *newtp);
 extern TUINT ones(int nbytes);
 
 /* expr.c */
-extern Node *expr(void), *negate(Node *np), *constexpr(void);
+extern Node *decay(Node *), *negate(Node *np), *assign(void);;
 extern Node *convert(Node *np, Type *tp1, char iscast);
-extern Node *iconstexpr(void), *condexpr(void);
+extern Node *iconstexpr(void), *condexpr(void), *expr(void);
 extern bool isnodecmp(int op);
 extern int negop(int op);
 extern bool cmpnode(Node *np, TUINT val);
-extern Node *decay(Node *np);
-extern void initializer(Symbol *sym, Type *tp, int nelem);
+
+/* init.c */
+extern void initializer(Symbol *sym, Type *tp);
+extern Node *initlist(Type *tp);
 
 /* cpp.c */
 extern void icpp(void);
@@ -419,7 +435,8 @@ extern Symbol *curfun, *zero, *one;
 
 extern Type *voidtype, *pvoidtype, *booltype,
             *uchartype,   *chartype, *schartype,
-            *uinttype,    *inttype,     *sizettype,
+            *uinttype,    *inttype,
+            *sizettype, *pdifftype,
             *ushortype,   *shortype,
             *longtype,    *ulongtype,
             *ullongtype,  *llongtype,

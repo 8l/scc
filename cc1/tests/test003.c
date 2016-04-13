@@ -1,22 +1,22 @@
 /*
 name: TEST003
 description: Select function to call inside ternary operator
+error:
 output:
-F1	I
-G2	F1	foo
+G2	F	"foo
 {
 \
-	r	#I2A
+	h	#I2A
 }
-G3	F1	bar
+G3	F	"bar
 {
 \
-	r	#I18
+	h	#I18
 }
-G4	F1	main
+G4	F	"main
 {
 \
-	r	G2	cI
+	h	G2	cI
 }
 */
 

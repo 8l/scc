@@ -2,14 +2,19 @@
 /*
 name: TEST027
 description: Test of cpp stringizer
+error:
 output:
-F2	I
-G3	F2	main
+G3	F	"main
 {
 \
-A5	P	p
-	A5	"68656C6C6F20697320626574746572207468616E20627965	'P	:P
-	r	A5	@K	gI
+A5	P	"p
+V7	K	#N25
+Y6	V7	"	(
+	#"hello is better than bye
+	#K00
+)
+	A5	Y6	'P	:P
+	h	A5	@K	gI
 }
 */
 
@@ -23,4 +28,3 @@ main(void)
 
 	return *p;
 }
-

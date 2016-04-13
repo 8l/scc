@@ -1,25 +1,25 @@
 /*
 name: TEST009
 description: Basic test for loops
+error:
 output:
-F1	I	E
-G2	F1	main
+G2	F	"main
 {
 \
-A3	I	x
+A3	I	"x
 	A3	#I0	:I
 	j	L6
 	e
 L4
 	A3	A3	#I1	+I	:I
 L6
-	j	L4	A3	#IA	<I
+	y	L4	A3	#IA	<I
 	b
 L5
-	j	L7	A3	#IA	=I
-	r	#I1
+	y	L7	A3	#IA	=I
+	h	#I1
 L7
-	r	#I0
+	h	#I0
 }
 */
 

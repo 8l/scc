@@ -3,13 +3,13 @@
 name: TEST021
 description: Basic test for char constants
 comments: This test is done for z80 implementation
+error:
 output:
-F1	I
-G2	F1	main
+G2	F	"main
 {
 \
-A3	K	uc
-A4	C	sc
+A3	K	"uc
+A4	C	"sc
 	A3	#KFF	:K
 	A3	#K23	:K
 	A3	#K1	:K

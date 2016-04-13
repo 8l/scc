@@ -1,35 +1,35 @@
 /*
 name: TEST018
 description: Basic test for arrays
+error:
 output:
-F1	I	E
-G2	F1	main
+G2	F	"main
 {
 \
-V3	K	#4
-V4	V3	#2
-A5	V4	arr
-A7	P	p
-A9	P	q
-V10	I	#4
-A11	V10	v
+V3	K	#N4
+V4	V3	#N2
+A5	V4	"arr
+A7	P	"p
+A9	P	"q
+V10	I	#N4
+A11	V10	"v
 	A7	A5	'P	:P
 	A9	A5	'P	#P4	+P	#P3	+P	:P
 	A5	'P	#P4	+P	#P3	+P	@K	#K2	:K
 	A11	#I2	:I
-	j	L13	A5	'P	#P4	+P	#P3	+P	@K	gI	#I2	=I
-	r	#I1
+	y	L13	A5	'P	#P4	+P	#P3	+P	@K	gI	#I2	=I
+	h	#I1
 L13
-	j	L14	A7	#P4	+P	#P3	+P	@K	gI	#I2	=I
-	r	#I1
+	y	L14	A7	#P4	+P	#P3	+P	@K	gI	#I2	=I
+	h	#I1
 L14
-	j	L15	A9	@K	gI	#I2	=I
-	r	#I1
+	y	L15	A9	@K	gI	#I2	=I
+	h	#I1
 L15
-	j	L16	A11	#I2	=I
-	r	#I1
+	y	L16	A11	#I2	=I
+	h	#I1
 L16
-	r	#I0
+	h	#I0
 }
 */
 

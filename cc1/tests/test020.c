@@ -2,14 +2,14 @@
 /*
 name: TEST020
 description: Basic test for integer algebraic identities
-output:
+error:
 test020.c:81: warning: division by 0
 test020.c:82: warning: division by 0
-F1	I
-G2	F1	main
+output:
+G2	F	"main
 {
 \
-A3	I	i
+A3	I	"i
 	A3	A3	#I0	!I	:I
 	A3	A3	#I0	!I	#I1	,I	:I
 	A3	#I1	:I

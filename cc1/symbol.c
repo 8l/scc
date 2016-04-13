@@ -1,5 +1,4 @@
 
-#include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +6,7 @@
 
 #include "../inc/cc.h"
 #include "../inc/sizes.h"
+#include "arch.h"
 #include "cc1.h"
 
 #define NR_SYM_HASH 64
@@ -111,6 +111,10 @@ popctx(void)
 			killsym(sym);
 		}
 		labels = NULL;
+		if (curfun) {
+			free(curfun->u.pars);
+			curfun->u.pars = NULL;
+		}
 	}
 
 	for (sym = head; sym && sym->ctx > curctx; sym = next) {
@@ -223,6 +227,20 @@ newsym(int ns)
 }
 
 Symbol *
+newstring(char *s, size_t len)
+{
+	Symbol *sym = newsym(NS_IDEN);
+
+	sym->id = newid();
+	sym->flags |= ISSTRING | ISCONSTANT | ISPRIVATE;
+	sym->u.s = xmalloc(len);
+	if (s)
+		memcpy(sym->u.s, s, len);
+	sym->type = mktype(chartype, ARY, len, NULL);
+	return sym;
+}
+
+Symbol *
 newlabel(void)
 {
 	Symbol *sym = newsym(NS_LABEL);
@@ -243,8 +261,24 @@ lookup(int ns, char *name)
 		if (*t != c || strcmp(t, name))
 			continue;
 		sns = sym->ns;
-		if (sns == NS_KEYWORD || sns == NS_CPP || sns == ns)
+		/*
+		 * CPP namespace has a total priority over the another
+		 * namespaces, because it is a previous pass,
+		 * If we are looking in the CPP namespace,
+		 * we don't want symbols related to keywords or types.
+		 * When a lookup is done in a namespace associated
+		 * to a struct we also want symbols of NS_IDEN which
+		 * are typedef, because in other case we cannot declare
+		 * fields of such types.
+		 */
+		if (sns == NS_CPP && !disexpand || sns == ns)
 			return sym;
+		if (ns == NS_CPP)
+			continue;
+		if (sns == NS_KEYWORD ||
+		    (sym->flags & ISTYPEDEF) && ns >= NS_STRUCTS) {
+			return sym;
+		}
 	}
 	return allocsym(ns, name);
 }

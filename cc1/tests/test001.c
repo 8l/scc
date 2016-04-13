@@ -1,15 +1,19 @@
 /*
 name: TEST001
 description: Basic hello world test
+error:
 output:
-F3	I	P	E
-X4	F3	printf
-F5	I
-G6	F5	main
+G6	F	"main
 {
 \
-	X4	"68656C6C6F20776F726C640A	'P	pP	cI
-	r	#I0
+V8	K	#N13
+Y7	V8	"	(
+	#"hello world
+	#K0A
+	#K00
+)
+	X4	Y7	'P	pP	cI
+	h	#I0
 }
 */
 

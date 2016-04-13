@@ -1,11 +1,11 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../inc/cc.h"
+#include "arch.h"
 #include "cc1.h"
 
-
-/* TODO: Add ENUM in the cases */
 
 TUINT
 ones(int nbytes)
@@ -21,7 +21,7 @@ static bool
 addi(TINT l, TINT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
-	TINT max = lim->max.i, min = lim->min.i;
+	TINT max = lim->max.i, min = -lim->min.i;
 
 	if (l < 0 && r < 0 && l >= min - r ||
 	    l == 0 ||
@@ -69,7 +69,7 @@ static bool
 muli(TINT l, TINT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
-	TINT max = lim->max.i, min = lim->min.i;
+	TINT max = lim->max.i, min = -lim->min.i;
 
 	if (l > -1 && l <= 1 ||
 	    r > -1 && r <= 1 ||
@@ -87,7 +87,7 @@ static bool
 mulf(TFLOAT l, TFLOAT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
-	TFLOAT max = lim->max.i, min = lim->min.i;
+	TFLOAT max = lim->max.f, min = lim->min.f;
 
 	if (l > -1 && l <= 1 ||
 	    r > -1 && r <= 1 ||
@@ -106,7 +106,7 @@ divi(TINT l, TINT r,  Type *tp)
 {
 	struct limits *lim = getlimits(tp);
 
-	if (r == 0 || l == lim->min.i && r == -1) {
+	if (r == 0 || l == -lim->min.i && r == -1) {
 		warn("overflow in constant expression");
 		return 0;
 	}
@@ -317,13 +317,23 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 		warn("division by 0");
 		return NULL;
 	}
-	if (!lp->constant || rp && !rp->constant)
+	/*
+	 * Return if any of the children is no constant,
+	 * or it is a constant generated when
+	 * the address of a static variable is taken
+	 * (when we don't know the physical address so
+	 * we cannot fold it)
+	 */
+	if (!lp->constant || !lp->sym ||
+	    rp && (!rp->constant || !rp->sym)) {
 		return NULL;
+	}
 	optype = lp->type;
 	ls = lp->sym;
 	rs = (rp) ? rp->sym : NULL;
 
 	switch (type = optype->op) {
+	case ENUM:
 	case INT:
 		if (!optype->sign)
 			type = UNSIGNED;
@@ -480,6 +490,25 @@ change_to_comma:
 	return NULL;
 }
 
+static Node *
+foldternary(int op, Type *tp, Node *cond, Node *body)
+{
+	Node *np;
+
+	if (!cond->constant)
+		return node(op, tp, cond, body);
+	if (cmpnode(cond, 0)) {
+		np = body->right;
+		freetree(body->left);
+	} else {
+		np = body->left;
+		freetree(body->right);
+	}
+	freetree(cond);
+	free(body);
+	return np;
+}
+
 /*
  * TODO: transform simplify in a recursivity
  * function, because we are losing optimization
@@ -490,6 +519,8 @@ simplify(int op, Type *tp, Node *lp, Node *rp)
 {
 	Node *np;
 
+	if (op == OASK)
+		return foldternary(op, tp, lp, rp);
 	commutative(&op, &lp, &rp);
 	if ((np = fold(op, tp, lp, rp)) != NULL)
 		return np;

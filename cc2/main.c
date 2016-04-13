@@ -1,31 +1,24 @@
 
 #include <stdarg.h>
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../inc/cc.h"
-
+#include "arch.h"
 #include "cc2.h"
 #include "error.h"
-
-char odebug;
 
 void
 error(unsigned nerror, ...)
 {
 	va_list va;
 	va_start(va, nerror);
-	if (nerror >= ENUMERR)
-		fprintf(stderr, "incorrect error number '%d'", nerror);
-	else
-		vfprintf(stderr, errlist[nerror], va);
+	vfprintf(stderr, errlist[nerror], va);
 	va_end(va);
 	putc('\n', stderr);
 	exit(1);
 }
 
-bool
+static int
 moreinput(void)
 {
 	int c;
@@ -42,12 +35,11 @@ repeat:
 int
 main(void)
 {
-	fputs("cc2 is not updated with the output of cc1", stderr);
-	exit(1);
+
 	while (moreinput()) {
 		parse();
 		optimize();
-		addable();
+		addressability();
 		generate();
 		peephole();
 		writeout();

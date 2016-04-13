@@ -1,22 +1,22 @@
 /*
 name: TEST007
 description: basic while test
+error:
 output:
-F1	I	E
-G2	F1	main
+G2	F	"main
 {
 \
-A3	I	x
+A3	I	"x
 	A3	#IA	:I
 	j	L6
 	e
 L4
 	A3	A3	#I1	-I	:I
 L6
-	j	L4	A3	#I0	!I
+	y	L4	A3	#I0	!I
 	b
 L5
-	r	A3
+	h	A3
 }
 */
 

@@ -2,15 +2,20 @@
 /*
 name: TEST026
 descritpion: Test of predefined cpp macros
+error:
 output:
-F2	I
-G3	F2	main
+G3	F	"main
 {
 \
-A4	I	y
-A6	P	p
-	A6	"746573743032362E63	'P	:P
-	A4	#I1E	:I
+A4	I	"y
+A6	P	"p
+V8	K	#N10
+Y7	V8	"	(
+	#"test026.c
+	#K00
+)
+	A6	Y7	'P	:P
+	A4	#I23	:I
 	A4	#I1	:I
 	A4	#I1	:I
 	A4	#I1	:I

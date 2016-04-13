@@ -1,18 +1,18 @@
 /*
 name: TEST002
 description: Test forward references before definition of types
+error:
 output:
-G4	P	x
-F7	I
-G8	F7	main
+G4	P	"x
+G8	F	"main
 {
 \
-S2	S
-M5	I	i
-M6	P	next
-A9	S2	y
-A10	P	p
-A11	N	n
+S2	"S	#NC	#N2
+M5	I	"i	#N0
+M6	P	"next	#N2
+A9	S2	"y
+A10	P	"p
+A11	N	"n
 	A9	M5	.I	#I0	:I
 	G4	@S2	A9	:S2
 	A11	#N0	:N	A10	A9	'P	:P	,P
@@ -21,7 +21,7 @@ A11	N	n
 L12
 	A11	#N1	:+N	A10	A10	@S2	M6	.P	:P	,P
 L14
-	j	L12	A10	#P0	!I
+	y	L12	A10	#P0	!I
 	b
 L13
 }

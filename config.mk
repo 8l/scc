@@ -3,16 +3,22 @@ VERSION     = 0.1
 
 # Customize below to fit your system
 ARCH = z80
+DRIVER = posix
 
 # paths
-PREFIX    = /usr/local/
+PREFIX    = $(HOME)
 MANPREFIX = ${PREFIX}/share/man
 
-CC = cc
-LD = $(CC)
-AR = ar
+# if your system is not POSIX maybe you want to use cc or gcc
+# CC = c99
+# AR = ar
 
 # for Plan9 add -D_SUSV2_SOURCE -DNBOOL
-CFLAGS   = -O2 -std=c99
-LDFLAGS  = -s
-CPPFLAGS = -DNDEBUG -Iarch/$(ARCH)
+SCC_CFLAGS = -DNDEBUG -Iarch/$(ARCH) -DPREFIX=\"$(PREFIX)\" $(CFLAGS)
+SCC_LDFLAGS  = $(LDFLAGS)
+
+.c.o:
+	$(CC) $(SCC_CFLAGS) -o $@ -c $<
+
+.c:
+	$(CC) $(SCC_CFLAGS) $(SCC_LDFLAGS) -o $@ $<

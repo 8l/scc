@@ -1,6 +1,5 @@
 
 #include <errno.h>
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,596 +7,632 @@
 #include "../inc/cc.h"
 #include "../inc/sizes.h"
 
+#include "arch.h"
 #include "cc2.h"
 
-#define MAXLINE 200
-#define NR_STACKSIZ 32
-#define NR_NODEPOOL 128
-#define NR_EXPRESSIONS 64
+#define MAXLINE     200
+#define STACKSIZ     50
 
-enum {
-	LOCAL, GLOBAL, PARAMETER
+extern Type int8type, int16type, int32type, int64type,
+            uint8type, uint16type, uint32type, uint64type,
+            float32type, float64type, float80type,
+            booltype,
+            ptrtype,
+            voidtype,
+            elipsistype;
+
+Type funtype = {
+	.flags = FUNF
 };
 
-Symbol *curfun;
-static Node *stack[NR_STACKSIZ], **stackp;
-static Node *listexp[NR_EXPRESSIONS], **listp;
-static Node nodepool[NR_NODEPOOL], *newp;
-
-
-static Type Funct = {
-	.letter = L_FUNCTION,
+union tokenop {
+	void *arg;
+	int op;
 };
 
-static Type l_int8 = {
-	.letter = L_INT8,
-	.size = 1,
-	.align = 2,
-	.flags = SIGNF | INTF
+typedef void parsefun(char *, union tokenop);
+static parsefun type, symbol, getname, unary, binary, ternary, call,
+                parameter, constant, composed, binit, einit,
+                jump, oreturn, loop, assign, ocase, odefault, casetbl;
+
+typedef void evalfun(void);
+static evalfun vardecl, beginfun, endfun, endpars, stmt,
+               array, aggregate, flddecl, labeldcl;
+
+static struct decoc {
+	void (*eval)(void);
+	void (*parse)(char *token, union tokenop);
+	union tokenop u;
+} optbl[] = {            /*  eval     parse           args */
+	[AUTO]        = {  vardecl,  symbol, .u.op  =        OAUTO},
+	[REG]         = {  vardecl,  symbol, .u.op  =         OREG},
+	[GLOB]        = {  vardecl,  symbol, .u.op  =         OMEM},
+	[EXTRN]       = {  vardecl,  symbol, .u.op  =         OMEM},
+	[PRIVAT]      = {  vardecl,  symbol, .u.op  =         OMEM},
+	[LOCAL]       = {  vardecl,  symbol, .u.op  =         OMEM},
+	[MEMBER]      = {  flddecl,  symbol, .u.op  =         OMEM},
+	[LABEL]       = { labeldcl,  symbol, .u.op  =       OLABEL},
+
+	[INT8]        = {     NULL,    type, .u.arg =    &int8type},
+	[INT16]       = {     NULL,    type, .u.arg =   &int16type},
+	[INT32]       = {     NULL,    type, .u.arg =   &int32type},
+	[INT64]       = {     NULL,    type, .u.arg =   &int64type},
+	[UINT8]       = {     NULL,    type, .u.arg =   &uint8type},
+	[UINT16]      = {     NULL,    type, .u.arg =  &uint16type},
+	[UINT32]      = {     NULL,    type, .u.arg =  &uint32type},
+	[UINT64]      = {     NULL,    type, .u.arg =  &uint64type},
+	[FLOAT]       = {     NULL,    type, .u.arg = &float32type},
+	[DOUBLE]      = {     NULL,    type, .u.arg = &float64type},
+	[LDOUBLE]     = {     NULL,    type, .u.arg = &float80type},
+	[VOID]        = {     NULL,    type, .u.arg =    &voidtype},
+	[BOOL]        = {     NULL,    type, .u.arg =    &booltype},
+	[POINTER]     = {     NULL,    type, .u.arg =     &ptrtype},
+	[ELLIPSIS]    = {     NULL,    type, .u.arg = &elipsistype},
+
+	[FUNCTION]    = {     NULL,    type, .u.arg =     &funtype},
+	[VECTOR]      = {    array,composed,                     0},
+	[UNION]       = {aggregate,composed,                     0},
+	[STRUCT]      = {aggregate,composed,                     0},
+
+	[ONAME]       = {     NULL, getname,                     0},
+	['{']         = { beginfun,    NULL,                     0},
+	['}']         = {   endfun,    NULL,                     0},
+	['(']         = {     NULL,   binit,                     0},
+	[')']         = {     NULL,   einit,                     0},
+	[OEPARS]      = {  endpars,    NULL,                     0},
+	[OSTMT]       = {     stmt,    NULL,                     0},
+
+	[OCPL]        = {     NULL,   unary,                     0},
+	[ONEG]        = {     NULL,   unary,                     0},
+	[OADDR]       = {     NULL,   unary,                     0},
+	[OPTR]        = {     NULL,   unary,                     0},
+	[OCAST]       = {     NULL,   unary,                     0},
+	[OPAR ]       = {     NULL,   unary,                     0},
+
+	[OAND]        = {     NULL,  binary,                     0},
+	[OOR]         = {     NULL,  binary,                     0},
+	[OFIELD]      = {     NULL,  binary,                     0},
+	[OADD]        = {     NULL,  binary,                     0},
+	[OSUB]        = {     NULL,  binary,                     0},
+	[OMUL]        = {     NULL,  binary,                     0},
+	[OMOD]        = {     NULL,  binary,                     0},
+	[ODIV]        = {     NULL,  binary,                     0},
+	[OSHL]        = {     NULL,  binary,                     0},
+	[OSHR]        = {     NULL,  binary,                     0},
+	[OLT]         = {     NULL,  binary,                     0},
+	[OGT]         = {     NULL,  binary,                     0},
+	[OLE]         = {     NULL,  binary,                     0},
+	[OGE]         = {     NULL,  binary,                     0},
+	[OEQ]         = {     NULL,  binary,                     0},
+	[ONE]         = {     NULL,  binary,                     0},
+	[OBAND]       = {     NULL,  binary,                     0},
+	[OBOR]        = {     NULL,  binary,                     0},
+	[OBXOR]       = {     NULL,  binary,                     0},
+	[OCOMMA]      = {     NULL,  binary,                     0},
+
+	[OASSIG]      = {     NULL,  assign,                     0},
+	[OASK]        = {     NULL, ternary,                     0},
+	[OCALL]       = {     NULL,    call,                     0},
+
+	[OCONST]      = {     NULL,constant,                     0},
+
+	[OJMP]        = {     NULL,    jump,                     0},
+	[OBRANCH]     = {     NULL,    jump,                     0},
+	[ORET]        = {     NULL, oreturn,                     0},
+
+	[OBLOOP]      = {     NULL,    loop,                     0},
+	[OELOOP]      = {     NULL,    loop,                     0},
+
+	[OCASE]       = {     NULL,    jump,                     0},
+	[OSWITCH]     = {     NULL,    jump,                     0},
+
+	[ODEFAULT]    = {     NULL,odefault,                     0},
+	[OTABLE]      = {     NULL, casetbl,                     0}
 };
 
-static Type l_int16 = {
-	.letter = L_INT16,
-	.size = 2,
-	.align = 2,
-	.flags = SIGNF | INTF
-
-};
-
-static Type l_int32 = {
-	.letter = L_INT32,
-	.size = 4,
-	.align = 4,
-	.flags = SIGNF | INTF
-
-};
-
-static Type l_int64 = {
-	.letter = L_INT64,
-	.size = 8,
-	.align = 8,
-	.flags = SIGNF | INTF
-
-};
-
-static Type l_uint8 = {
-	.letter = L_UINT8,
-	.size = 1,
-	.align = 2,
-	.flags =  INTF
-};
-
-static Type l_uint16 = {
-	.letter = L_UINT16,
-	.size = 2,
-	.align = 2,
-	.flags =  INTF
-};
-
-static Type l_uint32 = {
-	.letter = L_UINT32,
-	.size = 4,
-	.align = 4,
-	.flags =  INTF
-};
-
-static Type l_uint64 = {
-	.letter = L_UINT64,
-	.size = 8,
-	.align = 8,
-	.flags =  INTF
-};
-
-static void cast(char *), operator(char *), assignment(char *), increment(char *),
-            globvar(char *), localvar(char *), paramvar(char *), label(char *),
-            immediate(char *), unary(char *), oreturn(char *);
-
-/*TODO: Remove hardcoded symbols */
-
-static void (*optbl[])(char *) = {
-	[L_INT8] = cast,
-	[L_INT16] = cast,
-	[L_INT32] = cast,
-	[L_INT64] = cast,
-	[L_UINT8] = cast,
-	[L_UINT16] = cast,
-	[L_UINT32] = cast,
-	[L_UINT64] = cast,
-	[L_BOOL] = cast,
-	[L_FLOAT] = cast,
-	[L_DOUBLE] = cast,
-	[L_LDOUBLE] = cast,
-	[L_POINTER] = cast,
-	[L_VOID] = cast,
-	['+'] = operator,
-	['%'] = operator,
-	['-'] = operator,
-	['*'] = operator,
-	['/'] = operator,
-	['l'] = operator,
-	['r'] = operator,
-	['&'] = operator,
-	['|'] = operator,
-	['^'] = operator,
-	[':'] = assignment,
-	[';'] = increment,
-	['Y'] = globvar,
-	['A'] = localvar,
-	['K'] = localvar,
-	['T'] = localvar,
-	['G'] = globvar,
-	['P'] = paramvar,
-	['L'] = label,
-	['#'] = immediate,
-	['@'] = unary,
-	['a'] = unary,
-	['<'] = operator,
-	['>'] = operator,
-	[']'] = operator,
-	['['] = operator,
-	['='] = operator,
-	['!'] = unary,
-	['y'] = oreturn,
-	['j'] = NULL,
-	['o'] = operator,
-	['_'] = unary,
-	['~'] = unary,
-	[','] = operator,
-	['\177'] = NULL
-};
+static int sclass, inpars, ininit, endf, lineno;
+static Node *stmtp;
+static void *stack[STACKSIZ], **sp = stack;
 
 static void
-prnode(Node *np)
+push(void *elem)
 {
-	if (np->left)
-		prnode(np->left);
-	if (np->right)
-		prnode(np->right);
-	fprintf(stderr, "\t%c%c", np->op, np->type.letter);
-}
-
-void
-prtree(Node *np)
-{
-	prnode(np);
-	putc('\n', stderr);
-}
-
-void
-apply(Node *(*fun)(Node *))
-{
-	Node **list, *np;
-
-	for (list = curfun->u.f.body; np = *list; ++list)
-		*list++ = (*fun)(np);
-}
-
-static Symbol *
-parameter(char *num)
-{
-	static Symbol tbl[NR_FUNPARAM];
-	Symbol *sym;
-	unsigned i = atoi(num);
-
-	if (!curfun)
-		error(ESYNTAX);
-	if (i >= NR_FUNPARAM)
-		error(EPARNUM);
-	sym = &tbl[i];
-	sym->id = i;
-	return sym;
-}
-
-static Symbol *
-local(char *num)
-{
-	static Symbol tbl[NR_INT_IDENT];
-	Symbol *sym;
-	unsigned i = atoi(num);
-
-	if (!curfun)
-		error(ESYNTAX);
-	if (i >= NR_INT_IDENT)
-		error(EINTNUM);
-	sym = &tbl[i];
-	sym->id = i;
-	return sym;
-}
-
-static Symbol *
-global(char *num)
-{
-	static Symbol tbl[NR_EXT_IDENT];
-	Symbol *sym;
-	unsigned i = atoi(num);
-
-	if (i >= NR_EXT_IDENT)
-		error(EEXTNUM);
-
-	sym = &tbl[i];
-	sym->id = i;
-	return sym;
-}
-
-static Node *
-newnode(void)
-{
-	if (newp == &nodepool[NR_NODEPOOL])
-		error(ENODEOV);
-	return newp++;
-}
-
-Node *
-imm(TINT i)
-{
-	Node *np = newnode();
-
-	np->op = CONST;
-	np->type = l_int16;
-	/* FIX: memory leak */
-	np->sym = xmalloc(sizeof(Symbol));
-	np->sym->u.imm = i;
-	np->left = np->right = NULL;
-	return np;
-}
-
-static void
-push(Node *np)
-{
-	if (stackp == &stack[NR_STACKSIZ])
+	if (sp == stack[STACKSIZ])
 		error(ESTACKO);
-	*stackp++ = np;
+	*sp++ = elem;
 }
 
-static Node *
+static void *
 pop(void)
 {
-	if (stackp == stack)
+	if (sp == stack)
 		error(ESTACKU);
-	return *--stackp;
+	return *--sp;
 }
 
-static Type *
-gettype(char *type)
+static int
+empty(void)
 {
-	switch (type[0]) {
-	case L_INT8:
-		return &l_int8;
-	case L_INT16:
-		return &l_int16;
-	case L_INT32:
-		return &l_int32;
-	case L_INT64:
-		return &l_int64;
-	case L_UINT8:
-		return &l_uint8;
-	case L_UINT16:
-		return &l_uint16;
-	case L_UINT32:
-		return &l_uint32;
-	case L_UINT64:
-		return &l_uint64;
-	case L_FUNCTION:
-		return &Funct;
-	default:
-		error(ETYPERR);
-	}
+	return sp == stack;
 }
 
-static Symbol *
-symbol(uint8_t t, char *token)
+static void
+type(char *token, union tokenop u)
+{
+	push(u.arg);
+}
+
+static void
+composed(char *token, union tokenop u)
 {
 	Symbol *sym;
-	static Symbol *(*tbl[3])(char *)= {
-		[LOCAL] = local,
-		[GLOBAL] = global,
-		[PARAMETER] = parameter
-	};
-	sym = (*tbl[t])(token+1);
-	sym->kind = *token;
-	return sym;
+
+	sym = getsym(atoi(token+1));
+	push(&sym->type);
 }
 
 static void
-variable(uint8_t t, char *token)
+getname(char *t, union tokenop u)
 {
-	Node *np = newnode();
-	Symbol *sym = symbol(t, token);
-
-	np->sym = sym;
-	np->op = sym->u.v.sclass;
-	np->type = sym->u.v.type;
-	np->left = np->right = NULL;
-	push(np);
+	push((*++t) ? xstrdup(t) : NULL);
 }
 
 static void
-localvar(char *token)
-{
-	variable(LOCAL, token);
-}
-
-static void
-globvar(char *token)
-{
-	variable(GLOBAL, token);
-}
-
-static void
-paramvar(char *token)
-{
-	variable(PARAMETER, token);
-}
-
-static void
-immediate(char *token)
-{
-	/* TODO: check type of immediate */
-	push(imm(atoi(token+2)));
-}
-
-static void
-unary(char *token)
-{
-	Node *np = newnode();
-
-	np->right = NULL;
-	np->left = pop();
-	np->type = *gettype(token+1);
-	np->op = token[0];
-	push(np);
-}
-
-static void
-operator(char *token)
-{
-	Node *np = newnode();
-
-	np->right = pop();
-	np->left = pop();
-	np->type = *gettype(token+1);
-	np->op = token[0];
-	push(np);
-}
-
-static void
-label(char *token)
-{
-	Node *np = newnode();
-
-	np->left = np->right = NULL;
-	np->op = LABEL;
-	np->sym = local(token);
-	push(np);
-}
-
-static void
-increment(char *token)
-{
-	Node *np = newnode();
-
-	np->right = pop();
-	np->left = pop();
-	np->type = *gettype(token+2);
-	np->op = token[0];
-	switch (np->subop = token[1]) {
-	case '-': case '+':
-		push(np);
-		break;
-	default:
-		error(ESYNTAX);
-	}
-}
-
-static void
-assignment(char *token)
-{
-	Node *np = newnode();
-
-	np->right = pop();
-	np->left = pop();
-	np->op = *token;
-	switch (*++token) {
-	case OADD: case OSUB: case OINC:  case OMOD: case ODIV:
-	case OSHL: case OSHR: case OBAND: case OBOR: case OBXOR:
-		np->subop = *++token;
-	default:
-		np->type = *gettype(token);
-		break;
-	}
-	push(np);
-}
-
-static void
-cast(char *token)
-{
-	Node *np = newnode();
-
-	np->right = NULL;
-	np->left = pop();
-	np->op = OCAST;
-	np->type = *gettype(token+1);
-	push(np);
-}
-
-static void
-expr(char *token)
-{
-	void (*fun)(char *);
-	unsigned c;
-
-	do {
-		if ((c = token[0]) > 0x7f || (fun = optbl[c]) == NULL)
-			error(ESYNTAX);
-		(*fun)(token);
-	} while (token = strtok(NULL, "\t"));
-}
-
-static void
-expression(char *token)
+symbol(char *token, union tokenop u)
 {
 	Node *np;
 
-	if (!curfun)
+	sclass = *token++;
+	np = newnode();
+	np->u.sym = getsym(atoi(token));
+	np->op = u.op;
+	push(np);
+}
+
+static Type *
+gettype(char *token)
+{
+	struct decoc *dp;
+
+	dp = &optbl[*token];
+	if (!dp->parse)
 		error(ESYNTAX);
-
-	expr(token);
-
-	np = pop();
-	if (stackp != stack)
-		error(EEXPBAL);
-	if (listp == &listexp[NR_EXPRESSIONS])
-		error(EEXPROV);
-	*listp++ = np;
+	(*dp->parse)(token, dp->u);
+	return pop();
 }
 
 static void
-oreturn(char *token)
+constant(char *token, union tokenop u)
 {
-	Node *np = newnode(), *lp;
+	static char letters[] = "0123456789ABCDEF";
+	Node *np = newnode();
+	TUINT v;
+	unsigned c;
 
-	np->op = token[0];
-
-	if (token = strtok(NULL, "\t")) {
-		expr(token);
-		lp = pop();
-		np->left = lp;
-		np->type = lp->type;
+	++token;
+	if (*token == OSTRING) {
+		++token;
+		np->op = OSTRING;
+		np->type.flags = STRF;
+		np->type.size = strlen(token);
+		np->type.align = int8type.align;
+		np->u.s = xstrdup(token);
 	} else {
-		np->left = NULL;
+		np->op = OCONST;
+		np->type = *gettype(token++);
+		for (v = 0; c = *token++; v += c) {
+			v <<= 4;
+			c = strchr(letters, c) - letters;
+		}
+		np->u.i = v;
 	}
+	push(np);
+}
+
+static void
+assign(char *token, union tokenop u)
+{
+	int c, op = *token++;
+	Node *np = newnode();
+
+	switch (*token) {
+	case ODIV:
+	case OMOD:
+	case OADD:
+	case OSUB:
+	case OSHL:
+	case OSHR:
+	case OBAND:
+	case OBXOR:
+	case OBOR:
+	case OINC:
+	case ODEC:
+		c = *token++;
+		break;
+	default:
+		c = 0;
+		break;
+	}
+
+	np->u.subop = c;
+	np->op = op;
+	np->type = *gettype(token);
+	np->right = pop();
+	np->left = pop();
+	push(np);
+}
+
+static void
+ternary(char *token, union tokenop u)
+{
+	Node *ask, *colon;
+	Type *tp;
+
+	tp = gettype(++token);
+
+	colon = newnode();
+	colon->op = OCOLON;
+	colon->right = pop();
+	colon->left = pop();
+
+	ask = newnode();
+	ask->op = OASK;
+	ask->type = *tp;
+	ask->left = pop();
+	push(ask);
+}
+
+static Node *
+eval(char *tok)
+{
+	struct decoc *dp;
+
+	do {
+		dp = &optbl[*tok];
+		if (!dp->parse)
+			break;
+		(*dp->parse)(tok, dp->u);
+	} while (tok = strtok(NULL, "\t\n"));
+}
+
+static int
+nextline(void)
+{
+	char line[MAXLINE];
+	size_t len;
+	int c;
+	void (*fun)(void);
+
+repeat:
+	++lineno;
+	if (!fgets(line, sizeof(line), stdin))
+		return 0;
+	if ((len = strlen(line)) == 0 || line[0] == '\n')
+		goto repeat;
+	if (line[len-1] != '\n')
+		error(ELNLINE);
+	line[len-1] = '\0';
+
+	c = *line;
+	eval(strtok(line, "\t\n"));
+	if ((fun = *optbl[c].eval) != NULL)
+		(*fun)();
+	if (sp != stack)
+		error(ESTACKA);
+	return 1;
+}
+
+static void
+oreturn(char *token, union tokenop u)
+{
+	Node *np;
+
+	np = newnode();
+	np->op = *token;
+	eval(strtok(NULL, "\t\n"));
+	if (!empty())
+		np->left = pop();
+	push(np);
+}
+
+static void
+jump(char *token, union tokenop u)
+{
+	Node *np, *aux;
+
+	np = newnode();
+	np->op = *token;
+	eval(strtok(NULL, "\t\n"));
+
+	if (*token != OJMP)
+		np->left = pop();
+	aux = pop();
+	np->u.sym = aux->u.sym;
+	delnode(aux);
+	push(np);
+}
+
+static void
+casetbl(char *token, union tokenop u)
+{
+	Node *np, *aux;
+
+	np = newnode();
+	np->op = *token;
+	eval(strtok(NULL, "\t\n"));
+	np->left = pop();
+	push(np);
+}
+
+static void
+odefault(char *token, union tokenop u)
+{
+	Node *np;
+
+	np = newnode();
+	np->op = *token;
+	eval(strtok(NULL, "\t\n"));
+	np->left = pop();
+	push(np);
+}
+
+static void
+loop(char *token, union tokenop u)
+{
+	Node *np;
+
+	np = newnode();
+	np->op = *token;
+	push(np);
+}
+
+static void
+unary(char *token, union tokenop u)
+{
+	Node *np = newnode();
+
+	np->op = *token++;
+	np->type = *gettype(token);
+	np->left = pop();
 	np->right = NULL;
 	push(np);
 }
 
 static void
-deflabel(char *token)
+call(char *token, union tokenop u)
 {
+	Node *np, *par, *fun;
+
+	for (par = NULL;; par = np) {
+		np = pop();
+		if (np->op != OPAR)
+			break;
+		np->right = par;
+	}
+	fun = newnode();
+	fun->op = *token++;
+	fun->type = *gettype(token);
+	fun->left = np;
+	fun->right = par;
+	push(fun);
+}
+
+static void
+binary(char *token, union tokenop u)
+{
+	Node *np = newnode();
+
+	np->op = *token++;
+	np->type = *gettype(token);
+	np->right = pop();
+	np->left = pop();
+	push(np);
+}
+
+static void
+binit(char *token, union tokenop u)
+{
+	ininit = 1;
+}
+
+static void
+einit(char *token, union tokenop u)
+{
+	ininit = 0;
+	endinit();
+}
+
+static void
+endpars(void)
+{
+	if (!curfun || !inpars)
+		error(ESYNTAX);
+	inpars = 0;
+}
+
+static void
+aggregate(void)
+{
+	Node *align, *size;
+	char *name;
+	Type *tp;
 	Symbol *sym;
 
-	if (!curfun)
-		error(ESYNTAX);
-	sym = local(token);
+	align = pop();
+	size = pop();
+	name = pop();
+	tp = pop();
+
+	tp->size = size->u.i;
+	tp->align = align->u.i;
+	/*
+	 * type is the first field of Symbol so we can obtain the
+	 * address of the symbol from the address of the type.
+	 * We have to do this because composed returns the pointer
+	 * to the type, but in this function we also need the
+	 * symbol to store the name.
+	 */
+	sym = (Symbol *) tp;
+	sym->name = name;
+
+	delnode(align);
+	delnode(size);
 }
 
-static Symbol *
-declaration(uint8_t t, char class, char *token)
+static void
+array(void)
 {
-	Symbol *sym = symbol(t, token);
-	char *s;
+	Type *tp, *base;
+	Node *size;
 
+	size = pop();
+	base = pop();
+	tp = pop();
+	tp->size = size->u.i;
+	tp->align = base->align;
+
+	delnode(size);
+}
+
+static void
+decl(Symbol *sym)
+{
+	Type *tp = &sym->type;
+
+	if (tp->flags & FUNF) {
+		curfun = sym;
+	} else {
+		switch (sym->kind) {
+		case EXTRN:
+		case GLOB:
+		case PRIVAT:
+		case LOCAL:
+			defglobal(sym);
+			break;
+		case AUTO:
+		case REG:
+			if (!curfun)
+				error(ESYNTAX);
+			((inpars) ? defpar : defvar)(sym);
+			break;
+		default:
+			abort();
+		}
+	}
+}
+
+static void
+vardecl(void)
+{
+	Type *tp;
+	Node *np;
+	Symbol *sym;
+	char *name;
+
+	name = pop();
+	tp = pop();
+	np = pop();
+
+	sym = np->u.sym;
+	/*
+	 * We have to free sym->name because in tentative declarations
+	 * we can have multiple declarations of the same symbol, and in
+	 * this case our parser will allocate twice the memory
+	 */
 	free(sym->name);
-	memset(sym, 0, sizeof(*sym));
-	sym->u.v.sclass = class;
+	sym->name = name;
+	sym->type = *tp;
+	sym->kind = sclass;
 
-	if ((s = strtok(NULL, "\t")) == NULL)
-		error(ESYNTAX);
-	sym->u.v.type = *gettype(s);
-	if ((s = strtok(NULL, "\t")) != NULL)
-		sym->name = xstrdup(s);
-
-	return sym;
+	if (ininit)
+		sym->type.flags |= INITF;
+	decl(sym);
+	delnode(np);
 }
 
 static void
-globdcl(char *token)
+flddecl(void)
 {
-	Symbol *sym = declaration(GLOBAL, MEM, token);
+	Node *off, *np;
+	char *name;
+	Type *tp;
+	Symbol *sym;
 
-	switch (token[0]) {
-	case 'X':
-		sym->extrn = 1;
-		break;
-	case 'G':
-		sym->public = 1;
-		break;
-	}
+	off = pop();
+	name = pop();
+	tp = pop();
+	np = pop();
 
-	if (sym->u.v.type.letter != L_FUNCTION)
+	sym = np->u.sym;
+	sym->u.off = off->u.i;
+	sym->name = name;
+	sym->type = *tp;
+
+	delnode(np);
+	delnode(off);
+}
+
+static void
+labeldcl(void)
+{
+	Node *np;
+	Symbol *sym;
+
+	np = pop();
+	sym = np->u.sym;
+	delnode(np);
+	nextline();
+	stmtp->label = sym;
+	sym->u.label = stmtp;
+}
+
+static void
+addstmt(Node *np)
+{
+	if (!curfun->u.label)
+		curfun->u.label = np;
+	else
+		stmtp->stmt = np;
+	stmtp = np;
+}
+
+static void
+stmt(void)
+{
+	Node *np;
+
+	np = pop();
+	if (ininit) {
+		data(np);
+		deltree(np);
 		return;
-
-	if (curfun)
-		error(ESYNTAX);
-
-	curfun = sym;
-	sym->u.f.body = listp = listexp;
-	newp = nodepool;
-}
-
-static void
-paramdcl(char *token)
-{
-	Symbol *sym = declaration(PARAMETER, AUTO, token);
-	sym->u.v.off = -curfun->u.f.params;
-	curfun->u.f.params += sym->u.v.type.size;
-}
-
-static void
-localdcl(char *token)
-{
-	Symbol *sym = declaration(LOCAL, token[0], token);
-	char sclass = *token;
-
-	if (sclass == 'A' || sclass == 'R') {
-		uint8_t size = sym->u.v.type.size;
-		/* stack elements are 2 byte multiple */
-		if (size == 1)
-			++size;
-		curfun->u.f.locals += size;
-		sym->u.v.off = curfun->u.f.locals;
 	}
+	addstmt(np);
+}
+
+static void
+beginfun(void)
+{
+	inpars = 1;
+	pushctx();
+}
+
+static void
+endfun(void)
+{
+	endf = 1;
 }
 
 void
 parse(void)
 {
-	void (*fun)(char *tok);
-	uint8_t len;
-	int c;
-	char line[MAXLINE];
-
+	cleannodes();  /* remove code of previous function */
+	popctx();  /* remove context of previous function */
 	curfun = NULL;
-	stackp = stack;
-	listp = listexp;
-	newp = nodepool;
+	endf = 0;
 
-	for (;;) {
-		switch (c = getchar()) {
-		case 'L':
-			fun = deflabel;
-			break;
-		case '\t':
-			fun = expression;
-			break;
-		case 'S':
-			/* TODO: struct */
-			break;
-		case 'P':
-			fun = paramdcl;
-			break;
-		case 'A': case 'R': case 'T':
-			fun = localdcl;
-			break;
-		case 'Y': case 'G':
-			fun = globdcl;
-			break;
-		case '}':
-			if (curfun)
-				return;
-		default:
-			goto syntax_error;
-		}
-
-		ungetc(c, stdin);
-		if (!fgets(line, sizeof(line), stdin))
-			break;
-		len = strlen(line);
-		if (line[len-1] != '\n')
-			error(ELNLINE);
-		line[len-1] = '\0';
-		(*fun)(strtok(line, "\t"));
-	}
-
-syntax_error:
-	error(ESYNTAX);
+	while (!endf && nextline())
+		/* nothing */;
+	if (ferror(stdin))
+		error(EFERROR, strerror(errno));
 }

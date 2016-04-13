@@ -1,11 +1,11 @@
 
 #include <stddef.h>
-#include <inttypes.h>
 #include <setjmp.h>
 #include <stdio.h>
 
 #include "../inc/cc.h"
 #include "../inc/sizes.h"
+#include "arch.h"
 #include "cc1.h"
 
 Symbol *curfun;
@@ -110,7 +110,7 @@ For(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 	stmt(end, begin, lswitch);
 	emit(OEXPR, einc);
 	emit(OLABEL, cond);
-	emit(OBRANCH, begin);
+	emit((econd) ? OBRANCH : OJUMP, begin);
 	emit(OEXPR, econd);
 	emit(OELOOP, NULL);
 	emit(OLABEL, end);
@@ -163,20 +163,24 @@ static void
 Break(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	expect(BREAK);
-	if (!lbreak)
-		error("break statement not within loop or switch");
-	emit(OJUMP, lbreak);
-	expect(';');
+	if (!lbreak) {
+		errorp("break statement not within loop or switch");
+	} else {
+		emit(OJUMP, lbreak);
+		expect(';');
+	}
 }
 
 static void
 Continue(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 {
 	expect(CONTINUE);
-	if (!lcont)
-		error("continue statement not within loop");
-	emit(OJUMP, lcont);
-	expect(';');
+	if (!lcont) {
+		errorp("continue statement not within loop");
+	} else {
+		emit(OJUMP, lcont);
+		expect(';');
+	}
 }
 
 static void
@@ -234,17 +238,22 @@ Case(Symbol *lbreak, Symbol *lcont, Caselist *lswitch)
 
 	expect(CASE);
 	if (!lswitch)
-		error("case label not within a switch statement");
+		errorp("case label not within a switch statement");
 	if ((np = iconstexpr()) == NULL)
-		error("case label does not reduce to an integer constant");
+		errorp("case label does not reduce to an integer constant");
 	expect(':');
-	pcase = xmalloc(sizeof(*pcase));
-	pcase->expr = np;
-	pcase->next = lswitch->head;
-	emit(OLABEL, pcase->label = newlabel());
-	lswitch->head = pcase;
-	if (++lswitch->nr == NR_SWITCH)
-		error("too case labels for a switch statement");
+	if (lswitch && lswitch->nr >= 0) {
+		if (++lswitch->nr == NR_SWITCH) {
+			errorp("too case labels for a switch statement");
+			lswitch->nr = -1;
+		} else {
+			pcase = xmalloc(sizeof(*pcase));
+			pcase->expr = np;
+			pcase->next = lswitch->head;
+			emit(OLABEL, pcase->label = newlabel());
+			lswitch->head = pcase;
+		}
+	}
 	stmt(lbreak, lcont, lswitch);
 }
 

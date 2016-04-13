@@ -3,13 +3,13 @@
 name: TEST024
 description: Basic test for long long constants
 comments: This test is done for z80 data types
+error:
 output:
-F1	I
-G2	F1	main
+G2	F	"main
 {
 \
-A3	Q	i
-A4	O	u
+A3	Q	"i
+A4	O	"u
 	A3	#Q1	:Q
 	A3	#QFFFFFFFFFFFFFFFF	:Q
 	A3	#QFFFFFFFFFFFFFFFF	:Q
@@ -24,7 +24,7 @@ A4	O	u
 	A4	#OFFFFFFFFFFFFFFFF	:O
 	A4	#O3	:O
 	A4	#O0	:O
-	r	#I0
+	h	#I0
 }
 */
 

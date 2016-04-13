@@ -1,5 +1,5 @@
 * Verify correctness in initializators
-* emit initializators
+* emit automatic initializators
 * Implement bitfields
 * Define data structure shared between cc1 and cc2 with the type
   information
@@ -8,4 +8,9 @@
 * Add C99 features (almost all the new features of C99 are missed)
 * Add correct emit for any kind of constant
 * Add warning when some ANSI limit is violated.
-* Add k&r functions
+* Free memory in emit after some error happened.
+* Rewrite initializers to deal with the idea of  "current object"
+* Add some test about pointer airthmetic.
+* Merge all the definitions of the same string
+* Do not assign identifierss until symbols are emitted. This change will
+  avoid identifiers that are not emitted.

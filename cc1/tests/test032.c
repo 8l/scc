@@ -2,14 +2,19 @@
 /*
 name: TEST032
 description: test special characters @ and $ in macro definitions
+error:
 output:
-F3	I
-G4	F3	main
+G5	F	"main
 {
 \
-A6	P	p
-	A6	"54686973206973206120737472696E672024206F722023206F72202323616E64206974206973206F6B2021	'P	:P
-	r	A6	#P0	!I
+V9	K	#N44
+Y8	V9	"	(
+	#"This is a string $ or # or ##and it is ok !
+	#K00
+)
+A7	P	"p
+	A7	Y8	'P	:P
+	h	A7	#P0	!I
 }
 */
 

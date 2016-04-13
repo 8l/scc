@@ -15,6 +15,7 @@ it closes the output stream.
 ## Types ##
 
 Types are represented using upper case letters:
+
 * C -- char
 * I -- int
 * W -- long
@@ -43,6 +44,7 @@ unions (S1, V12 ...).
 ## Storage class ##
 
 Storage class is represented using upper case letters:
+
 * A -- automatic
 * R -- register
 * G -- public (global variable declared in the module)
@@ -58,9 +60,9 @@ Variables names are composed by a storage class and an identifier,
 A1, R2 or T3. Declarations/definitions are composed by a variable
 name, a type and the name of the variable:
 
-> A1	I	i
-> R2	C	c
-> A3	S4	str
+	A1	I	i
+	R2	C	c
+	A3	S4	str
 
 ### Type declarations ###
 
@@ -70,61 +72,61 @@ of the last struct or union declared.
 
 For example the next code:
 
-> struct foo {
-> 	int i;
->	long c;
-> } var1;
+	struct foo {
+		int i;
+		ong c;
+	} var1;
 
 will generate the next output:
 
-> S2	foo
-> M3	I	i
-> M4	W	c
-> G5	S2	var1
+	S2	foo
+	M3	I	i
+	M4	W	c
+	G5	S2	var1
 
 
 ## Functions ##
 
 A function prototype like
 
-> int printf(char *cmd);
+	int printf(char *cmd);
 
 will generate a type declaration and a variable declaration:
 
-> F3	P
-> X6	F3	printf
+	F3	P
+	X6	F3	printf
 
 After the type specification of the function (F and an identifier),
 the types of the function parameters are described.
 A '{' in the first column begins the body for the previously
 declared function: For example:
 
-> int printf(char *cmd) {}
+	int printf(char *cmd) {}
 
 will generate
 
-> F3	P
-> G6	F3	printf
-> {
-> A7	P	cmd
-> \
-> }
+	F3	P
+	G6	F3	printf
+	{
+	A7	P	cmd
+	\
+	}
 
 Again, the front end must ensure that '{' appears only after the
 declaration of a function. The character '\' marks the separation
 between parameters and local variables:
 
-> int printf(register char *cmd) {int i;};
+	int printf(register char *cmd) {int i;};
 
 will generate
 
-> F3	P
-> G6	F3	printf
-> {
-> R7	P	cmd
-> \
-> A8	I	i
-> }
+	F3	P
+	G6	F3	printf
+	{
+	R7	P	cmd
+	\
+	A8	I	i
+	}
 
 
 ### Expressions ###
@@ -136,9 +138,9 @@ to parse them and convert them to a tree representation.
 
 Operators allowed in expressions are:
 
-* + -- addition
-* - -- substraction
-* * -- multiplication
+* \+ -- addition
+* \- -- substraction
+* \* -- multiplication
 * % -- modulo
 * / -- division
 * l -- left shift
@@ -189,23 +191,23 @@ where I indicates that is an integer constant. Strings represent
 a special case because they are represented with the " character.
 The constant "hello" is emitted as "68656C6C6F. Example:
 
-> int
-> main(void)
-> {
-> 	int i, j;
-> 	i = j+2*3;
-> }
+	int
+	main(void)
+	{
+		int i, j;
+		i = j+2*3;
+	}
 
 generates:
 
-> F1
-> G1	F1	main
-> {
-> \
-> A2      I	i
-> A3      I	j
-> 	A2	A3	#I6	+I	:I
-> }
+	F1
+	G1	F1	main
+	{
+	\
+	A2      I	i
+	A3      I	j
+		A2	A3	#I6	+I	:I
+	}
 
 Casting are expressed with the letter 'g' followed of the type
 involved in the cast.
@@ -220,44 +222,44 @@ Jumps have the next form:
 the optional expression field indicates some condition which
 must be satisfied to jump. Example:
 
-> int
-> main(void)
-> {
-> 	int i;
-> 	goto    label;
-> label:  i -= i;
-> }
+	int
+	main(void)
+	{
+		int i;
+		goto    label;
+	label:  i -= i;
+	}
 
 generates:
 
-> F1
-> G1      F1      main
-> {
-> \
-> A2	I	i
-> 	j	L3
-> L3
-> 	A2	A2	:-
-> }
+	F1
+	G1      F1      main
+	{
+	\
+	A2	I	i
+		j	L3
+	L3
+		A2	A2	:-
+	}
 
 Another form of jump is the return statement, which uses the
 letter 'r' with an optional expression.
 For example:
 
-> int
-> main(void)
-> {
-> 	return 16;
-> }
+	int
+	main(void)
+	{
+		return 16;
+	}
 
 produces:
 
-> F1
-> G1	F1	main
-> {
-> \
-> 	r	#I10
-> }
+	F1
+	G1	F1	main
+	{
+	\
+		r	#I10
+	}
 
 
 #### Loops ####
@@ -278,40 +280,40 @@ The switch statement itself is represented by 's' followed by
 the label where the jump table is located, and the expression
 of the switch. For example:
 
-> int
-> func(int n)
-> {
-> 	switch (n+1) {
-> 	case 1:
-> 	case 2:
-> 	case 3:
-> 	default:
-> 		++n;
-> 	}
-> }
+	int
+	func(int n)
+	{
+		switch (n+1) {
+		case 1:
+		case 2:
+		case 3:
+		default:
+			++n;
+		}
+	}
 
 generates:
 
-> F2	I
-> G1	F2	func
-> {
-> A1	I	n
-> \
-> 	s	L4	A1	#I1	+
-> L5
-> L6
-> L7
-> L8
-> 	A1	#I1	:+I
-> 	j	L3
-> L4
-> 	t	#4
-> 	v	L7	#I3
-> 	v	L6	#I2
-> 	v	L5	#I1
-> 	f	L8
-> L3
-> }
+	F2	I
+	G1	F2	func
+	{
+	A1	I	n
+	\
+		s	L4	A1	#I1	+
+	L5
+	L6
+	L7
+	L8
+		A1	#I1	:+I
+		j	L3
+	L4
+		t	#4
+		v	L7	#I3
+		v	L6	#I2
+		v	L5	#I1
+		f	L8
+	L3
+	}
 
 
 The beginning of the jump table is indicated by the the letter t,
@@ -348,10 +350,10 @@ switch.
 * L -- label
 * { -- end of function body
 * } -- end of fucntion body
-* \ -- end of function parameters
-* + -- addition
-* - -- substraction
-* * -- multiplication
+* \\ -- end of function parameters
+* \+ -- addition
+* \- -- substraction
+* \* -- multiplication
 * % -- modulo
 * / -- division
 * l -- left shift

@@ -1,6 +1,5 @@
 
 #include <ctype.h>
-#include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,11 +8,8 @@
 
 #include "../inc/sizes.h"
 #include "../inc/cc.h"
+#include "arch.h"
 #include "cc1.h"
-
-#ifndef PREFIX
-#define PREFIX "/usr/include/local"
-#endif
 
 static char *argp, *macroname;
 static unsigned arglen;
@@ -471,7 +467,7 @@ include(void)
 
 	switch (*yytext) {
 	case '<':
-		if ((p = strchr(input->begin, '>')) == NULL)
+		if ((p = strchr(input->begin, '>')) == NULL || p == yytext + 1)
 			goto bad_include;
 		*p = '\0';
 		file = input->begin;
@@ -479,7 +475,7 @@ include(void)
 		input->begin = input->p = p+1;
 		break;
 	case '"':
-		if ((p = strchr(yytext + 1, '"')) == NULL)
+		if ((p = strchr(yytext + 1, '"')) == NULL || p == yytext + 1)
 			goto bad_include;
 		*p = '\0';
 		file = yytext+1;
@@ -520,6 +516,7 @@ line(void)
 	if (cppoff)
 		return;
 
+	disexpand = 0;
 	next();
 	n = strtol(yytext, &endp, 10);
 	if (n <= 0 || n > USHRT_MAX || *endp != '\0') {
@@ -541,7 +538,7 @@ line(void)
 	next();
 
 set_line:
-	input->nline = n;
+	input->nline = n - 1;
 }
 
 static void
@@ -680,7 +677,7 @@ bool
 cpp(void)
 {
 	static struct {
-		uint8_t token;
+		unsigned char token;
 		void (*fun)(void);
 	} *bp, clauses [] = {
 		{DEFINE, define},
@@ -712,8 +709,10 @@ cpp(void)
 
 	for (bp = clauses; bp->token && bp->token != yytoken; ++bp)
 		/* nothing */;
-	if (!bp->token)
-		error("incorrect preprocessor directive");
+	if (!bp->token) {
+		errorp("incorrect preprocessor directive");
+		goto error;
+	}
 
 	pushctx();              /* create a new context to avoid polish */
 	(*bp->fun)();           /* the current context, and to get all  */
@@ -722,6 +721,7 @@ cpp(void)
 	if (yytoken != EOFTOK && !cppoff)
 		errorp("trailing characters after preprocessor directive");
 
+error:
 	disexpand = 0;
 	lexmode = CCMODE;
 	namespace = ns;
@@ -735,7 +735,7 @@ outcpp(void)
 	char c, *s, *t;
 
 	for (next(); yytoken != EOFTOK; next()) {
-		if (yytoken != CONSTANT || *yytext != '"') {
+		if (yytoken != STRING) {
 			printf("%s ", yytext);
 			continue;
 		}
