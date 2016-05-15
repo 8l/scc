@@ -324,8 +324,8 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 	 * (when we don't know the physical address so
 	 * we cannot fold it)
 	 */
-	if (!lp->constant || !lp->sym ||
-	    rp && (!rp->constant || !rp->sym)) {
+	if (!(lp->flags & NCONST) || !lp->sym ||
+	    rp && (!(rp->flags & NCONST) || !rp->sym)) {
 		return NULL;
 	}
 	optype = lp->type;
@@ -355,7 +355,7 @@ commutative(int *op, Node **lp, Node **rp)
 {
 	Node *l = *lp, *r = *rp, *aux;
 
-	if (r == NULL || r->constant || !l->constant)
+	if (r == NULL || r->flags & NCONST || !(l->flags & NCONST))
 		return;
 
 	switch (*op) {
@@ -383,7 +383,7 @@ commutative(int *op, Node **lp, Node **rp)
 static Node *
 identity(int *op, Node *lp, Node *rp)
 {
-	int iszeror, isoner, istruer, val;
+	int iszeror, isoner, istruer;
 	int iszerol, isonel, istruel;
 
 	if (!rp)
@@ -391,10 +391,10 @@ identity(int *op, Node *lp, Node *rp)
 
 	iszeror = cmpnode(rp, 0);
 	isoner = cmpnode(rp, 1),
-	istruer = !iszeror && rp->constant;
+	istruer = !iszeror && rp->flags & NCONST;
 	iszerol = cmpnode(lp, 0);
 	isonel = cmpnode(lp, 1),
-	istruel = !iszerol && lp->constant;
+	istruel = !iszerol && lp->flags & NCONST;
 
 	switch (*op) {
 	case OOR:
@@ -495,7 +495,7 @@ foldternary(int op, Type *tp, Node *cond, Node *body)
 {
 	Node *np;
 
-	if (!cond->constant)
+	if (!(cond->flags & NCONST))
 		return node(op, tp, cond, body);
 	if (cmpnode(cond, 0)) {
 		np = body->right;
@@ -538,7 +538,7 @@ castcode(Node *np, Type *newtp)
 	Type *oldtp = np->type;
 	Symbol aux, *sym, *osym = np->sym;
 
-	if (!np->constant)
+	if (!(np->flags & NCONST))
 		goto noconstant;
 
 	switch (newtp->op) {

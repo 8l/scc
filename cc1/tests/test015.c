@@ -12,7 +12,7 @@ M10	S8	"s1	#N2
 S2	"s	#N4	#N1
 M11	S5	"s	#N0
 G12	S2	"s2
-G14	F	"main
+G14	I	F	"main
 {
 \
 	j	L15

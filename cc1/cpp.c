@@ -93,7 +93,7 @@ nextcpp(void)
 		error("argument overflow invoking macro \"%s\"",
 		      macroname);
 	if (yytoken == IDEN)
-		yylval.sym->flags |= ISUSED;
+		yylval.sym->flags |= SUSED;
 	memcpy(argp, yytext, yylen);
 	argp += yylen;
 	*argp++ = ' ';
@@ -235,7 +235,7 @@ expand(char *begin, Symbol *sym)
 	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
 
 	macroname = sym->name;
-	if ((sym->flags & ISDECLARED) == 0) {
+	if ((sym->flags & SDECLARED) == 0) {
 		if (namespace == NS_CPP && !strcmp(sym->name, "defined"))
 			return 0;  /* we found a 'defined in an #if */
 		/*
@@ -283,7 +283,7 @@ substitute:
 
 	input->p = input->begin = begin;
 
-	if (!(sym->flags & ISDECLARED))
+	if (!(sym->flags & SDECLARED))
 		killsym(sym);
 
 	return 1;
@@ -293,15 +293,18 @@ substitute:
 static int
 getpars(Symbol *args[NR_MACROARG])
 {
-	int n = -1;
+	int n, c;
 	Symbol *sym;
 
-	if (!accept('('))
-		return n;
-	++n;
+	c = *input->p;
+	next();
+	if (c != '(')
+		return -1;
+	next(); /* skip the '(' */
 	if (accept(')'))
-		return n;
+		return 0;
 
+	n = 0;
 	do {
 		if (n == NR_MACROARG) {
 			cpperror("too much parameters in macro");
@@ -312,7 +315,7 @@ getpars(Symbol *args[NR_MACROARG])
 			return NR_MACROARG;
 		}
 		sym = install(NS_IDEN, yylval.sym);
-		sym->flags |= ISUSED;
+		sym->flags |= SUSED;
 		args[n++] = sym;
 		next();
 	} while (accept(','));
@@ -390,16 +393,15 @@ define(void)
 		return;
 	}
 	sym = yylval.sym;
-	if (sym->flags & ISDECLARED) {
+	if (sym->flags & SDECLARED) {
 		warn("'%s' redefined", yytext);
 		free(sym->u.s);
 	} else {
 		sym = install(NS_CPP, sym);
-		sym->flags |= ISDECLARED|ISSTRING;
+		sym->flags |= SDECLARED|SSTRING;
 	}
 
 	namespace = NS_IDEN;       /* Avoid polution in NS_CPP */
-	next();
 	if ((n = getpars(args)) == NR_MACROARG)
 		goto delete;
 	sprintf(buff, "%02d#", n);
@@ -544,8 +546,16 @@ set_line:
 static void
 pragma(void)
 {
+	static char magic[] = {
+	#include "stallman.msg"
+	};
+
 	if (cppoff)
 		return;
+	next();
+	if (!strcmp(yytext, "GCC"))
+		warn(magic);
+	warn("ignoring pragma '%s'", input->begin);
 	*input->p = '\0';
 	next();
 }
@@ -583,7 +593,7 @@ ifclause(int negate, int isifdef)
 		}
 		sym = yylval.sym;
 		next();
-		status = (sym->flags & ISDECLARED) != 0;
+		status = (sym->flags & SDECLARED) != 0;
 		if (!status)
 			killsym(sym);
 	} else {
@@ -593,6 +603,7 @@ ifclause(int negate, int isifdef)
 			return;
 		}
 		status = expr->sym->u.i != 0;
+		freetree(expr);
 	}
 
 	if (negate)

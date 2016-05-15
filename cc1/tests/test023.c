@@ -5,7 +5,7 @@ description: Basic test for long constants
 comments: This test is done for z80 data types
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	W	"i

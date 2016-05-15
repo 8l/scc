@@ -5,7 +5,7 @@ error:
 test011.c:13: warning: 'foo' defined but not used
 test011.c:13: warning: 'start' defined but not used
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 L3

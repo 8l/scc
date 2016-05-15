@@ -7,7 +7,7 @@ test006.c:7: warning: conditional expression is constant
 test006.c:10: warning: conditional expression is constant
 output:
 G1	K	"c
-G3	F	"main
+G3	I	F	"main
 {
 \
 	y	L4	#I0

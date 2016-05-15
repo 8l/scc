@@ -9,7 +9,7 @@ test041.c:50: warning: 'i' defined but not used
 test041.c:50: warning: 'foo' defined but not used
 test041.c:50: warning: 's' defined but not used
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"i

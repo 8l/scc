@@ -3,7 +3,7 @@ name: TEST005
 description: Test unary integer operations
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"x

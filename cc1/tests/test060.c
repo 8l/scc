@@ -3,7 +3,7 @@ name: TEST060
 description: Test for correctness of #line
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 	h	#I0

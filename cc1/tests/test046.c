@@ -9,7 +9,7 @@ G2	V1	"x	(
 	#I2
 	#I3
 )
-G4	F	"main
+G4	I	F	"main
 {
 \
 	y	L5	G2	#I1	=I

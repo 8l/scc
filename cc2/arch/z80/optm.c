@@ -3,11 +3,7 @@
 #include "../../cc2.h"
 
 Node *
-cgen(Node *np)
+optm(Node *np)
 {
-}
-
-Node *
-sethi(Node *np)
-{
+	return np;
 }

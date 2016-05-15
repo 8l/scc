@@ -9,12 +9,12 @@ G1	I	"x
 G1	I	"x	(
 	#I0
 )
-G5	F	"foo
+G5	P	F	"foo
 {
 \
 	h	X3	'P
 }
-G3	F	"main
+G3	I	F	"main
 {
 \
 	G1	#I0	:I

@@ -10,7 +10,7 @@ G5	S2	"s	(
 	#I1
 	#I2
 )
-G7	F	"main
+G7	I	F	"main
 {
 \
 	y	L8	G5	M3	.I	#I1	=I

@@ -22,7 +22,7 @@ G9	S2	"s	(
 V10	K	#N0
 G11	V10	"m	(
 )
-G13	F	"main
+G13	I	F	"main
 {
 \
 	h	G9	M7	.V6	'P	#P2	+P	@K	gI	gN	#N0	!I

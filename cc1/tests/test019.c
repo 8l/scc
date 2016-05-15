@@ -6,7 +6,7 @@ error:
 test019.c:12: warning: division by 0
 test019.c:13: warning: division by 0
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"i

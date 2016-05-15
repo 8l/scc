@@ -30,6 +30,7 @@ allocinput(char *fname, FILE *fp)
 	ip = xmalloc(sizeof(Input));
 	ip->fname = xstrdup(fname);
 	ip->p = ip->begin = ip->line = xmalloc(INPUTSIZ);
+	ip->p[0] = '\0';
 	ip->nline = 0;
 	ip->next = input;
 	ip->fp = fp;
@@ -89,7 +90,6 @@ ilex(char *fname)
 		}
 	}
 	allocinput(fname, fp);
-	*input->begin = '\0';
 	keywords(keys, NS_KEYWORD);
 }
 
@@ -250,7 +250,7 @@ repeat:
 static void
 tok2str(void)
 {
-	if ((yylen = input->p - input->begin) > IDENTSIZ)
+	if ((yylen = input->p - input->begin) > INTIDENTSIZ)
 		error("token too big");
 	strncpy(yytext, input->begin, yylen);
 	yytext[yylen] = '\0';
@@ -274,7 +274,7 @@ readint(char *s, int base, int sign, Symbol *sym)
 
 	for (u = 0; isxdigit(c = *s++); u = u*base + val) {
 		static char letters[] = "0123456789ABCDEF";
-		val = strchr(letters, c) - letters;
+		val = strchr(letters, toupper(c)) - letters;
 	repeat:
 		if (u <= max/base && u*base <= max - val)
 			continue;
@@ -341,7 +341,7 @@ convert:
 	tp = ctype(INT, sign, size);
 	sym = newsym(NS_IDEN);
 	sym->type = tp;
-	sym->flags |= ISCONSTANT;
+	sym->flags |= SCONSTANT;
 	yylval.sym = readint(s, base, sign, sym);
 	return CONSTANT;
 }
@@ -354,7 +354,7 @@ digits(unsigned base)
 	for (p = input->p; c = *p; ++p) {
 		switch (base) {
 		case 8:
-			if (c > '7' || c < '0')
+			if (!strchr("01234567", c))
 				goto end;
 			break;
 		case 10:
@@ -513,7 +513,7 @@ iden(void)
 			sym = nextsym(sym, namespace);
 	}
 	yylval.sym = sym;
-	if (sym->flags & ISCONSTANT)
+	if (sym->flags & SCONSTANT)
 		return CONSTANT;
 	if (sym->token != IDEN)
 		yylval.token = sym->u.token;

@@ -1,29 +1,29 @@
-# Scc intermediate representation #
+# scc intermediate representation #
 
-Scc IR tries to be be a simple and easily parseable intermediate
-representation, and it makes it a bit terse and criptic. The main
+The scc IR tries to be be a simple and easily parseable intermediate
+representation, and it makes it a bit terse and cryptic. The main
 characteristic of the IR is that all the types and operations are
 represented with only one letter, so parsing tables can be used
 to parse it.
 
-The language is composed by lines, which represent statements,
-and fields in statements are separated by tabulators. Declaration
-statements begin in column 0, meanwhile expressions and control
-flow begin with a tabulator. When the front end detects an error
-it closes the output stream.
+The language is composed of lines, representing statements.
+Each statement is composed of tab-separated fields.
+Declaration statements begin in column 0, expressions and
+control flow begin with a tabulator.
+When the frontend detects an error, it closes the output stream.
 
 ## Types ##
 
-Types are represented using upper case letters:
+Types are represented with uppercase letters:
 
-* C -- char
-* I -- int
-* W -- long
-* O -- long long
-* M -- unsigned char
-* N -- unsigned int
-* Z -- unsigned long
-* Q -- unsigned long long
+* C -- signed    8-Bit integer
+* I -- signed   16-Bit integer
+* W -- signed   32-Bit integer
+* O -- signed   64-Bit integer
+* M -- unsigned  8-Bit integer
+* N -- unsigned 16-Bit integer
+* Z -- unsigned 32-Bit integer
+* Q -- unsigned 64-Bit integer
 * 0 -- void
 * P -- pointer
 * F -- function
@@ -35,104 +35,124 @@ Types are represented using upper case letters:
 * D -- double
 * H -- long double
 
-This list is built for the original Z80 backend, where 'int'
-had the same size than 'short'. Several types need an identifier
-after the type letter, mainly S, F, V and U, to be able to
-differentiate between different structs, functions, vectors and
-unions (S1, V12 ...).
+This list has been built for the original Z80 backend, where 'int'
+has the same size as 'short'. Several types (S, F, V, U and others) need
+an identifier after the type letter for better differentiation
+between multiple structs, functions, vectors and unions (S1, V12 ...)
+naturally occuring in a C-program.
 
-## Storage class ##
+## Storage classes ##
 
-Storage class is represented using upper case letters:
+The storage classes are represented using uppercase letters:
 
 * A -- automatic
 * R -- register
 * G -- public (global variable declared in the module)
 * X -- extern (global variable declared in another module)
-* Y -- private (file scoped variable)
-* T -- local (function scopped static variable)
+* Y -- private (variable in file-scope)
+* T -- local (static variable in function-scope)
 * M -- member (struct/union member)
 * L -- label
 
 ## Declarations/definitions ##
 
-Variables names are composed by a storage class and an identifier,
-A1, R2 or T3. Declarations/definitions are composed by a variable
+Variable names are composed of a storage class and an identifier
+(e.g. A1, R2, T3).
+Declarations and definitions are composed of a variable
 name, a type and the name of the variable:
 
-	A1	I	i
-	R2	C	c
-	A3	S4	str
+	A1	I	maxweight
+	R2	C	flag
+	A3	S4	statstruct
 
 ### Type declarations ###
 
-Some declarations need a previous declaration of the types involved
-in the variable declaration. In the case of members, they form part
-of the last struct or union declared.
+Some declarations (e.g. structs) involve the declaration of member
+variables.
+Struct members are declared normally after the type declaration in
+parentheses.
 
-For example the next code:
+For example the struct declaration
 
 	struct foo {
 		int i;
-		ong c;
+		long c;
 	} var1;
 
-will generate the next output:
+generates
 
-	S2	foo
-	M3	I	i
-	M4	W	c
-	G5	S2	var1
-
+	S2      foo     (
+	M3      I       i
+	M4      W       c
+	)
+	G5      S2      var1
 
 ## Functions ##
 
-A function prototype like
+A function prototype
 
-	int printf(char *cmd);
+	int printf(char *cmd, int flag, void *data);
 
-will generate a type declaration and a variable declaration:
+will generate a type declaration and a variable declaration
 
-	F3	P
-	X6	F3	printf
+	F5	P	I	P
+	X1	F5	printf
 
-After the type specification of the function (F and an identifier),
-the types of the function parameters are described.
-A '{' in the first column begins the body for the previously
-declared function: For example:
+The first line gives the function-type specification 'F' with
+an identifier '5' and subsequently lists the types of the
+function parameters.
+The second line declares the 'printf' function as a publicly
+scoped variable.
 
-	int printf(char *cmd) {}
+Analogously, a statically declared function in file scope
 
-will generate
+	static int printf(char *cmd, int flag, void *data);
 
-	F3	P
-	G6	F3	printf
+generates
+
+	F5      P       I       P
+	T1      F5      printf
+
+Thus, the 'printf' variable  went into local scope ('T').
+
+A '{' in the first column starts the body of the previously
+declared function:
+
+	int printf(char *cmd, int flag, void *data) {}
+
+generates
+
+	F5      P       I       P
+	G1      F5      printf
 	{
-	A7	P	cmd
-	\
+	A2      P       cmd
+	A3      I       flag
+	A4      P       data
+	-
 	}
 
-Again, the front end must ensure that '{' appears only after the
-declaration of a function. The character '\' marks the separation
+Again, the frontend must ensure that '{' appears only after the
+declaration of a function. The character '-' marks the separation
 between parameters and local variables:
 
-	int printf(register char *cmd) {int i;};
+	int printf(register char *cmd, int flag, void *data) {int i;};
 
-will generate
+generates
 
-	F3	P
-	G6	F3	printf
+	F5      P       I       P
+	G1      F5      printf
 	{
-	R7	P	cmd
-	\
-	A8	I	i
+	R2      P       cmd
+	A3      I       flag
+	A4      P       data
+	-
+	A6      I       i
 	}
-
 
 ### Expressions ###
 
-Expressions are emitted as postorder expressions, making very easy
-to parse them and convert them to a tree representation.
+Expressions are emitted in reverse polish notation, simplifying
+parsing and converting into a tree representation.
 
 #### Operators ####
 
@@ -185,39 +205,61 @@ Every operator in an expression has a type descriptor.
 
 #### Constants ####
 
-Constants are introduced by the character '#'. For example 10 is
-translated to #IA (all the constants are emitted in hexadecimal),
-where I indicates that is an integer constant. Strings represent
-a special case because they are represented with the " character.
-The constant "hello" is emitted as "68656C6C6F. Example:
+Constants are introduced with the character '#'. For instance, 10 is
+translated to #IA (all constants are emitted in hexadecimal),
+where I indicates that it is an integer constant.
+Strings are a special case because they are represented with
+the " character.
+The constant "hello" is emitted as "68656C6C6F. For example
 
 	int
 	main(void)
 	{
 		int i, j;
+
 		i = j+2*3;
 	}
 
-generates:
+generates
 
 	F1
 	G1	F1	main
 	{
-	\
+	-
 	A2      I	i
 	A3      I	j
 		A2	A3	#I6	+I	:I
 	}
 
-Casting are expressed with the letter 'g' followed of the type
-involved in the cast.
+Type casts are expressed with a tuple denoting the
+type conversion
+
+        int
+	main(void)
+	{
+		int i;
+		long j;
+
+		j = (long)i;
+	}
+
+generates
+
+	F1
+	G1      F1      main
+	{
+	-
+	A2      I       i
+	A3      W       j
+	        A2      A3      WI      :I
+	}
 
 ### Statements ###
 #### Jumps #####
 
-Jumps have the next form:
+Jumps have the following form:
 
-* j	L?	[expression]
+	j	L#	[expression]
 
 the optional expression field indicates some condition which
 must be satisfied to jump. Example:
@@ -226,25 +268,27 @@ must be satisfied to jump. Example:
 	main(void)
 	{
 		int i;
+
 		goto    label;
-	label:  i -= i;
+	label:
+		i -= i;
 	}
 
-generates:
+generates
 
 	F1
 	G1      F1      main
 	{
-	\
+	-
 	A2	I	i
 		j	L3
 	L3
-		A2	A2	:-
+		A2	A2	:-I
 	}
 
 Another form of jump is the return statement, which uses the
-letter 'r' with an optional expression.
-For example:
+letter 'y' followed by a type identifier.
+Depending on the type, an optional expression follows.
 
 	int
 	main(void)
@@ -252,33 +296,33 @@ For example:
 		return 16;
 	}
 
-produces:
+generates
 
 	F1
 	G1	F1	main
 	{
-	\
-		r	#I10
+	-
+		yI	#I10
 	}
 
 
 #### Loops ####
 
-There is a two special characters that are used to indicate
-to the backend that the next statements are part of the body
-of a loop:
+There are two special characters that are used to indicate
+to the backend that the following statements are part of
+a loop body.
 
-* b -- begin of loop
+* b -- beginning of loop
 * e -- end of loop
 
 #### Switch statement ####
 
 Switches are represented using a table, in which the labels
 where to jump for each case are indicated. Common cases are
-represented by 'v', meanwhile default is represented by 'f'.
-The switch statement itself is represented by 's' followed by
-the label where the jump table is located, and the expression
-of the switch. For example:
+represented with 'v' and default with 'f'.
+The switch statement itself is represented with 's' followed
+by the label where the jump table is located, and the
+expression of the switch:
 
 	int
 	func(int n)
@@ -292,14 +336,14 @@ of the switch. For example:
 		}
 	}
 
-generates:
+generates
 
 	F2	I
 	G1	F2	func
 	{
 	A1	I	n
-	\
-		s	L4	A1	#I1	+
+	-
+		s	L4	A1	#I1	+I
 	L5
 	L6
 	L7
@@ -315,21 +359,20 @@ generates:
 	L3
 	}
 
-
-The beginning of the jump table is indicated by the the letter t,
+The beginning of the jump table is indicated by the the letter 't',
 followed by the number of cases (including default case) of the
 switch.
 
 ## Resumen ##
 
-* C -- char
-* I -- int
-* W -- long
-* O -- long long
-* M -- unsigned char
-* N -- unsigned int
-* Z -- unsigned long
-* Q -- unsigned long long
+* C -- signed    8-Bit integer
+* I -- signed   16-Bit integer
+* W -- signed   32-Bit integer
+* O -- signed   64-Bit integer
+* M -- unsigned  8-Bit integer
+* N -- unsigned 16-Bit integer
+* Z -- unsigned 32-Bit integer
+* Q -- unsigned 64-Bit integer
 * 0 -- void
 * P -- pointer
 * F -- function
@@ -344,12 +387,12 @@ switch.
 * R -- register
 * G -- public (global variable declared in the module)
 * X -- extern (global variable declared in another module)
-* Y -- private (file scoped variable)
-* T -- local (function scopped static variable)
+* Y -- private (variable in file-scope)
+* T -- local (static variable in function-scope)
 * M -- member (struct/union member)
 * L -- label
-* { -- end of function body
-* } -- end of fucntion body
+* { -- beginning of function body
+* } -- end of function body
 * \\ -- end of function parameters
 * \+ -- addition
 * \- -- substraction
@@ -376,7 +419,6 @@ switch.
 * , -- comma operator
 * ? -- ternary operator
 * ' -- take address
-* g -- casting
 * a -- logical shortcut and
 * o -- logical shortcut or
 * @ -- content of pointer

@@ -21,7 +21,7 @@ output:
 G1	I	"a
 Y2	K	"b
 X3	I	"c
-G6	F	"func1
+G6	I	F	"func1
 {
 \
 A7	I	"h
@@ -31,13 +31,13 @@ X10	I	"k
 T11	Z	"a
 	h	#I0
 }
-G14	F	"func2
+G14	0	F	"func2
 {
 R12	I	"par
 \
 A15	I	"par
 }
-T17	F	"func3
+T17	0	F	"func3
 {
 R16	I	"par
 \

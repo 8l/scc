@@ -10,7 +10,7 @@
  */
 typedef struct type Type;
 typedef struct symbol Symbol;
-typedef struct caselist Caselist;
+typedef struct swtch Switch;
 typedef struct node Node;
 typedef struct input Input;
 
@@ -82,24 +82,13 @@ struct node {
 	unsigned char op;
 	Type *type;
 	Symbol *sym;
-	bool lvalue : 1;
-	bool constant : 1;
+	char flags;
 	struct node *left, *right;
 };
 
-struct scase {
-	Symbol *label;
-	Node *expr;
-	struct scase *next;
-};
-
-struct caselist {
+struct swtch {
 	short nr;
-	Symbol *deflabel;
-	Symbol *ltable;
-	Symbol *lbreak;
-	Node *expr;
-	struct scase *head;
+	char hasdef;
 };
 
 struct yystype {
@@ -173,22 +162,29 @@ enum {
 
 /* symbol flags */
 enum {
-	ISAUTO     =       1,
-	ISREGISTER =       2,
-	ISDECLARED =       4,
-	ISFIELD    =       8,
-	ISEXTERN   =      16,
-	ISUSED     =      32,
-	ISCONSTANT =      64,
-	ISGLOBAL   =     128,
-	ISPRIVATE  =     256,
-	ISLOCAL    =     512,
-	ISEMITTED  =    1024,
-	ISDEFINED  =    2048,
-	ISSTRING   =    4096,
-	ISTYPEDEF  =    8192,
-	ISINITLST  =   16384,
-	HASINIT    =   32768
+	SAUTO     = 1 << 0,
+	SREGISTER = 1 << 1,
+	SDECLARED = 1 << 2,
+	SFIELD    = 1 << 3,
+	SEXTERN   = 1 << 4,
+	SUSED     = 1 << 5,
+	SCONSTANT = 1 << 6,
+	SGLOBAL   = 1 << 7,
+	SPRIVATE  = 1 << 8,
+	SLOCAL    = 1 << 9,
+	SEMITTED  = 1 << 10,
+	SDEFINED  = 1 << 11,
+	SSTRING   = 1 << 12,
+	STYPEDEF  = 1 << 13,
+	SINITLST  = 1 << 14,
+	SHASINIT  = 1 << 15
+};
+
+/* node flags */
+enum {
+	NLVAL   = 1 << 0,
+	NCONST  = 1 << 1,
+	NEFFECT = 1 << 2
 };
 
 /* lexer mode, compiler or preprocessor directive */
@@ -199,11 +195,11 @@ enum {
 
 /* input tokens */
 enum tokens {
-	CONST      =       1,      /* type qualifier tokens are used as flags */
-	RESTRICT   =       2,
-	VOLATILE   =       4,
-	INLINE     =       8,
-	TQUALIFIER =     128,
+	CONST      = 1 << 0,      /* type qualifier tokens are used as flags */
+	RESTRICT   = 1 << 1,
+	VOLATILE   = 1 << 2,
+	INLINE     = 1 << 3,
+	TQUALIFIER = 1 << 7,      /* this value is picked outside of ASCII range */
 	TYPE,
 	IDEN,
 	SCLASS,
@@ -335,8 +331,8 @@ enum op {
 	OCALL,
 	ORET,
 	ODECL,
-	OSWITCH,
-	OSWITCHT,
+	OBSWITCH,
+	OESWITCH,
 	OINIT
 };
 
@@ -368,7 +364,7 @@ extern void keywords(struct keyword *key, int ns);
 extern Symbol *newstring(char *s, size_t len);
 
 /* stmt.c */
-extern void compound(Symbol *lbreak, Symbol *lcont, Caselist *lswitch);
+extern void compound(Symbol *lbreak, Symbol *lcont, Switch *sw);
 
 /* decl.c */
 extern Type *typename(void);

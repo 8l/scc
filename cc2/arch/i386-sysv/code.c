@@ -33,20 +33,17 @@ segment(int seg)
 static char *
 symname(Symbol *sym)
 {
-	static char name[IDENTSIZ+1];
-	static unsigned short id;
+	static char name[INTIDENTSIZ+1];
 
 	if (sym->name) {
 		switch (sym->kind) {
-		case EXTRN:
-		case GLOB:
-		case PRIVAT:
+		case SEXTRN:
+		case SGLOB:
+		case SPRIV:
 			return sym->name;
 		}
 	}
 
-	if (sym->numid == 0 && (sym->numid = ++id) == 0)
-		error(EIDOVER);
 	sprintf(name, ".L%d", sym->numid);
 
 	return name;
@@ -91,7 +88,7 @@ emittree(Node *np)
 	case OADDR:
 		emittree(np->left);
 		break;
-	case MEM:
+	case OMEM:
 		fputs(symname(np->u.sym), stdout);
 		break;
 	default:
@@ -154,11 +151,11 @@ label(Symbol *sym)
 	segment(seg);
 
 	switch (sym->kind) {
-	case EXTRN:
+	case SEXTRN:
 		printf("\t.extern\t%s\n", name);
-	case LOCAL:
+	case SLOCAL:
 		return;
-	case GLOB:
+	case SGLOB:
 		printf("\t.global\t%s\n", name);
 		if (seg == BSSSEG) {
 			printf("\t.comm\t%s,%llu\n",
@@ -168,7 +165,7 @@ label(Symbol *sym)
 		break;
 	}
 	if (sym->type.align != 1)
-		printf("\t.align\t%d\n",sym->type.align );
+		printf("\t.align\t%lld\n", (long long) sym->type.align );
 	printf("%s:\n", name);
 }
 
@@ -176,7 +173,7 @@ void
 defglobal(Symbol *sym)
 {
 	label(sym);
-	if (sym->kind == EXTRN || (sym->type.flags & INITF))
+	if (sym->kind == SEXTRN || (sym->type.flags & INITF))
 		return;
 	size2asm(&sym->type);
 	puts("0");

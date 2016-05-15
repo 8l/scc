@@ -3,7 +3,7 @@ name: TEST007
 description: basic while test
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"x

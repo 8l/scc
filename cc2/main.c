@@ -38,9 +38,9 @@ main(void)
 
 	while (moreinput()) {
 		parse();
-		optimize();
-		addressability();
-		generate();
+		apply(optm);
+		apply(sethi);
+		apply(cgen);
 		peephole();
 		writeout();
 	}

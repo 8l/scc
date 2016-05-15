@@ -3,7 +3,7 @@ name: TEST001
 description: Basic hello world test
 error:
 output:
-G6	F	"main
+G6	I	F	"main
 {
 \
 V8	K	#N13

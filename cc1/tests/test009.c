@@ -3,7 +3,7 @@ name: TEST009
 description: Basic test for loops
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"x

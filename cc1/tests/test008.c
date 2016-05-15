@@ -3,7 +3,7 @@ name: TEST008
 description: Basic do while loop
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"x

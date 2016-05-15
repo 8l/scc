@@ -9,7 +9,7 @@ G2	V1	"arr	(
 	#I1
 	#I2
 )
-G4	F	"main
+G4	I	F	"main
 {
 \
 	y	L5	G2	#I0	=I

@@ -4,70 +4,58 @@ description: Basic switch test
 error:
 test012.c:38: warning: 'foo' defined but not used
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"x
 	A3	#I0	:I
-	s	L5	A3
-L6
-	j	L4
+	s	A3
+	v	L5	#I0
 L5
-	t	#N1
-	v	L6	#I0
+	k	L4
 L4
-	s	L8	A3
-L9
-	s	L11	A3
-L12
-	j	L13
-L14
-	h	#I1
-	j	L10
-L11
-	t	#N2
-	v	L12	#I0
-	f	L14
-L10
-	j	L7
-L8
-	t	#N1
-	v	L9	#I0
+	s	A3
+	v	L7	#I0
 L7
+	s	A3
+	v	L9	#I0
+L9
+	j	L10
+	f	L11
+L11
+	h	#I1
+	k	L8
+L8
+	k	L6
+L6
 	h	#I2
+L10
+	s	A3
+	v	L13	#I1
 L13
-	s	L16	A3
-L17
 	h	#I3
-	j	L15
-L16
-	t	#N1
-	v	L17	#I1
-L15
-	s	L19	A3
+	k	L12
+L12
+	s	A3
 	A3	#I2	:I
-L20
-L21
+L15
+	v	L16	#I1
+L16
 	h	#I4
-	j	L18
-L19
-	t	#N1
-	v	L21	#I1
+	k	L14
+L14
+	s	A3
+	v	L18	#I0
 L18
-	s	L23	A3
-L24
 	h	A3
-L25
+	v	L19	#I1
+L19
 	h	#I1
-L26
+	f	L20
+L20
 	h	#I1
-	j	L22
-L23
-	t	#N3
-	v	L25	#I1
-	v	L24	#I0
-	f	L26
-L22
+	k	L17
+L17
 }
 */
 

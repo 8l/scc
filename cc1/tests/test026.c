@@ -4,7 +4,7 @@ name: TEST026
 descritpion: Test of predefined cpp macros
 error:
 output:
-G3	F	"main
+G3	I	F	"main
 {
 \
 A4	I	"y

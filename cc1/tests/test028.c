@@ -4,7 +4,7 @@ name: TEST028
 description: Test of reinterpretation in define
 error:
 output:
-G6	F	"foo
+G6	P	F	"foo
 {
 \
 V8	K	#N3

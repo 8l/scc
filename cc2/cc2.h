@@ -5,11 +5,27 @@ enum tflags {
 	STRF    =    8,
 	UNIONF  =    16,
 	FUNF    =    32,
+	PARF    =    64,
 	INITF   =   128
 };
 
-enum op {
-	/* types */
+enum sclass {
+	SAUTO     = 'A',
+	SREG      = 'R',
+	SLABEL    = 'L',
+	SINDEX    = 'I',
+	STMP      = 'N',
+	SGLOB     = 'G',
+	SEXTRN    = 'X',
+	SPRIV     = 'Y',
+	SLOCAL    = 'T',
+	SMEMB     = 'M',
+	SCONST    = '#',
+	STRING    = '"',
+	SNONE     = 0
+};
+
+enum types {
 	ELLIPSIS = 'E',
 	INT8     = 'C',
 	INT16    = 'I',
@@ -28,29 +44,19 @@ enum op {
 	FLOAT    = 'J',
 	DOUBLE   = 'D',
 	LDOUBLE  = 'H',
-	VOID     = '0',
-	ONAME    = '"',
+	VOID     = '0'
+};
+
+enum op {
 	/* kind of operand */
-	NONE     = 0,
-	MEM      = 'M',
-	AUTO     = 'A',
-	REG      = 'R',
-	CONST    = '#',
-	STRING   = '"',
-	LABEL    = 'L',
-	INDEX    = 'I',
-	/* storage class */
-	GLOB     = 'G',
-	EXTRN    = 'X',
-	PRIVAT   = 'Y',
-	LOCAL    = 'T',
-	MEMBER   = 'M',
 	/* operands */
 	OMEM     = 'M',
+	OTMP     = 'N',
 	OAUTO    = 'A',
 	OREG     = 'R',
 	OCONST   = '#',
 	OSTRING  = '"',
+	OLOAD    = 'D',
 	OLABEL   = 'L',
 	OADD     = '+',
 	OSUB     = '-',
@@ -81,7 +87,6 @@ enum op {
 	OAND     = 'a',
 	OOR      = 'o',
 	OPTR     = '@',
-	OSYM     = 'i',
 	OCAST    = 'g',
 	OINC     = 'i',
 	ODEC     = 'd',
@@ -96,8 +101,6 @@ enum op {
 	ODEFAULT = 'f',
 	OTABLE   = 't',
 	OSWITCH  = 's',
-	OEPARS   = '\\',
-	OSTMT    = '\t'
 };
 
 enum nerrors {
@@ -110,7 +113,9 @@ enum nerrors {
 	ESTACKO,       /* stack overflow */
 	ESTACKU,       /* stack underflow */
 	ELNLINE,       /* line too long */
+	ELNBLNE,       /* line without new line */
 	EFERROR,       /* error reading from file:%s*/
+	EBADID,        /* incorrect symbol id */
 	ENUMERR
 };
 
@@ -134,7 +139,8 @@ struct symbol {
 	char kind;
 	union {
 		TSIZE off;
-		Node *label;
+		Node *stmt;
+		Inst *inst;
 	} u;
 	Symbol *next;
 	Symbol *h_next;
@@ -145,6 +151,7 @@ struct node {
 	Type type;
 	char complex;
 	char address;
+	unsigned char flags;
 	union {
 		TUINT i;
 		char reg;
@@ -154,7 +161,7 @@ struct node {
 	} u;
 	Symbol *label;
 	Node *left, *right;
-	Node *stmt;
+	Node *next, *prev;
 };
 
 struct addr {
@@ -167,7 +174,8 @@ struct addr {
 };
 
 struct inst {
-        char op;
+        unsigned char op;
+	Symbol *label;
         Addr from1, from2, to;
         Inst *next, *prev;
 };
@@ -179,11 +187,11 @@ extern void error(unsigned nerror, ...);
 extern void parse(void);
 
 /* optm.c */
-extern void optimize(void);
+extern Node *optm(Node *np);
 
 /* cgen.c */
-extern void addressability(void);
-extern void generate(void);
+extern Node *sethi(Node *np);
+extern Node *cgen(Node *np);
 
 /* peep.c */
 extern void peephole(void);
@@ -191,17 +199,31 @@ extern void peephole(void);
 /* code.c */
 extern void data(Node *np);
 extern void writeout(void), endinit(void), newfun(void);
+extern void code(int op, Node *to, Node *from1, Node *from2);
 extern void defvar(Symbol *), defpar(Symbol *), defglobal(Symbol *);
+extern void setlabel(Symbol *sym);
+extern Node *label2node(Symbol *sym);
 
 /* node.c */
+#define SETCUR  1
+#define KEEPCUR 0
+extern void apply(Node *(*fun)(Node *));
 extern void cleannodes(void);
 extern void delnode(Node *np);
 extern void deltree(Node *np);
-extern Node *newnode(void);
-extern Symbol *curfun;
+extern Node *newnode(int op);
+extern Node *addstmt(Node *np, int flags);
+extern Node *nextstmt(void);
 
 /* symbol.c */
-extern Symbol *getsym(int id);
+#define TMPSYM  0
+extern Symbol *getsym(unsigned id);
 extern void popctx(void);
 extern void pushctx(void);
 extern void freesym(Symbol *sym);
+
+/* globals */
+extern Type rtype;
+extern Symbol *curfun;
+extern Symbol *locals;
+extern Inst *pc, *prog;

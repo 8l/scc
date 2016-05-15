@@ -3,17 +3,17 @@ name: TEST003
 description: Select function to call inside ternary operator
 error:
 output:
-G2	F	"foo
+G2	I	F	"foo
 {
 \
 	h	#I2A
 }
-G3	F	"bar
+G3	I	F	"bar
 {
 \
 	h	#I18
 }
-G4	F	"main
+G4	I	F	"main
 {
 \
 	h	G2	cI

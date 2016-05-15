@@ -3,7 +3,7 @@ name: TEST018
 description: Basic test for arrays
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 V3	K	#N4

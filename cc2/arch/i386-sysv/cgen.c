@@ -2,12 +2,12 @@
 #include "arch.h"
 #include "../../cc2.h"
 
-void
-generate(void)
+Node *
+cgen(Node *np)
 {
 }
 
-void
-addressability(void)
+Node *
+sethi(Node *np)
 {
 }

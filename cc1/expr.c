@@ -18,7 +18,7 @@ cmpnode(Node *np, TUINT val)
 	Type *tp;
 	TUINT mask, nodeval;
 
-	if (!np || !np->constant || !np->sym)
+	if (!np || !(np->flags & NCONST) || !np->sym)
 		return 0;
 	sym = np->sym;
 	tp = sym->type;
@@ -56,7 +56,6 @@ promote(Node *np)
 {
 	Type *tp;
 	Node *new;
-	unsigned r;
 	struct limits *lim, *ilim;
 
 	tp = np->type;
@@ -85,7 +84,7 @@ promote(Node *np)
 static void
 arithconv(Node **p1, Node **p2)
 {
-	int n, to = 0, s1, s2;
+	int to = 0, s1, s2;
 	unsigned r1, r2;
 	Type *tp1, *tp2;
 	Node *np1, *np2;
@@ -130,7 +129,7 @@ set_p1_p2:
 static int
 null(Node *np)
 {
-	if (!np->constant || np->type != pvoidtype)
+	if (!np->flags & NCONST || np->type != pvoidtype)
 		return 0;
 	return cmpnode(np, 0);
 }
@@ -191,7 +190,7 @@ wrong_type:
 static void
 chklvalue(Node *np)
 {
-	if (!np->lvalue)
+	if (!(np->flags & NLVAL))
 		errorp("lvalue required in operation");
 	if (np->type == voidtype)
 		errorp("invalid use of void expression");
@@ -214,8 +213,8 @@ decay(Node *np)
 		}
 	case FTN:
 		new = node(OADDR, mktype(tp, PTR, 0, NULL), np, NULL);
-		if (np->sym && np->sym->flags & (ISGLOBAL|ISLOCAL|ISPRIVATE))
-			new->constant = 1;
+		if (np->sym && np->sym->flags & (SGLOBAL|SLOCAL|SPRIVATE))
+			new->flags |= NCONST;
 		return new;
 	default:
 		return np;
@@ -462,12 +461,12 @@ field(Node *np)
 		      yylval.sym->name);
 		goto free_np;
 	}
-	if ((sym->flags & ISDECLARED) == 0) {
+	if ((sym->flags & SDECLARED) == 0) {
 		errorp("incorrect field in struct/union");
 		goto free_np;
 	}
 	np = node(OFIELD, sym->type, np, varnode(sym));
-	np->lvalue = 1;
+	np->flags |= NLVAL;
 	return np;
 
 free_np:
@@ -491,7 +490,7 @@ content(char op, Node *np)
 		} else {
 			np = node(op, np->type->type, np, NULL);
 		}
-		np->lvalue = 1;
+		np->flags |= NLVAL;
 		return np;
 	default:
 		error("invalid argument of memory indirection");
@@ -531,6 +530,7 @@ incdec(Node *np, char op)
 	Node *inc;
 
 	chklvalue(np);
+	np->flags |= NEFFECT;
 
 	if (!tp->defined) {
 		errorp("invalid use of undefined type");
@@ -553,7 +553,7 @@ address(char op, Node *np)
 
 	if (BTYPE(np) != FTN) {
 		chklvalue(np);
-		if (np->sym && (np->sym->flags & ISREGISTER))
+		if (np->sym && (np->sym->flags & SREGISTER))
 			errorp("address of register variable '%s' requested", yytext);
 		if (np->op == OPTR) {
 			Node *new = np->left;
@@ -563,8 +563,8 @@ address(char op, Node *np)
 	}
 	new = node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
 
-	if (np->sym && np->sym->flags & (ISGLOBAL|ISLOCAL|ISPRIVATE))
-		new->constant = 1;
+	if (np->sym && np->sym->flags & (SGLOBAL|SLOCAL|SPRIVATE))
+		new->flags |= NCONST;
 	return new;
 }
 
@@ -593,10 +593,10 @@ notdefined(Symbol *sym)
 		expect(IDEN);
 		expect(')');
 
-		isdef = (sym->flags & ISDECLARED) != 0;
+		isdef = (sym->flags & SDECLARED) != 0;
 		sym = newsym(NS_IDEN);
 		sym->type = inttype;
-		sym->flags |= ISCONSTANT;
+		sym->flags |= SCONSTANT;
 		sym->u.i = isdef;
 		disexpand = 0;
 		return sym;
@@ -619,7 +619,7 @@ primary(void)
 	switch (yytoken) {
 	case STRING:
 		np = constnode(sym);
-		sym->flags |= HASINIT;
+		sym->flags |= SHASINIT;
 		emit(ODECL, sym);
 		emit(OINIT, np);
 		np = decay(varnode(sym));
@@ -630,13 +630,13 @@ primary(void)
 		next();
 		break;
 	case IDEN:
-		if ((sym->flags & ISDECLARED) == 0)
+		if ((sym->flags & SDECLARED) == 0)
 			sym = notdefined(sym);
-		if (sym->flags & ISCONSTANT) {
+		if (sym->flags & SCONSTANT) {
 			np = constnode(sym);
 			break;
 		}
-		sym->flags |= ISUSED;
+		sym->flags |= SUSED;
 		np = varnode(sym);
 		next();
 		break;
@@ -740,6 +740,7 @@ postfix(Node *lp)
 			break;
 		case '(':
 			lp = arguments(lp);
+			lp->flags |= NEFFECT;
 			break;
 		default:
 			return lp;
@@ -840,7 +841,8 @@ cast(void)
 			lp = cast();
 			if ((rp = convert(lp,  tp, 1)) == NULL)
 				error("bad type convertion requested");
-			rp->lvalue = lp->lvalue;
+			rp->flags &= ~NLVAL;
+			rp->flags |= lp->flags & NLVAL;
 		}
 		break;
 	default:
@@ -1047,6 +1049,7 @@ assign(void)
 		default: return np;
 		}
 		chklvalue(np);
+		np->flags |= NEFFECT;
 		next();
 		np = (fun)(op, np, assign());
 	}
@@ -1058,7 +1061,7 @@ constexpr(void)
 	Node *np;
 
 	np = ternary();
-	if (!np->constant) {
+	if (!(np->flags & NCONST)) {
 		freetree(np);
 		return NULL;
 	}
@@ -1101,7 +1104,7 @@ condexpr(void)
 	Node *np;
 
 	np = exp2cond(expr(), 0);
-	if (np->constant)
+	if (np->flags & NCONST)
 		warn("conditional expression is constant");
 	return np;
 }

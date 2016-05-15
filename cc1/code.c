@@ -9,9 +9,7 @@
 #include "cc1.h"
 
 static void emitbin(unsigned, void *),
-            emitswitcht(unsigned, void *),
             emitcast(unsigned, void *),
-            emitswitch(unsigned, void *),
             emitsym(unsigned, void *),
             emitexp(unsigned, void *),
             emitsymid(unsigned, void *),
@@ -60,6 +58,8 @@ char *optxt[] = {
 	[OCOMMA] = ",",
 	[OLABEL] = "L%d\n",
 	[ODEFAULT] = "\tf\tL%d\n",
+	[OBSWITCH] = "\ts",
+	[OESWITCH] = "\tk\tL%d\n",
 	[OCASE] = "\tv\tL%d",
 	[OJUMP] = "\tj\tL%d\n",
 	[OBRANCH] = "\ty\tL%d",
@@ -126,8 +126,8 @@ void (*opcode[])(unsigned, void *) = {
 	[OFUN] = emitfun,
 	[ORET] = emittext,
 	[ODECL] = emitdcl,
-	[OSWITCH] = emitswitch,
-	[OSWITCHT] = emitswitcht,
+	[OBSWITCH] = emittext,
+	[OESWITCH] = emitsymid,
 	[OPAR] = emitbin,
 	[OCALL] = emitbin,
 	[OINIT] = emitinit
@@ -166,17 +166,17 @@ emitvar(Symbol *sym)
 	char c;
 	short flags = sym->flags;
 
-	if (flags & ISLOCAL)
+	if (flags & SLOCAL)
 		c = 'T';
-	else if (flags & ISPRIVATE)
+	else if (flags & SPRIVATE)
 		c =  'Y';
-	else if (flags & ISGLOBAL)
+	else if (flags & SGLOBAL)
 		c = 'G';
-	else if (flags & ISREGISTER)
+	else if (flags & SREGISTER)
 		c = 'R';
-	else if (flags & ISFIELD)
+	else if (flags & SFIELD)
 		c = 'M';
-	else if (flags & ISEXTERN)
+	else if (flags & SEXTERN)
 		c = 'X';
 	else
 		c = 'A';
@@ -186,11 +186,9 @@ emitvar(Symbol *sym)
 static void
 emitconst(Node *np)
 {
-	char *bp, c;
 	Symbol *sym = np->sym;
 	Type *tp = np->type;
 	TUINT u;
-	size_t n;
 
 	switch (tp->op) {
 	case PTR:
@@ -211,7 +209,7 @@ emitsym(unsigned op, void *arg)
 {
 	Node *np = arg;
 
-	if ((np->sym->flags & ISINITLST) == 0) {
+	if ((np->sym->flags & SINITLST) == 0) {
 		/*
 		 * When we have a compound literal we are going
 		 * to call to emitnode for every element of it,
@@ -220,7 +218,7 @@ emitsym(unsigned op, void *arg)
 		 */
 		putchar('\t');
 	}
-	(np->constant) ? emitconst(np) : emitvar(np->sym);
+	(np->flags & NCONST) ? emitconst(np) : emitvar(np->sym);
 }
 
 static void
@@ -239,7 +237,6 @@ static void
 emittype(Type *tp)
 {
 	TINT n;
-	Type **vp;
 	Symbol **sp;
 	char *tag;
 
@@ -253,7 +250,8 @@ emittype(Type *tp)
 		emitletter(tp);
 		putchar('\t');
 		emitletter(tp->type);
-		printf("\t#%c%d\n", sizettype->letter, tp->n.elem);
+		printf("\t#%c%lld\n",
+		       sizettype->letter, (long long) tp->n.elem);
 		return;
 	case PTR:
 		emittype(tp->type);
@@ -288,7 +286,7 @@ emitstring(Symbol *sym, Type *tp)
 	char *bp, *s, *lim;
 	int n;
 
-	bp = bp = sym->u.s;
+	bp = sym->u.s;
 	lim = &sym->u.s[tp->n.elem];
 	while (bp < lim) {
 		s = bp;
@@ -321,11 +319,11 @@ emitdesig(Node *np, Type *tp)
 		if (!np->sym)
 			goto emit_expression;
 		sym = np->sym;
-		if (sym->flags & ISSTRING) {
+		if (sym->flags & SSTRING) {
 			emitstring(sym, tp);
 			return;
 		}
-		if ((sym->flags & ISINITLST) == 0)
+		if ((sym->flags & SINITLST) == 0)
 			goto emit_expression;
 	}
 
@@ -375,17 +373,21 @@ emitdcl(unsigned op, void *arg)
 {
 	Symbol *sym = arg;
 
-	if (sym->flags & ISEMITTED)
+	if (sym->flags & SEMITTED)
 		return;
 	emittype(sym->type);
 	emitvar(sym);
 	putchar('\t');
+	if (sym->type->op == FTN) {
+		emitletter(sym->type->type);
+		putchar('\t');
+	}
 	emitletter(sym->type);
 	printf("\t\"%s", (sym->name) ? sym->name : "");
-	if (sym->flags & ISFIELD)
+	if (sym->flags & SFIELD)
 		printf("\t#%c%llX", sizettype->letter, sym->u.i);
-	sym->flags |= ISEMITTED;
-	if ((sym->flags & HASINIT) == 0)
+	sym->flags |= SEMITTED;
+	if ((sym->flags & SHASINIT) == 0)
 		putchar('\n');
 }
 
@@ -451,32 +453,6 @@ emitsymid(unsigned op, void *arg)
 	printf(optxt[op], sym->id);
 }
 
-static void
-emitswitch(unsigned op, void *arg)
-{
-	Caselist *lcase = arg;
-
-	printf("\ts\tL%u", lcase->ltable->id);
-	emitexp(OEXPR, lcase->expr);
-}
-
-static void
-emitswitcht(unsigned op, void *arg)
-{
-	Caselist *lcase = arg;
-	struct scase *p, *next;
-
-	printf("\tt\t#%c%0x\n", sizettype->letter, lcase->nr);
-	for (p = lcase->head; p; p = next) {
-		emitsymid(OCASE, p->label);
-		emitexp(OEXPR, p->expr);
-		next = p->next;
-		free(p);
-	}
-	if (lcase->deflabel)
-		emitsymid(ODEFAULT, lcase->deflabel);
-}
-
 Node *
 node(unsigned op, Type *tp, Node *lp, Node *rp)
 {
@@ -486,10 +462,14 @@ node(unsigned op, Type *tp, Node *lp, Node *rp)
 	np->op = op;
 	np->type = tp;
 	np->sym = NULL;
-	np->constant = np->lvalue = 0;
+	np->flags = 0;
 	np->left = lp;
 	np->right = rp;
 
+	if (lp)
+		np->flags |= lp->flags & NEFFECT;
+	if (rp)
+		np->flags |= rp->flags & NEFFECT;
 	return np;
 }
 
@@ -501,8 +481,7 @@ varnode(Symbol *sym)
 
 	np = node(OSYM, sym->type, NULL, NULL);
 	np->type = sym->type;
-	np->lvalue = tp->op != FTN && tp->op != ARY;
-	np->constant = 0;
+	np->flags = (tp->op != FTN && tp->op != ARY) ? NLVAL : 0;
 	np->sym = sym;
 	return np;
 }
@@ -514,7 +493,7 @@ constnode(Symbol *sym)
 
 	np = node(OSYM, sym->type, NULL, NULL);
 	np->type = sym->type;
-	np->constant = 1;
+	np->flags = NCONST;
 	np->sym = sym;
 	return np;
 }

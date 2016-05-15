@@ -6,7 +6,7 @@ test010.c:8: warning: conditional expression is constant
 test010.c:10: warning: conditional expression is constant
 test010.c:30: warning: conditional expression is constant
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"x

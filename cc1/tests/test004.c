@@ -3,7 +3,7 @@ name: TEST004
 description: Test integer operations
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	I	"x

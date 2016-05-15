@@ -58,7 +58,7 @@ unlinkhash(Symbol *sym)
 {
 	Symbol **h, *p, *prev;
 
-	if ((sym->flags & ISDECLARED) == 0)
+	if ((sym->flags & SDECLARED) == 0)
 		return;
 	h = &htab[hash(sym->name)];
 	for (prev = p = *h; p != sym; prev = p, p = p->hash)
@@ -83,15 +83,15 @@ killsym(Symbol *sym)
 	char *name;
 
 	f = sym->flags;
-	if (f & ISSTRING)
+	if (f & SSTRING)
 		free(sym->u.s);
 	if (sym->ns == NS_TAG)
 		sym->type->defined = 0;
 	unlinkhash(sym);
 	if ((name = sym->name) != NULL && sym->ns != NS_CPP) {
-		if ((f & (ISUSED|ISGLOBAL|ISDECLARED)) == ISDECLARED)
+		if ((f & (SUSED|SGLOBAL|SDECLARED)) == SDECLARED)
 			warn("'%s' defined but not used", name);
-		if ((f & ISDEFINED) == 0 && sym->ns == NS_LABEL)
+		if ((f & SDEFINED) == 0 && sym->ns == NS_LABEL)
 			errorp("label '%s' is not defined", name);
 	}
 	free(name);
@@ -102,8 +102,6 @@ void
 popctx(void)
 {
 	Symbol *next, *sym;
-	char *name;
-	short f;
 
 	if (--curctx == GLOBALCTX) {
 		for (sym = labels; sym; sym = next) {
@@ -216,7 +214,7 @@ linkhash(Symbol *sym)
 
 	if (sym->ns != NS_CPP)
 		sym->id = newid();
-	sym->flags |= ISDECLARED;
+	sym->flags |= SDECLARED;
 	return linksym(sym);
 }
 
@@ -232,7 +230,7 @@ newstring(char *s, size_t len)
 	Symbol *sym = newsym(NS_IDEN);
 
 	sym->id = newid();
-	sym->flags |= ISSTRING | ISCONSTANT | ISPRIVATE;
+	sym->flags |= SSTRING | SCONSTANT | SPRIVATE;
 	sym->u.s = xmalloc(len);
 	if (s)
 		memcpy(sym->u.s, s, len);
@@ -276,7 +274,7 @@ lookup(int ns, char *name)
 		if (ns == NS_CPP)
 			continue;
 		if (sns == NS_KEYWORD ||
-		    (sym->flags & ISTYPEDEF) && ns >= NS_STRUCTS) {
+		    (sym->flags & STYPEDEF) && ns >= NS_STRUCTS) {
 			return sym;
 		}
 	}
@@ -308,7 +306,7 @@ nextsym(Symbol *sym, int ns)
 Symbol *
 install(int ns, Symbol *sym)
 {
-	if (sym->flags & ISDECLARED) {
+	if (sym->flags & SDECLARED) {
 		if (sym->ctx == curctx && ns == sym->ns)
 			return NULL;
 		sym = allocsym(ns, sym->name);

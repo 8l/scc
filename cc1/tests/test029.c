@@ -9,7 +9,7 @@ error:
 test029.c:34: error: redefinition of 'f1'
 test029.c:35: error: 'f' undeclared
 output:
-G3	F	"f1
+G3	I	F	"f1
 {
 \
 A4	I	"f

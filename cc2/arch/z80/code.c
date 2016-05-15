@@ -34,22 +34,19 @@ segment(int seg)
 static char *
 symname(Symbol *sym)
 {
-	static char name[IDENTSIZ+1];
-	static unsigned short id;
+	static char name[INTIDENTSIZ+1];
 
 	if (sym->name) {
 		switch (sym->kind) {
-		case GLOB:
-		case EXTRN:
+		case SGLOB:
+		case SEXTRN:
 			snprintf(name, sizeof(name), "_%s", sym->name);
 			return name;
-		case PRIVAT:
+		case SPRIV:
 			return sym->name;
 		}
 	}
 
-	if (sym->numid == 0 && (sym->numid = ++id) == 0)
-		error(EIDOVER);
 	sprintf(name, ".%d", sym->numid);
 
 	return name;
@@ -70,10 +67,10 @@ label(Symbol *sym)
 	segment(seg);
 
 	switch (sym->kind) {
-	case EXTRN:
+	case SEXTRN:
 		printf("\tEXTRN\t%s\n", name);
 		return;
-	case GLOB:
+	case SGLOB:
 		printf("\tPUBLIC\t%s\n", name);
 		break;
 	}
@@ -117,7 +114,7 @@ emittree(Node *np)
 	case OADDR:
 		emittree(np->left);
 		break;
-	case MEM:
+	case OMEM:
 		fputs(symname(np->u.sym), stdout);
 		break;
 	default:
@@ -168,7 +165,7 @@ defpar(Symbol *sym)
 {
 	TSIZE align, size;
 
-	if (sym->kind != REG && sym->kind != AUTO)
+	if (sym->kind != SREG && sym->kind != SAUTO)
 		return;
 	align = sym->type.align;
 	size = sym->type.size;
@@ -176,7 +173,7 @@ defpar(Symbol *sym)
 	offpar -= align-1 & ~align;
 	sym->u.off = offpar;
 	offpar -= size;
-	sym->kind = AUTO;
+	sym->kind = SAUTO;
 }
 
 void
@@ -184,7 +181,7 @@ defvar(Symbol *sym)
 {
 	TSIZE align, size;
 
-	if (sym->kind != REG && sym->kind != AUTO)
+	if (sym->kind != SREG && sym->kind != SAUTO)
 		return;
 	align = sym->type.align;
 	size = sym->type.size;
@@ -192,14 +189,14 @@ defvar(Symbol *sym)
 	offvar += align-1 & ~align;
 	sym->u.off = offvar;
 	offvar += size;
-	sym->kind = AUTO;
+	sym->kind = SAUTO;
 }
 
 void
 defglobal(Symbol *sym)
 {
 	label(sym);
-	if (sym->kind == EXTRN || (sym->type.flags & INITF))
+	if (sym->kind == SEXTRN || (sym->type.flags & INITF))
 		return;
 	size2asm(&sym->type);
 	puts("0");

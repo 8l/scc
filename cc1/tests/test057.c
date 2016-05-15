@@ -22,7 +22,7 @@ G4	V2	"arr2	(
 	#I1
 	#I2
 )
-G6	F	"main
+G6	I	F	"main
 {
 \
 	h	G3	'P	#P6	+P	#P4	+P	@I	G4	'P	#P6	+P	#P6	+P	@I	!I

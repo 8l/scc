@@ -5,7 +5,7 @@ description: Basic test for char constants
 comments: This test is done for z80 implementation
 error:
 output:
-G2	F	"main
+G2	I	F	"main
 {
 \
 A3	K	"uc

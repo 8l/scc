@@ -3,7 +3,7 @@ name: TEST017
 description: Basic test about pointers and structs
 error:
 output:
-G10	F	"main
+G10	I	F	"main
 {
 \
 S2	"s1	#N4	#N1

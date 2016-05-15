@@ -7,7 +7,7 @@ S2	"Clock0link	#NC	#N2
 M6	P	"clock	#N0
 M8	P	"link	#N2
 G9	S2	"cl0
-G11	F	"main
+G11	I	F	"main
 {
 \
 	G9	M6	.P	@F	c0

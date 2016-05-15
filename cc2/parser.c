@@ -27,13 +27,13 @@ Type funtype = {
 
 union tokenop {
 	void *arg;
-	int op;
+	unsigned op;
 };
 
 typedef void parsefun(char *, union tokenop);
 static parsefun type, symbol, getname, unary, binary, ternary, call,
-                parameter, constant, composed, binit, einit,
-                jump, oreturn, loop, assign, ocase, odefault, casetbl;
+                constant, composed, binit, einit,
+                jump, oreturn, loop, assign, casetbl;
 
 typedef void evalfun(void);
 static evalfun vardecl, beginfun, endfun, endpars, stmt,
@@ -43,95 +43,94 @@ static struct decoc {
 	void (*eval)(void);
 	void (*parse)(char *token, union tokenop);
 	union tokenop u;
-} optbl[] = {            /*  eval     parse           args */
-	[AUTO]        = {  vardecl,  symbol, .u.op  =        OAUTO},
-	[REG]         = {  vardecl,  symbol, .u.op  =         OREG},
-	[GLOB]        = {  vardecl,  symbol, .u.op  =         OMEM},
-	[EXTRN]       = {  vardecl,  symbol, .u.op  =         OMEM},
-	[PRIVAT]      = {  vardecl,  symbol, .u.op  =         OMEM},
-	[LOCAL]       = {  vardecl,  symbol, .u.op  =         OMEM},
-	[MEMBER]      = {  flddecl,  symbol, .u.op  =         OMEM},
-	[LABEL]       = { labeldcl,  symbol, .u.op  =       OLABEL},
+} optbl[] = {      /*  eval     parse           args */
+	['A']   = {  vardecl,  symbol, .u.op  =  SAUTO<<8 | OAUTO},
+	['R']   = {  vardecl,  symbol, .u.op  =   SREG<<8 |  OREG},
+	['G']   = {  vardecl,  symbol, .u.op  =  SGLOB<<8 |  OMEM},
+	['X']   = {  vardecl,  symbol, .u.op  = SEXTRN<<8 |  OMEM},
+	['Y']   = {  vardecl,  symbol, .u.op  =  SPRIV<<8 |  OMEM},
+	['T']   = {  vardecl,  symbol, .u.op  = SLOCAL<<8 |  OMEM},
+	['M']   = {  flddecl,  symbol, .u.op  =  SMEMB<<8 |  OMEM},
+	['L']   = { labeldcl,  symbol, .u.op  = SLABEL<<8 | OLABEL},
 
-	[INT8]        = {     NULL,    type, .u.arg =    &int8type},
-	[INT16]       = {     NULL,    type, .u.arg =   &int16type},
-	[INT32]       = {     NULL,    type, .u.arg =   &int32type},
-	[INT64]       = {     NULL,    type, .u.arg =   &int64type},
-	[UINT8]       = {     NULL,    type, .u.arg =   &uint8type},
-	[UINT16]      = {     NULL,    type, .u.arg =  &uint16type},
-	[UINT32]      = {     NULL,    type, .u.arg =  &uint32type},
-	[UINT64]      = {     NULL,    type, .u.arg =  &uint64type},
-	[FLOAT]       = {     NULL,    type, .u.arg = &float32type},
-	[DOUBLE]      = {     NULL,    type, .u.arg = &float64type},
-	[LDOUBLE]     = {     NULL,    type, .u.arg = &float80type},
-	[VOID]        = {     NULL,    type, .u.arg =    &voidtype},
-	[BOOL]        = {     NULL,    type, .u.arg =    &booltype},
-	[POINTER]     = {     NULL,    type, .u.arg =     &ptrtype},
-	[ELLIPSIS]    = {     NULL,    type, .u.arg = &elipsistype},
+	['C']   = {     NULL,    type, .u.arg =    &int8type},
+	['I']   = {     NULL,    type, .u.arg =   &int16type},
+	['W']   = {     NULL,    type, .u.arg =   &int32type},
+	['Q']   = {     NULL,    type, .u.arg =   &int64type},
+	['K']   = {     NULL,    type, .u.arg =   &uint8type},
+	['N']   = {     NULL,    type, .u.arg =  &uint16type},
+	['Z']   = {     NULL,    type, .u.arg =  &uint32type},
+	['O']   = {     NULL,    type, .u.arg =  &uint64type},
+	['J']   = {     NULL,    type, .u.arg = &float32type},
+	['D']   = {     NULL,    type, .u.arg = &float64type},
+	['H']   = {     NULL,    type, .u.arg = &float80type},
+	['0']   = {     NULL,    type, .u.arg =    &voidtype},
+	['B']   = {     NULL,    type, .u.arg =    &booltype},
+	['P']   = {     NULL,    type, .u.arg =     &ptrtype},
+	['E']   = {     NULL,    type, .u.arg = &elipsistype},
 
-	[FUNCTION]    = {     NULL,    type, .u.arg =     &funtype},
-	[VECTOR]      = {    array,composed,                     0},
-	[UNION]       = {aggregate,composed,                     0},
-	[STRUCT]      = {aggregate,composed,                     0},
+	['F']   = {     NULL,    type, .u.arg =     &funtype},
+	['V']   = {    array,composed,                     0},
+	['U']   = {aggregate,composed,                     0},
+	['S']   = {aggregate,composed,                     0},
 
-	[ONAME]       = {     NULL, getname,                     0},
-	['{']         = { beginfun,    NULL,                     0},
-	['}']         = {   endfun,    NULL,                     0},
-	['(']         = {     NULL,   binit,                     0},
-	[')']         = {     NULL,   einit,                     0},
-	[OEPARS]      = {  endpars,    NULL,                     0},
-	[OSTMT]       = {     stmt,    NULL,                     0},
+	['"']   = {     NULL, getname,                     0},
+	['{']   = { beginfun,    NULL,                     0},
+	['}']   = {   endfun,    NULL,                     0},
+	['(']   = {     NULL,   binit,                     0},
+	[')']   = {     NULL,   einit,                     0},
+	['\\']  = {  endpars,    NULL,                     0},
+	['\t']  = {     stmt,    NULL,                     0},
 
-	[OCPL]        = {     NULL,   unary,                     0},
-	[ONEG]        = {     NULL,   unary,                     0},
-	[OADDR]       = {     NULL,   unary,                     0},
-	[OPTR]        = {     NULL,   unary,                     0},
-	[OCAST]       = {     NULL,   unary,                     0},
-	[OPAR ]       = {     NULL,   unary,                     0},
+	['~']   = {     NULL,   unary, .u.op =          OCPL},
+	['-']   = {     NULL,   unary, .u.op =          ONEG},
+	['\'']  = {     NULL,   unary, .u.op =         OADDR},
+	['@']   = {     NULL,   unary, .u.op =          OPTR},
+	['g']   = {     NULL,   unary, .u.op =         OCAST},
+	['p']   = {     NULL,   unary, .u.op =          OPAR},
 
-	[OAND]        = {     NULL,  binary,                     0},
-	[OOR]         = {     NULL,  binary,                     0},
-	[OFIELD]      = {     NULL,  binary,                     0},
-	[OADD]        = {     NULL,  binary,                     0},
-	[OSUB]        = {     NULL,  binary,                     0},
-	[OMUL]        = {     NULL,  binary,                     0},
-	[OMOD]        = {     NULL,  binary,                     0},
-	[ODIV]        = {     NULL,  binary,                     0},
-	[OSHL]        = {     NULL,  binary,                     0},
-	[OSHR]        = {     NULL,  binary,                     0},
-	[OLT]         = {     NULL,  binary,                     0},
-	[OGT]         = {     NULL,  binary,                     0},
-	[OLE]         = {     NULL,  binary,                     0},
-	[OGE]         = {     NULL,  binary,                     0},
-	[OEQ]         = {     NULL,  binary,                     0},
-	[ONE]         = {     NULL,  binary,                     0},
-	[OBAND]       = {     NULL,  binary,                     0},
-	[OBOR]        = {     NULL,  binary,                     0},
-	[OBXOR]       = {     NULL,  binary,                     0},
-	[OCOMMA]      = {     NULL,  binary,                     0},
+	['a']   = {     NULL,  binary, .u.op =          OAND},
+	['o']   = {     NULL,  binary, .u.op =           OOR},
+	['.']   = {     NULL,  binary, .u.op =        OFIELD},
+	['+']   = {     NULL,  binary, .u.op =          OADD},
+	['-']   = {     NULL,  binary, .u.op =          OSUB},
+	['*']   = {     NULL,  binary, .u.op =          OMUL},
+	['%']   = {     NULL,  binary, .u.op =          OMOD},
+	['/']   = {     NULL,  binary, .u.op =          ODIV},
+	['l']   = {     NULL,  binary, .u.op =          OSHL},
+	['r']   = {     NULL,  binary, .u.op =          OSHR},
+	['<']   = {     NULL,  binary, .u.op =           OLT},
+	['>']   = {     NULL,  binary, .u.op =           OGT},
+	['[']   = {     NULL,  binary, .u.op =           OLE},
+	[']']   = {     NULL,  binary, .u.op =           OGE},
+	['=']   = {     NULL,  binary, .u.op =           OEQ},
+	['!']   = {     NULL,  binary, .u.op =           ONE},
+	['&']   = {     NULL,  binary, .u.op =         OBAND},
+	['|']   = {     NULL,  binary, .u.op =          OBOR},
+	['^']   = {     NULL,  binary, .u.op =         OBXOR},
+	[',']   = {     NULL,  binary, .u.op =        OCOMMA},
 
-	[OASSIG]      = {     NULL,  assign,                     0},
-	[OASK]        = {     NULL, ternary,                     0},
-	[OCALL]       = {     NULL,    call,                     0},
+	[':']   = {     NULL,  assign, .u.op =        OASSIG},
+	['?']   = {     NULL, ternary, .u.op =          OASK},
+	['c']   = {     NULL,    call, .u.op =         OCALL},
 
-	[OCONST]      = {     NULL,constant,                     0},
+	['#']   = {     NULL,constant, .u.op =        OCONST},
 
-	[OJMP]        = {     NULL,    jump,                     0},
-	[OBRANCH]     = {     NULL,    jump,                     0},
-	[ORET]        = {     NULL, oreturn,                     0},
+	['j']   = {     NULL,    jump, .u.op =          OJMP},
+	['y']   = {     NULL,    jump, .u.op =       OBRANCH},
+	['h']   = {     NULL, oreturn, .u.op =          ORET},
 
-	[OBLOOP]      = {     NULL,    loop,                     0},
-	[OELOOP]      = {     NULL,    loop,                     0},
+	['b']   = {     NULL,    loop, .u.op =        OBLOOP},
+	['e']   = {     NULL,    loop, .u.op =        OELOOP},
 
-	[OCASE]       = {     NULL,    jump,                     0},
-	[OSWITCH]     = {     NULL,    jump,                     0},
+	['v']   = {     NULL,    jump, .u.op =         OCASE},
+	['s']   = {     NULL,    jump, .u.op =       OSWITCH},
 
-	[ODEFAULT]    = {     NULL,odefault,                     0},
-	[OTABLE]      = {     NULL, casetbl,                     0}
+	['f']   = {     NULL, casetbl, .u.op =      ODEFAULT},
+	['t']   = {     NULL, casetbl, .u.op =        OTABLE}
 };
 
 static int sclass, inpars, ininit, endf, lineno;
-static Node *stmtp;
 static void *stack[STACKSIZ], **sp = stack;
 
 static void
@@ -180,12 +179,12 @@ getname(char *t, union tokenop u)
 static void
 symbol(char *token, union tokenop u)
 {
-	Node *np;
+	Node *np = newnode(u.op & 0xFF);
+	Symbol *sym = getsym(atoi(token+1));
 
-	sclass = *token++;
-	np = newnode();
-	np->u.sym = getsym(atoi(token));
-	np->op = u.op;
+	sclass = u.op >> 8;
+	np->u.sym = sym;
+	np->type = sym->type;
 	push(np);
 }
 
@@ -205,20 +204,20 @@ static void
 constant(char *token, union tokenop u)
 {
 	static char letters[] = "0123456789ABCDEF";
-	Node *np = newnode();
+	Node *np;
 	TUINT v;
 	unsigned c;
 
 	++token;
 	if (*token == OSTRING) {
 		++token;
-		np->op = OSTRING;
+		np = newnode(OSTRING);
 		np->type.flags = STRF;
 		np->type.size = strlen(token);
 		np->type.align = int8type.align;
 		np->u.s = xstrdup(token);
 	} else {
-		np->op = OCONST;
+		np = newnode(OCONST);
 		np->type = *gettype(token++);
 		for (v = 0; c = *token++; v += c) {
 			v <<= 4;
@@ -232,30 +231,30 @@ constant(char *token, union tokenop u)
 static void
 assign(char *token, union tokenop u)
 {
-	int c, op = *token++;
-	Node *np = newnode();
+	int subop;
+	Node *np = newnode(u.op);
 
-	switch (*token) {
-	case ODIV:
-	case OMOD:
-	case OADD:
-	case OSUB:
-	case OSHL:
-	case OSHR:
-	case OBAND:
-	case OBXOR:
-	case OBOR:
-	case OINC:
-	case ODEC:
-		c = *token++;
+	switch (subop = *++token) {
+	case '/':
+	case '%':
+	case '+':
+	case '-':
+	case 'l':
+	case 'r':
+	case '&':
+	case '|':
+	case '^':
+	case 'i':
+	case 'd':
+		++token;
+		subop = optbl[subop].u.op;
 		break;
 	default:
-		c = 0;
+		subop = 0;
 		break;
 	}
 
-	np->u.subop = c;
-	np->op = op;
+	np->u.subop = subop;
 	np->type = *gettype(token);
 	np->right = pop();
 	np->left = pop();
@@ -265,18 +264,12 @@ assign(char *token, union tokenop u)
 static void
 ternary(char *token, union tokenop u)
 {
-	Node *ask, *colon;
-	Type *tp;
+	Node *ask = newnode(OCOLON), *colon = newnode(OASK);
+	Type *tp = gettype(token+1);
 
-	tp = gettype(++token);
-
-	colon = newnode();
-	colon->op = OCOLON;
 	colon->right = pop();
 	colon->left = pop();
 
-	ask = newnode();
-	ask->op = OASK;
 	ask->type = *tp;
 	ask->left = pop();
 	push(ask);
@@ -310,7 +303,7 @@ repeat:
 	if ((len = strlen(line)) == 0 || line[0] == '\n')
 		goto repeat;
 	if (line[len-1] != '\n')
-		error(ELNLINE);
+		error(len < sizeof(line)-1 ? ELNBLNE : ELNLINE);
 	line[len-1] = '\0';
 
 	c = *line;
@@ -325,10 +318,8 @@ repeat:
 static void
 oreturn(char *token, union tokenop u)
 {
-	Node *np;
+	Node *np = newnode(u.op);
 
-	np = newnode();
-	np->op = *token;
 	eval(strtok(NULL, "\t\n"));
 	if (!empty())
 		np->left = pop();
@@ -338,13 +329,11 @@ oreturn(char *token, union tokenop u)
 static void
 jump(char *token, union tokenop u)
 {
-	Node *np, *aux;
+	Node *aux, *np = newnode(u.op);
 
-	np = newnode();
-	np->op = *token;
 	eval(strtok(NULL, "\t\n"));
 
-	if (*token != OJMP)
+	if (u.op != OJMP)
 		np->left = pop();
 	aux = pop();
 	np->u.sym = aux->u.sym;
@@ -355,22 +344,8 @@ jump(char *token, union tokenop u)
 static void
 casetbl(char *token, union tokenop u)
 {
-	Node *np, *aux;
+	Node *np = newnode(u.op);
 
-	np = newnode();
-	np->op = *token;
-	eval(strtok(NULL, "\t\n"));
-	np->left = pop();
-	push(np);
-}
-
-static void
-odefault(char *token, union tokenop u)
-{
-	Node *np;
-
-	np = newnode();
-	np->op = *token;
 	eval(strtok(NULL, "\t\n"));
 	np->left = pop();
 	push(np);
@@ -379,20 +354,15 @@ odefault(char *token, union tokenop u)
 static void
 loop(char *token, union tokenop u)
 {
-	Node *np;
-
-	np = newnode();
-	np->op = *token;
-	push(np);
+	push(newnode(u.op));
 }
 
 static void
 unary(char *token, union tokenop u)
 {
-	Node *np = newnode();
+	Node *np = newnode(u.op);
 
-	np->op = *token++;
-	np->type = *gettype(token);
+	np->type = *gettype(token+1);
 	np->left = pop();
 	np->right = NULL;
 	push(np);
@@ -401,7 +371,7 @@ unary(char *token, union tokenop u)
 static void
 call(char *token, union tokenop u)
 {
-	Node *np, *par, *fun;
+	Node *np, *par, *fun = newnode(u.op);
 
 	for (par = NULL;; par = np) {
 		np = pop();
@@ -409,9 +379,8 @@ call(char *token, union tokenop u)
 			break;
 		np->right = par;
 	}
-	fun = newnode();
-	fun->op = *token++;
-	fun->type = *gettype(token);
+
+	fun->type = *gettype(token+1);
 	fun->left = np;
 	fun->right = par;
 	push(fun);
@@ -420,10 +389,9 @@ call(char *token, union tokenop u)
 static void
 binary(char *token, union tokenop u)
 {
-	Node *np = newnode();
+	Node *np = newnode(u.op);
 
-	np->op = *token++;
-	np->type = *gettype(token);
+	np->type = *gettype(token+1);
 	np->right = pop();
 	np->left = pop();
 	push(np);
@@ -503,14 +471,14 @@ decl(Symbol *sym)
 		curfun = sym;
 	} else {
 		switch (sym->kind) {
-		case EXTRN:
-		case GLOB:
-		case PRIVAT:
-		case LOCAL:
+		case SEXTRN:
+		case SGLOB:
+		case SPRIV:
+		case SLOCAL:
 			defglobal(sym);
 			break;
-		case AUTO:
-		case REG:
+		case SAUTO:
+		case SREG:
 			if (!curfun)
 				error(ESYNTAX);
 			((inpars) ? defpar : defvar)(sym);
@@ -524,13 +492,15 @@ decl(Symbol *sym)
 static void
 vardecl(void)
 {
-	Type *tp;
+	Type *tp, *rp;
 	Node *np;
 	Symbol *sym;
 	char *name;
 
 	name = pop();
 	tp = pop();
+	if (tp->flags & FUNF)
+		rp = pop();
 	np = pop();
 
 	sym = np->u.sym;
@@ -542,6 +512,8 @@ vardecl(void)
 	free(sym->name);
 	sym->name = name;
 	sym->type = *tp;
+	if (tp->flags & FUNF)
+		rtype = *rp;
 	sym->kind = sclass;
 
 	if (ininit)
@@ -579,21 +551,12 @@ labeldcl(void)
 	Symbol *sym;
 
 	np = pop();
+	np->op = ONOP;
 	sym = np->u.sym;
-	delnode(np);
-	nextline();
-	stmtp->label = sym;
-	sym->u.label = stmtp;
-}
-
-static void
-addstmt(Node *np)
-{
-	if (!curfun->u.label)
-		curfun->u.label = np;
-	else
-		stmtp->stmt = np;
-	stmtp = np;
+	sym->kind = SLABEL;
+	sym->u.stmt = np;
+	np->label = sym;
+	addstmt(np, SETCUR);
 }
 
 static void
@@ -607,7 +570,7 @@ stmt(void)
 		deltree(np);
 		return;
 	}
-	addstmt(np);
+	addstmt(np, SETCUR);
 }
 
 static void

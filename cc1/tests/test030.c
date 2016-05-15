@@ -4,7 +4,7 @@ name: TEST030
 description: Basic test for vararg functions
 error:
 output:
-G14	F	"f1
+G14	I	F	"f1
 {
 S2	"foo	#N24	#N2
 M3	I	"i	#N0
@@ -21,7 +21,7 @@ A12	I	"n
 L15
 	h	A11	@S2	M4	.I	A12	+I
 }
-G17	F	"main
+G17	I	F	"main
 {
 \
 A18	S2	"f

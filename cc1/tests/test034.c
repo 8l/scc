@@ -7,13 +7,13 @@ test034.c:44: error: declared variable 'bar' of incomplete type
 test034.c:44: error: redeclaration of 'bar'
 output:
 X3	S2	"x
-G6	F	"main
+G6	I	F	"main
 {
 \
 X7	S2	"x
 	h	X7	'P	#P0	!I
 }
-G5	F	"foo
+G5	I	F	"foo
 {
 \
 	X3	M9	.I	#I0	:I

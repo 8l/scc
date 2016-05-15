@@ -4,7 +4,7 @@
 #include "arch.h"
 #include "cc2.h"
 
-static Inst *pc, *prog;
+Inst *pc, *prog;
 
 static void
 nextpc(void)
@@ -22,32 +22,54 @@ nextpc(void)
         }
 
         new->prev = pc;
-        new->to.kind = new->from2.kind = new->from1.kind = NONE;
+        new->to.kind = new->from2.kind = new->from1.kind = SNONE;
         pc = new;
 }
 
-void
-addr(int op, Node *np, Addr *addr)
+static void
+addr(Node *np, Addr *addr)
 {
-	switch (addr->kind = np->op) {
-	case REG:
+	switch (np->op) {
+	case OREG:
+		addr->kind = SREG;
 		addr->u.reg = np->u.reg;
 		break;
-	case CONST:
-		/* TODO: different type of constants*/
-		np->u.i = np->u.i;
+	case OCONST:
+		addr->kind = OCONST;
+		addr->u.i = np->u.i;
 		break;
-	case LABEL:
-	case MEM:
+	case OLABEL:
+		addr->kind = SLABEL;
+		goto symbol;
+	case OAUTO:
+		addr->kind = SAUTO;
+		goto symbol;
+	case OTMP:
+		addr->kind = STMP;;
+	symbol:
 		addr->u.sym = np->u.sym;
 		break;
-	case AUTO:
-	case INDEX:
-		break;
-	default:
-		abort();
 	}
+}
 
+Node *
+label2node(Symbol *sym)
+{
+	Node *np;
+
+	np = newnode(OLABEL);
+	np->u.sym = sym;
+
+	return np;
+}
+
+void
+setlabel(Symbol *sym)
+{
+	if (!sym)
+		return;
+	code(0, NULL, NULL, NULL);
+	pc->label = sym;
 }
 
 void
@@ -55,13 +77,13 @@ code(int op, Node *to, Node *from1, Node *from2)
 {
 	nextpc();
 	if (from1)
-		addr(op, from1, &pc->from1);
+		addr(from1, &pc->from1);
 	if (from2)
-		addr(op, from2, &pc->from2);
+		addr(from2, &pc->from2);
 	if (to)
-		addr(op, to, &pc->to);
+		addr(to, &pc->to);
+	pc->op = op;
 }
-
 
 void
 delcode(void)

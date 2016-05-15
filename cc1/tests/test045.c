@@ -6,7 +6,7 @@ output:
 G1	I	"x	(
 	#I5
 )
-G3	F	"main
+G3	I	F	"main
 {
 \
 	y	L4	G1	#I5	=I

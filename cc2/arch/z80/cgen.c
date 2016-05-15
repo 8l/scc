@@ -2,8 +2,8 @@
 #include "arch.h"
 #include "../../cc2.h"
 
-void
-generate(void)
+Node *
+cgen(Node *np)
 {
 }
 
@@ -16,8 +16,8 @@ generate(void)
  *     STATIC => 12        (value)
  *     CONST => 20         $value
  */
-static Node *
-address(Node *np)
+Node *
+sethi(Node *np)
 {
 	Node *lp, *rp;
 
@@ -29,23 +29,21 @@ address(Node *np)
 	lp = np->left;
 	rp = np->right;
 	switch (np->op) {
-	case AUTO:
+	case OAUTO:
 		np->address = 11;
 		break;
-	case REG:
+	case OREG:
 		np->address = 13;
 		break;
-	case MEM:
+	case OMEM:
 		np->address = 12;
 		break;
-	case CONST:
+	case OCONST:
 		np->address = 20;
 		break;
 	default:
-		if (lp)
-			address(lp);
-		if (rp)
-			address(rp);
+		sethi(lp);
+		sethi(rp);
 		break;
 	}
 
@@ -64,16 +62,4 @@ address(Node *np)
 	if (np->complex == 0)
 		++np->complex;
 	return np;
-}
-
-void
-addressability(void)
-{
-	Node *np;
-
-	if (!curfun)
-		return;
-
-	for (np = curfun->u.label; np; np = np->stmt)
-		address(np);
 }
