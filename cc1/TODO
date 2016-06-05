@@ -1,8 +1,5 @@
 * Verify correctness in initializators
-* emit automatic initializators
 * Implement bitfields
-* Define data structure shared between cc1 and cc2 with the type
-  information
 * Rewrite error recovery code, and ensure correct state after recovery
 * Parse correctly all integer and float constants
 * Add C99 features (almost all the new features of C99 are missed)

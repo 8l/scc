@@ -2,7 +2,9 @@
 #include "arch.h"
 #include "cc2.h"
 
-void
-optimize(void)
+Node *
+optm_ind(Node *np)
 {
+	return np;
 }
+

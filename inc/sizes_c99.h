@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
  * 127 nesting levels of blocks
  */

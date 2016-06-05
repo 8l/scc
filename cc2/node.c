@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,7 +11,6 @@
 
 Node *curstmt;
 Symbol *curfun;
-Type rtype;
 
 struct arena {
 	Node *mem;

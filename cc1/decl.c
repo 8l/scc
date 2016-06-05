@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ push(struct declarators *dp, int op, ...)
 
 	va_start(va, op);
 	if ((n = dp->nr++) == NR_DECLARATORS)
-		error("too much declarators");
+		error("too many declarators");
 
 	p = &dp->d[n];
 	p->op = op;
@@ -65,7 +65,7 @@ push(struct declarators *dp, int op, ...)
 	va_end(va);
 }
 
-static bool
+static int
 pop(struct declarators *dp, struct decl *dcl)
 {
 	struct declarator *p;
@@ -160,7 +160,7 @@ parameter(struct decl *dcl)
 
 	switch (tp->op) {
 	case VOID:
-		if (n != 0 || funtp->k_r) {
+		if (n != 0 || (funtp->prop & TK_R)) {
 			errorp("incorrect void parameter");
 			return NULL;
 		}
@@ -177,11 +177,11 @@ parameter(struct decl *dcl)
 	}
 	if (!empty(sym, tp)) {
 		Symbol *p = install(NS_IDEN, sym);
-		if (!p && !funtp->k_r) {
+		if (!p && !(funtp->prop & TK_R)) {
 			errorp("redefinition of parameter '%s'", name);
 			return NULL;
 		}
-		if (p && funtp->k_r) {
+		if (p && (funtp->prop & TK_R)) {
 			errorp("declaration for parameter ‘%s’ but no such parameter",
 			       sym->name);
 			return NULL;
@@ -268,7 +268,7 @@ ansifun(Type *tp, Type *types[], Symbol *syms[], int *ntypes, int *nsyms)
 			continue;
 		}
 		if (!toomany)
-			errorp("too much parameters in function definition");
+			errorp("too many parameters in function definition");
 		toomany = 1;
 	} while (accept(','));
 
@@ -287,10 +287,10 @@ fundcl(struct declarators *dp)
 	pushctx();
 	expect('(');
 	type.n.elem = 0;
-	type.k_r = 0;
+	type.prop = 0;
 
 	k_r = (yytoken == ')' || yytoken == IDEN);
-	(*(k_r ? krfun : ansifun))(&type, types, syms, &ntypes, &nsyms);
+	(k_r ? krfun : ansifun)(&type, types, syms, &ntypes, &nsyms);
 	expect(')');
 
 	type.n.elem = ntypes;
@@ -320,7 +320,7 @@ directdcl(struct declarators *dp, unsigned ns)
 
 	if (accept('(')) {
 		if (nested == NR_SUBTYPE)
-			error("too declarators nested by parentheses");
+			error("too many declarators nested by parentheses");
 		++nested;
 		declarator(dp, ns);
 		--nested;
@@ -366,12 +366,12 @@ static Type *
 specifier(int *sclass, int *qualifier)
 {
 	Type *tp = NULL;
-	int spec, qlf, sign, type, cls, size;
+	unsigned spec, qlf, sign, type, cls, size;
 
 	spec = qlf = sign = type = cls = size = 0;
 
 	for (;;) {
-		unsigned *p;
+		unsigned *p = NULL;
 		Type *(*dcl)(void) = NULL;
 
 		switch (yytoken) {
@@ -415,7 +415,6 @@ specifier(int *sclass, int *qualifier)
 				if (size == LONG) {
 					yylval.token = LLONG;
 					size = 0;
-					break;
 				}
 			case SHORT:
 				p = &size;
@@ -482,7 +481,7 @@ newtag(void)
 		Type *tp;
 
 		if (ns == NS_STRUCTS + NR_MAXSTRUCTS)
-			error("too much tags declared");
+			error("too many tags declared");
 		tp = mktype(NULL, tag, 0, NULL);
 		tp->ns = ns++;
 		sym->type = tp;
@@ -518,12 +517,12 @@ structdcl(void)
 		return tp;
 	}
 
-	if (tp->defined)
+	if (tp->prop & TDEFINED)
 		error("redefinition of struct/union '%s'", sym->name);
-	tp->defined = 1;
+	tp->prop |= TDEFINED;
 
 	if (nested == NR_STRUCT_LEVEL)
-		error("too levels of nested structure or union definitions");
+		error("too many levels of nested structure or union definitions");
 
 	++nested;
 	while (yytoken != '}') {
@@ -551,9 +550,9 @@ enumdcl(void)
 
 	if (!accept('{'))
 		goto restore_name;
-	if (tp->defined)
+	if (tp->prop & TDEFINED)
 		errorp("redefinition of enumeration '%s'", tagsym->name);
-	tp->defined = 1;
+	tp->prop |= TDEFINED;
 	namespace = NS_IDEN;
 
 	/* TODO: check incorrect values in val */
@@ -626,7 +625,7 @@ field(struct decl *dcl)
 		errorp("storage class in struct/union field");
 		err = 1;
 	}
-	if (!tp->defined) {
+	if (!(tp->prop & TDEFINED)) {
 		error("field '%s' has incomplete type", name);
 		err = 1;
 	}
@@ -639,7 +638,7 @@ field(struct decl *dcl)
 
 	sym->flags |= SFIELD;
 	if (n == NR_FIELDS)
-		error("too much fields in struct/union");
+		error("too many fields in struct/union");
 	DBG("New field '%s' in namespace %d\n", name, structp->ns);
 	structp->p.fields = xrealloc(structp->p.fields, ++n * sizeof(*sym));
 	structp->p.fields[n-1] = sym;
@@ -729,7 +728,7 @@ identifier(struct decl *dcl)
 		return sym;
 
 	/* TODO: Add warning about ANSI limits */
-	if (!tp->defined                          &&
+	if (!(tp->prop & TDEFINED)                &&
 	    sclass != EXTERN && sclass != TYPEDEF &&
 	    !(tp->op == ARY && yytoken == '=')) {
 		errorp("declared variable '%s' of incomplete type", name);
@@ -847,6 +846,7 @@ decl(void)
 	 * against GLOBALCTX+1
 	 */
 	if (curctx != GLOBALCTX+1 || yytoken == ';') {
+		emit(ODECL, sym);
 		/*
 		 * avoid non used warnings in prototypes
 		 */
@@ -859,7 +859,7 @@ decl(void)
 		curfun = ocurfun;
 		return;
 	}
-	if (sym->type->k_r) {
+	if (sym->type->prop & TK_R) {
 		while (yytoken != '{') {
 			par = dodcl(1, parameter, NS_IDEN, sym->type);
 			expect(';');

@@ -1,8 +1,10 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST015
 description: Stress namespace mechanism
 error:
-test015.c:52: error: label 's' already defined
+test015.c:54: error: label 's' already defined
 output:
 S8	"s2	#N2	#N1
 M9	I	"s	#N0

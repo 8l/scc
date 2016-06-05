@@ -1,3 +1,4 @@
+/* See LICENSE file for copyright and license details. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +12,7 @@
 
 Node *expr(void);
 
-bool
+int
 cmpnode(Node *np, TUINT val)
 {
 	Symbol *sym;
@@ -27,7 +28,7 @@ cmpnode(Node *np, TUINT val)
 	case PTR:
 	case INT:
 		mask = (val > 1) ? ones(np->type->size) : -1;
-		nodeval = (tp->sign) ? sym->u.i : sym->u.u;
+		nodeval = (tp->prop & TSIGNED) ? sym->u.i : sym->u.u;
 		return (nodeval & mask) == (val & mask);
 	case FLOAT:
 		return sym->u.f == val;
@@ -35,7 +36,7 @@ cmpnode(Node *np, TUINT val)
 	return 0;
 }
 
-bool
+int
 isnodecmp(int op)
 {
 	switch (op) {
@@ -99,8 +100,13 @@ arithconv(Node **p1, Node **p2)
 	if (tp1 == tp2)
 		goto set_p1_p2;
 
-	s1 = tp1->sign, r1 = tp1->n.rank, lp1 = getlimits(tp1);
-	s2 = tp2->sign, r2 = tp2->n.rank, lp2 = getlimits(tp2);
+	s1 = (tp1->prop & TSIGNED) != 0;
+	r1 = tp1->n.rank;
+	lp1 = getlimits(tp1);
+
+	s2 = (tp2->prop & TSIGNED) != 0;
+	r2 = tp2->n.rank;
+	lp2 = getlimits(tp2);
 
 	if (s1 == s2 || tp1->op == FLOAT || tp2->op == FLOAT) {
 		to = r1 - r2;
@@ -148,15 +154,15 @@ chkternary(Node *yes, Node *no)
 	 */
 
 	if (!eqtype(yes->type, no->type)) {
-		if (yes->type->arith && no->type->arith) {
+		if ((yes->type->prop & TARITH) && (no->type->prop & TARITH)) {
 			arithconv(&yes, &no);
 		} else if (yes->type->op != PTR && no->type->op != PTR) {
 			goto wrong_type;
 		} else {
 			/* convert integer 0 to NULL */
-			if (yes->type->integer && cmpnode(yes, 0))
+			if ((yes->type->prop & TINTEGER) && cmpnode(yes, 0))
 				yes = convert(yes, pvoidtype, 0);
-			if (no->type->integer && cmpnode(no, 0))
+			if ((no->type->prop & TINTEGER) && cmpnode(no, 0))
 				no = convert(no, pvoidtype, 0);
 			/*
 			 * At this point the type of both should be
@@ -224,7 +230,7 @@ decay(Node *np)
 static Node *
 integerop(char op, Node *lp, Node *rp)
 {
-	if (!lp->type->integer || !rp->type->integer)
+	if (!(lp->type->prop & TINTEGER) || !(rp->type->prop & TINTEGER))
 		error("operator requires integer operands");
 	arithconv(&lp, &rp);
 	return simplify(op, lp->type, lp, rp);
@@ -233,7 +239,7 @@ integerop(char op, Node *lp, Node *rp)
 static Node *
 integeruop(char op, Node *np)
 {
-	if (!np->type->integer)
+	if (!(np->type->prop & TINTEGER))
 		error("unary operator requires integer operand");
 	np = promote(np);
 	if (op == OCPL && np->op == OCPL)
@@ -244,7 +250,7 @@ integeruop(char op, Node *np)
 static Node *
 numericaluop(char op, Node *np)
 {
-	if (!np->type->arith)
+	if (!(np->type->prop & TARITH))
 		error("unary operator requires numerical operand");
 	np = promote(np);
 	if (op == ONEG && np->op == ONEG)
@@ -320,7 +326,7 @@ parithmetic(char op, Node *lp, Node *rp)
 		lp = node(OSUB, pdifftype, lp, rp);
 		return node(ODIV, inttype, lp, size);
 	}
-	if (!rp->type->integer)
+	if (!(rp->type->prop & TINTEGER))
 		goto incorrect;
 
 	rp = convert(promote(rp), sizettype, 0);
@@ -339,7 +345,7 @@ arithmetic(char op, Node *lp, Node *rp)
 {
 	Type *ltp = lp->type, *rtp = rp->type;
 
-	if (ltp->arith && rtp->arith) {
+	if ((ltp->prop & TARITH) && (rtp->prop & TARITH)) {
 		arithconv(&lp, &rp);
 	} else if ((ltp->op == PTR || rtp->op == PTR) &&
 	           (op == OADD || op == OSUB)) {
@@ -356,10 +362,10 @@ pcompare(char op, Node *lp, Node *rp)
 	Node *np;
 	int err = 0;
 
-	if (lp->type->integer)
+	if (lp->type->prop & TINTEGER)
 		XCHG(lp, rp, np);
 
-	if (rp->type->integer) {
+	if (rp->type->prop & TINTEGER) {
 		if (!cmpnode(rp, 0))
 			err = 1;
 		rp = convert(rp, pvoidtype, 1);
@@ -370,7 +376,7 @@ pcompare(char op, Node *lp, Node *rp)
 		err = 1;
 	}
 	if (err)
-		errorp("incompatibles type in comparision");
+		errorp("incompatible types in comparison");
 	return simplify(op, inttype, lp, rp);
 }
 
@@ -387,11 +393,11 @@ compare(char op, Node *lp, Node *rp)
 
 	if (ltp->op == PTR || rtp->op == PTR) {
 		return pcompare(op, rp, lp);
-	} else if (ltp->arith && rtp->arith) {
+	} else if ((ltp->prop & TARITH) && (rtp->prop & TARITH)) {
 		arithconv(&lp, &rp);
 		return simplify(op, inttype, lp, rp);
 	} else {
-		errorp("incompatibles type in comparision");
+		errorp("incompatible types in comparison");
 		freetree(lp);
 		freetree(rp);
 		return constnode(zero);
@@ -425,7 +431,7 @@ static Node *
 exp2cond(Node *np, char neg)
 {
 	np = decay(np);
-	if (np->type->aggreg) {
+	if (np->type->prop & TAGGREG) {
 		errorp("used struct/union type value where scalar is required");
 		np = constnode(zero);
 	}
@@ -456,7 +462,7 @@ field(Node *np)
 		unexpected();
 	next();
 
-	if (!np->type->aggreg) {
+	if (!(np->type->prop & TAGGREG)) {
 		errorp("request for member '%s' in something not a structure or union",
 		      yylval.sym->name);
 		goto free_np;
@@ -503,7 +509,7 @@ array(Node *lp, Node *rp)
 	Type *tp;
 	Node *np;
 
-	if (!lp->type->integer && !rp->type->integer)
+	if (!(lp->type->prop & TINTEGER) && !(rp->type->prop & TINTEGER))
 		error("array subscript is not an integer");
 	np = arithmetic(OADD, decay(lp), decay(rp));
 	tp = np->type;
@@ -532,10 +538,10 @@ incdec(Node *np, char op)
 	chklvalue(np);
 	np->flags |= NEFFECT;
 
-	if (!tp->defined) {
+	if (!(tp->prop & TDEFINED)) {
 		errorp("invalid use of undefined type");
 		return np;
-	} else if (tp->arith) {
+	} else if (tp->prop & TARITH) {
 		inc = constnode(one);
 	} else if (tp->op == PTR) {
 		inc = sizeofnode(tp->type);
@@ -572,7 +578,7 @@ static Node *
 negation(char op, Node *np)
 {
 	np = decay(np);
-	if (!np->type->arith && np->type->op != PTR) {
+	if (!(np->type->prop & TARITH) && np->type->op != PTR) {
 		errorp("invalid argument of unary '!'");
 		freetree(np);
 		return constnode(zero);
@@ -794,7 +800,7 @@ unary(void)
 	case SIZEOF:
 		next();
 		tp = (yytoken == '(') ? sizeexp() : typeof(unary());
-		if (!tp->defined)
+		if (!(tp->prop & TDEFINED))
 			errorp("sizeof applied to an incomplete type");
 		return sizeofnode(tp);
 	case INC:
@@ -836,18 +842,18 @@ cast(void)
 
 		switch (tp->op) {
 		case ARY:
-			error("cast specify an array type");
+			error("cast specifies an array type");
 		default:
 			lp = cast();
 			if ((rp = convert(lp,  tp, 1)) == NULL)
-				error("bad type convertion requested");
+				error("bad type conversion requested");
 			rp->flags &= ~NLVAL;
 			rp->flags |= lp->flags & NLVAL;
 		}
 		break;
 	default:
 		if (nested == NR_SUBEXPR)
-			error("too expressions nested by parentheses");
+			error("too many expressions nested by parentheses");
 		++nested;
 		rp = expr();
 		--nested;

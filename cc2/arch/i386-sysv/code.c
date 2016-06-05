@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -120,11 +120,11 @@ size2asm(Type *tp)
 			s = "\t.quad\t";
 			break;
 		default:
-			s = "\t.space\t%llu,";
+			s = "\t.space\t%lu,";
 			break;
 		}
 	}
-	printf(s, (unsigned long long) tp->size);
+	printf(s, tp->size);
 }
 
 void
@@ -157,15 +157,12 @@ label(Symbol *sym)
 		return;
 	case SGLOB:
 		printf("\t.global\t%s\n", name);
-		if (seg == BSSSEG) {
-			printf("\t.comm\t%s,%llu\n",
-			       name,
-			       (unsigned long long) tp->size);
-		}
+		if (seg == BSSSEG)
+			printf("\t.comm\t%s,%lu\n", name, tp->size);
 		break;
 	}
 	if (sym->type.align != 1)
-		printf("\t.align\t%lld\n", (long long) sym->type.align );
+		printf("\t.align\t%lu\n", sym->type.align );
 	printf("%s:\n", name);
 }
 

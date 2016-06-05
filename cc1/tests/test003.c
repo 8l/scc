@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST003
 description: Select function to call inside ternary operator

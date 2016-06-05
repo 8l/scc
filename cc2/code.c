@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdlib.h>
 
 #include "arch.h"
@@ -29,26 +29,31 @@ nextpc(void)
 static void
 addr(Node *np, Addr *addr)
 {
+	Symbol *sym;
+
 	switch (np->op) {
 	case OREG:
+		/* TODO:
+		 * At this moment this op is used also for register variables
+		 */
 		addr->kind = SREG;
 		addr->u.reg = np->u.reg;
 		break;
 	case OCONST:
-		addr->kind = OCONST;
+		addr->kind = SCONST;
+		/* TODO: Add support for more type of constants */
 		addr->u.i = np->u.i;
 		break;
-	case OLABEL:
-		addr->kind = SLABEL;
-		goto symbol;
-	case OAUTO:
-		addr->kind = SAUTO;
-		goto symbol;
 	case OTMP:
-		addr->kind = STMP;;
-	symbol:
-		addr->u.sym = np->u.sym;
+	case OLABEL:
+	case OAUTO:
+	case OMEM:
+		sym = np->u.sym;
+		addr->kind = sym->kind;
+		addr->u.sym = sym;
 		break;
+	default:
+		abort();
 	}
 }
 

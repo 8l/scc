@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdarg.h>
 #include <stdio.h>
 

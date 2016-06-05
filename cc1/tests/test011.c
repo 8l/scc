@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST011
 description: Basic test for goto

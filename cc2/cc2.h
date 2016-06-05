@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 enum tflags {
 	SIGNF   =    1,
 	INTF    =    2,
@@ -99,8 +99,8 @@ enum op {
 	OELOOP   = 'e',
 	OCASE    = 'v',
 	ODEFAULT = 'f',
-	OTABLE   = 't',
-	OSWITCH  = 's',
+	OBSWITCH = 's',
+	OESWITCH = 't',
 };
 
 enum nerrors {
@@ -116,6 +116,9 @@ enum nerrors {
 	ELNBLNE,       /* line without new line */
 	EFERROR,       /* error reading from file:%s*/
 	EBADID,        /* incorrect symbol id */
+	EWTACKO,       /* switch stack overflow */
+	EWTACKU,       /* switch stack underflow */
+	ENOSWTC,       /* Out of switch statement */
 	ENUMERR
 };
 
@@ -126,19 +129,20 @@ typedef struct addr Addr;
 typedef struct inst Inst;
 
 struct type {
-	TSIZE size;
-	TSIZE align;
+	unsigned long size;
+	unsigned long align;
 	char flags;
 };
 
 struct symbol {
 	Type type;
+	Type rtype;
 	unsigned short id;
 	unsigned short numid;
 	char *name;
 	char kind;
 	union {
-		TSIZE off;
+		unsigned long off;
 		Node *stmt;
 		Inst *inst;
 	} u;
@@ -187,7 +191,7 @@ extern void error(unsigned nerror, ...);
 extern void parse(void);
 
 /* optm.c */
-extern Node *optm(Node *np);
+extern Node *optm_dep(Node *np), *optm_ind(Node *np);
 
 /* cgen.c */
 extern Node *sethi(Node *np);
@@ -223,7 +227,6 @@ extern void pushctx(void);
 extern void freesym(Symbol *sym);
 
 /* globals */
-extern Type rtype;
 extern Symbol *curfun;
 extern Symbol *locals;
 extern Inst *pc, *prog;

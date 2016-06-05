@@ -1,14 +1,16 @@
+/* See LICENSE file for copyright and license details. */
 
 /*
 name: TEST038
 description: Basic test for tentative definitions
 error:
-test038.c:43: error: redeclaration of 'x'
+test038.c:45: error: redeclaration of 'x'
 output:
 G1	I	"x
 G1	I	"x	(
 	#I0
 )
+X3	I	F	"main
 G5	P	F	"foo
 {
 \

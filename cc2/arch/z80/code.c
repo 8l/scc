@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -14,7 +14,7 @@ enum segment {
 };
 
 static int curseg = NOSEG;
-static TSIZE offpar, offvar;
+static unsigned long offpar, offvar;
 
 static void
 segment(int seg)
@@ -147,11 +147,11 @@ size2asm(Type *tp)
 			s = "\tDD\t";
 			break;
 		default:
-			s = "\tDS\t%llu,";
+			s = "\tDS\t%lu,";
 			break;
 		}
 	}
-	printf(s, (unsigned long long) tp->size);
+	printf(s, tp->size);
 }
 
 void
@@ -163,7 +163,7 @@ newfun()
 void
 defpar(Symbol *sym)
 {
-	TSIZE align, size;
+	unsigned long align, size;
 
 	if (sym->kind != SREG && sym->kind != SAUTO)
 		return;
@@ -179,7 +179,7 @@ defpar(Symbol *sym)
 void
 defvar(Symbol *sym)
 {
-	TSIZE align, size;
+	unsigned long align, size;
 
 	if (sym->kind != SREG && sym->kind != SAUTO)
 		return;

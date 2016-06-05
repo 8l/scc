@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST043
 description: Test for double typedef (taken from plan9 kernel)

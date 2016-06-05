@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #define RANK_BOOL    0
 #define RANK_SCHAR   1
 #define RANK_UCHAR   1
@@ -18,6 +18,5 @@
 #define TINT        long long
 #define TUINT       unsigned long long
 #define TFLOAT      double
-#define TSIZE       unsigned long
 
 #define L_ENUM      L_INT32

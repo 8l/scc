@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST040
 description: Test for bug parsing typenames in struct definition

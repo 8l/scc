@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +73,7 @@ void
 pushctx(void)
 {
 	if (++curctx == NR_BLOCK+1)
-		error("too much nested blocks");
+		error("too many nested blocks");
 }
 
 void
@@ -86,7 +86,7 @@ killsym(Symbol *sym)
 	if (f & SSTRING)
 		free(sym->u.s);
 	if (sym->ns == NS_TAG)
-		sym->type->defined = 0;
+		sym->type->prop &= ~TDEFINED;
 	unlinkhash(sym);
 	if ((name = sym->name) != NULL && sym->ns != NS_CPP) {
 		if ((f & (SUSED|SGLOBAL|SDECLARED)) == SDECLARED)

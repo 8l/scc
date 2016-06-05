@@ -19,11 +19,11 @@ Types are represented with uppercase letters:
 * C -- signed    8-Bit integer
 * I -- signed   16-Bit integer
 * W -- signed   32-Bit integer
-* O -- signed   64-Bit integer
-* M -- unsigned  8-Bit integer
+* Q -- signed   64-Bit integer
+* K -- unsigned  8-Bit integer
 * N -- unsigned 16-Bit integer
 * Z -- unsigned 32-Bit integer
-* Q -- unsigned 64-Bit integer
+* O -- unsigned 64-Bit integer
 * 0 -- void
 * P -- pointer
 * F -- function

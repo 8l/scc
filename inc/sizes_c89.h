@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
  * 15 nesting levels of compound statements, iteration control
  * structures, and selection control structures

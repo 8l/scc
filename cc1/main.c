@@ -1,18 +1,21 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
+#include "../inc/arg.h"
 #include "../inc/cc.h"
 #include "arch.h"
 #include "cc1.h"
 
+char *argv0;
+
 int warnings;
 jmp_buf recover;
 
-static char *output, *arg0;
+static char *output;
 int onlycpp;
 
 static void
@@ -27,61 +30,53 @@ clean(void)
 static void
 usage(void)
 {
-	fprintf(stderr,
-	        "usage: %s [-E] [-Dmacro[=value]] [-Idir] [-w] [-d] [-o output] [input]\n",
-	        arg0);
-	exit(1);
+	die("usage: %s [-E] [-D macro[=value]] ... [-I dir] [-w] [-d]"
+	    "[-o output] [input]", argv0);
 }
 
 int
 main(int argc, char *argv[])
 {
-	char c, *cp;
+	char *base;
 
 	atexit(clean);
 
-	arg0 = (cp = strrchr(*argv, '/')) ? cp+1 : *argv;
-	if (!strcmp(arg0, "cpp"))
+	ARGBEGIN {
+	case 'w':
+		warnings = 1;
+		break;
+	case 'E':
 		onlycpp = 1;
+		break;
+	case 'D':
+		defmacro(EARGF(usage()));
+		break;
+	case 'd':
+		DBGON();
+		break;
+	case 'I':
+		incdir(EARGF(usage()));
+		break;
+	case 'o':
+		output = EARGF(usage());
+		break;
+	default:
+		usage();
+	} ARGEND
 
-	for (;;) {
-	nextiter:
-		--argc, ++argv;
-		if (!*argv || argv[0][0] != '-' || argv[0][1] == '-')
-			break;
-		for (cp = &argv[0][1]; (c = *cp); cp++) {
-			switch (c) {
-			case 'w':
-				warnings = 1;
-				break;
-			case 'E':
-				onlycpp = 1;
-				break;
-			case 'D':
-				defmacro(cp+1);
-				goto nextiter;
-			case 'd':
-				DBGON();
-				break;
-			case 'I':
-				incdir(cp+1);
-				goto nextiter;
-			case 'o':
-				if (!*++argv || argv[0][0] == '-')
-					usage();
-				--argc;
-				output = *argv;
-				break;
-			default:
-				usage();
-			}
-		}
-	}
-
-	if (output && !freopen(output, "w", stdout))
-		die("error opening output:%s", strerror(errno));
 	if (argc > 1)
 		usage();
+
+	/* if run as cpp, only run the preprocessor */
+	if ((base = strrchr(argv0, '/')))
+		++base;
+	else
+		base = argv0;
+	if (!strcmp(base, "cpp"))
+		onlycpp = 1;
+
+	if (output && !freopen(output, "w", stdout))
+		die("error opening output: %s", strerror(errno));
 
 	icpp();
 	ilex(*argv);
@@ -89,8 +84,10 @@ main(int argc, char *argv[])
 	if (onlycpp) {
 		outcpp();
 	} else {
-		for (next(); yytoken != EOFTOK; decl())
-			/* nothing */;
+		next();
+
+		while (yytoken != EOFTOK)
+			decl();
 	}
 
 	return 0;

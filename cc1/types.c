@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,7 +81,7 @@ getlimits(Type *tp)
 	switch (tp->op) {
 	case ENUM:
 	case INT:
-		ntable = tp->sign;
+		ntable = ((tp->prop & TSIGNED) != 0);
 		switch (tp->size) {
 		case 1: ntype = 0; break;
 		case 2: ntype = 1; break;
@@ -97,6 +97,8 @@ getlimits(Type *tp)
 		case 16: ntype = 2; break;
 		}
 		break;
+	default:
+		abort();
 	}
 
 	return &limits[ntable][ntype];
@@ -171,7 +173,9 @@ typesize(Type *tp)
 {
 	Symbol **sp;
 	Type *aux;
-	TSIZE n, size, align, a;
+	unsigned long size;
+	int align, a;
+	TINT n;
 
 	switch (tp->op) {
 	case ARY:
@@ -259,13 +263,7 @@ mktype(Type *tp, int op, TINT nelem, Type *pars[])
 
 	type.type = tp;
 	type.op = op;
-	type.defined = 0;
-	type.arith = 0;
-	type.sign = 0;
-	type.integer = 0;
-	type.printed = 0;
-	type.aggreg = 0;
-	type.k_r = k_r;
+	type.prop = k_r ? TK_R : 0;
 	type.letter = c;
 	type.p.pars = pars;
 	type.n.elem = nelem;
@@ -278,18 +276,18 @@ mktype(Type *tp, int op, TINT nelem, Type *pars[])
 		/* PASSTROUGH */
 	case FTN:
 	case PTR:
-		type.defined = 1;
+		type.prop |= TDEFINED;
 		break;
 	case ENUM:
-		type.printed = 1;
-		type.integer = 1;
-		type.arith = 1;
+		type.prop |= TPRINTED | TINTEGER | TARITH;
 		type.n.rank = RANK_INT;
 		break;
 	case STRUCT:
 	case UNION:
-		type.aggreg = 1;
+		type.prop |= TAGGREG;
 		break;
+	default:
+		abort();
 	}
 
 	t = (op ^ (uintptr_t) tp >> 3) & NR_TYPE_HASH-1;
@@ -312,24 +310,19 @@ mktype(Type *tp, int op, TINT nelem, Type *pars[])
 	return *tbl = bp;
 }
 
-bool
+int
 eqtype(Type *tp1, Type *tp2)
 {
 	TINT n;
 	Type **p1, **p2;
 
-	if (!tp1 || !tp2)
-		return 0;
 	if (tp1 == tp2)
 		return 1;
+	if (!tp1 || !tp2)
+		return 0;
 	if (tp1->op != tp2->op)
 		return 0;
 	switch (tp1->op) {
-	case ARY:
-		if (tp1->n.elem != tp2->n.elem)
-			return 0;
-	case PTR:
-		return eqtype(tp1->type, tp2->type);
 	case UNION:
 	case STRUCT:
 	case FTN:
@@ -340,12 +333,20 @@ eqtype(Type *tp1, Type *tp2)
 			if (!eqtype(*p1++, *p2++))
 				return 0;
 		}
-		return 1;
+		goto check_base;
+	case ARY:
+		if (tp1->n.elem != tp2->n.elem)
+			return 0;
+	case PTR:
+	check_base:
+		return eqtype(tp1->type, tp2->type);
 	case VOID:
 	case ENUM:
 		return 0;
 	case INT:
 	case FLOAT:
 		return tp1->letter == tp2->letter;
+	default:
+		abort();
 	}
 }

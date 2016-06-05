@@ -1,5 +1,5 @@
 # scc version
-VERSION     = 0.1
+VERSION = 0.1
 
 # Customize below to fit your system
 ARCH = z80
@@ -18,7 +18,7 @@ MANPREFIX = ${PREFIX}/share/man
 
 # for Plan9 add -D_SUSV2_SOURCE -DNBOOL
 SCC_CFLAGS = -DNDEBUG -Iarch/$(ARCH) -DPREFIX=\"$(PREFIX)\" $(CFLAGS)
-SCC_LDFLAGS  = $(LDFLAGS)
+SCC_LDFLAGS = $(LDFLAGS)
 
 .c.o:
 	$(CC) $(SCC_CFLAGS) -o $@ -c $<

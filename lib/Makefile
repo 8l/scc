@@ -1,3 +1,4 @@
+# See LICENSE file for copyright and license details.
 include ../config.mk
 
 OBJS = die.o xcalloc.o xmalloc.o xrealloc.o xstrdup.o debug.o

@@ -1,3 +1,4 @@
+/* See LICENSE file for copyright and license details. */
 #ifndef _STDIO_H
 #define _STDIO_H
 

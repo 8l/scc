@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST010
 description: Test for continue and break statements
@@ -66,7 +68,7 @@ int
 main()
 {
 	int x;
-	
+
 	x = 0;
 	while(1)
 		break;

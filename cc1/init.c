@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +39,7 @@ arydesig(Init *ip)
 	next();
 	np = iconstexpr();
 	npos = np->sym->u.i;
-	if (npos < 0 || tp->defined && npos >= tp->n.elem) {
+	if (npos < 0 || (tp->prop & TDEFINED) && npos >= tp->n.elem) {
 		errorp("array index in initializer exceeds array bounds");
 		npos = 0;
 	}
@@ -55,7 +55,7 @@ fielddesig(Init *ip)
 	Symbol *sym, **p;
 	Type *tp = ip->type;
 
-	if (!tp->aggreg)
+	if (!(tp->prop & TAGGREG))
 		errorp("field name not in record or union initializer");
 	ons = namespace;
 	namespace = tp->ns;
@@ -65,7 +65,7 @@ fielddesig(Init *ip)
 		unexpected();
 	sym = yylval.sym;
 	if ((sym->flags & SDECLARED) == 0) {
-		errorp(" unknown field '%s' specified in initializer",
+		errorp("unknown field '%s' specified in initializer",
 		      sym->name);
 		return 0;
 	}
@@ -119,8 +119,8 @@ initialize(Type *tp)
 			goto return_zero;
 		}
 		len = sym->type->n.elem-1;
-		if (!tp->defined) {
-			tp->defined = 1;
+		if (!(tp->prop & TDEFINED)) {
+			tp->prop |= TDEFINED;
 			tp->n.elem = len+1;
 		} else if (tp->n.elem < len) {
 			warn("initializer-string for array of chars is too long");
@@ -221,7 +221,7 @@ initlist(Type *tp)
 		switch (tp->op) {
 		case ARY:
 			newtp = tp->type;
-			if (!tp->defined || in.pos < tp->n.elem)
+			if (!(tp->prop & TDEFINED) || in.pos < tp->n.elem)
 				break;
 			if (!toomany)
 				warn("excess elements in array initializer");
@@ -271,9 +271,9 @@ initlist(Type *tp)
 	if (braces)
 		expect('}');
 
-	if (tp->op == ARY && !tp->defined) {
+	if (tp->op == ARY && !(tp->prop & TDEFINED)) {
 		tp->n.elem = in.max;
-		tp->defined = 1;
+		tp->prop |= TDEFINED;
 	}
 	if (tp->op == ARY || tp->op == STRUCT)
 		in.max = tp->n.elem;
@@ -292,7 +292,7 @@ initializer(Symbol *sym, Type *tp)
 	int flags = sym->flags;
 
 	if (tp->op == FTN) {
-		errorp("function '%s' is initialized like a variable",
+		errorp("function '%s' initialized like a variable",
 		       sym->name);
 		tp = inttype;
 	}

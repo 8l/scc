@@ -1,3 +1,4 @@
+/* See LICENSE file for copyright and license details. */
 #ifndef _STDLIB_H
 #define _STDLIB_H
 

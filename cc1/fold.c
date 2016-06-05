@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -17,7 +17,7 @@ ones(int nbytes)
 	return v;
 }
 
-static bool
+static int
 addi(TINT l, TINT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
@@ -35,7 +35,7 @@ addi(TINT l, TINT r, Type *tp)
 	return 0;
 }
 
-static bool
+static int
 addf(TFLOAT l, TFLOAT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
@@ -53,19 +53,19 @@ addf(TFLOAT l, TFLOAT r, Type *tp)
 	return 0;
 }
 
-static bool
+static int
 subi(TINT l, TINT r, Type *tp)
 {
 	return addi(l, -r, tp);
 }
 
-static bool
+static int
 subf(TFLOAT l, TFLOAT r, Type *tp)
 {
 	return addf(l, -r, tp);
 }
 
-static bool
+static int
 muli(TINT l, TINT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
@@ -83,7 +83,7 @@ muli(TINT l, TINT r, Type *tp)
 	return 0;
 }
 
-static bool
+static int
 mulf(TFLOAT l, TFLOAT r, Type *tp)
 {
 	struct limits *lim = getlimits(tp);
@@ -101,7 +101,7 @@ mulf(TFLOAT l, TFLOAT r, Type *tp)
 	return 0;
 }
 
-static bool
+static int
 divi(TINT l, TINT r,  Type *tp)
 {
 	struct limits *lim = getlimits(tp);
@@ -113,7 +113,7 @@ divi(TINT l, TINT r,  Type *tp)
 	return 1;
 }
 
-static bool
+static int
 divf(TFLOAT l, TFLOAT r,  Type *tp)
 {
 	struct limits *lim = getlimits(tp);
@@ -128,7 +128,7 @@ divf(TFLOAT l, TFLOAT r,  Type *tp)
 	return 1;
 }
 
-static bool
+static int
 lshi(TINT l, TINT r, Type *tp)
 {
 	if (r < 0 || r >= tp->size * 8) {
@@ -138,7 +138,7 @@ lshi(TINT l, TINT r, Type *tp)
 	return muli(l, 1 << r, tp);
 }
 
-static bool
+static int
 rshi(TINT l, TINT r, Type *tp)
 {
 	if (r < 0 || r >= tp->size * 8) {
@@ -148,12 +148,12 @@ rshi(TINT l, TINT r, Type *tp)
 	return 1;
 }
 
-static bool
+static int
 foldint(int op, Symbol *res, TINT l, TINT r)
 {
 	TINT i;
 	Type *tp = res->type;
-	bool (*validate)(TINT, TINT, Type *tp);
+	int (*validate)(TINT, TINT, Type *tp);
 
 	switch (op) {
 	case OADD: validate = addi; break;
@@ -196,7 +196,7 @@ foldint(int op, Symbol *res, TINT l, TINT r)
 	return 1;
 }
 
-static bool
+static int
 folduint(int op, Symbol *res, TUINT l, TUINT r)
 {
 	TINT i;
@@ -234,12 +234,12 @@ sign:
 	return 1;
 }
 
-static bool
+static int
 foldfloat(int op, Symbol *res, TFLOAT l, TFLOAT r)
 {
 	TFLOAT f;
 	TINT i;
-	bool (*validate)(TFLOAT, TFLOAT, Type *tp);
+	int (*validate)(TFLOAT, TFLOAT, Type *tp);
 
 	switch (op) {
 	case OADD: validate = addf; break;
@@ -257,18 +257,18 @@ foldfloat(int op, Symbol *res, TFLOAT l, TFLOAT r)
 	case OSUB: f = l - r;  break;
 	case OMUL: f = l * r;  break;
 	case ODIV: f = l / r;  break;
-	case OLT:  i = l < r;  goto comparision;
-	case OGT:  i = l > r;  goto comparision;
-	case OGE:  i = l >= r; goto comparision;
-	case OLE:  i = l <= r; goto comparision;
-	case OEQ:  i = l == r; goto comparision;
-	case ONE:  i = l != r; goto comparision;
+	case OLT:  i = l < r;  goto comparison;
+	case OGT:  i = l > r;  goto comparison;
+	case OGE:  i = l >= r; goto comparison;
+	case OLE:  i = l <= r; goto comparison;
+	case OEQ:  i = l == r; goto comparison;
+	case ONE:  i = l != r; goto comparison;
 	default:   return 0;
 	}
 	res->u.f = f;
 	return 1;
 
-comparision:
+comparison:
 	res->u.i = i;
 	return 1;
 }
@@ -335,7 +335,7 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 	switch (type = optype->op) {
 	case ENUM:
 	case INT:
-		if (!optype->sign)
+		if (!(optype->prop & TSIGNED))
 			type = UNSIGNED;
 	case PTR:
 	case FLOAT:
@@ -549,7 +549,7 @@ castcode(Node *np, Type *newtp)
 		case PTR:
 		case INT:
 		case ENUM:
-			u = (oldtp->sign) ? osym->u.i : osym->u.u;
+			u = (oldtp->prop & TSIGNED) ? osym->u.i : osym->u.u;
 			break;
 		case FLOAT:
 			oldtp = newtp;
@@ -559,7 +559,7 @@ castcode(Node *np, Type *newtp)
 			goto noconstant;
 		}
 		mask = ones(newtp->size);
-		if (newtp->sign) {
+		if (newtp->prop & TSIGNED) {
 			negmask = ~mask;
 			if (u & (negmask >> 1) & mask)
 				u |= negmask;
@@ -570,7 +570,7 @@ castcode(Node *np, Type *newtp)
 		break;
 	case FLOAT:
 		/* FIXME: The cast can be from another float type */
-		aux.u.f = (oldtp->sign) ? osym->u.i : osym->u.u;
+		aux.u.f = (oldtp->prop & TSIGNED) ? osym->u.i : osym->u.u;
 		break;
 	default:
 		goto noconstant;

@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST007
 description: basic while test
@@ -24,7 +26,7 @@ int
 main()
 {
 	int x;
-	
+
 	x = 10;
 	while (x)
 		x = x - 1;

@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST061
 description: Test for macros without arguments but with parenthesis

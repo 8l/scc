@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST008
 description: Basic do while loop
@@ -24,20 +26,20 @@ L7
 }
 */
 
-int 
+int
 main()
 {
 	int x;
-	
+
 	x = 0;
-	do 
+	do
 	  x = x + 1;
-	while(x < 10);
-	
+	while (x < 10);
+
 	do {
 	  x = x + 1;
-	} while(x < 20);
-	
+	} while (x < 20);
+
 	return x - 20;
 }
 

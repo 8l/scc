@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,10 +30,19 @@ union tokenop {
 	unsigned op;
 };
 
+struct swtch {
+	int nr;
+	Node *first;
+	Node *last;
+};
+
+static struct swtch swtbl[NR_BLOCK], *swp = swtbl;
+
 typedef void parsefun(char *, union tokenop);
 static parsefun type, symbol, getname, unary, binary, ternary, call,
                 constant, composed, binit, einit,
-                jump, oreturn, loop, assign, casetbl;
+                jump, oreturn, loop, assign,
+                ocase, bswitch, eswitch;
 
 typedef void evalfun(void);
 static evalfun vardecl, beginfun, endfun, endpars, stmt,
@@ -83,7 +92,7 @@ static struct decoc {
 	['\t']  = {     stmt,    NULL,                     0},
 
 	['~']   = {     NULL,   unary, .u.op =          OCPL},
-	['-']   = {     NULL,   unary, .u.op =          ONEG},
+	['_']   = {     NULL,   unary, .u.op =          ONEG},
 	['\'']  = {     NULL,   unary, .u.op =         OADDR},
 	['@']   = {     NULL,   unary, .u.op =          OPTR},
 	['g']   = {     NULL,   unary, .u.op =         OCAST},
@@ -123,22 +132,21 @@ static struct decoc {
 	['b']   = {     NULL,    loop, .u.op =        OBLOOP},
 	['e']   = {     NULL,    loop, .u.op =        OELOOP},
 
-	['v']   = {     NULL,    jump, .u.op =         OCASE},
-	['s']   = {     NULL,    jump, .u.op =       OSWITCH},
-
-	['f']   = {     NULL, casetbl, .u.op =      ODEFAULT},
-	['t']   = {     NULL, casetbl, .u.op =        OTABLE}
+	['v']   = {     NULL,   ocase, .u.op =         OCASE},
+	['f']   = {     NULL,   ocase, .u.op =      ODEFAULT},
+	['t']   = {     NULL, eswitch, .u.op =      OESWITCH},
+	['s']   = {     NULL, bswitch, .u.op =      OBSWITCH},
 };
 
 static int sclass, inpars, ininit, endf, lineno;
 static void *stack[STACKSIZ], **sp = stack;
 
-static void
+static Node *
 push(void *elem)
 {
 	if (sp == stack[STACKSIZ])
 		error(ESTACKO);
-	*sp++ = elem;
+	return *sp++ = elem;
 }
 
 static void *
@@ -327,27 +335,68 @@ oreturn(char *token, union tokenop u)
 }
 
 static void
+waft(Node *np)
+{
+	Node *p;
+	struct swtch *cur;
+
+	if (swp == swtbl)
+		error(EWTACKU);
+
+	cur = swp - 1;
+	p = cur->last;
+	np->next = p->next;
+	np->prev = p;
+	p->next = np;
+	cur->last = np;
+	cur->nr++;
+}
+
+static void
+bswitch(char *token, union tokenop u)
+{
+	struct swtch *cur;
+
+	if (swp == &swtbl[NR_BLOCK+1])
+		error(EWTACKO);
+	cur = swp++;
+	cur->nr = 0;
+	jump(token, u);
+	cur->first = cur->last = push(pop());
+}
+
+static void
+eswitch(char *token, union tokenop u)
+{
+	struct swtch *cur;
+
+	if (swp == swtbl)
+		error(EWTACKU);
+	jump(token, u);
+	waft(pop());
+	cur = swp--;
+	cur->first->u.i = cur->nr;
+}
+
+static void
+ocase(char *token, union tokenop u)
+{
+	jump(token, u);
+	waft(pop());
+}
+
+static void
 jump(char *token, union tokenop u)
 {
 	Node *aux, *np = newnode(u.op);
 
 	eval(strtok(NULL, "\t\n"));
 
-	if (u.op != OJMP)
+	if (u.op == OBRANCH || u.op == OCASE)
 		np->left = pop();
 	aux = pop();
 	np->u.sym = aux->u.sym;
 	delnode(aux);
-	push(np);
-}
-
-static void
-casetbl(char *token, union tokenop u)
-{
-	Node *np = newnode(u.op);
-
-	eval(strtok(NULL, "\t\n"));
-	np->left = pop();
 	push(np);
 }
 
@@ -456,7 +505,7 @@ array(void)
 	size = pop();
 	base = pop();
 	tp = pop();
-	tp->size = size->u.i;
+	tp->size = size->u.i * base->size; /* FIXME check for overflow */
 	tp->align = base->align;
 
 	delnode(size);
@@ -513,7 +562,7 @@ vardecl(void)
 	sym->name = name;
 	sym->type = *tp;
 	if (tp->flags & FUNF)
-		rtype = *rp;
+		sym->rtype = *rp;
 	sym->kind = sclass;
 
 	if (ininit)
@@ -564,6 +613,8 @@ stmt(void)
 {
 	Node *np;
 
+	if (empty())
+		return;
 	np = pop();
 	if (ininit) {
 		data(np);

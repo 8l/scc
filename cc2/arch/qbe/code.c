@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +10,7 @@
 #define ADDR_LEN (INTIDENTSIZ+64)
 
 static void binary(void), unary(void), store(void), jmp(void), ret(void),
-            branch(void);
+            branch(void), call(void), ecall(void), param(void);
 
 static struct opdata {
 	void (*fun)(void);
@@ -121,11 +121,20 @@ static struct opdata {
 	[ASSLTOS] = {.fun = unary, .txt = "sltof", .letter = 's'},
 
 	[ASEXTS] = {.fun = unary, .txt = "exts", .letter = 'd'},
-	[ASSLTOS]= {.fun = unary, .txt = "truncd", .letter = 's'},
+	[ASTRUNCD] = {.fun = unary, .txt = "truncd", .letter = 's'},
 
 	[ASBRANCH] = {.fun = branch},
 	[ASJMP]  = {.fun = jmp},
 	[ASRET]  = {.fun = ret},
+	[ASCALLB] = {.fun = call, .letter = 'b'},
+	[ASCALLH] = {.fun = call, .letter = 'h'},
+	[ASCALLW] = {.fun = call, .letter = 'w'},
+	[ASCALLS] = {.fun = call, .letter = 's'},
+	[ASCALLL] = {.fun = call, .letter = 'l'},
+	[ASCALLD] = {.fun = call, .letter = 'd'},
+	[ASCALL] = {.fun = ecall},
+	[ASPAR] = {.fun = param, .txt = "%s %s, "},
+	[ASPARE] = {.fun = param, .txt = "%s %s"},
 };
 
 static char buff[ADDR_LEN];
@@ -261,7 +270,7 @@ defglobal(Symbol *sym)
 	printf("data %s = {\n", symname(sym));
 	if (sym->type.flags & INITF)
 		return;
-	printf("\tz\t%llu\n}\n", (unsigned long long) sym->type.size);
+	printf("\tz\t%lu\n}\n", sym->type.size);
 }
 
 void
@@ -273,6 +282,8 @@ defpar(Symbol *sym)
 void
 defvar(Symbol *sym)
 {
+	if (sym->kind == SREG)
+		sym->kind = SAUTO;
 }
 
 void
@@ -288,10 +299,10 @@ static void
 alloc(Symbol *sym)
 {
 	Type *tp = &sym->type;
+	extern Type ptrtype;
 
-	printf("\t%s %s=\talloc%lld\t%lld\n",
-	       symname(sym), size2asm(tp),
-	       (long long) tp->size, (long long) tp->align);
+	printf("\t%s =%s\talloc%lu\t%lu\n",
+	       symname(sym), size2asm(&ptrtype), tp->align+3 & ~3, tp->size );
 }
 
 void
@@ -303,7 +314,7 @@ writeout(void)
 
 	if (curfun->kind == SGLOB)
 		fputs("export ", stdout);
-	printf("function %s %s(", size2asm(&rtype), symname(curfun));
+	printf("function %s %s(", size2asm(&curfun->rtype), symname(curfun));
 
 	/* declare formal parameters */
 	for (sep = "", p = locals; p; p = p->next, sep = ",") {
@@ -311,7 +322,7 @@ writeout(void)
 			break;
 		printf("%s%s %s.val", sep, size2asm(&p->type), symname(p));
 	}
-	puts(")\n{");
+	puts(")\n{\n@.start");
 
 	/* allocate stack space for parameters */
 	for (p = locals; p && (p->type.flags & PARF) != 0; p = p->next)
@@ -319,7 +330,7 @@ writeout(void)
 
 	/* allocate stack space for local variables) */
 	for ( ; p && p->id != TMPSYM; p = p->next) {
-		if (p->kind != SLABEL)
+		if (p->kind == SAUTO)
 			alloc(p);
 	}
 	/* store formal parameters in parameters */
@@ -338,6 +349,8 @@ writeout(void)
 		if (pc->op)
 			(*optbl[pc->op].fun)();
 	}
+	if (!prog)
+		puts("\t\tret");
 
 	puts("}");
 }
@@ -352,6 +365,10 @@ addr2txt(Addr *a)
 	case SAUTO:
 	case SLABEL:
 	case STMP:
+	case SGLOB:
+	case SEXTRN:
+	case SPRIV:
+	case SLOCAL:
 		return symname(a->u.sym);
 	default:
 		abort();
@@ -390,6 +407,32 @@ unary(void)
 	strcpy(to, addr2txt(&pc->to));
 	strcpy(from, addr2txt(&pc->from1));
 	printf("\t%s %c=\t%s\t%s\n", to, p->letter, p->txt, from);
+}
+
+static void
+call(void)
+{
+       struct opdata *p = &optbl[pc->op];
+       char to[ADDR_LEN], from[ADDR_LEN];
+
+       strcpy(to, addr2txt(&pc->to));
+       strcpy(from, addr2txt(&pc->from1));
+       printf("\t%s =%c\tcall\t%s(", to, p->letter, from);
+}
+
+static void
+param(void)
+{
+	Symbol *sym = pc->from2.u.sym;
+
+	printf(optbl[pc->op].txt,
+	       size2asm(&sym->type), addr2txt(&pc->from1));
+}
+
+static void
+ecall(void)
+{
+	puts(")");
 }
 
 static void

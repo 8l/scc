@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -85,7 +85,7 @@ ilex(char *fname)
 		fname = "<stdin>";
 	} else {
 		if ((fp = fopen(fname, "r")) == NULL) {
-			die("error opening input '%s':%s",
+			die("error: failed to open input file '%s': %s",
 			    fname, strerror(errno));
 		}
 	}
@@ -93,7 +93,7 @@ ilex(char *fname)
 	keywords(keys, NS_KEYWORD);
 }
 
-bool
+int
 addinput(char *fname)
 {
 	FILE *fp;
@@ -112,7 +112,7 @@ delinput(void)
 	if (!ip->next)
 		eof = 1;
 	if (fclose(ip->fp))
-		die("error reading from input file '%s'", ip->fname);
+		die("error: failed to read from input file '%s'", ip->fname);
 	if (eof)
 		return;
 	input = ip->next;
@@ -124,7 +124,7 @@ static void
 newline(void)
 {
 	if (++input->nline == 0)
-		die("error:input file '%s' too long", input->fname);
+		die("error: input file '%s' too long", input->fname);
 }
 
 static char
@@ -174,7 +174,7 @@ comment(char type)
 		error("unterminated comment");
 }
 
-static bool
+static int
 readline(void)
 {
 	char *bp, *lim;
@@ -212,7 +212,7 @@ repeat:
 	return 1;
 }
 
-bool
+int
 moreinput(void)
 {
 	static char file[FILENAME_MAX];
@@ -278,7 +278,7 @@ readint(char *s, int base, int sign, Symbol *sym)
 	repeat:
 		if (u <= max/base && u*base <= max - val)
 			continue;
-		if (tp->sign) {
+		if (tp->prop & TSIGNED) {
 			if (tp == inttype)
 				tp = (base==10) ? longtype : uinttype;
 			else if (tp == longtype)
@@ -299,7 +299,7 @@ readint(char *s, int base, int sign, Symbol *sym)
 		goto repeat;
 	}
 
-	if (tp->sign)
+	if (tp->prop & TSIGNED)
 		sym->u.i = u;
 	else
 		sym->u.u = u;

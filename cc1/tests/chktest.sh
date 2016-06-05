@@ -1,4 +1,5 @@
 #!/bin/sh
+# See LICENSE file for copyright and license details.
 
 out=/tmp/$$.out
 err=/tmp/$$.err

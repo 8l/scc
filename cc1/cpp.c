@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
@@ -155,13 +155,13 @@ parsepars(char *buffer, char **listp, int nargs)
 		} while (++n < NR_MACROARG && yytoken == ',');
 	}
 	if (yytoken != ')')
-		error("incorrect macro function alike invocation");
+		error("incorrect macro function-alike invocation");
 	disexpand = 0;
 
 	if (n == NR_MACROARG)
-		error("too much parameters in macro \"%s\"", macroname);
+		error("too many parameters in macro \"%s\"", macroname);
 	if (n != nargs) {
-		error("macro \"%s\" passed %d arguments, but it takes %d",
+		error("macro \"%s\" received %d arguments, but it takes %d",
 		      macroname, n, nargs);
 	}
 
@@ -222,11 +222,11 @@ copymacro(char *buffer, char *s, size_t bufsiz, char *arglist[])
 	return bp - buffer;
 
 expansion_too_long:
-	error("expansion of macro \"%s\" is too long", macroname);
+	error("macro expansion of \"%s\" too long", macroname);
 }
 
 #define BUFSIZE ((INPUTSIZ > FILENAME_MAX+2) ? INPUTSIZ : FILENAME_MAX+2)
-bool
+int
 expand(char *begin, Symbol *sym)
 {
 	size_t total, elen, rlen, llen, ilen;
@@ -271,7 +271,7 @@ substitute:
 	total = llen + elen + rlen;
 
 	if (total >= LINESIZ)
-		error("macro expansion too long");
+		error("macro expansion of \"%s\" too long", macroname);
 
 	/* cut macro invocation */
 	memmove(begin, begin + ilen, rlen);
@@ -307,7 +307,7 @@ getpars(Symbol *args[NR_MACROARG])
 	n = 0;
 	do {
 		if (n == NR_MACROARG) {
-			cpperror("too much parameters in macro");
+			cpperror("too many parameters in macro");
 			return NR_MACROARG;
 		}
 		if (yytoken != IDEN) {
@@ -324,7 +324,7 @@ getpars(Symbol *args[NR_MACROARG])
 	return n;
 }
 
-static bool
+static int
 getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 {
 	Symbol **argp;
@@ -332,7 +332,7 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 	int prevc = 0, ispar;
 
 	if (yytoken == '$') {
-		cpperror("'##' cannot appear at either end of a macro expansion");
+		cpperror("'##' cannot appear at either ends of a macro expansion");
 		return 0;
 	}
 
@@ -356,7 +356,7 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 			break;
 
 		if ((len = strlen(yytext)) >= bufsiz) {
-			cpperror("too long macro");
+			cpperror("macro too long");
 			return 0;
 		}
 		if (yytoken == '$') {
@@ -425,7 +425,7 @@ incdir(char *dir)
 	dirinclude[ninclude-1] = dir;
 }
 
-static bool
+static int
 includefile(char *dir, char *file, size_t filelen)
 {
 	size_t dirlen;
@@ -579,7 +579,7 @@ ifclause(int negate, int isifdef)
 	Node *expr;
 
 	if (cppctx == NR_COND-1)
-		error("too much nesting levels of conditional inclusion");
+		error("too many nesting levels of conditional inclusion");
 
 	n = cppctx++;
 	namespace = NS_CPP;
@@ -684,7 +684,7 @@ undef(void)
 	next();
 }
 
-bool
+int
 cpp(void)
 {
 	static struct {

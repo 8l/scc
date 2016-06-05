@@ -1,112 +1,22 @@
-
+/* See LICENSE file for copyright and license details. */
 
 #define INPUTSIZ LINESIZ
 
 #define GLOBALCTX 0
 
-
-/*
- * Definition of structures
- */
-typedef struct type Type;
-typedef struct symbol Symbol;
-typedef struct swtch Switch;
-typedef struct node Node;
-typedef struct input Input;
-
-struct limits {
-	union {
-		TUINT i;
-		TFLOAT f;
-	} max;
-	union {
-		TUINT i;
-		TFLOAT f;
-	} min;
-};
-
-struct keyword {
-	char *str;
-	unsigned char token, value;
-};
-
-struct type {
-	unsigned char op;           /* type builder operator */
-	char ns;                    /* namespace for struct members */
-	short id;                   /* type id, used in dcls */
-	char letter;                /* letter of the type */
-	bool defined : 1;           /* type defined */
-	bool sign : 1;              /* signess of the type */
-	bool printed : 1;           /* the type already was printed */
-	bool integer : 1;           /* this type is INT or enum */
-	bool arith : 1;             /* this type is INT, ENUM, FLOAT */
-	bool aggreg : 1;            /* this type is struct or union */
-	bool k_r : 1;               /* This is a k&r function */
-	TSIZE size;                 /* sizeof the type */
-	TSIZE align;                /* align of the type */
-	Type *type;                 /* base type */
-	Symbol *tag;                /* symbol of the strug tag */
-	Type *next;                 /* next element in the hash */
-	union {
-		Type **pars;            /* Function type parameters */
-		Symbol **fields;        /* fields of aggregate type */
-	} p;
-	union {
-		unsigned char rank;     /* convertion rank */
-		TINT elem;              /* number of type parameters */
-	} n;
-};
-
-struct symbol {
-	char *name;
-	Type *type;
-	unsigned short id;
-	unsigned char ctx;
-	char ns;
-	unsigned char token;
-	short flags;
-	union {
-		TINT i;
-		TUINT u;
-		TFLOAT f;
-		char *s;
-		unsigned char token;
-		Node **init;
-		Symbol **pars;
-	} u;
-	struct symbol *next;
-	struct symbol *hash;
-};
-
-struct node {
-	unsigned char op;
-	Type *type;
-	Symbol *sym;
-	char flags;
-	struct node *left, *right;
-};
-
-struct swtch {
-	short nr;
-	char hasdef;
-};
-
-struct yystype {
-	Symbol *sym;
-	unsigned char token;
-};
-
-struct input {
-	char *fname;
-	FILE *fp;
-	char *line, *begin, *p;
-	struct input *next;
-	unsigned short nline;
-};
-
 /*
  * Definition of enumerations
  */
+
+enum typeprops {
+	TDEFINED = 1 << 0,    /* type defined */
+	TSIGNED  = 1 << 1,    /* signedness of the type */
+	TPRINTED = 1 << 2,    /* the type was already printed */
+	TINTEGER = 1 << 3,    /* the type is INT of enum */
+	TARITH   = 1 << 4,    /* the type is INT, ENUM or FLOAT */
+	TAGGREG  = 1 << 5,    /* the type is struct or union */
+	TK_R     = 1 << 6,    /* this is a K&R-function */
+};
 
 /* data type letters */
 enum {
@@ -336,6 +246,99 @@ enum op {
 	OINIT
 };
 
+/*
+ * Definition of structures
+ */
+typedef struct type Type;
+typedef struct symbol Symbol;
+typedef struct swtch Switch;
+typedef struct node Node;
+typedef struct input Input;
+
+struct limits {
+	union {
+		TUINT i;
+		TFLOAT f;
+	} max;
+	union {
+		TUINT i;
+		TFLOAT f;
+	} min;
+};
+
+struct keyword {
+	char *str;
+	unsigned char token, value;
+};
+
+struct type {
+	unsigned char op;           /* type builder operator */
+	char ns;                    /* namespace for struct members */
+	short id;                   /* type id, used in dcls */
+	char letter;                /* letter of the type */
+	unsigned int prop;          /* type properties */
+	unsigned long size;         /* sizeof the type */
+	unsigned char align;        /* align of the type */
+	Type *type;                 /* base type */
+	Symbol *tag;                /* symbol of the strug tag */
+	Type *next;                 /* next element in the hash */
+	union {
+		Type **pars;            /* Function type parameters */
+		Symbol **fields;        /* fields of aggregate type */
+	} p;
+	union {
+		unsigned char rank;     /* convertion rank */
+		TINT elem;              /* number of type parameters */
+	} n;
+};
+
+struct symbol {
+	char *name;
+	Type *type;
+	unsigned short id;
+	unsigned char ctx;
+	char ns;
+	unsigned char token;
+	short flags;
+	union {
+		TINT i;
+		TUINT u;
+		TFLOAT f;
+		char *s;
+		unsigned char token;
+		Node **init;
+		Symbol **pars;
+	} u;
+	struct symbol *next;
+	struct symbol *hash;
+};
+
+struct node {
+	unsigned char op;
+	Type *type;
+	Symbol *sym;
+	char flags;
+	struct node *left, *right;
+};
+
+struct swtch {
+	short nr;
+	char hasdef;
+};
+
+struct yystype {
+	Symbol *sym;
+	unsigned char token;
+};
+
+struct input {
+	char *fname;
+	FILE *fp;
+	char *line, *begin, *p;
+	struct input *next;
+	unsigned short nline;
+};
+
 /* error.c */
 extern void error(char *fmt, ...);
 extern void warn(char *fmt, ...);
@@ -344,7 +347,7 @@ extern void errorp(char *fmt, ...);
 extern void cpperror(char *fmt, ...);
 
 /* types.c */
-extern bool eqtype(Type *tp1, Type *tp2);
+extern int eqtype(Type *tp1, Type *tp2);
 extern Type *ctype(unsigned type, unsigned sign, unsigned size);
 extern Type *mktype(Type *tp, int op, TINT nelem, Type *data[]);
 extern Type *duptype(Type *base);
@@ -373,10 +376,10 @@ extern void decl(void);
 /* lex.c */
 extern char ahead(void);
 extern unsigned next(void);
-extern bool moreinput(void);
+extern int moreinput(void);
 extern void expect(unsigned tok);
 extern void discard(void);
-extern bool addinput(char *fname);
+extern int addinput(char *fname);
 extern void setsafe(int type);
 extern void ilex(char *fname);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
@@ -396,12 +399,12 @@ extern Node *castcode(Node *np, Type *newtp);
 extern TUINT ones(int nbytes);
 
 /* expr.c */
-extern Node *decay(Node *), *negate(Node *np), *assign(void);;
+extern Node *decay(Node *), *negate(Node *np), *assign(void);
 extern Node *convert(Node *np, Type *tp1, char iscast);
 extern Node *iconstexpr(void), *condexpr(void), *expr(void);
-extern bool isnodecmp(int op);
+extern int isnodecmp(int op);
 extern int negop(int op);
-extern bool cmpnode(Node *np, TUINT val);
+extern int cmpnode(Node *np, TUINT val);
 
 /* init.c */
 extern void initializer(Symbol *sym, Type *tp);
@@ -409,8 +412,8 @@ extern Node *initlist(Type *tp);
 
 /* cpp.c */
 extern void icpp(void);
-extern bool cpp(void);
-extern bool expand(char *begin, Symbol *sym);
+extern int cpp(void);
+extern int expand(char *begin, Symbol *sym);
 extern void incdir(char *dir);
 extern void outcpp(void);
 extern Symbol *defmacro(char *s);

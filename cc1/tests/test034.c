@@ -1,12 +1,14 @@
+/* See LICENSE file for copyright and license details. */
 
 /*
 name: TEST034
 description: Basic test for incomplete structures
 error:
-test034.c:44: error: declared variable 'bar' of incomplete type
-test034.c:44: error: redeclaration of 'bar'
+test034.c:46: error: declared variable 'bar' of incomplete type
+test034.c:46: error: redeclaration of 'bar'
 output:
 X3	S2	"x
+X5	I	F	"foo
 G6	I	F	"main
 {
 \

@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST016
 description: Basic pointer test
@@ -58,7 +60,7 @@ func1(void)
 	*p = 0;
 	if (x)
 		return 1;
-	
+
 	p = &g;
 	*p = 0;
 	if (p == 0)
@@ -72,7 +74,7 @@ func2(void)
 	int   x;
 	int  *p;
 	int **pp;
-	
+
 	x = 1;
 	p = &x;
 	pp = &p;

@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #ifndef _CTYPE_H
 #define _CTYPE_H
 

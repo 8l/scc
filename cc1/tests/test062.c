@@ -1,3 +1,5 @@
+/* See LICENSE file for copyright and license details. */
+
 /*
 name: TEST062
 description: Test for hexadecimal numbers in upper and lower case

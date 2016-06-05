@@ -1,11 +1,11 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <stddef.h>
 
 #include "arch.h"
 #include "../../cc2.h"
 
 Node *
-optm(Node *np)
+optm_dep(Node *np)
 {
 	int op = np->op;
 	Node *p, *dst, *next = np->next;

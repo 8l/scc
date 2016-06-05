@@ -1,4 +1,4 @@
-
+/* See LICENSE file for copyright and license details. */
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -194,7 +194,7 @@ emitconst(Node *np)
 	case PTR:
 	case INT:
 	case ENUM:
-		u = (tp->sign) ? (TUINT) sym->u.i : sym->u.u;
+		u = (tp->prop & TSIGNED) ? (TUINT) sym->u.i : sym->u.u;
 		printf("#%c%llX",
 		       np->type->letter,
 		       (long long) sym->u.i & ones(tp->size));
@@ -240,9 +240,9 @@ emittype(Type *tp)
 	Symbol **sp;
 	char *tag;
 
-	if (tp->printed || !tp->defined)
+	if ((tp->prop & TPRINTED) || !(tp->prop & TDEFINED))
 		return;
-	tp->printed = 1;
+	tp->prop |= TPRINTED;
 
 	switch (tp->op) {
 	case ARY:
@@ -263,12 +263,12 @@ emittype(Type *tp)
 			emittype((*sp)->type);
 		emitletter(tp);
 		tag = tp->tag->name;
-		printf("\t\"%s\t#%c%llX\t#%c%llX\n",
+		printf("\t\"%s\t#%c%lX\t#%c%X\n",
 		       (tag) ? tag : "",
 		       sizettype->letter,
-		       (unsigned long long) tp->size,
+		       tp->size,
 		       sizettype->letter,
-		       (unsigned long long) tp->align);
+		       tp->align);
 		n = tp->n.elem;
 		for (sp = tp->p.fields; n-- > 0; ++sp)
 			emit(ODECL, *sp);

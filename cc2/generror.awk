@@ -1,0 +1,12 @@
+# See LICENSE file for copyright and license details.
+BEGIN {
+	print "char *errlist[] = {"
+}
+/^enum nerrors \{/     {inhome = 1}
+inhome && /E[A-Z]*, /  {sub(/,/, "", $1)
+                        printf("\t[%s] = \"", $1)
+                        for (i = 3; i < NF-1; ++i)
+                        	printf("%s ", $i)
+                        printf("%s\",\n", $(NF-1));}
+inhome && /^}/          {print "};" ; inhome = 0}
+

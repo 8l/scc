@@ -1,9 +1,10 @@
+/* See LICENSE file for copyright and license details. */
 
 /*
 name: TEST036
 description: Duff's device
 error:
-test036.c:58: warning: type defaults to 'int' in declaration
+test036.c:59: warning: type defaults to 'int' in declaration
 output:
 G5	I	F	"send
 {

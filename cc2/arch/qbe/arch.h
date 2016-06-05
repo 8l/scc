@@ -1,8 +1,7 @@
-
+/* See LICENSE file for copyright and license details. */
 #define TINT    long long
 #define TUINT   unsigned long long
 #define TFLOAT  double
-#define TSIZE   unsigned long
 
 enum asmop {
 	ASNOP = 0,
@@ -133,4 +132,13 @@ enum asmop {
 	ASJMP,
 	ASBRANCH,
 	ASRET,
+	ASCALLB,
+	ASCALLH,
+	ASCALLW,
+	ASCALLS,
+	ASCALLL,
+	ASCALLD,
+	ASCALL,
+	ASPAR,
+	ASPARE,
 };
