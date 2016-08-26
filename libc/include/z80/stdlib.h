@@ -4,6 +4,7 @@
 
 #ifndef _SIZET
 typedef unsigned size_t;
+#define _SIZET
 #endif
 
 #ifndef NULL
@@ -47,7 +48,7 @@ extern void qsort(void *base, size_t nitems, size_t size,
 extern void abs(int x);
 /* div_t div(int num, int denom); */
 extern long labs(long int x);
-/* ldiv_t ldiv(long int number, long int denom);
+/* ldiv_t ldiv(long int number, long int denom); */
 
 extern int rand(void);
 extern void srand(unsigned seed);

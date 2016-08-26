@@ -8,6 +8,7 @@
 
 #ifndef _SIZET
 typedef unsigned size_t;
+#define _SIZET
 #endif
 
 #define EOF            -1
@@ -34,7 +35,7 @@ extern void setbuf(FILE *fp, char *buf);
 extern int setvbuf(FILE *fp, char *buf, size_t size);
 
 extern size_t fread(void *ptr, size_t size, size_t n, FILE *fp);
-extern size_t fwrite(const void *ptr, size_t size, size n, FILE *fp);
+extern size_t fwrite(const void *ptr, size_t size, size_t n, FILE *fp);
 
 extern int fgetc(FILE *fp);
 extern int getc(FILE *fp);
@@ -74,5 +75,5 @@ extern int rename(const char *old, const char *new);
 extern FILE *tmpfile(void);
 extern FILE *tmpnam(char *s);
 
-extern FILE *stdin, *stdio, *stderr;
+extern FILE *stdin, *stdout, *stderr;
 #endif

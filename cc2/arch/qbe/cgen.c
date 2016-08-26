@@ -6,12 +6,6 @@
 #include "../../cc2.h"
 #include "../../../inc/sizes.h"
 
-enum lflags {
-	FORCE = 1 << 0,
-	LOADL = 1 << 1,
-	LOADR = 1 << 2
-};
-
 enum sflags {
 	ISTMP  = 1,
 	ISCONS = 2
@@ -76,7 +70,6 @@ static char opasms[] = {
 	[OBXOR] = ASBXORS,
 	[OCPL] = ASCPLS
 };
-
 static char opasmd[] = {
 	[OADD] = ASADDD,
 	[OSUB] = ASSUBD,
@@ -97,13 +90,17 @@ static char opasmd[] = {
 	[OCPL] = ASCPLD
 };
 
+extern Type int32type, uint32type;
+
 static Node *
-tmpnode(Node *np)
+tmpnode(Node *np, Type *tp)
 {
 	Symbol *sym;
 
+	if (!np)
+		np = newnode(OTMP);
 	sym = getsym(TMPSYM);
-	sym->type = np->type;
+	sym->type = np->type = *tp;
 	sym->kind = STMP;
 	np->u.sym = sym;
 	np->op = OTMP;
@@ -111,66 +108,48 @@ tmpnode(Node *np)
 	return np;
 }
 
-/*
- * load() load the address passed in a child of np in a temporary
- * if it is not already in a temporay. It can be forced to load
- * using the FORCE flag
- */
 static Node *
-load(Node *np, int flags)
+load(Node *np, Node *new)
 {
 	int op;
 	Type *tp;
-	Node *child;
 
-	child = (flags & LOADL) ? np->left : np->right;
-	if (!child)
-		return NULL;
-	tp = &child->type;
-
-	if ((flags & FORCE) || !(child->flags & (ISTMP|ISCONS))) {
-		Node *new = tmpnode(newnode(OTMP));
-		new->type = *tp;
-		new->left = child;
-
-		switch (tp->size) {
-		case 1:
-			op = ASLDB;
-			break;
-		case 2:
-			op = ASLDH;
-			break;
-		case 4:
-			op = (tp->flags & INTF) ? ASLDW : ASLDS;
-			break;
-		case 8:
-			op = (tp->flags & INTF) ? ASLDL : ASLDD;
-			break;
-		default:
-			abort();
-		}
-		code(op, new, child, NULL);
-		child = new;
+	tp = &np->type;
+	switch (tp->size) {
+	case 1:
+		op = ASLDB;
+		break;
+	case 2:
+		op = ASLDH;
+		break;
+	case 4:
+		op = (tp->flags & INTF) ? ASLDW : ASLDS;
+		break;
+	case 8:
+		op = (tp->flags & INTF) ? ASLDL : ASLDD;
+		break;
+	default:
+		abort();
 	}
+	code(op, tmpnode(new, tp), np, NULL);
 
-	return (flags & LOADL) ? (np->left = child) : (np->right = child);
+	return new;
 }
 
+static Node *rhs(Node *np, Node *new);
+
 static Node *
-cast(Node *nd)
+cast(Type *td, Node *ns, Node *nd)
 {
-	Type *ts, *td;
-	Node *tmp, *ns;
-	int op, disint, sisint;
-	extern Type uint32type, int32type;
+	Type *ts;
+	Node aux1, aux2;
+	int op, d_isint, s_isint;
 
-	ns = load(nd, LOADL);
-	td = &nd->type;
 	ts = &ns->type;
-	disint = (td->flags & INTF) != 0;
-	sisint = (ts->flags & INTF) != 0;
+	d_isint = (td->flags & INTF) != 0;
+	s_isint = (ts->flags & INTF) != 0;
 
-	if (disint && sisint) {
+	if (d_isint && s_isint) {
 		if (td->size <= ts->size)
 			return nd;
 		assert(td->size == 4 || td->size == 8);
@@ -192,7 +171,7 @@ cast(Node *nd)
 		 * signed version
 		 */
 		op += (td->flags & SIGNF) == 0;
-	} else if (disint) {
+	} else if (d_isint) {
 		/* conversion from float to int */
 		switch (ts->size) {
 		case 4:
@@ -205,15 +184,13 @@ cast(Node *nd)
 			abort();
 		}
 		/* TODO: Add signess */
-	} else if (sisint) {
+	} else if (s_isint) {
 		/* conversion from int to float */
 		switch (ts->size) {
 		case 1:
 		case 2:
-			tmp = tmpnode(newnode(ONOP));
-			tmp->type = (ts->flags&SIGNF) ? int32type : uint32type;
-			tmp->left = ns;
-			nd->left = ns = cast(tmp);
+			ts = (ts->flags&SIGNF) ? &int32type : &uint32type;
+			ns = cast(ts, ns, tmpnode(&aux2, ts));
 		case 4:
 			op = (td->size == 8) ? ASSWTOD : ASSWTOS;
 			break;
@@ -228,23 +205,27 @@ cast(Node *nd)
 		/* conversion from float to float */
 		op = (td->size == 4) ? ASEXTS : ASTRUNCD;
 	}
-	code(op, tmpnode(nd), ns, NULL);
+
+	code(op, tmpnode(nd, td), ns, NULL);
 	return nd;
 }
 
+static Node *rhs(Node *np, Node *new);
+
 static Node *
-call(Node *np)
+call(Node *np, Node *ret)
 {
 	int n, op;
-	Type *tp = &np->type;
-	Node **q, *tmp, *p, *pars[NR_FUNPARAM];
+	Type *tp;
+	Node aux, **q, *p, *pars[NR_FUNPARAM];
 
 	for (n = 0, p = np->right; p; p = p->right)
-		pars[n++] = cgen(p->left);
+		pars[n++] = rhs(p->left, newnode(OTMP));
 
+	tp = &np->type;
 	switch (tp->size) {
 	case 0:
-		np->left = tmpnode(newnode(OTMP));
+		np->left = tmpnode(NULL, tp);
 		op = ASCALLW;
 		break;
 	case 1:
@@ -262,183 +243,305 @@ call(Node *np)
 	default:
 		abort();
 	}
-	code(op, tmpnode(np), np->left, NULL);
+	code(op, tmpnode(ret, tp), np->left, NULL);
 
 	for (q = pars; q < &pars[n]; ++q) {
 		op = (q == &pars[n-1]) ? ASPARE : ASPAR;
-		p = newnode(OTMP);
-		p->type = (*q)->type;
-		code(op, NULL, *q, tmpnode(p));
+		tmpnode(&aux, &(*q)->type);
+		code(op, NULL, *q, &aux);
 	}
 	code(ASCALL, NULL, NULL, NULL);
 
-	return np;
+	return ret;
 }
 
 static Node *
-abbrev(Node *np)
+abbrev(Node *np, Node *ret)
 {
-	Node *tmp;
+	Node aux;
 
-	if (np->u.subop == 0)
-		return np->right;
-	tmp = newnode(np->u.subop);
-	tmp->type = np->type;
-	tmp->right = np->right;
-	tmp->left = np->left;
-	return np->right = cgen(tmp);
+	tmpnode(&aux, &np->type);
+	aux.right = np->right;
+	aux.left = np->left;
+	return rhs(&aux, ret);
 }
 
-/* TODO: Fix "memory leaks" */
-Node *
-cgen(Node *np)
+static Node *
+assign(Node *to, Node *from)
 {
-	Node *ifyes, *ifno, *next;
-	Symbol *sym;
 	Type *tp;
-	int op, off;
-	char *tbl;
+	int op;
 
-	if (!np)
-		return NULL;
-
-	setlabel(np->label);
-	 if (np->op != OCALL) {
-		np->left = cgen(np->left);
-		np->right = cgen(np->right);
+	tp = &to->type;
+	switch (tp->size) {
+	case 1:
+		op = ASSTB;
+		break;
+	case 2:
+		op = ASSTH;
+		break;
+	case 4:
+		op = (tp->flags & INTF) ? ASSTW : ASSTS;
+		break;
+	case 8:
+		op = (tp->flags & INTF) ? ASSTL : ASSTD;
+		break;
+	default:
+		abort();
 	}
+	code(op, to, from, NULL);
+	return from;
+}
+
+static Node *
+lhs(Node *np, Node *new)
+{
+	switch (np->op) {
+	case OMEM:
+	case OAUTO:
+		*new = *np;
+		return np;
+	case OPTR:
+		return rhs(np->left, new);
+	default:
+		abort();
+	}
+}
+
+static void
+bool(Node *np, Symbol *true, Symbol *false)
+{
+	Node *l = np->left, *r = np->right;
+	Node ret, ifyes, ifno;
+	Symbol *label;
+
+	switch (np->op) {
+	case ONEG:
+		bool(l, false, true);
+		break;
+	case OAND:
+		label = newlabel();
+		bool(l, label, false);
+		setlabel(label);
+		bool(r, true, false);
+		break;
+	case OOR:
+		label = newlabel();
+		bool(l, true, label);
+		setlabel(label);
+		bool(r, true, false);
+		break;
+	default:
+		label2node(&ifyes, true);
+		label2node(&ifno, false);
+		code(ASBRANCH, rhs(l, &ret), &ifyes, &ifno);
+		break;
+	}
+}
+
+static Node *
+ternary(Node *np, Node *ret)
+{
+	Node ifyes, ifno, phi, *colon, aux1, aux2, aux3;
+
+	tmpnode(ret, &np->type);
+	label2node(&ifyes, NULL);
+	label2node(&ifno, NULL);
+	label2node(&phi, NULL);
+
+	colon = np->right;
+	code(ASBRANCH, rhs(np->left, &aux1), &ifyes, &ifno);
+
+	setlabel(ifyes.u.sym);
+	assign(ret, rhs(colon->left, &aux2));
+	code(ASJMP, NULL, &phi, NULL);
+
+	setlabel(ifno.u.sym);
+	assign(ret, rhs(colon->right, &aux3));
+	setlabel(phi.u.sym);
+
+	return ret;
+}
+
+static Node *
+function(void)
+{
+	Node aux;
+	Symbol *p;
+
+	/* allocate stack space for parameters */
+	for (p = locals; p && (p->type.flags & PARF) != 0; p = p->next)
+		code(ASALLOC, label2node(&aux, p), NULL, NULL);
+
+	/* allocate stack space for local variables) */
+	for ( ; p && p->id != TMPSYM; p = p->next) {
+		if (p->kind != SAUTO)
+			continue;
+		code(ASALLOC, label2node(&aux, p), NULL, NULL);
+	}
+	/* store formal parameters in parameters */
+	for (p = locals; p; p = p->next) {
+		if ((p->type.flags & PARF) == 0)
+			break;
+		code(ASFORM, label2node(&aux, p), NULL, NULL);
+	}
+	return NULL;
+}
+
+static Node *
+rhs(Node *np, Node *ret)
+{
+	Node aux1, aux2, *phi, *l = np->left, *r = np->right;
+	Type *tp;
+	int off, op;
+	char *tbl;
+	Symbol *true, *false;
+
 	tp = &np->type;
 
 	switch (np->op) {
-	case OSTRING:
-		abort();
-	case OCONST:
-	case OLABEL:
-		np->flags |= ISCONS;
-	case OMEM:
-	case OAUTO:
-		return np;
-	case OSHR:
-	case OMOD:
-	case ODIV:
-	case OLT:
-	case OGT:
-	case OLE:
-	case OGE:
-		/*
-		 * unsigned version of operations are always +1 the
-		 * signed version
-		 */
-		off = (tp->flags & SIGNF) == 0;
-		goto binary;
-	case OADD:
-	case OSUB:
-	case OMUL:
-	case OSHL:
-	case OBAND:
-	case OBOR:
-	case OBXOR:
-	case OEQ:
-	case ONE:
-		off = 0;
-	binary:
-		switch (tp->size) {
-		case 4:
-			tbl = (tp->flags & INTF) ? opasmw : opasms;
-			break;
-		case 8:
-			tbl = (tp->flags & INTF) ? opasml : opasmd;
-			break;
-		default:
-			abort();
-		}
-		op = tbl[np->op] + off;
-		code(op, tmpnode(np), load(np, LOADL), load(np, LOADR));
-		return np;
+	case OBFUN:
+		return function();
 	case ONOP:
 	case OBLOOP:
 	case OELOOP:
+	case OEFUN:
 		return NULL;
-	case OCAST:
-		return cast(np);
-	case OADDR:
-		np->flags |= ISTMP;
-		np->op = OTMP;
-		np->u.sym = np->left->u.sym;
+	case OCONST:
+		*ret = *np;
 		return np;
-	case OPTR:
-		load(np, LOADL);
-		/* FIXME: The type of the loaded value is not np->type */
-		load(np, LOADL|FORCE);
-		return tmpnode(np);
-	case OCPL:
-	case OPAR:
+	case OMEM:
+	case OAUTO:
+		return load(np, ret);
 	case ONEG:
-	case OINC:
-	case ODEC:
-		abort();
-	case OASSIG:
-		abbrev(np);
-		switch (tp->size) {
-		case 1:
-			op = ASSTB;
-			break;
-		case 2:
-			op = ASSTH;
-			break;
-		case 4:
-			op = (tp->flags & INTF) ? ASSTW : ASSTS;
-			break;
-		case 8:
-			op = (tp->flags & INTF) ? ASSTL : ASSTD;
-			break;
-		default:
-			abort();
-		}
-		code(op, np->left, load(np, LOADR), NULL);
-		return np->right;
-	case OCOMMA:
-		return np->right;
-	case OCALL:
-		return call(np);
-	case OFIELD:
-	case OASK:
-	case OCOLON:
 	case OAND:
 	case OOR:
-		abort();
-	case OBRANCH:
-		next = np->next;
-		load(np, LOADL);
-		if (next->label) {
-			sym = getsym(TMPSYM);
-			sym->kind = SLABEL;
-			next->label = sym;
+		true = newlabel();
+		false = newlabel();
+		phi = label2node(&aux1, NULL);
+		tmpnode(ret, &int32type);
+
+		bool(np, true, false);
+
+		setlabel(true);
+		assign(ret, constnode(1, &int32type));
+		code(ASJMP, NULL, phi, NULL);
+
+		setlabel(false);
+		assign(ret, constnode(0, &int32type));
+
+		setlabel(phi->u.sym);
+		return ret;
+        case OSHR:
+        case OMOD:
+        case ODIV:
+        case OLT:
+        case OGT:
+        case OLE:
+        case OGE:
+                /*
+                 * unsigned version of operations are always +1 the
+                 * signed version
+                 */
+                off = (tp->flags & SIGNF) == 0;
+                goto binary;
+        case OADD:
+        case OSUB:
+        case OMUL:
+        case OSHL:
+        case OBAND:
+        case OBOR:
+        case OBXOR:
+        case OEQ:
+        case ONE:
+                off = 0;
+        binary:
+		if (l->complex >= r->complex) {
+			rhs(l, &aux1);
+			rhs(r, &aux2);
+		} else {
+			rhs(r, &aux2);
+			rhs(l, &aux1);
 		}
-		ifyes = label2node(np->u.sym);
-		ifno = label2node(next->label);
-		op = ASBRANCH;
-		np = np->left;
-		goto emit_jump;
-	case OJMP:
-		ifyes = label2node(np->u.sym);
-		op = ASJMP;
-		np = ifno = NULL;
-	emit_jump:
-		code(op, np, ifyes, ifno);
-		deltree(ifyes);
-		deltree(ifno);
-		return NULL;
-	case ORET:
-		code(ASRET, NULL, load(np, LOADL), NULL);
-		return NULL;
+                switch (tp->size) {
+                case 4:
+                        tbl = (tp->flags & INTF) ? opasmw : opasms;
+                        break;
+                case 8:
+                        tbl = (tp->flags & INTF) ? opasml : opasmd;
+                        break;
+                default:
+                        abort();
+                }
+                op = tbl[np->op] + off;
+		tmpnode(ret, tp);
+                code(op, ret, &aux1, &aux2);
+                return ret;
+	case OCALL:
+		if (np->left->op == OPTR)
+			np = rhs(l, &aux1);
+		return call(np, ret);
+	case OCAST:
+		return cast(tp, rhs(l, &aux1), ret);
+	case OASSIG:
+		/* TODO: see what is the more difficult */
+		if (np->u.subop != 0)
+			r = abbrev(np, &aux1);
+		lhs(l, &aux2);
+		rhs(r, ret);
+		return assign(&aux2, ret);
+	case OASK:
+		return ternary(np, ret);
+	case OCOMMA:
+		return rhs(np, ret);
+	case OPTR:
+		return load(rhs(l, &aux1), ret);
+	case OADDR:
+		return lhs(l, ret);
+	case OFIELD:
+	case OINC:
+	case ODEC:
 	case OCASE:
 	case ODEFAULT:
 	case OESWITCH:
 	case OBSWITCH:
+		/* TODO: implement these operators */
 	default:
 		abort();
 	}
+	abort();
+}
+
+Node *
+cgen(Node *np)
+{
+	Node ret, aux1, aux2, *p, *next, ifyes, ifno;
+
+	setlabel(np->label);
+	switch (np->op) {
+	case OJMP:
+		label2node(&ifyes, np->u.sym);
+		code(ASJMP, NULL, &ifyes, NULL);
+		break;
+        case OBRANCH:
+                next = np->next;
+                if (!next->label)
+                        next->label = newlabel();
+
+                label2node(&ifyes, np->u.sym);
+                label2node(&ifno, next->label);
+		rhs(np->left, &ret);
+		code(ASBRANCH, &ret, &ifyes, &ifno);
+                break;
+	case ORET:
+		p = (np->left) ? rhs(np->left, &ret) : NULL;
+		code(ASRET, NULL, p, NULL);
+		break;
+	default:
+		rhs(np, &ret);
+		break;
+	}
+	return NULL;
 }
 
 /*
@@ -451,7 +554,7 @@ cgen(Node *np)
  *     CONST => 11         $value
  * These values of addressability are not used in the code generation.
  * They are only used to calculate the Sethi-Ullman numbers. Since
- * QBE is AMD64 targered we could do a better job here, and try to
+ * QBE is AMD64 targered we could do a better job there, and try to
  * detect some of the complex addressing modes of these processors.
  */
 Node *
@@ -474,11 +577,24 @@ sethi(Node *np)
 	case OCONST:
 		np->address = 11;
 		break;
+	case OCPL:
+		np->op = OAND;
+		rp = constnode(~(TUINT) 0, &np->type);
+		goto binary;
+	case OSNEG:
+		np->op = OSUB;
+		rp = lp;
+		lp = constnode(0, &np->type);
+		if ((np->type.flags & INTF) == 0)
+			lp->u.f = 0.0;
 	default:
-		sethi(lp);
-		sethi(rp);
+	binary:
+		lp = sethi(lp);
+		rp = sethi(rp);
 		break;
 	}
+	np->left = lp;
+	np->right = rp;
 
 	if (np->address > 10)
 		return np;

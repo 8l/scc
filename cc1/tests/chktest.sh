@@ -22,10 +22,5 @@ do
 	../cc1 -I. -w $i > $out 2>$err
 	echo $i >> test.log
 	cat $err $out > $tst
-	if diff -c $chk $tst >> test.log
-	then
-		echo [OK]
-	else
-		echo [FAILED]
-	fi
+	diff -c $chk $tst >> test.log && echo [OK] || echo [FAILED]
 done

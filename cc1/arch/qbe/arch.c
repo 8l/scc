@@ -23,8 +23,8 @@ static Type types[] = {
 		.op = PTR,
 		.letter = L_POINTER,
 		.prop = TDEFINED | TPRINTED,
-		.size = 2,
-		.align = 2,
+		.size = 8,
+		.align = 8,
 	},
 	{      /* 2 = booltype */
 		.op = INT,

@@ -1,4 +1,3 @@
-* Verify correctness in initializators
 * Implement bitfields
 * Rewrite error recovery code, and ensure correct state after recovery
 * Parse correctly all integer and float constants

@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,22 +35,6 @@ cmpnode(Node *np, TUINT val)
 		return sym->u.f == val;
 	}
 	return 0;
-}
-
-int
-isnodecmp(int op)
-{
-	switch (op) {
-	case OEQ:
-	case ONE:
-	case OLT:
-	case OGE:
-	case OLE:
-	case OGT:
-		return 1;
-	default:
-		return 0;
-	}
 }
 
 static Node *
@@ -143,9 +128,6 @@ null(Node *np)
 static Node *
 chkternary(Node *yes, Node *no)
 {
-	yes = decay(yes);
-	no = decay(no);
-
 	/*
 	 * FIXME:
 	 * We are ignoring type qualifiers here,
@@ -153,7 +135,7 @@ chkternary(Node *yes, Node *no)
 	 * take a look to 6.5.15
 	 */
 
-	if (!eqtype(yes->type, no->type)) {
+	if (!eqtype(yes->type, no->type, 1)) {
 		if ((yes->type->prop & TARITH) && (no->type->prop & TARITH)) {
 			arithconv(&yes, &no);
 		} else if (yes->type->op != PTR && no->type->op != PTR) {
@@ -180,7 +162,7 @@ chkternary(Node *yes, Node *no)
 			if (null(no))
 				no = convert(no, yes->type, 0);
 
-			if (!eqtype(yes->type, no->type))
+			if (!eqtype(yes->type, no->type, 1))
 				goto wrong_type;
 		}
 	}
@@ -253,7 +235,7 @@ numericaluop(char op, Node *np)
 	if (!(np->type->prop & TARITH))
 		error("unary operator requires numerical operand");
 	np = promote(np);
-	if (op == ONEG && np->op == ONEG)
+	if (op == OSNEG && np->op == OSNEG)
 		return np->left;
 	if (op == OADD)
 		return np;
@@ -265,7 +247,7 @@ convert(Node *np, Type *newtp, char iscast)
 {
 	Type *oldtp = np->type;
 
-	if (eqtype(newtp, oldtp))
+	if (eqtype(newtp, oldtp, 0))
 		return np;
 
 	switch (oldtp->op) {
@@ -294,7 +276,8 @@ convert(Node *np, Type *newtp, char iscast)
 				return NULL;
 			break;
 		case PTR:
-			if (iscast ||
+			if (eqtype(newtp, oldtp, 1) ||
+			    iscast ||
 			    newtp == pvoidtype || oldtp == pvoidtype) {
 				np->type = newtp;
 				return np;
@@ -317,7 +300,12 @@ parithmetic(char op, Node *lp, Node *rp)
 	if (lp->type->op != PTR)
 		XCHG(lp, rp, np);
 
+	tp = rp->type;
+	if (tp->op == PTR && !(tp->type->prop & TDEFINED))
+		goto incomplete;
 	tp = lp->type;
+	if (!(tp->type->prop & TDEFINED))
+		goto incomplete;
 	size = sizeofnode(tp->type);
 
 	if (op == OSUB && BTYPE(rp) == PTR) {
@@ -335,9 +323,13 @@ parithmetic(char op, Node *lp, Node *rp)
 
 	return simplify(OADD, tp, lp, rp);
 
+incomplete:
+	errorp("invalid use of undefined type");
+	return lp;
 incorrect:
 	errorp("incorrect arithmetic operands");
-	return node(OADD, tp, lp, rp);
+	return lp;
+
 }
 
 static Node *
@@ -370,7 +362,7 @@ pcompare(char op, Node *lp, Node *rp)
 			err = 1;
 		rp = convert(rp, pvoidtype, 1);
 	} else if (rp->type->op == PTR) {
-		if (!eqtype(lp->type, rp->type))
+		if (!eqtype(lp->type, rp->type, 1))
 			err = 1;
 	} else {
 		err = 1;
@@ -384,9 +376,6 @@ static Node *
 compare(char op, Node *lp, Node *rp)
 {
 	Type *ltp, *rtp;
-
-	lp = decay(lp);
-	rp = decay(rp);
 
 	ltp = lp->type;
 	rtp = rp->type;
@@ -408,14 +397,13 @@ int
 negop(int op)
 {
 	switch (op) {
-	case OAND: return OOR;
-	case OOR:  return OAND;
 	case OEQ:  return ONE;
 	case ONE:  return OEQ;
 	case OLT:  return OGE;
 	case OGE:  return OLT;
 	case OLE:  return OGT;
 	case OGT:  return OLE;
+	default:   abort();
 	}
 	return op;
 }
@@ -423,21 +411,57 @@ negop(int op)
 Node *
 negate(Node *np)
 {
-	np->op = negop(np->op);
+	int op = np->op;
+
+	switch (np->op) {
+	case OSYM:
+		assert(np->flags&NCONST && np->type->prop&TINTEGER);
+		np->sym = (np->sym->u.i) ? zero : one;
+		break;
+	case OOR:
+	case OAND:
+		if (np->op == ONEG) {
+			Node *new = np->left;
+			free(np);
+			return new;
+		}
+		np = node(ONEG, inttype, np, NULL);
+		break;
+	case OEQ:
+	case ONE:
+	case OLT:
+	case OGE:
+	case OLE:
+	case OGT:
+		np->op = negop(op);
+		break;
+	default:
+		abort();
+	}
+
 	return np;
 }
 
 static Node *
 exp2cond(Node *np, char neg)
 {
-	np = decay(np);
 	if (np->type->prop & TAGGREG) {
 		errorp("used struct/union type value where scalar is required");
-		np = constnode(zero);
+		return constnode(zero);
 	}
-	if (isnodecmp(np->op))
+	switch (np->op) {
+	case OOR:
+	case OAND:
+	case OEQ:
+	case ONE:
+	case OLT:
+	case OGE:
+	case OLE:
+	case OGT:
 		return (neg) ? negate(np) : np;
-	return compare((neg) ?  OEQ : ONE, np, constnode(zero));
+	default:
+		return compare((neg) ?  OEQ : ONE, np, constnode(zero));
+	}
 }
 
 static Node *
@@ -483,11 +507,9 @@ free_np:
 static Node *
 content(char op, Node *np)
 {
-	np = decay(np);
-	switch (BTYPE(np)) {
-	case ARY:
-	case FTN:
-	case PTR:
+	if (BTYPE(np) != PTR) {
+		errorp("invalid argument of memory indirection");
+	} else {
 		if (np->op == OADDR) {
 			Node *new = np->left;
 			new->type = np->type->type;
@@ -497,10 +519,8 @@ content(char op, Node *np)
 			np = node(op, np->type->type, np, NULL);
 		}
 		np->flags |= NLVAL;
-		return np;
-	default:
-		error("invalid argument of memory indirection");
 	}
+	return np;
 }
 
 static Node *
@@ -511,7 +531,7 @@ array(Node *lp, Node *rp)
 
 	if (!(lp->type->prop & TINTEGER) && !(rp->type->prop & TINTEGER))
 		error("array subscript is not an integer");
-	np = arithmetic(OADD, decay(lp), decay(rp));
+	np = arithmetic(OADD, lp, rp);
 	tp = np->type;
 	if (tp->op != PTR)
 		errorp("subscripted value is neither array nor pointer");
@@ -521,7 +541,7 @@ array(Node *lp, Node *rp)
 static Node *
 assignop(char op, Node *lp, Node *rp)
 {
-	if ((rp = convert(decay(rp), lp->type, 0)) == NULL) {
+	if ((rp = convert(rp, lp->type, 0)) == NULL) {
 		errorp("incompatible types when assigning");
 		return lp;
 	}
@@ -541,6 +561,10 @@ incdec(Node *np, char op)
 	if (!(tp->prop & TDEFINED)) {
 		errorp("invalid use of undefined type");
 		return np;
+	} else if (tp->op == PTR && !(tp->type->prop & TDEFINED)) {
+		errorp("%s of pointer to an incomplete type",
+		       (op == OINC) ? "increment" : "decrement");
+		return np;
 	} else if (tp->prop & TARITH) {
 		inc = constnode(one);
 	} else if (tp->op == PTR) {
@@ -557,15 +581,25 @@ address(char op, Node *np)
 {
 	Node *new;
 
-	if (BTYPE(np) != FTN) {
-		chklvalue(np);
-		if (np->sym && (np->sym->flags & SREGISTER))
-			errorp("address of register variable '%s' requested", yytext);
-		if (np->op == OPTR) {
-			Node *new = np->left;
-			free(np);
-			return new;
-		}
+	/*
+	 * ansi c accepts & applied to a function name, and it generates
+	 * a function pointer
+	 */
+	if (np->op == OSYM) {
+		if (np->type->op == FTN)
+			return decay(np);
+		if (np->type->op == ARY)
+			goto dont_check_lvalue;
+	}
+	chklvalue(np);
+
+dont_check_lvalue:
+	if (np->sym && (np->sym->flags & SREGISTER))
+		errorp("address of register variable '%s' requested", yytext);
+	if (np->op == OPTR) {
+		Node *new = np->left;
+		free(np);
+		return new;
 	}
 	new = node(op, mktype(np->type, PTR, 0, NULL), np, NULL);
 
@@ -577,7 +611,6 @@ address(char op, Node *np)
 static Node *
 negation(char op, Node *np)
 {
-	np = decay(np);
 	if (!(np->type->prop & TARITH) && np->type->op != PTR) {
 		errorp("invalid argument of unary '!'");
 		freetree(np);
@@ -628,7 +661,7 @@ primary(void)
 		sym->flags |= SHASINIT;
 		emit(ODECL, sym);
 		emit(OINIT, np);
-		np = decay(varnode(sym));
+		np = varnode(sym);
 		next();
 		break;
 	case CONSTANT:
@@ -680,7 +713,7 @@ arguments(Node *np)
 	toomany = 0;
 
 	do {
-		arg = decay(assign());
+		arg = assign();
 		argtype = *targs;
 		if (argtype == ellipsistype) {
 			n = 0;
@@ -719,42 +752,7 @@ no_pars:
 	return node(OCALL, rettype, np, par);
 }
 
-static Node *
-postfix(Node *lp)
-{
-	Node *rp;
-
-	if (!lp)
-		lp = primary();
-	for (;;) {
-		switch (yytoken) {
-		case '[':
-			next();
-			rp = expr();
-			lp = array(lp, rp);
-			expect(']');
-			break;
-		case DEC:
-		case INC:
-			lp = incdec(lp, (yytoken == INC) ? OINC : ODEC);
-			next();
-			break;
-		case INDIR:
-			lp = content(OPTR, lp);
-		case '.':
-			lp = field(lp);
-			break;
-		case '(':
-			lp = arguments(lp);
-			lp->flags |= NEFFECT;
-			break;
-		default:
-			return lp;
-		}
-	}
-}
-
-static Node *unary(void);
+static Node *unary(int);
 
 static Type *
 typeof(Node *np)
@@ -780,26 +778,75 @@ sizeexp(void)
 		tp = typename();
 		break;
 	default:
-		tp = typeof(unary());
+		tp = typeof(unary(0));
 		break;
 	}
 	expect(')');
 	return tp;
 }
 
-static Node *cast(void);
+static Node *
+postfix(Node *lp)
+{
+	Node *rp;
+
+	for (;;) {
+		switch (yytoken) {
+		case '[':
+		case DEC:
+		case INC:
+		case INDIR:
+		case '.':
+		case '(':
+			lp = decay(lp);
+			switch (yytoken) {
+			case '[':
+				next();
+				rp = expr();
+				expect(']');
+				lp = array(lp, rp);
+				break;
+			case DEC:
+			case INC:
+				lp = incdec(lp, (yytoken == INC) ? OINC : ODEC);
+				next();
+				break;
+			case INDIR:
+				lp = content(OPTR, lp);
+			case '.':
+				lp = field(lp);
+				break;
+			case '(':
+				lp = arguments(lp);
+				lp->flags |= NEFFECT;
+				break;
+			}
+			break;
+		default:
+			return lp;
+		}
+	}
+}
+
+static Node *cast(int);
 
 static Node *
-unary(void)
+unary(int needdecay)
 {
-	Node *(*fun)(char, Node *);
+	Node *(*fun)(char, Node *), *np;
 	char op;
 	Type *tp;
 
 	switch (yytoken) {
+	case '!': op = 0;     fun = negation;     break;
+	case '+': op = OADD;  fun = numericaluop; break;
+	case '-': op = OSNEG; fun = numericaluop; break;
+	case '~': op = OCPL;  fun = integeruop;   break;
+	case '&': op = OADDR; fun = address;      break;
+	case '*': op = OPTR;  fun = content;      break;
 	case SIZEOF:
 		next();
-		tp = (yytoken == '(') ? sizeexp() : typeof(unary());
+		tp = (yytoken == '(') ? sizeexp() : typeof(unary(0));
 		if (!(tp->prop & TDEFINED))
 			errorp("sizeof applied to an incomplete type");
 		return sizeofnode(tp);
@@ -807,29 +854,31 @@ unary(void)
 	case DEC:
 		op = (yytoken == INC) ? OA_ADD : OA_SUB;
 		next();
-		return incdec(unary(), op);
-	case '!': op = 0;     fun = negation;     break;
-	case '+': op = OADD;  fun = numericaluop; break;
-	case '-': op = ONEG;  fun = numericaluop; break;
-	case '~': op = OCPL;  fun = integeruop;   break;
-	case '&': op = OADDR; fun = address;      break;
-	case '*': op = OPTR;  fun = content;      break;
-	default:  return postfix(NULL);
+		np = incdec(unary(1), op);
+		goto chk_decay;
+	default:
+		np = postfix(primary());
+		goto chk_decay;
 	}
 
 	next();
-	return (*fun)(op, cast());
+	np = (*fun)(op, cast(op != OADDR));
+
+chk_decay:
+	if (needdecay)
+		np = decay(np);
+	return np;
 }
 
 static Node *
-cast(void)
+cast(int needdecay)
 {
 	Node *lp, *rp;
 	Type *tp;
 	static int nested;
 
 	if (!accept('('))
-		return unary();
+		return unary(needdecay);
 
 	switch (yytoken) {
 	case TQUALIFIER:
@@ -844,7 +893,7 @@ cast(void)
 		case ARY:
 			error("cast specifies an array type");
 		default:
-			lp = cast();
+			lp = cast(needdecay);
 			if ((rp = convert(lp,  tp, 1)) == NULL)
 				error("bad type conversion requested");
 			rp->flags &= ~NLVAL;
@@ -871,7 +920,7 @@ mul(void)
 	Node *np, *(*fun)(char, Node *, Node *);
 	char op;
 
-	np = cast();
+	np = cast(1);
 	for (;;) {
 		switch (yytoken) {
 		case '*': op = OMUL; fun = arithmetic; break;
@@ -880,7 +929,7 @@ mul(void)
 		default: return np;
 		}
 		next();
-		np = (*fun)(op, np, cast());
+		np = (*fun)(op, np, cast(1));
 	}
 }
 

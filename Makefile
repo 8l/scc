@@ -10,7 +10,7 @@ ARCHS = z80 i386-sysv amd64-sysv qbe
 all:
 	for i in $(DIRS); \
 	do \
-		(cd $$i && $(MAKE) -e -$(MAKEFLAGS)); \
+		(cd $$i && $(MAKE) -e); \
 	done
 	cp -f cc1/cc1 bin/cc1
 	cp -f cc2/cc2 bin/cc2
@@ -19,14 +19,14 @@ all:
 multi:
 	for i in $(ARCHS); \
 	do \
-		$(MAKE) -$(MAKEFLAGS) $$i || exit; \
+		$(MAKE) $$i || exit; \
 	done
 
 $(ARCHS):
 	for i in cc1 cc2; \
 	do \
 		(cd $$i; \
-		ARCH=$@ $(MAKE) -e -$(MAKEFLAGS) clean; \
+		ARCH=$@ $(MAKE) -e clean; \
 		ARCH=$@ $(MAKE) -e $$i || exit); \
 	done
 	ln -f cc1/cc1 bin/cc1-$@
@@ -35,9 +35,12 @@ $(ARCHS):
 install: all
 	mkdir -p $(PREFIX)/libexec/scc/
 	mkdir -p $(PREFIX)/bin/
+	mkdir -p $(PREFIX)/include/scc
 	cp -f bin/cc* $(PREFIX)/libexec/scc/
 	cp -f bin/cc1 $(PREFIX)/bin/cpp
 	cp -f bin/scc $(PREFIX)/bin/
+	cp -fr libc/include/* $(PREFIX)/include/scc/
+	find $(PREFIX)/include/scc/ -type f | xargs chmod 644
 	cd $(PREFIX)/libexec/scc/ && chmod 755 cc* && strip cc*
 	cd $(PREFIX)/bin && chmod 755 cpp scc && strip cpp scc
 
@@ -49,13 +52,13 @@ uninstall:
 clean:
 	for i in $(DIRS); \
 	do \
-		(cd $$i && $(MAKE) -$(MAKEFLAGS) $@ || exit); \
+		(cd $$i && $(MAKE) $@ || exit); \
 	done
 
 multi-clean:
 	for i in $(ARCHS); \
 	do \
-		ARCH=$$i $(MAKE) -e -$(MAKEFLAGS) clean || exit; \
+		ARCH=$$i $(MAKE) -e clean || exit; \
 	done
 
 distclean: multi-clean

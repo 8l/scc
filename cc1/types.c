@@ -145,7 +145,10 @@ ctype(unsigned type, unsigned sign, unsigned size)
 	case DOUBLE:
 		if (size == LLONG)
 			goto invalid_type;
-		size += LONG;
+		if (size == LONG)
+			size = LLONG;
+		else
+			size = LONG;
 		goto floating;
 	case FLOAT:
 		if (size == LLONG)
@@ -293,7 +296,7 @@ mktype(Type *tp, int op, TINT nelem, Type *pars[])
 	t = (op ^ (uintptr_t) tp >> 3) & NR_TYPE_HASH-1;
 	tbl = &typetab[t];
 	for (bp = *tbl; bp; bp = bp->next) {
-		if (eqtype(bp, &type) && op != STRUCT && op != UNION) {
+		if (eqtype(bp, &type, 0) && op != STRUCT && op != UNION) {
 			/*
 			 * pars was allocated by the caller
 			 * but the type already exists, so
@@ -311,7 +314,7 @@ mktype(Type *tp, int op, TINT nelem, Type *pars[])
 }
 
 int
-eqtype(Type *tp1, Type *tp2)
+eqtype(Type *tp1, Type *tp2, int equiv)
 {
 	TINT n;
 	Type **p1, **p2;
@@ -330,16 +333,18 @@ eqtype(Type *tp1, Type *tp2)
 			return 0;
 		p1 = tp1->p.pars, p2 = tp2->p.pars;
 		for (n = tp1->n.elem; n > 0; --n) {
-			if (!eqtype(*p1++, *p2++))
+			if (!eqtype(*p1++, *p2++, equiv))
 				return 0;
 		}
 		goto check_base;
 	case ARY:
+		if (equiv && (tp1->n.elem == 0 || tp2->n.elem == 0))
+			goto check_base;
 		if (tp1->n.elem != tp2->n.elem)
 			return 0;
 	case PTR:
 	check_base:
-		return eqtype(tp1->type, tp2->type);
+		return eqtype(tp1->type, tp2->type, equiv);
 	case VOID:
 	case ENUM:
 		return 0;

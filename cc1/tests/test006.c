@@ -12,14 +12,14 @@ G1	K	"c
 G3	I	F	"main
 {
 \
-	y	L4	#I0
+	y	L4	#I1
 	h	#I1
 	j	L5
 L4
-	y	L6	#I0
+	y	L6	#I1
 	j	L7
 L6
-	y	L8	#I1
+	y	L8	#I0
 	y	L9	G1	gI	#I0	=I
 	h	#I1
 	j	L10

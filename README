@@ -17,10 +17,7 @@ unnecessary complexity to the compiler (and increased compilation time):
 	  the compiler will treat them like normal variables (the standard
 	  specifies that a diagnostic message must be printed).
 
-	- volatile: The definition of volatile is not concrete, because
-	  it is defined as 'remove all optimizations applied to the
-	  variable', which of course depends on the kind of optimizations
-	  applied to the variable. This qualifier was added to the standard
+	- volatile: This qualifier was added to the standard
 	  to be able to deal with longjmp (local variables that are not
 	  volatile have undefined state) and for memory mapped registers
 	  or variables whose values are modified asynchronously. This can
@@ -39,7 +36,7 @@ unnecessary complexity to the compiler (and increased compilation time):
 	  numerical algorithms, where FORTRAN could achieve a better
 	  performance (and in fact even with this specifier FORTRAN has a
 	  better performance in this field). Ignoring it doesn't make the
-	  code non-standard and in almost all applications the performance
+	  compiler non-standard and in almost all applications the performance
 	  will be the same.
 
 - Function type names
@@ -66,3 +63,11 @@ This complexity is not needed at all as function pointers fix all these
 problems without this complexity (and they are the more usual
 way of writing such code).
 
+- Definition of variables with incomplete type
+  ---------------------------------------------
+
+C89 allows the definition of variables with incomplete type that
+have external linkage and file scope. The type of the variable
+is the composition of all the definitions find in the file. The exact
+rules are a bit complex (3.7.2), and SCC ignores  them at this moment
+and it does not allow any definition of variables with incomplete type.

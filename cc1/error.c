@@ -24,10 +24,8 @@ warn_error(int flag, char *fmt, va_list va)
 	putc('\n', stderr);
 
 	if (flag < 0) {
-		if (!failure) {
-			failure = 1;
+		if (!failure)
 			fclose(stdout);
-		}
 		failure = 1;
 		if (++nerrors == MAXERRNUM) {
 			fputs("too many errors\n", stderr);

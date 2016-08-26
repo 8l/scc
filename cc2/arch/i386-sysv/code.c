@@ -200,3 +200,8 @@ void
 endinit(void)
 {
 }
+
+void
+getbblocks(void)
+{
+}

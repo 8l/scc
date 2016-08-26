@@ -134,7 +134,7 @@ initialize(Type *tp)
 
 		return np;
 	}
-	if (eqtype(tp, np->type))
+	if (eqtype(tp, np->type, 1))
 		return np;
 	if ((aux = convert(decay(np), tp, 0)) != NULL)
 		return aux;

@@ -141,4 +141,6 @@ enum asmop {
 	ASCALL,
 	ASPAR,
 	ASPARE,
+	ASALLOC,
+	ASFORM,
 };

@@ -10,7 +10,8 @@
 #define ADDR_LEN (INTIDENTSIZ+64)
 
 static void binary(void), unary(void), store(void), jmp(void), ret(void),
-            branch(void), call(void), ecall(void), param(void);
+            branch(void), call(void), ecall(void), param(void),
+            alloc(void), form2local(void);
 
 static struct opdata {
 	void (*fun)(void);
@@ -135,6 +136,8 @@ static struct opdata {
 	[ASCALL] = {.fun = ecall},
 	[ASPAR] = {.fun = param, .txt = "%s %s, "},
 	[ASPARE] = {.fun = param, .txt = "%s %s"},
+	[ASALLOC] = {.fun = alloc},
+	[ASFORM] = {.fun = form2local},
 };
 
 static char buff[ADDR_LEN];
@@ -295,22 +298,13 @@ data(Node *np)
 	putchar('\n');
 }
 
-static void
-alloc(Symbol *sym)
-{
-	Type *tp = &sym->type;
-	extern Type ptrtype;
-
-	printf("\t%s =%s\talloc%lu\t%lu\n",
-	       symname(sym), size2asm(&ptrtype), tp->align+3 & ~3, tp->size );
-}
-
 void
 writeout(void)
 {
 	Symbol *p;
 	Type *tp;
 	char *sep, *name;
+	int haslabel = 0;
 
 	if (curfun->kind == SGLOB)
 		fputs("export ", stdout);
@@ -322,35 +316,22 @@ writeout(void)
 			break;
 		printf("%s%s %s.val", sep, size2asm(&p->type), symname(p));
 	}
-	puts(")\n{\n@.start");
-
-	/* allocate stack space for parameters */
-	for (p = locals; p && (p->type.flags & PARF) != 0; p = p->next)
-		alloc(p);
-
-	/* allocate stack space for local variables) */
-	for ( ; p && p->id != TMPSYM; p = p->next) {
-		if (p->kind == SAUTO)
-			alloc(p);
-	}
-	/* store formal parameters in parameters */
-	for (p = locals; p; p = p->next) {
-		tp = &p->type;
-		if ((tp->flags & PARF) == 0)
-			break;
-		name = symname(p);
-		printf("\t\tstore%s\t%s.val,%s\n", size2asm(tp), name, name);
-	}
+	puts(")\n{");
 
 	/* emit assembler instructions */
 	for (pc = prog; pc; pc = pc->next) {
-		if (pc->label)
-			printf("%s:\n", symname(pc->label));
-		if (pc->op)
-			(*optbl[pc->op].fun)();
+		if (pc->label) {
+			haslabel = 1;
+			printf("%s\n", symname(pc->label));
+		}
+		if (!pc->op)
+			continue;
+		if (pc->flags&BBENTRY && !haslabel)
+			printf("%s\n", symname(newlabel()));
+		(*optbl[pc->op].fun)();
+		if (!pc->label)
+			haslabel = 0;
 	}
-	if (!prog)
-		puts("\t\tret");
 
 	puts("}");
 }
@@ -384,7 +365,7 @@ binary(void)
 	strcpy(to, addr2txt(&pc->to));
 	strcpy(from1, addr2txt(&pc->from1));
 	strcpy(from2, addr2txt(&pc->from2));
-	printf("\t%s %c=\t%s\t%s,%s\n", to, p->letter, p->txt, from1, from2);
+	printf("\t%s =%c\t%s\t%s,%s\n", to, p->letter, p->txt, from1, from2);
 }
 
 static void
@@ -406,7 +387,7 @@ unary(void)
 
 	strcpy(to, addr2txt(&pc->to));
 	strcpy(from, addr2txt(&pc->from1));
-	printf("\t%s %c=\t%s\t%s\n", to, p->letter, p->txt, from);
+	printf("\t%s =%c\t%s\t%s\n", to, p->letter, p->txt, from);
 }
 
 static void
@@ -461,8 +442,54 @@ branch(void)
 	printf("\t\tjnz\t%s,%s,%s\n", to, from1, from2);
 }
 
+static void
+alloc(void)
+{
+	Symbol *sym = pc->to.u.sym;
+	Type *tp = &sym->type;
+	extern Type ptrtype;
+
+	printf("\t%s =%s\talloc%lu\t%lu\n",
+	       symname(sym), size2asm(&ptrtype), tp->align+3 & ~3, tp->size);
+}
+
+static void
+form2local(void)
+{
+	Symbol *sym = pc->to.u.sym;
+	Type *tp = &sym->type;
+	char *name = symname(sym);
+
+	printf("\t\tstore%s\t%s.val,%s\n", size2asm(tp), name, name);
+}
+
 void
 endinit(void)
 {
 	puts("}");
+}
+
+void
+getbblocks(void)
+{
+	Inst *i;
+
+	if (!prog)
+		return;
+
+	prog->flags |= BBENTRY;
+	for (pc = prog; pc; pc = pc->next) {
+		switch (pc->op) {
+		case ASBRANCH:
+			i = pc->from2.u.sym->u.inst;
+			i->flags |= BBENTRY;
+		case ASJMP:
+			i = pc->from1.u.sym->u.inst;
+			i->flags |= BBENTRY;
+		case ASRET:
+			if (pc->next)
+				pc->next->flags |= BBENTRY;
+			break;
+		}
+	}
 }

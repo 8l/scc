@@ -9,57 +9,59 @@
 extern char *argv0;
 
 /* use main(int argc, char *argv[]) */
-#define ARGBEGIN	for (argv0 = *argv, argv++, argc--;\
-					argv[0] && argv[0][0] == '-'\
-					&& argv[0][1];\
-					argc--, argv++) {\
-				char argc_;\
-				char **argv_;\
-				int brk_;\
-				if (argv[0][1] == '-' && argv[0][2] == '\0') {\
-					argv++;\
-					argc--;\
-					break;\
-				}\
-				for (brk_ = 0, argv[0]++, argv_ = argv;\
-						argv[0][0] && !brk_;\
-						argv[0]++) {\
-					if (argv_ != argv)\
-						break;\
-					argc_ = argv[0][0];\
-					switch (argc_)
+#define ARGBEGIN \
+for (argv0 = *argv, argv++, argc--;\
+     argv[0];\
+     argc--, argv++) {\
+	if (argv[0][0] == '-') {\
+		char argc_;\
+		char **argv_;\
+		int brk_;\
+		if (argv[0][1] == '-' && argv[0][2] == '\0') {\
+			argv++;\
+			argc--;\
+			break;\
+		}\
+		for (brk_ = 0, argv[0]++, argv_ = argv;\
+		     argv[0][0] && !brk_;\
+		     argv[0]++) {\
+			if (argv_ != argv)\
+				break;\
+			argc_ = argv[0][0];\
+			switch (argc_)
 
-/* Handles obsolete -NUM syntax */
-#define ARGNUM				case '0':\
-					case '1':\
-					case '2':\
-					case '3':\
-					case '4':\
-					case '5':\
-					case '6':\
-					case '7':\
-					case '8':\
-					case '9'
+#define ARGOPERAND \
+		}\
+	} else if (argv[0][0] != '\0') {\
+		{
 
-#define ARGEND			}\
-			}
+#define ARGEND \
+		}\
+	} else {\
+		break;\
+	}\
+}
 
-#define ARGC()		argc_
+#define ARGC() argc_
 
-#define ARGNUMF()	(brk_ = 1, estrtonum(argv[0], 0, INT_MAX))
+#define ARGOP() argv[0]
 
-#define EARGF(x)	((argv[0][1] == '\0' && argv[1] == NULL)?\
-				((x), abort(), (char *)0) :\
-				(brk_ = 1, (argv[0][1] != '\0')?\
-					(&argv[0][1]) :\
-					(argc--, argv++, argv[0])))
+#define ARGNUMF() (brk_ = 1, estrtonum(argv[0], 0, INT_MAX))
 
-#define ARGF()		((argv[0][1] == '\0' && argv[1] == NULL)?\
-				(char *)0 :\
-				(brk_ = 1, (argv[0][1] != '\0')?\
-					(&argv[0][1]) :\
-					(argc--, argv++, argv[0])))
+#define EARGF(x) \
+((argv[0][1] == '\0' && argv[1] == NULL) ?\
+    ((x), abort(), (char *)0) :\
+    (brk_ = 1, (argv[0][1] != '\0') ?\
+        (&argv[0][1]) :\
+        (argc--, argv++, argv[0])))
 
-#define LNGARG()	&argv[0][0]
+#define ARGF() \
+((argv[0][1] == '\0' && argv[1] == NULL)?\
+    (char *)0 :\
+    (brk_ = 1, (argv[0][1] != '\0')?\
+        (&argv[0][1]) :\
+        (argc--, argv++, argv[0])))
+
+#define LNGARG() &argv[0][0]
 
 #endif

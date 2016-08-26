@@ -188,7 +188,8 @@ foldint(int op, Symbol *res, TINT l, TINT r)
 	case OLE:   i = l <= r; break;
 	case OEQ:   i = l == r; break;
 	case ONE:   i = l != r; break;
-	case ONEG:  i = -l;     break;
+	case ONEG:  i = !l;     break;
+	case OSNEG: i = -l;     break;
 	case OCPL:  i = ~l;     break;
 	default:    return 0;
 	}
@@ -213,7 +214,8 @@ folduint(int op, Symbol *res, TUINT l, TUINT r)
 	case OBAND: u = l & r;  break;
 	case OBXOR: u = l ^ r;  break;
 	case OBOR:  u = l | r;  break;
-	case ONEG:  u = -l;     break;
+	case ONEG:  u = !l;     break;
+	case OSNEG: u = -l;     break;
 	case OCPL:  u = ~l;     break;
 	case OAND:  i = l && r; goto sign;
 	case OOR:   i = l || r; goto sign;

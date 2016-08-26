@@ -118,13 +118,15 @@ arydcl(struct declarators *dp)
 }
 
 static int
-empty(Symbol *sym, Type *tp)
+empty(Symbol *sym, Type *tp, int param)
 {
 	if (!sym->name) {
 		sym->type = tp;
 		switch (tp->op) {
 		default:
-			warn("empty declaration");
+			 /* warn if it is not a parameter */
+			if (!param)
+				warn("empty declaration");
 		case STRUCT:
 		case UNION:
 		case ENUM:
@@ -175,7 +177,7 @@ parameter(struct decl *dcl)
 		errorp("incorrect function type for a function parameter");
 		return NULL;
 	}
-	if (!empty(sym, tp)) {
+	if (!empty(sym, tp, 1)) {
 		Symbol *p = install(NS_IDEN, sym);
 		if (!p && !(funtp->prop & TK_R)) {
 			errorp("redefinition of parameter '%s'", name);
@@ -615,7 +617,7 @@ field(struct decl *dcl)
 	TINT n = structp->n.elem;
 	int err = 0;
 
-	if (empty(sym, tp))
+	if (empty(sym, tp, 0))
 		return sym;
 	if (tp->op == FTN) {
 		errorp("invalid type in struct/union");
@@ -662,7 +664,7 @@ redcl(Symbol *sym, Type *tp, Symbol **pars, int sclass)
 	int flags;
 	char *name = sym->name;
 
-	if (!eqtype(sym->type, tp)) {
+	if (!eqtype(sym->type, tp, 1)) {
 		errorp("conflicting types for '%s'", name);
 		return sym;
 	}
@@ -724,7 +726,7 @@ identifier(struct decl *dcl)
 	int sclass = dcl->sclass;
 	char *name = sym->name;
 
-	if (empty(sym, tp))
+	if (empty(sym, tp, 0))
 		return sym;
 
 	/* TODO: Add warning about ANSI limits */

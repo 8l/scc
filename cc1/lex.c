@@ -22,23 +22,25 @@ int namespace = NS_IDEN;
 static int safe, eof;
 Input *input;
 
-static void
-allocinput(char *fname, FILE *fp)
+void
+allocinput(char *fname, FILE *fp, char *line)
 {
-	Input *ip;
+	Input *ip = xmalloc(sizeof(Input));
 
-	ip = xmalloc(sizeof(Input));
-	ip->fname = xstrdup(fname);
-	ip->p = ip->begin = ip->line = xmalloc(INPUTSIZ);
-	ip->p[0] = '\0';
+	if (!line) {
+		line = xmalloc(INPUTSIZ);
+		line[0] = '\0';
+	}
+	ip->p = ip->begin = ip->line = line;
 	ip->nline = 0;
+	ip->fname = xstrdup(fname);
 	ip->next = input;
 	ip->fp = fp;
 	input = ip;
 }
 
 void
-ilex(char *fname)
+ilex(void)
 {
 	static struct keyword keys[] = {
 		{"auto", SCLASS, AUTO},
@@ -78,18 +80,6 @@ ilex(char *fname)
 		{"while", WHILE, WHILE},
 		{NULL, 0, 0},
 	};
-	FILE *fp;
-
-	if (!fname) {
-		fp = stdin;
-		fname = "<stdin>";
-	} else {
-		if ((fp = fopen(fname, "r")) == NULL) {
-			die("error: failed to open input file '%s': %s",
-			    fname, strerror(errno));
-		}
-	}
-	allocinput(fname, fp);
 	keywords(keys, NS_KEYWORD);
 }
 
@@ -98,21 +88,29 @@ addinput(char *fname)
 {
 	FILE *fp;
 
-	if ((fp = fopen(fname, "r")) == NULL)
-		return 0;
-	allocinput(fname, fp);
+	if (fname) {
+		if ((fp = fopen(fname, "r")) == NULL)
+			return 0;
+	} else {
+		fp = stdin;
+		fname = "<stdin>";
+	}
+	allocinput(fname, fp, NULL);
 	return 1;
 }
 
-static void
+void
 delinput(void)
 {
 	Input *ip = input;
 
-	if (!ip->next)
-		eof = 1;
-	if (fclose(ip->fp))
-		die("error: failed to read from input file '%s'", ip->fname);
+	if (ip->fp) {
+		if (fclose(ip->fp))
+			die("error: failed to read from input file '%s'",
+			    ip->fname);
+		if (!ip->next)
+			eof = 1;
+	}
 	if (eof)
 		return;
 	input = ip->next;
@@ -127,15 +125,15 @@ newline(void)
 		die("error: input file '%s' too long", input->fname);
 }
 
-static char
+static int
 readchar(void)
 {
+	FILE *fp = input->fp;
 	int c;
-	FILE *fp;
 
+	if (eof || !fp)
+		return 0;
 repeat:
-	fp = input->fp;
-
 	switch (c = getc(fp)) {
 	case EOF:
 		c = '\0';
@@ -157,21 +155,21 @@ repeat:
 }
 
 static void
-comment(char type)
+comment(int type)
 {
-	if (type == '*') {
-		while (!eof) {
-			while (readchar() != '*' && !eof)
-				/* nothing */;
-			if (readchar() == '/')
-				break;
+	int c;
+
+	c = -1;
+repeat:
+	do {
+		if (!c || eof) {
+			errorp("unterminated comment");
+			return;
 		}
-	} else {
-		while (readchar() != '\n' && !eof)
-			/* nothing */;
-	}
-	if (eof)
-		error("unterminated comment");
+	} while ((c = readchar()) != type);
+
+	if (type == '*' && (c = readchar()) != '/')
+		goto repeat;
 }
 
 static int
@@ -195,15 +193,11 @@ repeat:
 		peekc = 0;
 		if (c == '\n' || c == '\0')
 			break;
-		if (c != '/')
+		if (c != '/' || (peekc = readchar()) != '*' && peekc != '/')
 			continue;
-		if ((c = readchar()) != '*' && c != '/') {
-			peekc = c;
-			c = '/';
-		} else {
-			comment(c);
-			c = ' ';
-		}
+		comment((peekc == '/') ? '\n' : peekc);
+		peekc = 0;
+		c = ' ';
 	}
 
 	if (bp == lim)

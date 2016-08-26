@@ -4,6 +4,8 @@
 
 #define GLOBALCTX 0
 
+#define NR_USWITCHES 20
+
 /*
  * Definition of enumerations
  */
@@ -198,6 +200,7 @@ enum op {
 	OBAND,
 	OBXOR,
 	OBOR,
+	OSNEG,
 	ONEG,
 	OCPL,
 	OAND,
@@ -347,7 +350,7 @@ extern void errorp(char *fmt, ...);
 extern void cpperror(char *fmt, ...);
 
 /* types.c */
-extern int eqtype(Type *tp1, Type *tp2);
+extern int eqtype(Type *tp1, Type *tp2, int eqflag);
 extern Type *ctype(unsigned type, unsigned sign, unsigned size);
 extern Type *mktype(Type *tp, int op, TINT nelem, Type *data[]);
 extern Type *duptype(Type *base);
@@ -380,8 +383,10 @@ extern int moreinput(void);
 extern void expect(unsigned tok);
 extern void discard(void);
 extern int addinput(char *fname);
+extern void allocinput(char *fname, FILE *fp, char *line);
+extern void delinput(void);
 extern void setsafe(int type);
-extern void ilex(char *fname);
+extern void ilex(void);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */
@@ -416,7 +421,8 @@ extern int cpp(void);
 extern int expand(char *begin, Symbol *sym);
 extern void incdir(char *dir);
 extern void outcpp(void);
-extern Symbol *defmacro(char *s);
+extern void defdefine(char *macro, char *val, char *source);
+extern void undefmacro(char *s);
 
 /*
  * Definition of global variables

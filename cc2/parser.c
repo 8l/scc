@@ -92,11 +92,12 @@ static struct decoc {
 	['\t']  = {     stmt,    NULL,                     0},
 
 	['~']   = {     NULL,   unary, .u.op =          OCPL},
-	['_']   = {     NULL,   unary, .u.op =          ONEG},
+	['_']   = {     NULL,   unary, .u.op =         OSNEG},
 	['\'']  = {     NULL,   unary, .u.op =         OADDR},
 	['@']   = {     NULL,   unary, .u.op =          OPTR},
 	['g']   = {     NULL,   unary, .u.op =         OCAST},
 	['p']   = {     NULL,   unary, .u.op =          OPAR},
+	['n']   = {     NULL,   unary, .u.op =          ONEG},
 
 	['a']   = {     NULL,  binary, .u.op =          OAND},
 	['o']   = {     NULL,  binary, .u.op =           OOR},
@@ -217,7 +218,7 @@ constant(char *token, union tokenop u)
 	unsigned c;
 
 	++token;
-	if (*token == OSTRING) {
+	if (*token == '"') {
 		++token;
 		np = newnode(OSTRING);
 		np->type.flags = STRF;
@@ -272,7 +273,7 @@ assign(char *token, union tokenop u)
 static void
 ternary(char *token, union tokenop u)
 {
-	Node *ask = newnode(OCOLON), *colon = newnode(OASK);
+	Node *ask = newnode(OASK), *colon = newnode(OCOLON);
 	Type *tp = gettype(token+1);
 
 	colon->right = pop();
@@ -280,10 +281,11 @@ ternary(char *token, union tokenop u)
 
 	ask->type = *tp;
 	ask->left = pop();
+	ask->right = colon;
 	push(ask);
 }
 
-static Node *
+static void
 eval(char *tok)
 {
 	struct decoc *dp;
@@ -328,7 +330,8 @@ oreturn(char *token, union tokenop u)
 {
 	Node *np = newnode(u.op);
 
-	eval(strtok(NULL, "\t\n"));
+	if (token = strtok(NULL, "\t\n"))
+		eval(token);
 	if (!empty())
 		np->left = pop();
 	push(np);
@@ -629,12 +632,14 @@ beginfun(void)
 {
 	inpars = 1;
 	pushctx();
+	addstmt(newnode(OBFUN), SETCUR);
 }
 
 static void
 endfun(void)
 {
 	endf = 1;
+	addstmt(newnode(OEFUN), SETCUR);
 }
 
 void

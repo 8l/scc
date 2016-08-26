@@ -1,6 +1,8 @@
 /* See LICENSE file for copyright and license details. */
 #include <stdlib.h>
+#include <string.h>
 
+#include "../inc/cc.h"
 #include "arch.h"
 #include "cc2.h"
 
@@ -11,18 +13,17 @@ nextpc(void)
 {
         Inst *new;
 
-        new = malloc(sizeof(*new)); /* TODO: create an arena */
+        new = xcalloc(1, sizeof(*new)); /* TODO: create an arena */
 
         if (!pc) {
-                new->next = NULL;
                 prog = new;
         } else {
                 new->next = pc->next;
                 pc->next = new;
         }
 
+	/* SNONE being 0, calloc initialized {from1,from2,to}.kind for us */
         new->prev = pc;
-        new->to.kind = new->from2.kind = new->from1.kind = SNONE;
         pc = new;
 }
 
@@ -57,14 +58,38 @@ addr(Node *np, Addr *addr)
 	}
 }
 
+Symbol *
+newlabel(void)
+{
+	Symbol *sym = getsym(TMPSYM);
+
+	sym->kind = SLABEL;
+	return sym;
+}
+
 Node *
-label2node(Symbol *sym)
+label2node(Node *np, Symbol *sym)
+{
+	if(!sym)
+		sym = newlabel();
+	if (!np)
+		np = newnode(OLABEL);
+	else
+		memset(np, 0, sizeof(np));
+	np->op = OLABEL;
+	np->u.sym = sym;
+
+	return np;
+}
+
+Node *
+constnode(TUINT n, Type *tp)
 {
 	Node *np;
 
-	np = newnode(OLABEL);
-	np->u.sym = sym;
-
+	np = newnode(OCONST);
+	np->type = *tp;
+	np->u.i = n;
 	return np;
 }
 
@@ -75,6 +100,7 @@ setlabel(Symbol *sym)
 		return;
 	code(0, NULL, NULL, NULL);
 	pc->label = sym;
+	sym->u.inst = pc;
 }
 
 void

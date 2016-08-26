@@ -21,7 +21,7 @@ main.o: error.h
 $(OBJS): cc2.h ../inc/sizes.h
 
 ../lib/libcc.a:
-	cd ../lib && $(MAKE) -e -$(MAKEFLAGS)
+	cd ../lib && $(MAKE) -e
 
 cc2: $(OBJS) ../lib/libcc.a
 	$(CC) $(SCC_LDFLAGS) $(OBJS) ../lib/libcc.a -o $@

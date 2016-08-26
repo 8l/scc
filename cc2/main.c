@@ -39,10 +39,8 @@ main(int argc, char *argv[])
 	if (argc > 2)
 		die("usage: cc2 [irfile]");
 
-	if (argv[1]) {
-		if (!freopen(argv[1], "r", stdin))
-			die("cc2: cannot open %s", argv[1]);
-	}
+	if (argv[1] && !freopen(argv[1], "r", stdin))
+		die("cc2: cannot open %s", argv[1]);
 
 	while (moreinput()) {
 		parse();
@@ -50,6 +48,7 @@ main(int argc, char *argv[])
 		apply(optm_dep);
 		apply(sethi);
 		apply(cgen);
+		getbblocks();  /* TODO: run apply over asm ins too */
 		peephole();
 		writeout();
 	}

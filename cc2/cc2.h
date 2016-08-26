@@ -1,4 +1,9 @@
 /* See LICENSE file for copyright and license details. */
+
+enum iflags {
+	BBENTRY =    1,
+};
+
 enum tflags {
 	SIGNF   =    1,
 	INTF    =    2,
@@ -22,7 +27,7 @@ enum sclass {
 	SMEMB     = 'M',
 	SCONST    = '#',
 	STRING    = '"',
-	SNONE     = 0
+	SNONE     = 0 /* cc2 relies on SNONE being 0 in nextpc() */
 };
 
 enum types {
@@ -76,7 +81,7 @@ enum op {
 	OBXOR    = '^',
 	OCPL     = '~',
 	OASSIG   = ':',
-	ONEG     = '_',
+	OSNEG    = '_',
 	OCALL    = 'c',
 	OPAR     = 'p',
 	OFIELD   = '.',
@@ -86,12 +91,13 @@ enum op {
 	OADDR    = '\'',
 	OAND     = 'a',
 	OOR      = 'o',
+	ONEG     = 'n',
 	OPTR     = '@',
 	OCAST    = 'g',
 	OINC     = 'i',
 	ODEC     = 'd',
 	/*statements */
-	ONOP     = 'n',
+	ONOP     = 'q',
 	OJMP     = 'j',
 	OBRANCH  = 'y',
 	ORET     = 'h',
@@ -101,6 +107,8 @@ enum op {
 	ODEFAULT = 'f',
 	OBSWITCH = 's',
 	OESWITCH = 't',
+	OBFUN    = 'x',
+	OEFUN    = 'k',
 };
 
 enum nerrors {
@@ -158,6 +166,7 @@ struct node {
 	unsigned char flags;
 	union {
 		TUINT i;
+		TFLOAT f;
 		char reg;
 		char *s;
 		Symbol *sym;
@@ -179,9 +188,10 @@ struct addr {
 
 struct inst {
         unsigned char op;
+	unsigned char flags;
 	Symbol *label;
-        Addr from1, from2, to;
         Inst *next, *prev;
+        Addr from1, from2, to;
 };
 
 /* main.c */
@@ -205,8 +215,9 @@ extern void data(Node *np);
 extern void writeout(void), endinit(void), newfun(void);
 extern void code(int op, Node *to, Node *from1, Node *from2);
 extern void defvar(Symbol *), defpar(Symbol *), defglobal(Symbol *);
-extern void setlabel(Symbol *sym);
-extern Node *label2node(Symbol *sym);
+extern void setlabel(Symbol *sym), getbblocks(void);
+extern Node *label2node(Node *np, Symbol *sym), *constnode(TUINT n, Type *tp);
+extern Symbol *newlabel(void);
 
 /* node.c */
 #define SETCUR  1

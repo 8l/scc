@@ -7,10 +7,10 @@ OBJS = scc.o
 
 all: scc
 
-$(OBJS): ../../inc/cc.h
+$(OBJS): ../../inc/cc.h ../../inc/arg.h
 
 ../../lib/libcc.a:
-	cd ../../lib && $(MAKE) -e -$(MAKEFLAGS)
+	cd ../../lib && $(MAKE) -e
 
 scc: $(OBJS) ../../lib/libcc.a
 	$(CC) $(SCC_LDFLAGS) $(OBJS) ../../lib/libcc.a -o $@
