@@ -1,9 +1,9 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/fold.c";
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc1.h"
 
 
@@ -194,6 +194,8 @@ foldint(int op, Symbol *res, TINT l, TINT r)
 	default:    return 0;
 	}
 	res->u.i = i;
+
+	DBG("FOLD i l=%lld %d r=%lld = %lld", l, op, r, i);
 	return 1;
 }
 
@@ -227,12 +229,15 @@ folduint(int op, Symbol *res, TUINT l, TUINT r)
 	case ONE:   i = l != r; goto sign;
 	default:    return 0;
 	}
-
 	res->u.u = u & ones(res->type->size);
+
+	DBG("FOLD ui l=%llu %d r=%llu = %llu", l, op, r, u);
 	return 1;
 
 sign:
 	res->u.i = i;
+
+	DBG("FOLD sui %llu %d %llu = %llu", l, op, r, i);
 	return 1;
 }
 
@@ -268,10 +273,14 @@ foldfloat(int op, Symbol *res, TFLOAT l, TFLOAT r)
 	default:   return 0;
 	}
 	res->u.f = f;
+
+	DBG("FOLD f l=%lf %d r=%lf = %lf", l, op, r, f);
 	return 1;
 
 comparison:
 	res->u.i = i;
+
+	DBG("FOLD if l=%lf %d r=%lf = %lld", l, op, r, i);
 	return 1;
 }
 
@@ -301,20 +310,127 @@ foldconst(int type, int op, Type *tp, Symbol *ls, Symbol *rs)
 			return NULL;
 		break;
 	}
-	sym = newsym(NS_IDEN);
+	sym = newsym(NS_IDEN, NULL);
+	sym->flags |= SCONSTANT;
 	sym->type = tp;
 	sym->u = aux.u;
 	return constnode(sym);
 }
 
 static Node *
-fold(int op, Type *tp, Node *lp, Node *rp)
+foldcast(Node *np, Node *l)
+{
+	TUINT negmask, mask, u;
+	Type *newtp = np->type, *oldtp = l->type;
+	Symbol aux, *sym, *osym = l->sym;
+
+	if (!(l->flags & NCONST))
+		return np;
+
+	switch (newtp->op) {
+	case PTR:
+	case INT:
+	case ENUM:
+		switch (oldtp->op) {
+		case PTR:
+		case INT:
+		case ENUM:
+			u = (oldtp->prop & TSIGNED) ? osym->u.i : osym->u.u;
+			break;
+		case FLOAT:
+			oldtp = newtp;
+			u = osym->u.f;
+			break;
+		default:
+			return  np;
+		}
+		mask = ones(newtp->size);
+		if (newtp->prop & TSIGNED) {
+			negmask = ~mask;
+			if (u & (negmask >> 1) & mask)
+				u |= negmask;
+			aux.u.i = u;
+		} else {
+			aux.u.u = u & mask;
+		}
+		break;
+	case FLOAT:
+		/* FIXME: The cast can be from another float type */
+		aux.u.f = (oldtp->prop & TSIGNED) ? osym->u.i : osym->u.u;
+		break;
+	default:
+		return np;
+	}
+	DBG("FOLD cast %c->%c", oldtp->letter, newtp->letter);
+	freetree(np);
+	sym = newsym(NS_IDEN, NULL);
+	sym->flags |= SCONSTANT;
+	sym->type = newtp;
+	sym->u = aux.u;
+	return constnode(sym);
+}
+
+static Node *
+foldunary(Node *np, Node *l)
+{
+	int op = l->op;
+	Node *aux;
+
+	switch (np->op) {
+	case ONEG:
+		if (l->op == ONEG)
+			break;
+		return NULL;
+	case OADD:
+		DBG("FOLD unary delete %d", np->op);
+		np->left = NULL;
+		freetree(np);
+		return l;
+	case OCAST:
+		if (op != OCAST)
+			return foldcast(np, l);
+		DBG("FOLD unary collapse %d", np->op);
+		np->left = l->left;
+		l->left = NULL;
+		freetree(l);
+		return np;
+	case OSNEG:
+	case OCPL:
+		if (op != np->op)
+			return NULL;
+		break;
+	case OPTR:
+		if (op != OADDR || np->type != l->left->type)
+			return NULL;
+		break;
+	case OADDR:
+		if (op != OPTR)
+			return NULL;
+		break;
+	default:
+		return NULL;
+	}
+	DBG("FOLD unary cancel %d", np->op);
+	aux = l->left;
+	l->left = NULL;
+	freetree(np);
+	return aux;
+}
+
+static Node *
+fold(Node *np)
 {
 	Symbol *rs, *ls;
-	Node *np;
 	Type *optype;
 	int type;
+	int op = np->op;
+	Node *p, *lp = np->left, *rp = np->right;
+	Type *tp = np->type;
 
+	if (!lp && !rp)
+		return np;
+	if (!rp && (p = foldunary(np, lp)) != NULL)
+		return p;
 	if ((op == ODIV || op == OMOD) && cmpnode(rp, 0)) {
 		warn("division by 0");
 		return NULL;
@@ -326,13 +442,18 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 	 * (when we don't know the physical address so
 	 * we cannot fold it)
 	 */
-	if (!(lp->flags & NCONST) || !lp->sym ||
-	    rp && (!(rp->flags & NCONST) || !rp->sym)) {
-		return NULL;
+	if (!rp) {
+		rs = NULL;
+	} else {
+		if (!(rp->flags & NCONST) || !rp->sym)
+			return NULL;
+		rs = rp->sym;
 	}
+
+	if (!(lp->flags & NCONST) || !lp->sym)
+		return NULL;
 	optype = lp->type;
 	ls = lp->sym;
-	rs = (rp) ? rp->sym : NULL;
 
 	switch (type = optype->op) {
 	case ENUM:
@@ -341,64 +462,60 @@ fold(int op, Type *tp, Node *lp, Node *rp)
 			type = UNSIGNED;
 	case PTR:
 	case FLOAT:
-		if ((np = foldconst(type, op, tp, ls, rs)) != NULL)
-			break;
+		if ((p = foldconst(type, op, tp, ls, rs)) == NULL)
+			return NULL;
+		freetree(np);
+		return p;
 	default:
 		return NULL;
 	}
-
-	freetree(lp);
-	freetree(rp);
-	return np;
 }
 
 static void
-commutative(int *op, Node **lp, Node **rp)
+commutative(Node *np, Node *l, Node *r)
 {
-	Node *l = *lp, *r = *rp, *aux;
+	int op = np->op;
 
-	if (r == NULL || r->flags & NCONST || !(l->flags & NCONST))
+	if (r == NULL || r->flags&NCONST || !(l->flags&NCONST))
 		return;
 
-	switch (*op) {
+	switch (op) {
 	case OLT:
 	case OGT:
 	case OGE:
 	case OLE:
+		DBG("FOLD neg commutative %d", np->op);
+		np->op = negop(op);
 	case OEQ:
 	case ONE:
-		*op = negop(*op);
 	case OADD:
 	case OMUL:
 	case OBAND:
 	case OBXOR:
 	case OBOR:
-		aux = l;
-		l = r;
-		r = aux;
+		DBG("FOLD commutative %d", np->op);
+		np->left = r;
+		np->right = l;
 		break;
 	}
-	*rp = r;
-	*lp = l;
 }
 
 static Node *
-identity(int *op, Node *lp, Node *rp)
+identity(Node *np)
 {
-	int iszeror, isoner, istruer;
-	int iszerol, isonel, istruel;
+	int iszeror, isoner;
+	int iszerol, isonel;
+	Node *lp = np->left, *rp = np->right;
 
 	if (!rp)
 		return NULL;
 
 	iszeror = cmpnode(rp, 0);
 	isoner = cmpnode(rp, 1),
-	istruer = !iszeror && rp->flags & NCONST;
 	iszerol = cmpnode(lp, 0);
-	isonel = cmpnode(lp, 1),
-	istruel = !iszerol && lp->flags & NCONST;
+	isonel = cmpnode(lp, 1);
 
-	switch (*op) {
+	switch (np->op) {
 	case OOR:
 		/*
 		 * 1 || i => 1    (free right)
@@ -473,6 +590,7 @@ identity(int *op, Node *lp, Node *rp)
 		return NULL;
 	case OMOD:
 		/* i % 1  => i,1 */
+		/* TODO: i % 2^n => i & n-1 */
 		if (isoner)
 			goto change_to_comma;
 	default:
@@ -480,25 +598,28 @@ identity(int *op, Node *lp, Node *rp)
 	}
 
 free_right:
-	freetree(rp);
+	DBG("FOLD identity %d", np->op);
+	np->left = NULL;
+	freetree(np);
 	return lp;
 
 free_left:
-	freetree(lp);
+	DBG("FOLD identity %d", np->op);
+	np->right = NULL;
+	freetree(np);
 	return rp;
 
 change_to_comma:
-	*op = OCOMMA;
-	return NULL;
+	DBG("FOLD identity %d", np->op);
+	np->op = OCOMMA;
+	return np;
 }
 
 static Node *
-foldternary(int op, Type *tp, Node *cond, Node *body)
+foldternary(Node *np, Node *cond, Node *body)
 {
-	Node *np;
-
 	if (!(cond->flags & NCONST))
-		return node(op, tp, cond, body);
+		return np;
 	if (cmpnode(cond, 0)) {
 		np = body->right;
 		freetree(body->left);
@@ -506,85 +627,42 @@ foldternary(int op, Type *tp, Node *cond, Node *body)
 		np = body->left;
 		freetree(body->right);
 	}
+
+	DBG("FOLD ternary");
+	body->left = NULL;
+	body->right = NULL;
 	freetree(cond);
 	free(body);
 	return np;
 }
 
-/*
- * TODO: transform simplify in a recursivity
- * function, because we are losing optimization
- * chances
- */
-Node *
-simplify(int op, Type *tp, Node *lp, Node *rp)
-{
-	Node *np;
-
-	if (op == OASK)
-		return foldternary(op, tp, lp, rp);
-	commutative(&op, &lp, &rp);
-	if ((np = fold(op, tp, lp, rp)) != NULL)
-		return np;
-	if ((np = identity(&op, lp, rp)) != NULL)
-		return np;
-	return node(op, tp, lp, rp);
-}
-
-/* TODO: check validity of types */
+/* TODO: fold OCOMMA */
 
 Node *
-castcode(Node *np, Type *newtp)
+simplify(Node *np)
 {
-	TUINT negmask, mask, u;
-	Type *oldtp = np->type;
-	Symbol aux, *sym, *osym = np->sym;
+	Node *p, *l, *r;
 
-	if (!(np->flags & NCONST))
-		goto noconstant;
+	if (!np)
+		return NULL;
+	if (debug)
+		prtree(np);
 
-	switch (newtp->op) {
-	case PTR:
-	case INT:
-	case ENUM:
-		switch (oldtp->op) {
-		case PTR:
-		case INT:
-		case ENUM:
-			u = (oldtp->prop & TSIGNED) ? osym->u.i : osym->u.u;
-			break;
-		case FLOAT:
-			oldtp = newtp;
-			u = osym->u.f;
-			break;
-		default:
-			goto noconstant;
-		}
-		mask = ones(newtp->size);
-		if (newtp->prop & TSIGNED) {
-			negmask = ~mask;
-			if (u & (negmask >> 1) & mask)
-				u |= negmask;
-			aux.u.i = u;
-		} else {
-			aux.u.u = u & mask;
-		}
-		break;
-	case FLOAT:
-		/* FIXME: The cast can be from another float type */
-		aux.u.f = (oldtp->prop & TSIGNED) ? osym->u.i : osym->u.u;
-		break;
+	l = np->left = simplify(np->left);
+	r = np->right = simplify(np->right);
+
+	switch (np->op) {
+	case OASK:
+		return foldternary(np, l, r);
+	case OCALL:
+	case OPAR:
+		return np;
 	default:
-		goto noconstant;
+		commutative(np, l, r);
+		if ((p = fold(np)) != NULL)
+			return p;
+		if ((p = identity(np)) != NULL)
+			return p;
+		return np;
 	}
-
-	sym = newsym(NS_IDEN);
-	np->type = sym->type = newtp;
-	np->sym = sym;
-	sym->u = aux.u;
-
-	return np;
-
-noconstant:
-	return node(OCAST, newtp, np, NULL);
 }

@@ -1,10 +1,10 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/error.c";
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc1.h"
 
 #define MAXERRNUM 10
@@ -18,7 +18,7 @@ warn_error(int flag, char *fmt, va_list va)
 	if (flag == 0)
 		return;
 	fprintf(stderr, "%s:%u: %s: ",
-	       input->fname, input->nline,
+	       filenam, lineno,
 	       (flag < 0) ? "error" : "warning");
 	vfprintf(stderr, fmt, va);
 	putc('\n', stderr);

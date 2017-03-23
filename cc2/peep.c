@@ -1,5 +1,6 @@
 /* See LICENSE file for copyright and license details. */
-#include "arch.h"
+static char sccsid[] = "@(#) ./cc2/peep.c";
+#include "../inc/cc.h"
 #include "cc2.h"
 
 void

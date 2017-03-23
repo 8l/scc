@@ -8,8 +8,8 @@ output:
 G6	P	F	"foo
 {
 \
-V8	K	#N3
-Y10	V8	"	(
+V7	K	#N3
+Y10	V7	"	(
 	#"hi
 	#K00
 )

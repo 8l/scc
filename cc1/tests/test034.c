@@ -4,8 +4,8 @@
 name: TEST034
 description: Basic test for incomplete structures
 error:
-test034.c:46: error: declared variable 'bar' of incomplete type
-test034.c:46: error: redeclaration of 'bar'
+test034.c:48: error: declared variable 'bar' of incomplete type
+test034.c:48: error: redeclaration of 'bar'
 output:
 X3	S2	"x
 X5	I	F	"foo
@@ -15,6 +15,8 @@ G6	I	F	"main
 X7	S2	"x
 	h	X7	'P	#P0	!I
 }
+S2	"X	#N2	#N1
+M9	I	"v	#N0
 G5	I	F	"foo
 {
 \

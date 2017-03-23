@@ -1,30 +1,45 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/symbol.c";
+#include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <cstd.h>
 #include "../inc/cc.h"
-#include "../inc/sizes.h"
-#include "arch.h"
 #include "cc1.h"
 
 #define NR_SYM_HASH 64
+#define NR_CPP_HASH 32
+#define NR_LBL_HASH 16
 
 unsigned curctx;
 static unsigned short counterid;
 
 static Symbol *head, *labels;
 static Symbol *htab[NR_SYM_HASH];
+static Symbol *htabcpp[NR_CPP_HASH];
+static Symbol *htablbl[NR_LBL_HASH];
 
 #ifndef NDEBUG
 void
-dumpstab(char *msg)
+dumpstab(Symbol **tbl, char *msg)
 {
 	Symbol **bp, *sym;
+	unsigned size;
 
 	fprintf(stderr, "Symbol Table dump at ctx=%u\n%s\n", curctx, msg);
-	for (bp = htab; bp < &htab[NR_SYM_HASH]; ++bp) {
+	if (tbl == htab)
+		size = NR_SYM_HASH;
+	else if (tbl == htabcpp)
+		size = NR_CPP_HASH;
+	else if (tbl == htablbl)
+		size = NR_LBL_HASH;
+	else
+		abort();
+
+	for (bp = tbl; bp < &tbl[size]; ++bp) {
 		if (*bp == NULL)
 			continue;
 		fprintf(stderr, "%d", (int) (bp - htab));
@@ -39,39 +54,60 @@ dumpstab(char *msg)
 		        sym->ns, sym->ctx,
 		        (sym->name) ? sym->name : "", (void *) sym);
 	}
+	fputs("\nlabels:", stderr);
+	for (sym = labels; sym; sym = sym->next) {
+		fprintf(stderr, "->[%d,%d:'%s'=%p]",
+		        sym->ns, sym->ctx,
+		        (sym->name) ? sym->name : "", (void *) sym);
+	}
 	putc('\n', stderr);
 }
 #endif
 
-static unsigned
-hash(const char *s)
+static Symbol **
+hash(char *s, int ns)
 {
-	unsigned c, h;
+	unsigned c, h, size;
+	Symbol **tab;
 
 	for (h = 0; c = *s; ++s)
-		h ^= 33 * c;
-	return h & NR_SYM_HASH-1;
+		h = h*33 ^ c;
+
+	switch (ns) {
+	case NS_CPP:
+		tab = htabcpp;
+		size = NR_CPP_HASH-1;
+		break;
+	case NS_LABEL:
+		tab = htablbl;
+		size = NR_LBL_HASH-1;
+		break;
+	default:
+		tab = htab;
+		size = NR_SYM_HASH-1;
+		break;
+	}
+	return &tab[h & size];
 }
 
 static void
 unlinkhash(Symbol *sym)
 {
-	Symbol **h, *p, *prev;
+	Symbol **h;
 
 	if ((sym->flags & SDECLARED) == 0)
 		return;
-	h = &htab[hash(sym->name)];
-	for (prev = p = *h; p != sym; prev = p, p = p->hash)
-		/* nothing */;
-	if (prev == p)
-		*h = sym->hash;
-	else
-		prev->hash = sym->hash;
+	h = hash(sym->name, sym->ns);
+	assert(sym->ns == NS_CPP || *h == sym);
+	while (*h != sym)
+		h = &(*h)->hash;
+	*h = sym->hash;
 }
 
 void
 pushctx(void)
 {
+	DBG("SYM: pushed context %d", curctx+1);
 	if (++curctx == NR_BLOCK+1)
 		error("too many nested blocks");
 }
@@ -82,6 +118,8 @@ killsym(Symbol *sym)
 	short f;
 	char *name;
 
+	if (!sym)
+		return;
 	f = sym->flags;
 	if (f & SSTRING)
 		free(sym->u.s);
@@ -102,6 +140,36 @@ void
 popctx(void)
 {
 	Symbol *next, *sym;
+	int ns, dangling = 0;
+
+	DBG("SYM: poped context %d", curctx);
+	/*
+	 * we have to be careful before popping the current
+	 * context, because since the parser is one token
+	 * ahead it may already have read an identifier at
+	 * this point, and yylval.sym is a pointer to
+	 * the symbol associated to such token. If that
+	 * symbol is from the context that we are popping
+	 * then we are going to generate a dangling pointer.
+	 * We can detect this situation and call again to
+	 * lookup.
+	 */
+	if ((yytoken == IDEN || yytoken == TYPEIDEN) &&
+	    yylval.sym->ctx == curctx) {
+		ns = yylval.sym->ns;
+		dangling = 1;
+	}
+
+	for (sym = head; sym && sym->ctx == curctx; sym = next) {
+		/*
+		 * Since we are unlinking them in the inverse order
+		 * we do know that sym is always the head of the
+		 * collision list
+		 */
+		next = sym->next;
+		killsym(sym);
+	}
+	head = sym;
 
 	if (--curctx == GLOBALCTX) {
 		for (sym = labels; sym; sym = next) {
@@ -109,24 +177,21 @@ popctx(void)
 			killsym(sym);
 		}
 		labels = NULL;
-		if (curfun) {
-			free(curfun->u.pars);
-			curfun->u.pars = NULL;
-		}
 	}
 
-	for (sym = head; sym && sym->ctx > curctx; sym = next) {
-		next = sym->next;
-		killsym(sym);
+	if (dangling) {
+		yylval.sym = lookup(ns, yytext, ALLOC);
+		yytoken = yylval.sym->token;
 	}
-	head = sym;
 }
 
-static unsigned short
+unsigned
 newid(void)
 {
 	unsigned short id;
 
+	if (lexmode == CPPMODE)
+		return 0;
 	id = ++counterid;
 	if (id == 0) {
 		die("Overflow in %s identifiers",
@@ -135,18 +200,8 @@ newid(void)
 	return id;
 }
 
-Type *
-duptype(Type *base)
-{
-	Type *tp = xmalloc(sizeof(*tp));
-
-	*tp = *base;
-	tp->id = newid();
-	return tp;
-}
-
-static Symbol *
-allocsym(int ns, char *name)
+Symbol *
+newsym(int ns, char *name)
 {
 	Symbol *sym;
 
@@ -155,161 +210,101 @@ allocsym(int ns, char *name)
 		name = xstrdup(name);
 	sym->name = name;
 	sym->id = 0;
+	sym->hide = 0;
 	sym->ns = ns;
-	sym->ctx = (ns == NS_CPP) ? UCHAR_MAX : curctx;
+	sym->ctx = curctx;
 	sym->token = IDEN;
 	sym->flags = 0;
 	sym->u.s = NULL;
 	sym->type = NULL;
-	sym->next = sym->hash = NULL;
-	return sym;
-}
+	sym->hash = NULL;
 
-static Symbol *
-linksym(Symbol *sym)
-{
-	Symbol *p, *prev;
-
-	switch (sym->ns) {
-	case NS_CPP:
-		return sym;
-	case NS_LABEL:
+	if (ns == NS_LABEL) {
 		sym->next = labels;
-		return labels = sym;
-	default:
-		for (prev = p = head; p; prev = p, p = p->next) {
-			if (p->ctx <= sym->ctx)
-				break;
-		}
-		if (p == prev) {
-			sym->next = head;
-			head = sym;
-		} else {
-			p = prev->next;
-			prev->next = sym;
-			sym->next = p;
-		}
-		return sym;
+		labels = sym;
+	} else if (ns != NS_CPP) {
+		sym->next = head;
+		head = sym;
 	}
+	return sym;
 }
 
 static Symbol *
 linkhash(Symbol *sym)
 {
-	Symbol **h, *p, *prev;
+	Symbol **h;
 
-	h = &htab[hash(sym->name)];
-	for (prev = p = *h; p; prev = p, p = p->hash) {
-		if (p->ctx <= sym->ctx)
-			break;
-	}
-	if (p == prev) {
-		sym->hash = *h;
-		*h = sym;
-	} else {
-		p = prev->hash;
-		prev->hash = sym;
-		sym->hash = p;
-	}
+	h = hash(sym->name, sym->ns);
+	sym->hash = *h;
+	*h = sym;
 
 	if (sym->ns != NS_CPP)
 		sym->id = newid();
 	sym->flags |= SDECLARED;
-	return linksym(sym);
-}
-
-Symbol *
-newsym(int ns)
-{
-	return linksym(allocsym(ns, NULL));
+	return sym;
 }
 
 Symbol *
 newstring(char *s, size_t len)
 {
-	Symbol *sym = newsym(NS_IDEN);
+	Symbol *sym = newsym(NS_IDEN, NULL);
 
+	if (lexmode != CPPMODE)
+		sym->type = mktype(chartype, ARY, len, NULL);
 	sym->id = newid();
 	sym->flags |= SSTRING | SCONSTANT | SPRIVATE;
 	sym->u.s = xmalloc(len);
 	if (s)
 		memcpy(sym->u.s, s, len);
-	sym->type = mktype(chartype, ARY, len, NULL);
+
 	return sym;
 }
 
 Symbol *
 newlabel(void)
 {
-	Symbol *sym = newsym(NS_LABEL);
+	Symbol *sym = newsym(NS_LABEL, NULL);
 	sym->id = newid();
 	return sym;
 }
 
 Symbol *
-lookup(int ns, char *name)
+lookup(int ns, char *name, int alloc)
 {
 	Symbol *sym;
 	int sns;
 	char *t, c;
 
 	c = *name;
-	for (sym = htab[hash(name)]; sym; sym = sym->hash) {
+	for (sym = *hash(name, ns); sym; sym = sym->hash) {
 		t = sym->name;
 		if (*t != c || strcmp(t, name))
 			continue;
 		sns = sym->ns;
+		if (sns == ns)
+			return sym;
 		/*
-		 * CPP namespace has a total priority over the another
-		 * namespaces, because it is a previous pass,
-		 * If we are looking in the CPP namespace,
-		 * we don't want symbols related to keywords or types.
 		 * When a lookup is done in a namespace associated
 		 * to a struct we also want symbols of NS_IDEN which
 		 * are typedef, because in other case we cannot declare
 		 * fields of such types.
+		 * TODO: Remove this trick
 		 */
-		if (sns == NS_CPP && !disexpand || sns == ns)
-			return sym;
-		if (ns == NS_CPP)
-			continue;
 		if (sns == NS_KEYWORD ||
 		    (sym->flags & STYPEDEF) && ns >= NS_STRUCTS) {
 			return sym;
 		}
 	}
-	return allocsym(ns, name);
-}
-
-Symbol *
-nextsym(Symbol *sym, int ns)
-{
-	char *s, *t, c;
-	Symbol *p;
-
-	/*
-	 * This function is only called when a macro with parameters
-	 * is called without them.
-	 *      #define x(y) ((y) + 1)
-	 *      int x = x(y);
-	 */
-	s = sym->name;
-	c = *s;
-	for (p = sym->hash; p; p = p->hash) {
-		t = p->name;
-		if (c == *t && !strcmp(s, t))
-			return p;
-	}
-	return allocsym(ns, s);
+	return (alloc == ALLOC) ? newsym(ns, name) : NULL;
 }
 
 Symbol *
 install(int ns, Symbol *sym)
 {
-	if (sym->flags & SDECLARED) {
+	if (sym->flags & SDECLARED || sym->ctx != curctx) {
 		if (sym->ctx == curctx && ns == sym->ns)
 			return NULL;
-		sym = allocsym(ns, sym->name);
+		sym = newsym(ns, sym->name);
 	}
 	return linkhash(sym);
 }
@@ -320,9 +315,29 @@ keywords(struct keyword *key, int ns)
 	Symbol *sym;
 
 	for ( ; key->str; ++key) {
-		sym = linkhash(allocsym(ns, key->str));
+		sym = linkhash(newsym(ns, key->str));
 		sym->token = key->token;
 		sym->u.token = key->value;
+	}
+	/*
+	 * Remove all the predefined symbols from * the symbol list. It
+	 * will make faster some operations. There is no problem of memory
+	 * leakeage because this memory is not ever freed
+	 */
+	counterid = 0;
+	head = NULL;
+}
+
+void
+builtins(struct builtin *built)
+{
+	Symbol *sym;
+	struct builtin *bp;
+
+	for (bp = built; bp->str; ++bp) {
+		sym = linkhash(newsym(NS_KEYWORD, bp->str));
+		sym->token = BUILTIN;
+		sym->u.fun = bp->fun;
 	}
 	/*
 	 * Remove all the predefined symbols from * the symbol list. It

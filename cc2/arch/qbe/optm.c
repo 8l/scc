@@ -1,7 +1,9 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/arch/qbe/optm.c";
+
 #include <stddef.h>
 
-#include "arch.h"
+#include "../../../inc/cc.h"
 #include "../../cc2.h"
 
 Node *
@@ -26,16 +28,6 @@ optm_dep(Node *np)
 		op = (np->prev) ? np->prev->op : 0;
 		if (!op || op == ONOP || op == OBRANCH || (op != ORET && op != OJMP))
 			addstmt(newnode(ORET), KEEPCUR);
-		break;
-	case ONOP:
-		if (next->op == ONOP) {
-			sym = np->u.sym;
-			osym = next->u.sym;
-			osym->id = sym->id;
-			osym->numid = sym->numid;
-			osym->u.stmt = sym->u.stmt;
-			return NULL;
-		}
 		break;
 	case OBRANCH:
 		if (!next->label) {

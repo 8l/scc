@@ -1,16 +1,19 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/types.c";
+#include <assert.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "../inc/sizes.h"
+#include <cstd.h>
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc1.h"
-#include "arch.h"
 
 #define NR_TYPE_HASH 16
+#define HASH(t) (((t)->op ^ (uintptr_t) (t)->type>>3) & NR_TYPE_HASH-1)
+
+static Type *typetab[NR_TYPE_HASH], *localtypes;
 
 /* FIXME:
  * Compiler can generate warnings here if the ranges of TINT,
@@ -21,37 +24,37 @@ static struct limits limits[][4] = {
 	{
 		{	/* 0 = unsigned 1 byte */
 			.min.i = 0,
-			.max.i = 255
+			.max.i = 0xff
 		},
 		{	/* 1 = unsigned 2 bytes */
 			.min.i = 0,
-			.max.i = 65535u
+			.max.i = 0xffff
 		},
 		{	/* 2 = unsigned 4 bytes */
 			.min.i = 0,
-			.max.i = 4294967295u
+			.max.i = 0xffffffff
 		},
 		{	/* 3 = unsigned 8 bytes */
 			.min.i = 0,
-			.max.i = 18446744073709551615u
+			.max.i = 0xffffffffffffffff
 		}
 	},
 	{
 		{	/* 0 = signed 1 byte */
-			.min.i = -127,
-			.max.i = 127
+			.min.i = -0x7f-1,
+			.max.i = 0x7f
 		},
 		{	/* 1 = signed 2 byte */
-			.min.i = -32767,
-			.max.i = 32767
+			.min.i = -0x7fff-1,
+			.max.i = 0x7fff
 		},
 		{	/* 2 = signed 4 byte */
-			.min.i = -2147483647L,
-			.max.i = 2147483647L
+			.min.i = -0x7fffffff-1,
+			.max.i = 0x7fffffff
 		},
 		{	/* 3 = signed 8 byte */
-			.min.i = -9223372036854775807LL,
-			.max.i = 9223372036854775807LL,
+			.min.i = -0x7fffffffffffffff-1,
+			.max.i = 0x7fffffffffffffff,
 		}
 	},
 	{
@@ -120,6 +123,10 @@ ctype(unsigned type, unsigned sign, unsigned size)
 			return uchartype;
 		}
 		break;
+	case VA_LIST:
+		if (size || sign)
+			goto invalid_type;
+		return va_list_type;
 	case VOID:
 		if (size || sign)
 			goto invalid_type;
@@ -175,8 +182,8 @@ void
 typesize(Type *tp)
 {
 	Symbol **sp;
-	Type *aux;
-	unsigned long size;
+	Type *type;
+	unsigned long size, offset;
 	int align, a;
 	TINT n;
 
@@ -200,21 +207,22 @@ typesize(Type *tp)
 		 * field, and the size of a struct is the sum
 		 * of the size of every field plus padding bits.
 		 */
-		align = size = 0;
+		offset = align = size = 0;
 		n = tp->n.elem;
 		for (sp = tp->p.fields; n--; ++sp) {
-			(*sp)->u.i = size;
-			aux = (*sp)->type;
-			a = aux->align;
+			(*sp)->u.i = offset;
+			type = (*sp)->type;
+			a = type->align;
 			if (a > align)
 				align = a;
 			if (tp->op == STRUCT) {
 				if (--a != 0)
-					size += (size + a) & ~a;
-				size += aux->size;
+					size = (size + a) & ~a;
+				size += type->size;
+				offset = size;
 			} else {
-				if (tp->size > size)
-					size = aux->size;
+				if (type->size > size)
+					size = type->size;
 			}
 		}
 
@@ -225,7 +233,7 @@ typesize(Type *tp)
 		 * alignment.
 		 */
 		if (tp->op == STRUCT && align-- > 1)
-			size += size + align & ~align;
+			size += size+align & ~align;
 		tp->size = size;
 		return;
 	case ENUM:
@@ -240,77 +248,104 @@ typesize(Type *tp)
 }
 
 Type *
+deftype(Type *tp)
+{
+	tp->prop |= TDEFINED;
+	typesize(tp);
+	emit(OTYP, tp);
+	return tp;
+}
+
+static Type *
+newtype(Type *base)
+{
+	Type *tp;
+	size_t siz;
+
+	tp = xmalloc(sizeof(*tp));
+	*tp = *base;
+	tp->id = newid();
+
+	if (tp->op == FTN) {
+		siz = tp->n.elem * sizeof(Type *);
+		tp->p.pars = memcpy(xmalloc(siz), tp->p.pars, siz);
+	}
+
+	if (curfun) {
+		/* it is a type defined in the body of a function */
+		tp->next = localtypes;
+		localtypes = tp;
+	}
+	if (tp->prop & TDEFINED)
+		deftype(tp);
+	return tp;
+}
+
+Type *
 mktype(Type *tp, int op, TINT nelem, Type *pars[])
 {
-	static Type *typetab[NR_TYPE_HASH];
 	Type **tbl, type;
-	unsigned t;
 	Type *bp;
-	int c, k_r = 0;
 
 	if (op == PTR && tp == voidtype)
 		return pvoidtype;
 
-	if (op == KRFTN) {
-		k_r = 1;
-		op = FTN;
-	}
-	switch (op) {
-	case PTR:     c = L_POINTER;  break;
-	case ARY:     c = L_ARRAY;    break;
-	case FTN:     c = L_FUNCTION; break;
-	case ENUM:    c = L_ENUM;     break;
-	case STRUCT:  c = L_STRUCT;   break;
-	case UNION:   c = L_UNION;    break;
-	}
-
+	memset(&type, 0, sizeof(type));
 	type.type = tp;
 	type.op = op;
-	type.prop = k_r ? TK_R : 0;
-	type.letter = c;
 	type.p.pars = pars;
 	type.n.elem = nelem;
-	type.ns = 0;
 
 	switch (op) {
 	case ARY:
-		if (nelem == 0)
-			break;
-		/* PASSTROUGH */
+		type.letter = L_ARRAY;
+		if (nelem != 0)
+			type.prop |= TDEFINED;
+		break;
+	case KRFTN:
+		type.prop |= TDEFINED | TK_R;
+		type.op = FTN;
+		type.letter = L_FUNCTION;
+		break;
 	case FTN:
+		if (nelem > 0 && pars[nelem-1] == ellipsistype)
+			type.prop |= TELLIPSIS;
+		type.letter = L_FUNCTION;
+		type.prop |= TDEFINED;
+		break;
 	case PTR:
+	        type.letter = L_POINTER;
 		type.prop |= TDEFINED;
 		break;
 	case ENUM:
-		type.prop |= TPRINTED | TINTEGER | TARITH;
-		type.n.rank = RANK_INT;
-		break;
+		type.letter = inttype->letter;
+		type.prop |= TINTEGER | TARITH;
+		type.n.rank = inttype->n.rank;
+		goto create_type;
 	case STRUCT:
-	case UNION:
+		type.letter = L_STRUCT;
 		type.prop |= TAGGREG;
-		break;
+		goto create_type;
+	case UNION:
+		type.letter = L_UNION;
+		type.prop |= TAGGREG;
+	create_type:
+		return newtype(&type);
 	default:
 		abort();
 	}
 
-	t = (op ^ (uintptr_t) tp >> 3) & NR_TYPE_HASH-1;
-	tbl = &typetab[t];
-	for (bp = *tbl; bp; bp = bp->next) {
-		if (eqtype(bp, &type, 0) && op != STRUCT && op != UNION) {
-			/*
-			 * pars was allocated by the caller
-			 * but the type already exists, so
-			 * we have to deallocte it
-			 */
-			free(pars);
+	tbl = &typetab[HASH(&type)];
+	for (bp = *tbl; bp; bp = bp->h_next) {
+		if (eqtype(bp, &type, 0))
 			return bp;
-		}
 	}
 
-	typesize(&type);
-	bp = duptype(&type);
-	bp->next = *tbl;
-	return *tbl = bp;
+	bp = newtype(&type);
+	bp->h_next = *tbl;
+	*tbl = bp;
+
+	return bp;
 }
 
 int
@@ -318,6 +353,7 @@ eqtype(Type *tp1, Type *tp2, int equiv)
 {
 	TINT n;
 	Type **p1, **p2;
+	Symbol **s1, **s2;
 
 	if (tp1 == tp2)
 		return 1;
@@ -325,9 +361,24 @@ eqtype(Type *tp1, Type *tp2, int equiv)
 		return 0;
 	if (tp1->op != tp2->op)
 		return 0;
+
 	switch (tp1->op) {
 	case UNION:
 	case STRUCT:
+		if (tp1->letter != tp2->letter)
+			return 0;
+		if (tp1->tag->name || tp2->tag->name)
+			return tp1->tag == tp2->tag;
+		if (tp1->n.elem != tp2->n.elem)
+			return 0;
+		s1 = tp1->p.fields, s2 = tp2->p.fields;
+		for (n = tp1->n.elem; n > 0; --n, ++s1, ++s2) {
+			if (strcmp((*s1)->name, (*s2)->name))
+				return 0;
+			if (!eqtype((*s1)->type, (*s2)->type, equiv))
+				return 0;
+		}
+		return 1;
 	case FTN:
 		if (tp1->n.elem != tp2->n.elem)
 			return 0;
@@ -354,4 +405,33 @@ eqtype(Type *tp1, Type *tp2, int equiv)
 	default:
 		abort();
 	}
+}
+
+void
+flushtypes(void)
+{
+	Type *tp, *next, **h;
+
+	for (tp = localtypes; tp; tp = next) {
+		next = tp->next;
+		switch (tp->op) {
+		default:
+			/*
+			 * All the local types are linked after
+			 * global types, and since we are
+			 * unlinking them in the inverse order
+			 * we do know that tp is always the head
+			 * of the collision list
+			 */
+			h = &typetab[HASH(tp)];
+			assert(*h == tp);
+			*h = tp->h_next;
+		case STRUCT:
+		case UNION:
+		case ENUM:
+			free(tp);
+			break;
+		}
+	}
+	localtypes = NULL;
 }

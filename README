@@ -10,8 +10,8 @@ it will have some differences:
 Type qualifers make the type system ugly, and their uselessness add
 unnecessary complexity to the compiler (and increased compilation time):
 	- const: The definition of const is not clear in the standard.
-	  If a const value is modified the behaviour is implementation
-	  defined. It seems it was defined in order to be able to
+	  If a const value is modified the behaviour is undefined
+	  behaviour. It seems it was defined in order to be able to
 	  allocate variables in ROM rather than error detection. This
 	  implememtation will not warn about these modifications and
 	  the compiler will treat them like normal variables (the standard
@@ -22,13 +22,13 @@ unnecessary complexity to the compiler (and increased compilation time):
 	  volatile have undefined state) and for memory mapped registers
 	  or variables whose values are modified asynchronously. This can
 	  be achieved with special pragma values though.
-	  In the first case, this is non-portable code by definition
+	  In the first case, it generates a lot of problems with modern
+	  processors and multithreading, where not holding the value in a
+	  register is not good enough (an explicit memory barrier is needed).
+	  In the second case, this is non-portable code by definition
 	  (depending on the register mapped), so it is better to deal with
 	  it using another solution (compiler extensions or direct
 	  assembler).
-	  In the second case, it generates a lot of problems with modern
-	  processors and multithreading, where not holding the value in a
-	  register is not good enough (an explicit memory barrier is needed).
 
 	- restrict: This qualifer can only be applied to pointers to
 	  mark that the pointed object has no other alias. This qualifer
@@ -53,6 +53,14 @@ grammar ambiguous because it is impossible to differentiate between:
         (int (f))  -> function returning int with one parameter of type f
         (int (f))  -> integer variable f
 
+If you don't believe me try this code:
+
+int
+f(int g())
+{
+	return g();
+}
+
 Function type names are stupid, because they are used as an alias
 of the function pointer types, but it is stupid that something
 like sizeof(int (int)) is not allowed (because here it should be
@@ -71,3 +79,11 @@ have external linkage and file scope. The type of the variable
 is the composition of all the definitions find in the file. The exact
 rules are a bit complex (3.7.2), and SCC ignores  them at this moment
 and it does not allow any definition of variables with incomplete type.
+
+If you don't believe me try this code:
+
+struct foo x;
+
+struct foo {
+	int i;
+};

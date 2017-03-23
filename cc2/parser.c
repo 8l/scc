@@ -1,16 +1,15 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/parser.c";
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <cstd.h>
 #include "../inc/cc.h"
-#include "../inc/sizes.h"
 
-#include "arch.h"
 #include "cc2.h"
 
-#define MAXLINE     200
 #define STACKSIZ     50
 
 extern Type int8type, int16type, int32type, int64type,
@@ -19,7 +18,11 @@ extern Type int8type, int16type, int32type, int64type,
             booltype,
             ptrtype,
             voidtype,
-            elipsistype;
+            arg_type;
+
+Type funetype = {
+	.flags = FUNF | ELLIPS
+};
 
 Type funtype = {
 	.flags = FUNF
@@ -37,12 +40,13 @@ struct swtch {
 };
 
 static struct swtch swtbl[NR_BLOCK], *swp = swtbl;
+static Symbol *lastfun;
 
 typedef void parsefun(char *, union tokenop);
 static parsefun type, symbol, getname, unary, binary, ternary, call,
                 constant, composed, binit, einit,
                 jump, oreturn, loop, assign,
-                ocase, bswitch, eswitch;
+                ocase, bswitch, eswitch, builtin;
 
 typedef void evalfun(void);
 static evalfun vardecl, beginfun, endfun, endpars, stmt,
@@ -76,7 +80,8 @@ static struct decoc {
 	['0']   = {     NULL,    type, .u.arg =    &voidtype},
 	['B']   = {     NULL,    type, .u.arg =    &booltype},
 	['P']   = {     NULL,    type, .u.arg =     &ptrtype},
-	['E']   = {     NULL,    type, .u.arg = &elipsistype},
+	['E']   = {     NULL,    type, .u.arg =    &funetype},
+	['1']	= {     NULL,    type, .u.arg =    &arg_type},
 
 	['F']   = {     NULL,    type, .u.arg =     &funtype},
 	['V']   = {    array,composed,                     0},
@@ -119,16 +124,20 @@ static struct decoc {
 	['|']   = {     NULL,  binary, .u.op =          OBOR},
 	['^']   = {     NULL,  binary, .u.op =         OBXOR},
 	[',']   = {     NULL,  binary, .u.op =        OCOMMA},
+	['m']   = {     NULL,  builtin,.u.op =      OBUILTIN},
 
 	[':']   = {     NULL,  assign, .u.op =        OASSIG},
 	['?']   = {     NULL, ternary, .u.op =          OASK},
 	['c']   = {     NULL,    call, .u.op =         OCALL},
+	['z']   = {     NULL,    call, .u.op =        OCALLE},
 
 	['#']   = {     NULL,constant, .u.op =        OCONST},
 
 	['j']   = {     NULL,    jump, .u.op =          OJMP},
 	['y']   = {     NULL,    jump, .u.op =       OBRANCH},
 	['h']   = {     NULL, oreturn, .u.op =          ORET},
+	['i']   = {     NULL,    NULL, .u.op =          OINC},
+	['d']   = {     NULL,    NULL, .u.op =          ODEC},
 
 	['b']   = {     NULL,    loop, .u.op =        OBLOOP},
 	['e']   = {     NULL,    loop, .u.op =        OELOOP},
@@ -244,10 +253,11 @@ assign(char *token, union tokenop u)
 	Node *np = newnode(u.op);
 
 	switch (subop = *++token) {
-	case '/':
-	case '%':
 	case '+':
 	case '-':
+	case '*':
+	case '%':
+	case '/':
 	case 'l':
 	case 'r':
 	case '&':
@@ -301,7 +311,7 @@ eval(char *tok)
 static int
 nextline(void)
 {
-	char line[MAXLINE];
+	static char line[LINESIZ];
 	size_t len;
 	int c;
 	void (*fun)(void);
@@ -337,20 +347,36 @@ oreturn(char *token, union tokenop u)
 	push(np);
 }
 
+/*
+ * Move np (which is a OCASE/ODEFAULT/OESWITCH) to be contigous with
+ * the last switch table. It is a bit ugly to touch directly curstmt
+ * here, but moving this function to node.c is worse, because we are
+ * putting knowledge of how the text is parsed into the node
+ * represtation module.
+ */
 static void
 waft(Node *np)
 {
-	Node *p;
+	Node *lastcase, *next;;
 	struct swtch *cur;
+	extern Node *curstmt;
 
 	if (swp == swtbl)
 		error(EWTACKU);
 
 	cur = swp - 1;
-	p = cur->last;
-	np->next = p->next;
-	np->prev = p;
-	p->next = np;
+	lastcase = cur->last;
+	next = lastcase->next;
+
+	np->next = next;
+	np->prev = lastcase;
+
+	if (next)
+		next->prev = np;
+	lastcase->next = np;
+
+	if (curstmt == cur->last)
+		curstmt = np;
 	cur->last = np;
 	cur->nr++;
 }
@@ -359,13 +385,17 @@ static void
 bswitch(char *token, union tokenop u)
 {
 	struct swtch *cur;
+	Node *np = newnode(u.op);
 
 	if (swp == &swtbl[NR_BLOCK+1])
 		error(EWTACKO);
 	cur = swp++;
 	cur->nr = 0;
-	jump(token, u);
-	cur->first = cur->last = push(pop());
+
+	eval(strtok(NULL, "\t\n"));
+	np->left = pop();
+
+	push(cur->first = cur->last = np);
 }
 
 static void
@@ -377,7 +407,7 @@ eswitch(char *token, union tokenop u)
 		error(EWTACKU);
 	jump(token, u);
 	waft(pop());
-	cur = swp--;
+	cur = --swp;
 	cur->first->u.i = cur->nr;
 }
 
@@ -439,6 +469,40 @@ call(char *token, union tokenop u)
 }
 
 static void
+builtin(char *token, union tokenop u)
+{
+	Node *np = newnode(u.op);
+	char *name;
+	unsigned subop, nchilds;
+
+	np->type = *gettype(token+1);
+	name = pop();
+
+	if (!strcmp("__builtin_va_arg", name)) {
+		nchilds = 1;
+		subop = BVA_ARG;
+	} else if (!strcmp("__builtin_va_start", name)) {
+		nchilds = 2;
+		subop = BVA_START;
+	} else if (!strcmp("__builtin_va_end", name)) {
+		nchilds = 1;
+		subop = BVA_END;
+	} else if (!strcmp("__builtin_va_copy", name)) {
+		nchilds = 2;
+		subop = BVA_COPY;
+	} else {
+		error(EBBUILT);;
+	}
+
+	np->u.subop = subop;
+	np->right = (nchilds == 2) ? pop() : NULL;
+	np->left = (nchilds != 0) ? pop() : NULL;
+
+	free(name);
+	push(np);
+}
+
+static void
 binary(char *token, union tokenop u)
 {
 	Node *np = newnode(u.op);
@@ -485,6 +549,7 @@ aggregate(void)
 
 	tp->size = size->u.i;
 	tp->align = align->u.i;
+	tp->flags = AGGRF;
 	/*
 	 * type is the first field of Symbol so we can obtain the
 	 * address of the symbol from the address of the type.
@@ -520,7 +585,7 @@ decl(Symbol *sym)
 	Type *tp = &sym->type;
 
 	if (tp->flags & FUNF) {
-		curfun = sym;
+		lastfun = sym;
 	} else {
 		switch (sym->kind) {
 		case SEXTRN:
@@ -630,6 +695,7 @@ stmt(void)
 static void
 beginfun(void)
 {
+	curfun = lastfun;
 	inpars = 1;
 	pushctx();
 	addstmt(newnode(OBFUN), SETCUR);

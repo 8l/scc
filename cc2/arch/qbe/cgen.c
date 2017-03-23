@@ -1,10 +1,13 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/arch/qbe/cgen.c";
+
 #include <assert.h>
 #include <stdlib.h>
 
+#include <cstd.h>
 #include "arch.h"
+#include "../../../inc/cc.h"
 #include "../../cc2.h"
-#include "../../../inc/sizes.h"
 
 enum sflags {
 	ISTMP  = 1,
@@ -28,7 +31,6 @@ static char opasmw[] = {
 	[OBAND] = ASBANDW,
 	[OBOR] = ASBORW,
 	[OBXOR] = ASBXORW,
-	[OCPL] = ASCPLW
 };
 
 static char opasml[] = {
@@ -48,60 +50,49 @@ static char opasml[] = {
 	[OBAND] = ASBANDL,
 	[OBOR] = ASBORL,
 	[OBXOR] = ASBXORL,
-	[OCPL] = ASCPLL
 };
 
 static char opasms[] = {
 	[OADD] = ASADDS,
 	[OSUB] = ASSUBS,
 	[OMUL] = ASMULS,
-	[OMOD] = ASMODS,
 	[ODIV] = ASDIVS,
-	[OSHL] = ASSHLS,
-	[OSHR] = ASSHRS,
 	[OLT] = ASLTS,
 	[OGT] = ASGTS,
 	[OLE] = ASLES,
 	[OGE] = ASGES,
 	[OEQ] = ASEQS,
 	[ONE] = ASNES,
-	[OBAND] = ASBANDS,
-	[OBOR] = ASBORS,
-	[OBXOR] = ASBXORS,
-	[OCPL] = ASCPLS
 };
 static char opasmd[] = {
 	[OADD] = ASADDD,
 	[OSUB] = ASSUBD,
 	[OMUL] = ASMULD,
-	[OMOD] = ASMODD,
 	[ODIV] = ASDIVD,
-	[OSHL] = ASSHLD,
-	[OSHR] = ASSHRD,
 	[OLT] = ASLTD,
 	[OGT] = ASGTD,
 	[OLE] = ASLED,
 	[OGE] = ASGED,
 	[OEQ] = ASEQD,
 	[ONE] = ASNED,
-	[OBAND] = ASBANDD,
-	[OBOR] = ASBORD,
-	[OBXOR] = ASBXORD,
-	[OCPL] = ASCPLD
 };
 
-extern Type int32type, uint32type;
+extern Type int32type, uint32type, ptrtype;
 
 static Node *
 tmpnode(Node *np, Type *tp)
 {
+	char flags;
 	Symbol *sym;
 
 	if (!np)
 		np = newnode(OTMP);
 	sym = getsym(TMPSYM);
 	sym->type = np->type = *tp;
+	flags = tp->flags & ~(PARF|INITF);
+	sym->type.flags = np->type.flags = flags;
 	sym->kind = STMP;
+	np->left = np->right = NULL;
 	np->u.sym = sym;
 	np->op = OTMP;
 	np->flags |= ISTMP;
@@ -109,28 +100,38 @@ tmpnode(Node *np, Type *tp)
 }
 
 static Node *
-load(Node *np, Node *new)
+load(Type *tp, Node *np, Node *new)
 {
 	int op;
-	Type *tp;
+	int flags = tp->flags;
 
-	tp = &np->type;
+	if (flags & (AGGRF|FUNF)) {
+		*new = *np;
+		return new;
+	}
 	switch (tp->size) {
 	case 1:
-		op = ASLDB;
+		op = ASLDSB;
 		break;
 	case 2:
-		op = ASLDH;
+		op = ASLDSH;
 		break;
 	case 4:
-		op = (tp->flags & INTF) ? ASLDW : ASLDS;
+		op = (flags & FLOATF) ? ASLDS : ASLDSW;
 		break;
 	case 8:
-		op = (tp->flags & INTF) ? ASLDL : ASLDD;
+		op = (flags & FLOATF) ? ASLDD : ASLDL;
 		break;
 	default:
 		abort();
 	}
+	/*
+	 * unsigned version of operations are always +1 the
+	 * signed version
+	 */
+	if ((flags & (INTF|SIGNF)) == INTF && tp->size < 8)
+		++op;
+
 	code(op, tmpnode(new, tp), np, NULL);
 
 	return new;
@@ -150,8 +151,10 @@ cast(Type *td, Node *ns, Node *nd)
 	s_isint = (ts->flags & INTF) != 0;
 
 	if (d_isint && s_isint) {
-		if (td->size <= ts->size)
+		if (td->size <= ts->size) {
+			*nd = *ns;
 			return nd;
+		}
 		assert(td->size == 4 || td->size == 8);
 		switch (ts->size) {
 		case 1:
@@ -170,7 +173,7 @@ cast(Type *td, Node *ns, Node *nd)
 		 * unsigned version of operations are always +1 the
 		 * signed version
 		 */
-		op += (td->flags & SIGNF) == 0;
+		op += (ts->flags & SIGNF) == 0;
 	} else if (d_isint) {
 		/* conversion from float to int */
 		switch (ts->size) {
@@ -213,7 +216,7 @@ cast(Type *td, Node *ns, Node *nd)
 static Node *rhs(Node *np, Node *new);
 
 static Node *
-call(Node *np, Node *ret)
+call(Node *np, Node *fun, Node *ret)
 {
 	int n, op;
 	Type *tp;
@@ -223,56 +226,23 @@ call(Node *np, Node *ret)
 		pars[n++] = rhs(p->left, newnode(OTMP));
 
 	tp = &np->type;
-	switch (tp->size) {
-	case 0:
-		np->left = tmpnode(NULL, tp);
-		op = ASCALLW;
-		break;
-	case 1:
-		op = ASCALLB;
-		break;
-	case 2:
-		op = ASCALLH;
-		break;
-	case 4:
-		op = (tp->flags & INTF) ? ASCALLW : ASCALLS;
-		break;
-	case 8:
-		op = (tp->flags & INTF) ? ASCALLL : ASCALLD;
-		break;
-	default:
-		abort();
-	}
-	code(op, tmpnode(ret, tp), np->left, NULL);
+	code(ASCALL, tmpnode(ret, tp), fun, NULL);
 
 	for (q = pars; q < &pars[n]; ++q) {
 		op = (q == &pars[n-1]) ? ASPARE : ASPAR;
 		tmpnode(&aux, &(*q)->type);
 		code(op, NULL, *q, &aux);
 	}
-	code(ASCALL, NULL, NULL, NULL);
+	code((np->op == OCALL) ? ASCALLE : ASCALLEX, NULL, NULL, NULL);
 
 	return ret;
 }
 
 static Node *
-abbrev(Node *np, Node *ret)
+assign(Type *tp, Node *to, Node *from)
 {
-	Node aux;
-
-	tmpnode(&aux, &np->type);
-	aux.right = np->right;
-	aux.left = np->left;
-	return rhs(&aux, ret);
-}
-
-static Node *
-assign(Node *to, Node *from)
-{
-	Type *tp;
 	int op;
 
-	tp = &to->type;
 	switch (tp->size) {
 	case 1:
 		op = ASSTB;
@@ -281,16 +251,69 @@ assign(Node *to, Node *from)
 		op = ASSTH;
 		break;
 	case 4:
-		op = (tp->flags & INTF) ? ASSTW : ASSTS;
+		op = (tp->flags & FLOATF) ? ASSTS : ASSTW;
 		break;
 	case 8:
-		op = (tp->flags & INTF) ? ASSTL : ASSTD;
+		op = (tp->flags & FLOATF) ? ASSTD : ASSTL;
 		break;
 	default:
+		op = ASSTM;
+		break;
+	}
+	code(op, to, from, NULL);
+	return from;
+}
+
+static Node *
+copy(Type *tp, Node *to, Node *from)
+{
+	int op;
+
+	switch (tp->size) {
+	case 1:
+		op = ASCOPYB;
+		break;
+	case 2:
+		op = ASCOPYH;
+		break;
+	case 4:
+		op = (tp->flags & FLOATF) ? ASCOPYS : ASCOPYW;
+		break;
+	case 8:
+		op = (tp->flags & FLOATF) ? ASCOPYD : ASCOPYL;
+		break;
+	default:
+		/* TODO: Need to handle the general case */
 		abort();
 	}
 	code(op, to, from, NULL);
 	return from;
+}
+
+/* TODO: Do field() transformation in sethi */
+
+static Node *
+field(Node *np, Node *ret, int islhs)
+{
+	Node base, node, off, add, *addr;
+	TUINT offset = np->right->u.sym->u.off;
+
+	addr = rhs(np->left, &base);
+
+	if (offset != 0) {
+		node.op = OADD;
+		node.type = ptrtype;
+		node.left = addr;
+		node.right = constnode(&off, offset, &ptrtype);
+		addr = rhs(&node, &add);
+	}
+
+	if (islhs)
+		*ret = *addr;
+	else
+		load(&np->type, addr, ret);
+
+	return ret;
 }
 
 static Node *
@@ -300,9 +323,11 @@ lhs(Node *np, Node *new)
 	case OMEM:
 	case OAUTO:
 		*new = *np;
-		return np;
+		return new;
 	case OPTR:
 		return rhs(np->left, new);
+	case OFIELD:
+		return field(np, new, 1);
 	default:
 		abort();
 	}
@@ -334,7 +359,7 @@ bool(Node *np, Symbol *true, Symbol *false)
 	default:
 		label2node(&ifyes, true);
 		label2node(&ifno, false);
-		code(ASBRANCH, rhs(l, &ret), &ifyes, &ifno);
+		code(ASBRANCH, rhs(np, &ret), &ifyes, &ifno);
 		break;
 	}
 }
@@ -353,11 +378,11 @@ ternary(Node *np, Node *ret)
 	code(ASBRANCH, rhs(np->left, &aux1), &ifyes, &ifno);
 
 	setlabel(ifyes.u.sym);
-	assign(ret, rhs(colon->left, &aux2));
+	copy(&ret->type, ret, rhs(colon->left, &aux2));
 	code(ASJMP, NULL, &phi, NULL);
 
 	setlabel(ifno.u.sym);
-	assign(ret, rhs(colon->right, &aux3));
+	copy(&ret->type, ret, rhs(colon->right, &aux3));
 	setlabel(phi.u.sym);
 
 	return ret;
@@ -388,6 +413,47 @@ function(void)
 	return NULL;
 }
 
+static void
+swtch_if(Node *idx)
+{
+	Node aux1, aux2, *np;
+	Symbol *deflabel = NULL;
+
+	for (;;) {
+		np = delstmt();
+		setlabel(np->label);
+
+		switch (np->op) {
+		case OESWITCH:
+			if (!deflabel)
+				deflabel = np->u.sym;
+			aux1.op = OJMP;
+			aux1.label = NULL;
+			aux1.u.sym = deflabel;
+			cgen(&aux1);
+			return;
+		case OCASE:
+			aux1 = *np;
+			aux1.op = OBRANCH;
+			aux1.label = NULL;
+			aux1.left = &aux2;
+
+			aux2.op = OEQ;
+			aux2.type = idx->type;
+			aux2.left = np->left;
+			aux2.right = idx;
+
+			cgen(&aux1);
+			break;
+		case ODEFAULT:
+			deflabel = np->u.sym;
+			break;
+		default:
+			abort();
+		}
+	}
+}
+
 static Node *
 rhs(Node *np, Node *ret)
 {
@@ -407,12 +473,13 @@ rhs(Node *np, Node *ret)
 	case OELOOP:
 	case OEFUN:
 		return NULL;
+	case OTMP:
 	case OCONST:
 		*ret = *np;
 		return np;
 	case OMEM:
 	case OAUTO:
-		return load(np, ret);
+		return load(tp, np, ret);
 	case ONEG:
 	case OAND:
 	case OOR:
@@ -424,16 +491,17 @@ rhs(Node *np, Node *ret)
 		bool(np, true, false);
 
 		setlabel(true);
-		assign(ret, constnode(1, &int32type));
+		code(ASCOPYW, ret, constnode(&aux2, 1, &int32type), NULL);
 		code(ASJMP, NULL, phi, NULL);
 
 		setlabel(false);
-		assign(ret, constnode(0, &int32type));
+		code(ASCOPYW, ret, constnode(&aux2, 0, &int32type), NULL);
 
 		setlabel(phi->u.sym);
 		return ret;
-        case OSHR:
         case OMOD:
+        case OSHR:
+		assert(tp->flags & INTF);
         case ODIV:
         case OLT:
         case OGT:
@@ -445,13 +513,14 @@ rhs(Node *np, Node *ret)
                  */
                 off = (tp->flags & SIGNF) == 0;
                 goto binary;
-        case OADD:
-        case OSUB:
-        case OMUL:
         case OSHL:
         case OBAND:
         case OBOR:
         case OBXOR:
+		assert(tp->flags & INTF);
+        case OADD:
+        case OSUB:
+        case OMUL:
         case OEQ:
         case ONE:
                 off = 0;
@@ -465,10 +534,10 @@ rhs(Node *np, Node *ret)
 		}
                 switch (tp->size) {
                 case 4:
-                        tbl = (tp->flags & INTF) ? opasmw : opasms;
+                        tbl = (tp->flags & FLOATF) ? opasms : opasmw;
                         break;
                 case 8:
-                        tbl = (tp->flags & INTF) ? opasml : opasmd;
+                        tbl = (tp->flags & FLOATF) ? opasmd : opasml;
                         break;
                 default:
                         abort();
@@ -478,34 +547,81 @@ rhs(Node *np, Node *ret)
                 code(op, ret, &aux1, &aux2);
                 return ret;
 	case OCALL:
-		if (np->left->op == OPTR)
-			np = rhs(l, &aux1);
-		return call(np, ret);
+	case OCALLE:
+		if (l->op == OPTR)
+			l = rhs(l, &aux1);
+		return call(np, l, ret);
 	case OCAST:
 		return cast(tp, rhs(l, &aux1), ret);
 	case OASSIG:
-		/* TODO: see what is the more difficult */
-		if (np->u.subop != 0)
-			r = abbrev(np, &aux1);
-		lhs(l, &aux2);
-		rhs(r, ret);
-		return assign(&aux2, ret);
+		/* TODO: Do this transformations in sethi */
+		switch (np->u.subop) {
+		case OINC:
+			op = OADD;
+			goto post_oper;
+		case ODEC:
+			op = OSUB;
+		post_oper:
+			aux1.op = op;
+			aux1.left = rhs(l, ret);
+			aux1.right = r;
+			aux1.type = np->type;
+			rhs(&aux1, &aux2);
+			lhs(l, &aux1);
+			assign(tp, &aux1, &aux2);
+			break;
+		default:
+			aux2.type = np->type;
+			aux2.op = np->u.subop;
+			aux2.right = np->right;
+			aux2.left = np->left;
+			r = rhs(&aux2, &aux1);
+			Node aux3;
+			if (l->op == OCAST) {
+				aux3.type = l->left->type;
+				aux3.op = OCAST;
+				aux3.left = r;
+				aux3.right = NULL;
+				r = &aux3;
+				l = l->left;
+			}
+		case 0:
+			/* TODO: see what is the most difficult */
+			lhs(l, &aux2);
+			rhs(r, ret);
+			return assign(tp, &aux2, ret);
+		}
+		return ret;
 	case OASK:
 		return ternary(np, ret);
 	case OCOMMA:
-		return rhs(np, ret);
+		rhs(l, &aux1);
+		return rhs(r, ret);
 	case OPTR:
-		return load(rhs(l, &aux1), ret);
+		return load(tp, rhs(l, &aux1), ret);
 	case OADDR:
-		return lhs(l, ret);
+		lhs(l, ret);
+		ret->type = *tp;
+		return ret;
 	case OFIELD:
-	case OINC:
-	case ODEC:
-	case OCASE:
-	case ODEFAULT:
-	case OESWITCH:
-	case OBSWITCH:
-		/* TODO: implement these operators */
+		return field(np, ret, 0);
+	case OBUILTIN:
+		switch (np->u.subop) {
+		case BVA_START:
+			l = rhs(l, &aux1);
+			code(ASVSTAR, NULL, l, NULL);
+			return NULL;
+		case BVA_END:
+			return NULL;
+		case BVA_ARG:
+			l = rhs(l, &aux1);
+			code(ASVARG, tmpnode(ret, tp), l, NULL);
+			return ret;
+		case BVA_COPY:
+			/* TODO */
+		default:
+			abort();
+		}
 	default:
 		abort();
 	}
@@ -515,30 +631,30 @@ rhs(Node *np, Node *ret)
 Node *
 cgen(Node *np)
 {
-	Node ret, aux1, aux2, *p, *next, ifyes, ifno;
+	Node aux, *p, *next;
 
 	setlabel(np->label);
 	switch (np->op) {
 	case OJMP:
-		label2node(&ifyes, np->u.sym);
-		code(ASJMP, NULL, &ifyes, NULL);
+		label2node(&aux, np->u.sym);
+		code(ASJMP, NULL, &aux, NULL);
 		break;
-        case OBRANCH:
-                next = np->next;
-                if (!next->label)
-                        next->label = newlabel();
-
-                label2node(&ifyes, np->u.sym);
-                label2node(&ifno, next->label);
-		rhs(np->left, &ret);
-		code(ASBRANCH, &ret, &ifyes, &ifno);
-                break;
+	case OBRANCH:
+		next = np->next;
+		if (!next->label)
+			next->label = newlabel();
+		bool(np->left, np->u.sym, next->label);
+		break;
 	case ORET:
-		p = (np->left) ? rhs(np->left, &ret) : NULL;
+		p = (np->left) ? rhs(np->left, &aux) : NULL;
 		code(ASRET, NULL, p, NULL);
 		break;
+	case OBSWITCH:
+		p = rhs(np->left, &aux);
+		swtch_if(p);
+		break;
 	default:
-		rhs(np, &ret);
+		rhs(np, &aux);
 		break;
 	}
 	return NULL;
@@ -578,13 +694,14 @@ sethi(Node *np)
 		np->address = 11;
 		break;
 	case OCPL:
-		np->op = OAND;
-		rp = constnode(~(TUINT) 0, &np->type);
+		assert(np->type.flags & INTF);
+		np->op = OBXOR;
+		rp = constnode(NULL, ~(TUINT) 0, &np->type);
 		goto binary;
 	case OSNEG:
 		np->op = OSUB;
 		rp = lp;
-		lp = constnode(0, &np->type);
+		lp = constnode(NULL, 0, &np->type);
 		if ((np->type.flags & INTF) == 0)
 			lp->u.f = 0.0;
 	default:

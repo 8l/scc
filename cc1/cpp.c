@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/cpp.c";
 #include <ctype.h>
 #include <limits.h>
 #include <stdio.h>
@@ -6,18 +7,18 @@
 #include <string.h>
 #include <time.h>
 
-#include "../inc/sizes.h"
+#include <cstd.h>
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc1.h"
 
+extern char *sysincludes[];
 static char *argp, *macroname;
 static unsigned arglen;
 static unsigned ncmdlines;
 static Symbol *symline, *symfile;
 static unsigned char ifstatus[NR_COND];
-static int ninclude;
-static char **dirinclude;
+static int cppoff;
+static struct items dirinclude;
 
 unsigned cppctx;
 int disexpand;
@@ -25,15 +26,16 @@ int disexpand;
 void
 defdefine(char *macro, char *val, char *source)
 {
-	char *def, *fmt = "#define %s %s";
+	char *def, *fmt = "#define %s %s\n";
+	Symbol dummy = {.flags = SDECLARED};
 
 	if (!val)
 		val = "";
 	def = xmalloc(strlen(fmt) + strlen(macro) + strlen(val));
 
 	sprintf(def, fmt, macro, val);
-	allocinput(source, NULL, def);
-	input->nline = ++ncmdlines;
+	lineno = ++ncmdlines;
+	addinput(source, &dummy, def);
 	cpp();
 	delinput();
 }
@@ -41,7 +43,7 @@ defdefine(char *macro, char *val, char *source)
 void
 undefmacro(char *s)
 {
-	killsym(lookup(NS_CPP, s));
+	killsym(lookup(NS_CPP, s, NOALLOC));
 }
 
 void
@@ -80,12 +82,12 @@ icpp(void)
 	strftime(stime, sizeof(stime), "\"%H:%M:%S\"", tm);
 	defdefine("__DATE__", sdate, "built-in");
 	defdefine("__TIME__", stime, "built-in");
-	defdefine("__STDC_VERSION__", "199409L", "built-in");
+	defdefine("__STDC_VERSION__", STDC_VERSION, "built-in");
 	defdefine("__LINE__", NULL, "built-in");
 	defdefine("__FILE__", NULL, "built-in");
 
-	symline = lookup(NS_CPP, "__LINE__");
-	symfile = lookup(NS_CPP, "__FILE__");
+	symline = lookup(NS_CPP, "__LINE__", ALLOC);
+	symfile = lookup(NS_CPP, "__FILE__", ALLOC);
 
 	for (bp = list; *bp; ++bp)
 		defdefine(*bp, "1", "built-in");
@@ -181,39 +183,37 @@ parsepars(char *buffer, char **listp, int nargs)
 	return 1;
 }
 
-/* FIXME: characters in the definition break the macro definition */
 static size_t
 copymacro(char *buffer, char *s, size_t bufsiz, char *arglist[])
 {
-	char prevc, c, *p, *arg, *bp = buffer;
+	char delim, prevc, c, *p, *arg, *bp = buffer;
 	size_t size;
 
 	for (prevc = '\0'; c = *s; prevc = c, ++s) {
-		if (c != '@') {
-			switch (c) {
-			case '$':
-				while (bp[-1] == ' ')
-					--bp, ++bufsiz;
-				while (s[1] == ' ')
-					++s;
-			case '#':
-				continue;
-			case '\"':
-				for (p = s; *++s != '"'; )
-					/* nothing */;
-				size = s - p + 1;
-				if (size > bufsiz)
-					goto expansion_too_long;
-				memcpy(bp, p, size);
-				bufsiz -= size;
-				bp += size;
-				continue;
-			// case '\'';
-			}
-			if (bufsiz-- == 0)
+		switch (c) {
+		case '$':
+			while (bp[-1] == ' ')
+				--bp, ++bufsiz;
+			while (s[1] == ' ')
+				++s;
+		case '#':
+			break;
+		case '\'':
+			delim = '\'';
+			goto search_delim;
+		case '\"':
+			delim = '"';
+		search_delim:
+			for (p = s; *++s != delim; )
+				/* nothing */;
+			size = s - p + 1;
+			if (size > bufsiz)
 				goto expansion_too_long;
-			*bp++ = c;
-		} else {
+			memcpy(bp, p, size);
+			bufsiz -= size;
+			bp += size;
+			break;
+		case '@':
 			if (prevc == '#')
 				bufsiz -= 2;
 			arg = arglist[atoi(++s)];
@@ -228,6 +228,12 @@ copymacro(char *buffer, char *s, size_t bufsiz, char *arglist[])
 				*bp++ = '"';
 			bufsiz -= size;
 			s += 2;
+			break;
+		default:
+			if (bufsiz-- == 0)
+				goto expansion_too_long;
+			*bp++ = c;
+			break;
 		}
 	}
 	*bp = '\0';
@@ -238,72 +244,41 @@ expansion_too_long:
 	error("macro expansion of \"%s\" too long", macroname);
 }
 
-#define BUFSIZE ((INPUTSIZ > FILENAME_MAX+2) ? INPUTSIZ : FILENAME_MAX+2)
 int
 expand(char *begin, Symbol *sym)
 {
-	size_t total, elen, rlen, llen, ilen;
-	int n;
+	size_t elen;
+	int n, i;
 	char *s = sym->u.s;
-	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[BUFSIZE];
+	char *arglist[NR_MACROARG], arguments[INPUTSIZ], buffer[INPUTSIZ];
 
 	macroname = sym->name;
-	if ((sym->flags & SDECLARED) == 0) {
-		if (namespace == NS_CPP && !strcmp(sym->name, "defined"))
-			return 0;  /* we found a 'defined in an #if */
-		/*
-		 * This case happens in #if were macro not defined must
-		 * be expanded to 0
-		 */
-		buffer[0] = '0';
-		buffer[1] = '\0';
-		elen = 1;
-		goto substitute;
-	}
 	if (sym == symfile) {
-		elen = sprintf(buffer, "\"%s\" ", input->fname);
+		elen = sprintf(buffer, "\"%s\" ", filenam);
 		goto substitute;
 	}
 	if (sym == symline) {
-		elen = sprintf(buffer, "%d ", input->nline);
+		elen = sprintf(buffer, "%d ", lineno);
 		goto substitute;
 	}
 	if (!s)
 		return 1;
 
+	n = atoi(s);
 	if (!parsepars(arguments, arglist, atoi(s)))
 		return 0;
-	for (n = 0; n < atoi(s); ++n)
-		DBG("MACRO par%d:%s", n, arglist[n]);
+	for (i = 0; i < n; ++i)
+		DBG("MACRO par%d:%s", i, arglist[i]);
 
 	elen = copymacro(buffer, s+3, INPUTSIZ-1, arglist);
 
 substitute:
 	DBG("MACRO '%s' expanded to :'%s'", macroname, buffer);
-	rlen = strlen(input->p);      /* rigth length */
-	llen = begin - input->line;   /* left length */
-	ilen = input->p - begin;      /* invocation length */
-	total = llen + elen + rlen;
-
-	if (total >= LINESIZ)
-		error("macro expansion of \"%s\" too long", macroname);
-
-	/* cut macro invocation */
-	memmove(begin, begin + ilen, rlen);
-
-	/* paste macro expansion */
-	memmove(begin + elen, begin, rlen);
-	memcpy(begin, buffer, elen);
-	input->line[total] = '\0';
-
-	input->p = input->begin = begin;
-
-	if (!(sym->flags & SDECLARED))
-		killsym(sym);
+	buffer[elen] = '\0';
+	addinput(filenam, sym, xstrdup(buffer));
 
 	return 1;
 }
-#undef BUFSIZE
 
 static int
 getpars(Symbol *args[NR_MACROARG])
@@ -324,6 +299,10 @@ getpars(Symbol *args[NR_MACROARG])
 		if (n == NR_MACROARG) {
 			cpperror("too many parameters in macro");
 			return NR_MACROARG;
+		}
+		if (accept(ELLIPSIS)) {
+			args[n++] = NULL;
+			break;
 		}
 		if (yytoken != IDEN) {
 			cpperror("macro arguments must be identifiers");
@@ -367,7 +346,7 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 			cpperror("'#' is not followed by a macro parameter");
 			return 0;
 		}
-		if (yytoken == EOFTOK)
+		if (yytoken == '\n')
 			break;
 
 		if ((len = strlen(yytext)) >= bufsiz) {
@@ -382,8 +361,10 @@ getdefs(Symbol *args[NR_MACROARG], int nargs, char *bp, size_t bufsiz)
 			bp += len;
 			bufsiz -= len;
 		}
-		if ((prevc  = yytoken) != '#')
+		if ((prevc = yytoken) != '#') {
 			*bp++ = ' ';
+			--bufsiz;
+		}
 		next();
 	}
 	*bp = '\0';
@@ -419,6 +400,8 @@ define(void)
 	namespace = NS_IDEN;       /* Avoid polution in NS_CPP */
 	if ((n = getpars(args)) == NR_MACROARG)
 		goto delete;
+	if (n > 0 && !args[n-1])  /* it is a variadic function */
+		--n;
 	sprintf(buff, "%02d#", n);
 	if (!getdefs(args, n, buff+3, LINESIZ-3))
 		goto delete;
@@ -435,9 +418,7 @@ incdir(char *dir)
 {
 	if (!dir || *dir == '\0')
 		die("incorrect -I flag");
-	++ninclude;
-	dirinclude = xrealloc(dirinclude, sizeof(*dirinclude) * ninclude);
-	dirinclude[ninclude-1] = dir;
+	newitem(&dirinclude, dir);
 }
 
 static int
@@ -461,20 +442,29 @@ includefile(char *dir, char *file, size_t filelen)
 	memcpy(path+dirlen, file, filelen);
 	path[dirlen + filelen] = '\0';
 
-	return addinput(path);
+	return addinput(path, NULL, NULL);
+}
+
+static char *
+cwd(char *buf)
+{
+	char *p, *s = filenam;
+	size_t len;
+
+	if ((p = strrchr(s, '/')) == NULL)
+		return NULL;
+	if ((len = p - s) >= FILENAME_MAX)
+		die("current work directory too long");
+	memcpy(buf, s, len);
+	buf[len] = '\0';
+	return buf;
 }
 
 static void
 include(void)
 {
-	char *file, *p, **bp;
+	char dir[FILENAME_MAX], file[FILENAME_MAX], *p, **bp;
 	size_t filelen;
-	static char *sysinclude[] = {
-		PREFIX "/include/scc/" ARCH  "/",
-		PREFIX"/include/",
-		PREFIX"/local/include/",
-		NULL
-	};
 	int n;
 
 	if (cppoff)
@@ -485,39 +475,58 @@ include(void)
 
 	switch (*yytext) {
 	case '<':
-		if ((p = strchr(input->begin, '>')) == NULL || p == yytext + 1)
+		if ((p = strchr(input->begin, '>')) == NULL || p[-1] == '<')
 			goto bad_include;
-		*p = '\0';
-		file = input->begin;
-		filelen = strlen(file);
+		filelen = p - input->begin;
+		if (filelen >= FILENAME_MAX)
+			goto too_long;
+		memcpy(file, input->begin, filelen);
+		file[filelen] = '\0';
+
 		input->begin = input->p = p+1;
+		if (next() != '\n')
+			goto trailing_characters;
+
 		break;
 	case '"':
-		if ((p = strchr(yytext + 1, '"')) == NULL || p == yytext + 1)
+		if (yylen < 3)
 			goto bad_include;
-		*p = '\0';
-		file = yytext+1;
-		filelen = strlen(file);
-		if (includefile(NULL, file, filelen))
+		filelen = yylen-2;
+		if (filelen >= FILENAME_MAX)
+			goto too_long;
+		memcpy(file, yytext+1, filelen);
+		file[filelen] = '\0';
+
+		if (next() != '\n')
+			goto trailing_characters;
+
+		if (includefile(cwd(dir), file, filelen))
 			goto its_done;
 		break;
 	default:
 		goto bad_include;
 	}
 
-	n = ninclude;
-	for (bp = dirinclude; n--; ++bp) {
+	n = dirinclude.n;
+	for (bp = dirinclude.s; n--; ++bp) {
 		if (includefile(*bp, file, filelen))
 			goto its_done;
 	}
-	for (bp = sysinclude; *bp; ++bp) {
+	for (bp = sysincludes; *bp; ++bp) {
 		if (includefile(*bp, file, filelen))
 			goto its_done;
 	}
 	cpperror("included file '%s' not found", file);
 
 its_done:
-	next();
+	return;
+
+trailing_characters:
+	cpperror("trailing characters after preprocessor directive");
+	return;
+
+too_long:
+	cpperror("too long file name in #include");
 	return;
 
 bad_include:
@@ -529,7 +538,7 @@ static void
 line(void)
 {
 	long n;
-	char *endp;
+	char *endp, *fname;
 
 	if (cppoff)
 		return;
@@ -543,20 +552,18 @@ line(void)
 	}
 
 	next();
-	if (yytoken == EOFTOK)
-		goto set_line;
-
-	if (*yytext != '\"' || yylen == 1) {
-		cpperror("second parameter of #line is not a valid filename");
-		return;
+	if (yytoken == '\n') {
+		fname = NULL;
+	} else {
+		if (*yytext != '\"' || yylen == 1) {
+			cpperror("second parameter of #line is not a valid filename");
+			return;
+		}
+		fname = yylval.sym->u.s;
 	}
-
-	free(input->fname);
-	input->fname = xstrdup(yylval.sym->u.s);
-	next();
-
-set_line:
-	input->nline = n - 1;
+	setloc(fname, n - 1);
+	if (yytoken != '\n')
+		next();
 }
 
 static void
@@ -614,7 +621,7 @@ ifclause(int negate, int isifdef)
 			killsym(sym);
 	} else {
 		/* TODO: catch recovery here */
-		if ((expr = iconstexpr()) == NULL) {
+		if ((expr = constexpr()) == NULL) {
 			cpperror("parameter of #if is not an integer constant expression");
 			return;
 		}
@@ -657,8 +664,9 @@ elseclause(void)
 		return;
 	}
 
-	status = (ifstatus[cppctx-1] ^= 1);
-	cppoff += (status) ? -1 : 1;
+	status = ifstatus[cppctx-1];
+	ifstatus[cppctx-1] = !status;
+	cppoff += (status) ? 1 : -1;
 }
 
 static void
@@ -672,8 +680,10 @@ static void
 elif(void)
 {
 	elseclause();
-	--cppctx;
-	cppif();
+	if (ifstatus[cppctx-1]) {
+		--cppctx;
+		cppif();
+	}
 }
 
 static void
@@ -724,10 +734,14 @@ cpp(void)
 		{0, NULL}
 	};
 	int ns;
+	char *p;
 
-	if (*input->p != '#')
-		return 0;
-	++input->p;
+	for (p = input->p; isspace(*p); ++p)
+		/* nothing */;
+
+	if (*p != '#')
+		return cppoff;
+	input->p = p+1;
 
 	disexpand = 1;
 	lexmode = CPPMODE;
@@ -739,15 +753,23 @@ cpp(void)
 	for (bp = clauses; bp->token && bp->token != yytoken; ++bp)
 		/* nothing */;
 	if (!bp->token) {
-		errorp("incorrect preprocessor directive");
+		errorp("incorrect preprocessor directive '%s'", yytext);
 		goto error;
 	}
+
+	DBG("CPP %s", yytext);
 
 	pushctx();              /* create a new context to avoid polish */
 	(*bp->fun)();           /* the current context, and to get all  */
 	popctx();               /* the symbols freed at the  end        */
 
-	if (yytoken != EOFTOK && !cppoff)
+	/*
+	 * #include changes the content of input->line, so the correctness
+	 * of the line must be checked in the own include(), and we have
+	 * to skip this tests. For the same reason include() is the only
+	 * function which does not prepare the next token
+	 */
+	if (yytoken != '\n' && !cppoff && bp->token != INCLUDE)
 		errorp("trailing characters after preprocessor directive");
 
 error:
@@ -759,11 +781,33 @@ error:
 }
 
 void
+ppragmaln(void)
+{
+	static char file[FILENAME_MAX];
+	static unsigned nline;
+	char *s;
+
+	putchar('\n');
+	if (strcmp(file, filenam)) {
+		strcpy(file, filenam);
+		s = "#line %u \"%s\"\n";
+	} else if (nline+1 != lineno) {
+		s = "#line %u\n";
+	} else {
+		s = "";
+	}
+	nline = lineno;
+	printf(s, nline, file);
+}
+
+void
 outcpp(void)
 {
 	char c, *s, *t;
 
 	for (next(); yytoken != EOFTOK; next()) {
+		if (onlyheader)
+			continue;
 		if (yytoken != STRING) {
 			printf("%s ", yytext);
 			continue;

@@ -1,29 +1,37 @@
 # scc version
 VERSION = 0.1
 
-# Customize below to fit your system
-ARCH = z80
+## Customize below to fit your system
+ARCHS = z80 i386-sysv amd64-sysv qbe
+# default architecure used in nested makefiles
+ARCH = qbe
+SYS = linux
 DRIVER = posix
-# Remove inc/sizes.h if STD is changed
-# can be c89 or c99
-STD = c89
+
+# Can be c89 or c99
+STD = c99
 
 # paths
 PREFIX    = $(HOME)
-MANPREFIX = ${PREFIX}/share/man
+MANPREFIX = $(PREFIX)/share/man
 
-# if your system is not POSIX maybe you want to use cc or gcc
+# scc expects to be built by a C99 compiler
+# if your system is not at least POSIX 2004 compatible, adjust CC
 # CC = c99
 # AR = ar
+AS = as
 
 # for Plan9 add -D_SUSV2_SOURCE
 SCC_CFLAGS = -DARCH=\"$(ARCH)\" \
-             -Iarch/$(ARCH) \
+             $(CSTDINC) \
              -DPREFIX=\"$(PREFIX)\" \
-             -DNDEBUG \
+             -g \
              $(CFLAGS)
 
 SCC_LDFLAGS = $(LDFLAGS)
+
+.s.o:
+	$(AS) $< -o $@
 
 .c.o:
 	$(CC) $(SCC_CFLAGS) -o $@ -c $<

@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./lib/debug.c";
 #include <stdarg.h>
 #include <stdio.h>
 

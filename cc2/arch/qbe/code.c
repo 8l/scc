@@ -1,34 +1,49 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/arch/qbe/code.c";
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <cstd.h>
 #include "arch.h"
+#include "../../../inc/cc.h"
 #include "../../cc2.h"
-#include "../../../inc/sizes.h"
 
 #define ADDR_LEN (INTIDENTSIZ+64)
 
 static void binary(void), unary(void), store(void), jmp(void), ret(void),
             branch(void), call(void), ecall(void), param(void),
-            alloc(void), form2local(void);
+            alloc(void), form2local(void), ldir(void), vastart(void),
+            vaarg(void);
 
 static struct opdata {
 	void (*fun)(void);
 	char *txt;
 	char letter;
 } optbl [] = {
-	[ASLDB]   =  {.fun = unary,  .txt = "load", .letter = 'b'},
-	[ASLDH]   =  {.fun = unary,  .txt = "load", .letter = 'h'},
-	[ASLDW]   =  {.fun = unary,  .txt = "load", .letter = 'w'},
-	[ASLDL]   =  {.fun = unary,  .txt = "load", .letter = 'l'},
-	[ASLDS]   =  {.fun = unary,  .txt = "load", .letter = 's'},
-	[ASLDD]   =  {.fun = unary,  .txt = "load", .letter = 'd'},
+	[ASLDSB]  =  {.fun = unary,  .txt = "loadsb", .letter = 'w'},
+	[ASLDUB]  =  {.fun = unary,  .txt = "loadub", .letter = 'w'},
+	[ASLDSH]  =  {.fun = unary,  .txt = "loadsh", .letter = 'w'},
+	[ASLDUH]  =  {.fun = unary,  .txt = "loaduh", .letter = 'w'},
+	[ASLDSW]  =  {.fun = unary,  .txt = "loadsw", .letter = 'w'},
+	[ASLDUW]  =  {.fun = unary,  .txt = "loaduw", .letter = 'w'},
+	[ASLDL]   =  {.fun = unary,  .txt = "loadl", .letter = 'l'},
+	[ASLDS]   =  {.fun = unary,  .txt = "loads", .letter = 's'},
+	[ASLDD]   =  {.fun = unary,  .txt = "loadd", .letter = 'd'},
+
+	[ASCOPYB] =  {.fun = unary,  .txt = "copy", .letter = 'b'},
+	[ASCOPYH] =  {.fun = unary,  .txt = "copy", .letter = 'h'},
+	[ASCOPYW] =  {.fun = unary,  .txt = "copy", .letter = 'w'},
+	[ASCOPYL] =  {.fun = unary,  .txt = "copy", .letter = 'l'},
+	[ASCOPYS] =  {.fun = unary,  .txt = "copy", .letter = 's'},
+	[ASCOPYD] =  {.fun = unary,  .txt = "copy", .letter = 'd'},
 
 	[ASSTB]   =  {.fun = store,  .txt = "store", .letter = 'b'},
 	[ASSTH]   =  {.fun = store,  .txt = "store", .letter = 'h'},
 	[ASSTW]   =  {.fun = store,  .txt = "store", .letter = 'w'},
 	[ASSTL]   =  {.fun = store,  .txt = "store", .letter = 'l'},
+	[ASSTM]   =  {.fun = ldir},
 	[ASSTS]   =  {.fun = store,  .txt = "store", .letter = 's'},
 	[ASSTD]   =  {.fun = store,  .txt = "store", .letter = 'd'},
 
@@ -40,8 +55,8 @@ static struct opdata {
 	[ASDIVW]  =  {.fun = binary, .txt = "div", .letter = 'w'},
 	[ASUDIVW] =  {.fun = binary, .txt = "udiv", .letter = 'w'},
 	[ASSHLW]  =  {.fun = binary, .txt = "shl", .letter = 'w'},
-	[ASSHRW]  =  {.fun = binary, .txt = "shrs", .letter = 'w'},
-	[ASUSHRW] =  {.fun = binary, .txt = "shrz", .letter = 'w'},
+	[ASSHRW]  =  {.fun = binary, .txt = "sar", .letter = 'w'},
+	[ASUSHRW] =  {.fun = binary, .txt = "shr", .letter = 'w'},
 	[ASLTW]   =  {.fun = binary, .txt = "csltw", .letter = 'w'},
 	[ASULTW]  =  {.fun = binary, .txt = "cultw", .letter = 'w'},
 	[ASGTW]   =  {.fun = binary, .txt = "csgtw", .letter = 'w'},
@@ -64,8 +79,8 @@ static struct opdata {
 	[ASDIVL]  =  {.fun = binary, .txt = "div", .letter = 'l'},
 	[ASUDIVL] =  {.fun = binary, .txt = "udiv", .letter = 'l'},
 	[ASSHLL]  =  {.fun = binary, .txt = "shl", .letter = 'l'},
-	[ASSHRL]  =  {.fun = binary, .txt = "shrs", .letter = 'l'},
-	[ASUSHRL] =  {.fun = binary, .txt = "shrz", .letter = 'l'},
+	[ASSHRL]  =  {.fun = binary, .txt = "sar", .letter = 'l'},
+	[ASUSHRL] =  {.fun = binary, .txt = "shr", .letter = 'l'},
 	[ASLTL]   =  {.fun = binary, .txt = "csltl", .letter = 'w'},
 	[ASULTL]  =  {.fun = binary, .txt = "cultl", .letter = 'w'},
 	[ASGTL]   =  {.fun = binary, .txt = "csgtl", .letter = 'w'},
@@ -108,8 +123,8 @@ static struct opdata {
 	[ASUEXTBL]=  {.fun = unary, .txt = "extub", .letter = 'l'},
 	[ASEXTHW] =  {.fun = unary, .txt = "extsh", .letter = 'w'},
 	[ASUEXTHW]=  {.fun = unary, .txt = "extuh", .letter = 'w'},
-	[ASEXTWL] =  {.fun = unary, .txt = "extsh", .letter = 'l'},
-	[ASUEXTWL]=  {.fun = unary, .txt = "extuh", .letter = 'l'},
+	[ASEXTWL] =  {.fun = unary, .txt = "extsw", .letter = 'l'},
+	[ASUEXTWL]=  {.fun = unary, .txt = "extuw", .letter = 'l'},
 
 	[ASSTOL] = {.fun = unary, .txt = "stosi", .letter = 'l'},
 	[ASSTOW] = {.fun = unary, .txt = "stosi", .letter = 'w'},
@@ -127,17 +142,16 @@ static struct opdata {
 	[ASBRANCH] = {.fun = branch},
 	[ASJMP]  = {.fun = jmp},
 	[ASRET]  = {.fun = ret},
-	[ASCALLB] = {.fun = call, .letter = 'b'},
-	[ASCALLH] = {.fun = call, .letter = 'h'},
-	[ASCALLW] = {.fun = call, .letter = 'w'},
-	[ASCALLS] = {.fun = call, .letter = 's'},
-	[ASCALLL] = {.fun = call, .letter = 'l'},
-	[ASCALLD] = {.fun = call, .letter = 'd'},
-	[ASCALL] = {.fun = ecall},
+	[ASCALL] = {.fun = call},
+	[ASCALLE] = {.fun = ecall, .txt = ")"},
+	[ASCALLEX] = {.fun = ecall, .txt = ", ...)"},
 	[ASPAR] = {.fun = param, .txt = "%s %s, "},
 	[ASPARE] = {.fun = param, .txt = "%s %s"},
 	[ASALLOC] = {.fun = alloc},
 	[ASFORM] = {.fun = form2local},
+
+	[ASVSTAR] = {.fun = vastart},
+	[ASVARG] = {.fun = vaarg},
 };
 
 static char buff[ADDR_LEN];
@@ -177,6 +191,7 @@ symname(Symbol *sym)
 		case SGLOB:
 			sprintf(buff, "%c%s", c, sym->name);
 			return buff;
+		case SLOCAL:
 		case SPRIV:
 		case SAUTO:
 			sprintf(buff, "%c%s.%u", c, sym->name, sym->id);
@@ -245,10 +260,8 @@ size2asm(Type *tp)
 {
 	if (tp->flags & STRF) {
 		return "b";
-	} else {
+	} else if (tp->flags & INTF) {
 		switch (tp->size) {
-		case 0:
-			return "";
 		case 1:
 			return "b";
 		case 2:
@@ -257,10 +270,14 @@ size2asm(Type *tp)
 			return "w";
 		case 8:
 			return "l";
-		default:
-			abort();
 		}
+	} else if (tp->flags & FLOATF) {
+		if (tp->size == 4)
+			return "s";
+		else if (tp->size == 8)
+			return "d";
 	}
+	abort();
 }
 
 void
@@ -298,6 +315,29 @@ data(Node *np)
 	putchar('\n');
 }
 
+static char *
+size2stack(Type *tp)
+{
+	if (tp->flags & INTF) {
+		switch (tp->size) {
+		case 1:
+		case 2:
+		case 4:
+			return "w";
+		case 8:
+			return "l";
+		}
+	} else if (tp->flags & FLOATF) {
+		if (tp->size == 4)
+			return "s";
+		else if (tp->size == 8)
+			return "d";
+	} else if (tp->size == 0) {
+		return "w";
+	}
+	abort();
+}
+
 void
 writeout(void)
 {
@@ -306,17 +346,19 @@ writeout(void)
 	char *sep, *name;
 	int haslabel = 0;
 
+	if (!curfun)
+		return;
 	if (curfun->kind == SGLOB)
 		fputs("export ", stdout);
-	printf("function %s %s(", size2asm(&curfun->rtype), symname(curfun));
+	printf("function %s %s(", size2stack(&curfun->rtype), symname(curfun));
 
 	/* declare formal parameters */
 	for (sep = "", p = locals; p; p = p->next, sep = ",") {
 		if ((p->type.flags & PARF) == 0)
 			break;
-		printf("%s%s %s.val", sep, size2asm(&p->type), symname(p));
+		printf("%s%s %s.val", sep, size2stack(&p->type), symname(p));
 	}
-	puts(")\n{");
+	printf("%s)\n{\n", (curfun->type.flags&ELLIPS) ? ", ..." : "");
 
 	/* emit assembler instructions */
 	for (pc = prog; pc; pc = pc->next) {
@@ -369,6 +411,16 @@ binary(void)
 }
 
 static void
+ldir(void)
+{
+	struct opdata *p = &optbl[pc->op];
+	char to[ADDR_LEN], from[ADDR_LEN];
+	/* TODO: what type do we use for the size? */
+
+	/* TODO: it is pending */
+}
+
+static void
 store(void)
 {
 	struct opdata *p = &optbl[pc->op];
@@ -393,12 +445,14 @@ unary(void)
 static void
 call(void)
 {
-       struct opdata *p = &optbl[pc->op];
-       char to[ADDR_LEN], from[ADDR_LEN];
+	struct opdata *p = &optbl[pc->op];
+	char to[ADDR_LEN], from[ADDR_LEN];
+	Symbol *sym = pc->to.u.sym;
 
-       strcpy(to, addr2txt(&pc->to));
-       strcpy(from, addr2txt(&pc->from1));
-       printf("\t%s =%c\tcall\t%s(", to, p->letter, from);
+	strcpy(to, addr2txt(&pc->to));
+	strcpy(from, addr2txt(&pc->from1));
+	printf("\t%s =%s\tcall\t%s(",
+	       to, size2stack(&sym->type), from);
 }
 
 static void
@@ -407,13 +461,15 @@ param(void)
 	Symbol *sym = pc->from2.u.sym;
 
 	printf(optbl[pc->op].txt,
-	       size2asm(&sym->type), addr2txt(&pc->from1));
+	       size2stack(&sym->type), addr2txt(&pc->from1));
 }
 
 static void
 ecall(void)
 {
-	puts(")");
+	struct opdata *p = &optbl[pc->op];
+
+	puts(p->txt);
 }
 
 static void
@@ -440,6 +496,24 @@ branch(void)
 	strcpy(from1, addr2txt(&pc->from1));
 	strcpy(from2, addr2txt(&pc->from2));
 	printf("\t\tjnz\t%s,%s,%s\n", to, from1, from2);
+}
+
+static void
+vastart(void)
+{
+	printf("\t\tvastart %s\n", addr2txt(&pc->from1));
+}
+
+static void
+vaarg(void)
+{
+	Symbol *sym = pc->to.u.sym;
+	Type *tp = &sym->type;
+	char to[ADDR_LEN], from[ADDR_LEN];
+
+	strcpy(to, addr2txt(&pc->to));
+	strcpy(from, addr2txt(&pc->from1));
+	printf("\t\t%s =%s vaarg %s\n", to, size2asm(tp), from);
 }
 
 static void

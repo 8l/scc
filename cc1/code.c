@@ -1,11 +1,11 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/code.c";
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc1.h"
 
 static void emitbin(unsigned, void *),
@@ -16,7 +16,9 @@ static void emitbin(unsigned, void *),
             emittext(unsigned, void *),
             emitfun(unsigned, void *),
             emitdcl(unsigned, void *),
-            emitinit(unsigned, void *);
+            emitinit(unsigned, void *),
+            emittype(unsigned, void *),
+            emitbuilt(unsigned, void *);
 
 char *optxt[] = {
 	[OADD] = "+",
@@ -60,7 +62,7 @@ char *optxt[] = {
 	[OLABEL] = "L%d\n",
 	[ODEFAULT] = "\tf\tL%d\n",
 	[OBSWITCH] = "\ts",
-	[OESWITCH] = "\tk\tL%d\n",
+	[OESWITCH] = "\tt\tL%d\n",
 	[OCASE] = "\tv\tL%d",
 	[OJUMP] = "\tj\tL%d\n",
 	[OBRANCH] = "\ty\tL%d",
@@ -70,6 +72,7 @@ char *optxt[] = {
 	[ORET] = "\th",
 	[OPAR] = "p",
 	[OCALL] = "c",
+	[OCALLE] = "z",
 	[OFIELD] = "."
 };
 
@@ -132,8 +135,19 @@ void (*opcode[])(unsigned, void *) = {
 	[OESWITCH] = emitsymid,
 	[OPAR] = emitbin,
 	[OCALL] = emitbin,
-	[OINIT] = emitinit
+	[OCALLE] = emitbin,
+	[OINIT] = emitinit,
+	[OBUILTIN] = emitbuilt,
+	[OTYP] = emittype,
 };
+
+static FILE *outfp;
+
+void
+icode(void)
+{
+	outfp = stdout;
+}
 
 void
 freetree(Node *np)
@@ -153,11 +167,21 @@ emitnode(Node *np)
 }
 
 void
+prtree(Node *np)
+{
+	outfp = stderr;
+	fputs("DBG prtree", outfp);
+	emitnode(np);
+	putc('\n', outfp);
+	outfp = stdout;
+}
+
+void
 emit(unsigned op, void *arg)
 {
 	extern int failure;
 
-	if (failure)
+	if (failure || onlycpp || onlyheader)
 		return;
 	(*opcode[op])(op, arg);
 }
@@ -182,7 +206,7 @@ emitvar(Symbol *sym)
 		c = 'X';
 	else
 		c = 'A';
-	printf("%c%u", c, sym->id);
+	fprintf(outfp, "%c%u", c, sym->id);
 }
 
 static void
@@ -197,9 +221,10 @@ emitconst(Node *np)
 	case INT:
 	case ENUM:
 		u = (tp->prop & TSIGNED) ? (TUINT) sym->u.i : sym->u.u;
-		printf("#%c%llX",
-		       np->type->letter,
-		       (long long) sym->u.i & ones(tp->size));
+		fprintf(outfp,
+		        "#%c%llX",
+		        np->type->letter,
+		        (long long) u & ones(tp->size));
 		break;
 	default:
 		abort();
@@ -218,7 +243,7 @@ emitsym(unsigned op, void *arg)
 		 * and it means that we will have two '\t'
 		 * for the first element
 		 */
-		putchar('\t');
+		putc('\t', outfp);
 	}
 	(np->flags & NCONST) ? emitconst(np) : emitvar(np->sym);
 }
@@ -226,46 +251,44 @@ emitsym(unsigned op, void *arg)
 static void
 emitletter(Type *tp)
 {
-	putchar(tp->letter);
+	int letter;
+
+	letter = (tp->prop&TELLIPSIS) ? 'E' : tp->letter;
+	putc(letter, outfp);
 	switch (tp->op) {
 	case ARY:
 	case STRUCT:
 	case UNION:
-		printf("%u", tp->id);
+		fprintf(outfp, "%u", tp->id);
 	}
 }
 
 static void
-emittype(Type *tp)
+emittype(unsigned op, void *arg)
 {
 	TINT n;
 	Symbol **sp;
 	char *tag;
+	Type *tp = arg;
 
-	if ((tp->prop & TPRINTED) || !(tp->prop & TDEFINED))
+	if (!(tp->prop & TDEFINED))
 		return;
-	tp->prop |= TPRINTED;
 
 	switch (tp->op) {
 	case ARY:
-		emittype(tp->type);
 		emitletter(tp);
-		putchar('\t');
+		putc('\t', outfp);
 		emitletter(tp->type);
-		printf("\t#%c%lld\n",
-		       sizettype->letter, (long long) tp->n.elem);
-		return;
-	case PTR:
-		emittype(tp->type);
+		fprintf(outfp,
+		        "\t#%c%llX\n",
+		        sizettype->letter, (long long) tp->n.elem);
 		return;
 	case UNION:
 	case STRUCT:
-		n = tp->n.elem;
-		for (sp = tp->p.fields; n-- > 0; ++sp)
-			emittype((*sp)->type);
 		emitletter(tp);
 		tag = tp->tag->name;
-		printf("\t\"%s\t#%c%lX\t#%c%X\n",
+		fprintf(outfp,
+		       "\t\"%s\t#%c%lX\t#%c%X\n",
 		       (tag) ? tag : "",
 		       sizettype->letter,
 		       tp->size,
@@ -275,7 +298,9 @@ emittype(Type *tp)
 		for (sp = tp->p.fields; n-- > 0; ++sp)
 			emit(ODECL, *sp);
 		break;
+	case PTR:
 	case FTN:
+	case ENUM:
 		return;
 	default:
 		abort();
@@ -292,18 +317,19 @@ emitstring(Symbol *sym, Type *tp)
 	lim = &sym->u.s[tp->n.elem];
 	while (bp < lim) {
 		s = bp;
-		while (isprint(*bp) && bp < lim)
+		while (bp < lim && isprint(*bp))
 			++bp;
 		if ((n = bp - s) > 1)
-			printf("\t#\"%.*s\n", n, s);
+			fprintf(outfp, "\t#\"%.*s\n", n, s);
 		else
 			bp = s;
 		if (bp == lim)
 			break;
 		do {
-			printf("\t#%c%02X\n",
-			       chartype->letter, (*bp++) & 0xFF);
-		} while (!isprint(*bp) && bp < lim);
+			fprintf(outfp,
+			        "\t#%c%02X\n",
+			        chartype->letter, (*bp++) & 0xFF);
+		} while (bp < lim && !isprint(*bp));
 	}
 }
 
@@ -365,9 +391,9 @@ emitinit(unsigned op, void *arg)
 {
 	Node *np = arg;
 
-	puts("\t(");
+	fputs("\t(\n", outfp);
 	emitdesig(np, np->type);
-	puts(")");
+	fputs(")\n", outfp);
 }
 
 static void
@@ -377,20 +403,19 @@ emitdcl(unsigned op, void *arg)
 
 	if (sym->flags & SEMITTED)
 		return;
-	emittype(sym->type);
 	emitvar(sym);
-	putchar('\t');
+	putc('\t', outfp);
 	if (sym->type->op == FTN) {
 		emitletter(sym->type->type);
-		putchar('\t');
+		putc('\t', outfp);
 	}
 	emitletter(sym->type);
-	printf("\t\"%s", (sym->name) ? sym->name : "");
+	fprintf(outfp, "\t\"%s", (sym->name) ? sym->name : "");
 	if (sym->flags & SFIELD)
-		printf("\t#%c%llX", sizettype->letter, sym->u.i);
+		fprintf(outfp, "\t#%c%llX", sizettype->letter, sym->u.i);
 	sym->flags |= SEMITTED;
 	if ((sym->flags & SHASINIT) == 0)
-		putchar('\n');
+		putc('\n', outfp);
 }
 
 static void
@@ -400,7 +425,7 @@ emitcast(unsigned op, void *arg)
 
 	emitnode(lp);
 	if (np->type != voidtype)
-		printf("\tg%c", np->type->letter);
+		fprintf(outfp, "\tg%c", np->type->letter);
 }
 
 static void
@@ -412,10 +437,22 @@ emitbin(unsigned op, void *arg)
 	emitnode(np->left);
 	emitnode(np->right);
 	if ((s = optxt[op]) != NULL)  {      /* do not print in OCOLON case */
-		printf("\t%s", optxt[op]);
+		fprintf(outfp, "\t%s", s);
 		emitletter(np->type);
 	}
 }
+
+static void
+emitbuilt(unsigned op, void *arg)
+{
+	Node *np = arg;
+
+	emitnode(np->left);
+	emitnode(np->right);
+	fprintf(outfp, "\t\"%s\tm", np->sym->name);
+	emitletter(np->type);
+}
+
 
 static void
 emitexp(unsigned op, void *arg)
@@ -423,7 +460,7 @@ emitexp(unsigned op, void *arg)
 	Node *np = arg;
 
 	emitnode(np);
-	putchar('\n');
+	putc('\n', outfp);
 	freetree(np);
 }
 
@@ -433,26 +470,24 @@ emitfun(unsigned op, void *arg)
 	Symbol *sym = arg, **sp;
 
 	emitdcl(op, arg);
-	puts("{");
+	fputs("{\n", outfp);
 
 	for (sp = sym->u.pars; sp && *sp; ++sp)
 		emit(ODECL, *sp);
-	puts("\\");
-	free(sym->u.pars);
-	sym->u.pars = NULL;
+	fputs("\\\n", outfp);
 }
 
 static void
 emittext(unsigned op, void *arg)
 {
-	fputs(optxt[op], stdout);
+	fputs(optxt[op], outfp);
 }
 
 static void
 emitsymid(unsigned op, void *arg)
 {
 	Symbol *sym = arg;
-	printf(optxt[op], sym->id);
+	fprintf(outfp, optxt[op], sym->id);
 }
 
 Node *
@@ -505,7 +540,7 @@ sizeofnode(Type *tp)
 {
 	Symbol *sym;
 
-	sym = newsym(NS_IDEN);
+	sym = newsym(NS_IDEN, NULL);
 	sym->type = sizettype;
 	sym->u.i = tp->size;
 	return constnode(sym);

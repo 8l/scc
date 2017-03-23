@@ -1,5 +1,7 @@
 /* See LICENSE file for copyright and license details. */
-#include "arch.h"
+static char sccsid[] = "@(#) ./cc2/arch/i386-sysv/types.c";
+
+#include "../../../inc/cc.h"
 #include "../../cc2.h"
 
 
@@ -64,16 +66,19 @@ Type booltype = {
 };
 
 Type float32type = {
+	.flags  = FLOATF,
 	.size   = 4,
 	.align  = 4
 };
 
 Type float64type = {
+	.flags  = FLOATF,
 	.size   = 8,
 	.align  = 4
 };
 
 Type float80type = {
+	.flags  = FLOATF,
 	.size   = 12,
 	.align  =  4
 };
@@ -83,7 +88,8 @@ Type voidtype = {
 	.align = 0
 };
 
-Type elipsistype = {
-	.size = 0,
-	.align = 0
+/* this type is not used in this architecture */
+Type arg_type = {
+        .size = 0,
+        .align = 0
 };

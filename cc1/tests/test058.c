@@ -7,7 +7,6 @@ error:
 output:
 V1	I	#N5
 V2	V1	#N3
-V3	V2	#N2
 G4	V3	"arr	(
 	#I0
 	#I0

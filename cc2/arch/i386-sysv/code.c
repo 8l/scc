@@ -1,10 +1,12 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/arch/i386-sysv/code.c";
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstd.h>
 #include "arch.h"
+#include "../../../inc/cc.h"
 #include "../../cc2.h"
-#include "../../../inc/sizes.h"
 
 enum segment {
 	CODESEG,
@@ -138,13 +140,13 @@ data(Node *np)
 static void
 label(Symbol *sym)
 {
-	int seg, flags = sym->type.flags;
+	int seg;
 	char *name = symname(sym);
 	Type *tp = &sym->type;
 
-	if (flags & FUNF)
+	if (sym->type.flags & FUNF)
 		seg = CODESEG;
-	else if (flags & INITF)
+	else if (sym->type.flags & INITF)
 		seg = DATASEG;
 	else
 		seg = BSSSEG;

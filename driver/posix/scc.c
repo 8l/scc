@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./driver/posix/scc.c";
 #define _POSIX_SOURCE
 #define _XOPEN_SOURCE 500
 #include <sys/types.h>
@@ -6,6 +7,7 @@
 #include <unistd.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdio.h>
@@ -37,9 +39,9 @@ static struct tool {
 	int    in, out, init;
 	pid_t  pid;
 } tools[] = {
-	[CC1]    = { .bin = "cc1",   .cmd = PREFIX "/libexec/scc/", },
+	[CC1]    = { .cmd = "cc1" },
 	[TEEIR]  = { .bin = "tee",   .cmd = "tee", },
-	[CC2]    = { .bin = "cc2",   .cmd = PREFIX "/libexec/scc/", },
+	[CC2]    = { .cmd = "cc2" },
 	[TEEQBE] = { .bin = "tee",   .cmd = "tee", },
 	[QBE]    = { .bin = "qbe",   .cmd = "qbe", },
 	[TEEAS]  = { .bin = "tee",   .cmd = "tee", },
@@ -49,11 +51,12 @@ static struct tool {
 };
 
 char *argv0;
-static char *arch, *objfile, *outfile;
+static char *arch, *execpath, *objfile, *outfile;
 static char *tmpdir;
 static size_t tmpdirln;
 static struct items objtmp, objout;
-static int Eflag, Sflag, cflag, kflag, sflag;
+static int Mflag, Eflag, Sflag, cflag, dflag, kflag, sflag;
+static int devnullfd;
 
 extern int failure;
 
@@ -94,7 +97,6 @@ static int
 inittool(int tool)
 {
 	struct tool *t = &tools[tool];
-	size_t binln;
 	int n;
 
 	if (t->init)
@@ -103,21 +105,16 @@ inittool(int tool)
 	switch (tool) {
 	case CC1: /* FALLTHROUGH */
 	case CC2:
-		binln = strlen(t->bin);
-		if (arch) {
-			n = snprintf(t->bin + binln,
-				     sizeof(t->bin) - binln,
-				     "-%s", arch);
-			if (n < 0 || n >= sizeof(t->bin))
-				die("scc: target tool bin too long");
-			binln = strlen(t->bin);
-		}
+		n = snprintf(t->bin, sizeof(t->bin), "%s-%s", t->cmd, arch);
+		if (n < 0 || n >= sizeof(t->bin))
+			die("scc: target tool name too long");
 
-		if (strlen(t->cmd) + binln + 1 > sizeof(t->cmd))
+		n = snprintf(t->cmd, sizeof(t->cmd), "%s/%s", execpath, t->bin);
+		if (n < 0 || n >= sizeof(t->cmd))
 			die("scc: target tool path too long");
-		strcat(t->cmd, t->bin);
 		break;
 	case LD:
+		addarg(tool, "-no-pie");
 		addarg(tool, "-o");
 		t->outfile = outfile ? outfile : xstrdup("a.out");
 		addarg(tool, t->outfile);
@@ -159,13 +156,15 @@ outfname(char *path, char *type)
 
 	newsz = pathln + 1 + strlen(type) + 1;
 	new = xmalloc(newsz);
-	n = snprintf(new, newsz, "%.*s%c%s", pathln, path, sep, type);
+	n = snprintf(new, newsz, "%.*s%c%s", (int)pathln, path, sep, type);
 	if (n < 0 || n >= newsz)
 		die("scc: wrong output filename");
-	if ((tmpfd = mkstemp(new)) < 0 && errno != EINVAL)
-		die("scc: could not create output file '%s': %s",
-		    new, strerror(errno));
-	close(tmpfd);
+	if (sep == '/') {
+		if ((tmpfd = mkstemp(new)) < 0)
+			die("scc: could not create output file '%s': %s",
+			    new, strerror(errno));
+		close(tmpfd);
+	}
 
 	return new;
 }
@@ -188,7 +187,7 @@ settool(int tool, char *infile, int nexttool)
 		addarg(tool, t->outfile);
 		break;
 	case TEEAS:
-		t->outfile = outfname(infile, "as");
+		t->outfile = outfname(infile, "s");
 		addarg(tool, t->outfile);
 		break;
 	case AS:
@@ -249,6 +248,8 @@ spawn(int tool)
 			dup2(t->out, 1);
 		if (t->in > -1)
 			dup2(t->in, 0);
+		if (!dflag && tool != CC1)
+			dup2(devnullfd, 2);
 		execvp(t->cmd, t->args.s);
 		fprintf(stderr, "scc: execvp %s: %s\n",
 		        t->cmd, strerror(errno));
@@ -274,10 +275,14 @@ toolfor(char *file)
 			return CC2;
 		if (!strcmp(dot, ".qbe"))
 			return QBE;
-		if (!strcmp(dot, ".as"))
+		if (!strcmp(dot, ".s"))
 			return AS;
 		if (!strcmp(dot, ".o"))
 			return LD;
+		if (!strcmp(dot, ".a"))
+			return LD;
+	} else if (!strcmp(file, "-")) {
+		return CC1;
 	}
 
 	die("scc: do not recognize filetype of %s", file);
@@ -292,19 +297,24 @@ validatetools(void)
 
 	for (tool = 0; tool < LAST_TOOL; ++tool) {
 		t = &tools[tool];
-		if (t->pid) {
-			if (waitpid(t->pid, &st, 0) < 0 ||
-			    !WIFEXITED(st) || WEXITSTATUS(st) != 0) {
-				failure = 1;
-				failed = tool;
+		if (!t->pid)
+			continue;
+		if (waitpid(t->pid, &st, 0) < 0 ||
+		    !WIFEXITED(st) ||
+		    WEXITSTATUS(st) != 0) {
+			if (!WIFEXITED(st)) {
+				fprintf(stderr,
+				        "scc:%s: internal error\n", t->bin);
 			}
-			if (tool >= failed && t->outfile)
-				unlink(t->outfile);
-			for (i = t->nparams; i < t->args.n; ++i)
-				free(t->args.s[i]);
-			t->args.n = t->nparams;
-			t->pid = 0;
+			failure = 1;
+			failed = tool;
 		}
+		if (tool >= failed && t->outfile)
+			unlink(t->outfile);
+		for (i = t->nparams; i < t->args.n; ++i)
+			free(t->args.s[i]);
+		t->args.n = t->nparams;
+		t->pid = 0;
 	}
 	if (failed < LAST_TOOL) {
 		unlink(objfile);
@@ -324,7 +334,7 @@ buildfile(char *file, int tool)
 	for (; tool < LAST_TOOL; tool = nexttool) {
 		switch (tool) {
 		case CC1:
-			if (Eflag)
+			if (Eflag || Mflag)
 				nexttool = LAST_TOOL;
 			else
 				nexttool = kflag ? TEEIR : CC2;
@@ -398,13 +408,13 @@ usage(void)
 {
 	die("usage: scc [-D def[=val]]... [-U def]... [-I dir]... "
 	    "[-L dir]... [-l dir]...\n"
-	    "           [-gksw] [-m arch] [-E|-S] [-o outfile] file...\n"
+	    "           [-dgksw] [-m arch] [-M|-E|-S] [-o outfile] file...\n"
 	    "       scc [-D def[=val]]... [-U def]... [-I dir]... "
 	    "[-L dir]... [-l dir]...\n"
-	    "           [-gksw] [-m arch] [-E|-S] -c file...\n"
+	    "           [-dgksw] [-m arch] [-M|-E|-S] -c file...\n"
 	    "       scc [-D def[=val]]... [-U def]... [-I dir]... "
 	    "[-L dir]... [-l dir]...\n"
-	    "           [-gksw] [-m arch] -c -o outfile file");
+	    "           [-dgksw] [-m arch] -c -o outfile file");
 }
 
 int
@@ -415,12 +425,19 @@ main(int argc, char *argv[])
 
 	atexit(terminate);
 
-	arch = getenv("ARCH");
+	if (!(arch = getenv("ARCH")))
+		arch = ARCH;
+	if (!(execpath = getenv("SCCEXECPATH")))
+		execpath = PREFIX "/libexec/scc";
 
 	ARGBEGIN {
 	case 'D':
 		addarg(CC1, "-D");
 		addarg(CC1, EARGF(usage()));
+		break;
+	case 'M':
+		Mflag = 1;
+		addarg(CC1, "-M");
 		break;
 	case 'E':
 		Eflag = 1;
@@ -434,6 +451,9 @@ main(int argc, char *argv[])
 		addarg(LD, "-L");
 		addarg(LD, EARGF(usage()));
 		break;
+	case 'O':
+		EARGF(usage());
+		break;
 	case 'S':
 		Sflag = 1;
 		break;
@@ -443,6 +463,9 @@ main(int argc, char *argv[])
 		break;
 	case 'c':
 		cflag = 1;
+		break;
+	case 'd':
+		dflag = 1;
 		break;
 	case 'g':
 		addarg(AS, "-g");
@@ -464,6 +487,8 @@ main(int argc, char *argv[])
 	case 's':
 		sflag = 1;
 		break;
+	case 'W':
+		EARGF(usage());
 	case 'w':
 		addarg(CC1, "-w");
 		break;
@@ -481,15 +506,25 @@ operand:
 	for (; *argv; --argc, ++argv)
 		goto operand;
 
-	if (Eflag && (Sflag || kflag) || linkchain.n == 0 ||
+	if (Eflag && linkchain.n == 0)
+		newitem(&linkchain, "-");
+
+	if (Eflag && Mflag ||
+            (Eflag || Mflag) && (Sflag || kflag) ||
+	    linkchain.n == 0 ||
 	    linkchain.n > 1 && cflag && outfile)
 		usage();
+
+	if (dflag) {
+		if ((devnullfd = open("/dev/null", O_WRONLY)) < 0)
+			fputs("scc: could not open /dev/null\n", stderr);
+	}
 
 	if (!(tmpdir = getenv("TMPDIR")) || !tmpdir[0])
 		tmpdir = ".";
 	tmpdirln = strlen(tmpdir);
 
-	build(&linkchain, (link = !(Eflag || Sflag || cflag)));
+	build(&linkchain, (link = !(Mflag || Eflag || Sflag || cflag)));
 
 	if (!(link || cflag))
 		return failure;

@@ -1,9 +1,26 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/arch/z80/arch.c";
 #include <stdio.h>
 
-#include "arch.h"
+#include "../../../inc/sysincludes.h"
 #include "../../../inc/cc.h"
 #include "../../cc1.h"
+
+#define RANK_BOOL    0
+#define RANK_SCHAR   1
+#define RANK_UCHAR   1
+#define RANK_CHAR    1
+#define RANK_SHORT   2
+#define RANK_USHORT  2
+#define RANK_INT     3
+#define RANK_UINT    3
+#define RANK_LONG    4
+#define RANK_ULONG   4
+#define RANK_LLONG   5
+#define RANK_ULLONG  5
+#define RANK_FLOAT   6
+#define RANK_DOUBLE  7
+#define RANK_LDOUBLE 8
 
 /*
  * Initializaion of type pointers were done with
@@ -17,19 +34,19 @@ static Type types[] = {
 	{       /* 0 = voidtype */
 		.op = VOID,
 		.letter = L_VOID,
-		.prop = TPRINTED,
 	},
 	{       /* 1 = pvoidtype */
 		.op = PTR,
 		.letter = L_POINTER,
-		.prop = TDEFINED | TPRINTED,
+		.prop = TDEFINED,
+		.type = &types[5], /* char type */
 		.size = 2,
 		.align = 2,
 	},
 	{      /* 2 = booltype */
 		.op = INT,
 		.letter = L_BOOL,
-		.prop = TDEFINED | TINTEGER | TARITH | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH,
 		.size = 1,
 		.align = 1,
 		.n.rank = RANK_BOOL,
@@ -37,7 +54,7 @@ static Type types[] = {
 	{       /* 3 = schartype */
 		.op = INT,
 		.letter = L_INT8,
-		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED,
 		.size = 1,
 		.align = 1,
 		.n.rank = RANK_SCHAR,
@@ -45,7 +62,7 @@ static Type types[] = {
 	{      /* 4 = uchartype */
 		.op = INT,
 		.letter = L_UINT8,
-		.prop = TDEFINED | TINTEGER | TARITH | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH,
 		.size = 1,
 		.align = 1,
 		.n.rank = RANK_UCHAR,
@@ -53,7 +70,7 @@ static Type types[] = {
 	{      /* 5 = chartype */
 		.op = INT,
 		.letter = L_UINT8,
-		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED,
 		.size = 1,
 		.align = 1,
 		.n.rank = RANK_CHAR,
@@ -61,7 +78,7 @@ static Type types[] = {
 	{       /* 6 = ushortype */
 		.op = INT,
 		.letter = L_UINT16,
-		.prop = TDEFINED | TINTEGER | TARITH | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH,
 		.size = 2,
 		.align = 1,
 		.n.rank = RANK_USHORT,
@@ -69,7 +86,7 @@ static Type types[] = {
 	{       /* 7 = shortype */
 		.op = INT,
 		.letter = L_INT16,
-		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED,
 		.size = 2,
 		.align = 1,
 		.n.rank = RANK_SHORT,
@@ -77,7 +94,7 @@ static Type types[] = {
 	{       /* 8 = uinttype */
 		.op = INT,
 		.letter = L_UINT16,
-		.prop = TDEFINED | TINTEGER | TARITH | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH,
 		.size = 2,
 		.align = 1,
 		.n.rank = RANK_UINT,
@@ -85,7 +102,7 @@ static Type types[] = {
 	{       /* 9 = inttype */
 		.op = INT,
 		.letter = L_INT16,
-		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED,
 		.size = 2,
 		.align = 1,
 		.n.rank = RANK_INT,
@@ -93,7 +110,7 @@ static Type types[] = {
 	{      /* 10 = longtype */
 		.op = INT,
 		.letter = L_INT32,
-		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED,
 		.size = 4,
 		.align = 1,
 		.n.rank = RANK_LONG,
@@ -101,7 +118,7 @@ static Type types[] = {
 	{       /* 11 = ulongtype */
 		.op = INT,
 		.letter = L_UINT32,
-		.prop = TDEFINED | TINTEGER | TARITH | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH,
 		.size = 4,
 		.align = 1,
 		.n.rank = RANK_ULONG,
@@ -109,7 +126,7 @@ static Type types[] = {
 	{	/* 12 = ullongtype */
 		.op = INT,
 		.letter = L_UINT64,
-		.prop = TDEFINED | TINTEGER | TARITH | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH,
 		.size = 8,
 		.align = 1,
 		.n.rank = RANK_ULLONG,
@@ -117,7 +134,7 @@ static Type types[] = {
 	{       /* 13 = llongtype */
 		.op = INT,
 		.letter = L_INT64,
-		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED,
 		.size = 8,
 		.align = 1,
 		.n.rank = RANK_LLONG,
@@ -125,7 +142,7 @@ static Type types[] = {
 	{       /* 14 = floattype */
 		.op = FLOAT,
 		.letter = L_FLOAT,
-		.prop = TDEFINED | TARITH | TPRINTED,
+		.prop = TDEFINED | TARITH,
 		.size = 4,
 		.align = 1,
 		.n.rank = RANK_FLOAT,
@@ -133,7 +150,7 @@ static Type types[] = {
 	{       /* 15 = doubletype */
 		.op = FLOAT,
 		.letter = L_DOUBLE,
-		.prop = TDEFINED | TARITH | TPRINTED,
+		.prop = TDEFINED | TARITH,
 		.size = 8,
 		.align = 1,
 		.n.rank = RANK_DOUBLE,
@@ -141,7 +158,7 @@ static Type types[] = {
 	{       /* 16 = ldoubletype */
 		.op = FLOAT,
 		.letter = L_LDOUBLE,
-		.prop = TDEFINED | TARITH | TPRINTED,
+		.prop = TDEFINED | TARITH,
 		.size = 16,
 		.align = 1,
 		.n.rank = RANK_LDOUBLE,
@@ -149,7 +166,7 @@ static Type types[] = {
 	{       /* 17 = sizettype */
 		.op = INT,
 		.letter = L_UINT16,
-		.prop = TDEFINED | TINTEGER | TARITH | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH,
 		.size = 2,
 		.align = 1,
 		.n.rank = RANK_UINT,
@@ -157,16 +174,23 @@ static Type types[] = {
 	{      /* 18 = ellipsis */
 		.op = ELLIPSIS,
 		.letter = L_ELLIPSIS,
-		.prop = TDEFINED | TPRINTED,
+		.prop = TDEFINED,
 	},
 	{       /* 7 = pdifftype */
 		.op = INT,
 		.letter = L_INT16,
-		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED | TPRINTED,
+		.prop = TDEFINED | TINTEGER | TARITH | TSIGNED,
 		.size = 2,
 		.align = 1,
 		.n.rank = RANK_SHORT,
 	},
+	{       /* 20 = va_list_type */
+		.op = PTR,
+		.letter = L_POINTER,
+		.prop = TDEFINED,
+		.size = 2,
+		.align = 1,
+	}
 };
 
 Type *voidtype = &types[0], *pvoidtype = &types[1],
@@ -179,8 +203,20 @@ Type *voidtype = &types[0], *pvoidtype = &types[1],
      *floattype = &types[14], *doubletype = &types[15],
      *ldoubletype = &types[16],
      *sizettype = &types[17], *pdifftype = &types[19],
-     *ellipsistype = &types[18];
+     *ellipsistype = &types[18], *va_list_type = &types[20];
+
 
 static Symbol dummy0 = {.u.i = 0, .type = &types[9]},
               dummy1 = {.u.i = 1, .type = &types[9]};
 Symbol *zero = &dummy0, *one = &dummy1;
+
+void
+iarch(void)
+{
+}
+
+int
+valid_va_list(Type *tp)
+{
+	return eqtype(tp, va_list_type, 1);
+}

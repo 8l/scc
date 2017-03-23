@@ -19,7 +19,7 @@ do
 	     /^\*\//             {copyon=0; next}
 	     copyon==1           {print > "'$chk'"}' $i
 
-	../cc1 -I. -w $i > $out 2>$err
+	../cc1-z80 -I. -w $i > $out 2>$err
 	echo $i >> test.log
 	cat $err $out > $tst
 	diff -c $chk $tst >> test.log && echo [OK] || echo [FAILED]

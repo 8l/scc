@@ -19,32 +19,32 @@ R7	I	"n
 L9
 	e
 L10
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	v	L12	#I7
 L12
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	v	L13	#I6
 L13
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	v	L14	#I5
 L14
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	v	L15	#I4
 L15
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	v	L16	#I3
 L16
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	v	L17	#I2
 L17
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	v	L18	#I1
 L18
-	R1	@I	R2	#N2	:iP	@I	:I
+	R1	@I	R2	#P2	:iP	@I	:I
 	y	L10	R7	#I1	:-I	#I0	>I
 	b
 L11
-	k	L8
+	t	L8
 L8
 }
 */

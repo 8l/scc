@@ -1,0 +1,9 @@
+/*
+PATTERN:
+
+.
+*/
+
+#ifdef FOO
+
+

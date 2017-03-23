@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/symbol.c";
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +7,6 @@
 
 #include "../inc/cc.h"
 
-#include "arch.h"
 #include "cc2.h"
 
 #define NR_SYMHASH  64
@@ -38,7 +38,19 @@ popctx(void)
 	infunction = 0;
 	for (sym = locals; sym; sym = next) {
 		next = sym->next;
-		symtab[sym->id & NR_SYMHASH-1] = sym->h_next;
+		/*
+		 * Symbols are inserted in the hash in the inverted
+		 * order they are found in locals and it is impossible
+		 * to have a global over a local, because a local is
+		 * any symbol defined in the body of a function,
+		 * even if it has extern linkage.
+		 * For this reason when we reach a symbol in the
+		 * locals list we know that it is the head of it
+		 * collision list and we can remove it assigning
+		 * it h_next to the hash table position
+		 */
+		if (sym->id != TMPSYM)
+			symtab[sym->id & NR_SYMHASH-1] = sym->h_next;
 		freesym(sym);
 	}
 	curlocal = locals = NULL;
@@ -50,7 +62,7 @@ getsym(unsigned id)
 	Symbol **htab, *sym;
 	static unsigned short num;
 
-	if (id > USHRT_MAX)
+	if (id >= USHRT_MAX)
 		error(EBADID);
 
 	htab = &symtab[id & NR_SYMHASH-1];
@@ -70,8 +82,10 @@ getsym(unsigned id)
 				curlocal->next = sym;
 			curlocal = sym;
 		}
-		sym->h_next = *htab;
-		*htab = sym;
+		if (id != TMPSYM) {
+			sym->h_next = *htab;
+			*htab = sym;
+		}
 	}
 	return sym;
 }

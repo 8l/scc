@@ -6,12 +6,12 @@ description: Test forward references before definition of types
 error:
 output:
 G4	P	"x
+S2	"S	#N8	#N2
+M5	I	"i	#N0
+M6	P	"next	#N2
 G8	I	F	"main
 {
 \
-S2	"S	#NC	#N2
-M5	I	"i	#N0
-M6	P	"next	#N2
 A9	S2	"y
 A10	P	"p
 A11	N	"n

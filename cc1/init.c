@@ -1,12 +1,12 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/init.c";
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <cstd.h>
 #include "../inc/cc.h"
-#include "../inc/sizes.h"
-#include "arch.h"
 #include "cc1.h"
 
 
@@ -37,7 +37,7 @@ arydesig(Init *ip)
 	if (ip->type->op != ARY)
 		errorp("array index in non-array initializer");
 	next();
-	np = iconstexpr();
+	np = constexpr();
 	npos = np->sym->u.i;
 	if (npos < 0 || (tp->prop & TDEFINED) && npos >= tp->n.elem) {
 		errorp("array index in initializer exceeds array bounds");
@@ -94,7 +94,7 @@ designation(Init *ip)
 static Node *
 initialize(Type *tp)
 {
-	Node *np, *aux;
+	Node *np;
 	Symbol *sym;
 	Type *btp;
 	size_t len;
@@ -120,8 +120,8 @@ initialize(Type *tp)
 		}
 		len = sym->type->n.elem-1;
 		if (!(tp->prop & TDEFINED)) {
-			tp->prop |= TDEFINED;
 			tp->n.elem = len+1;
+			deftype(tp);
 		} else if (tp->n.elem < len) {
 			warn("initializer-string for array of chars is too long");
 		}
@@ -133,12 +133,16 @@ initialize(Type *tp)
 		np->type = sym->type;
 
 		return np;
+	} else {
+		if (eqtype(tp, np->type, 1))
+			return np;
+		np = convert(decay(np), tp, 0);
+		if (!np) {
+			errorp("incorrect initializer");
+			goto return_zero;
+		}
 	}
-	if (eqtype(tp, np->type, 1))
-		return np;
-	if ((aux = convert(decay(np), tp, 0)) != NULL)
-		return aux;
-	errorp("incorrect initializer");
+	return simplify(np);
 
 return_zero:
 	return constnode(zero);
@@ -170,7 +174,7 @@ mkcompound(Init *ip)
 		}
 	}
 
-	sym = newsym(NS_IDEN);
+	sym = newsym(NS_IDEN, NULL);
 	sym->u.init = v;
 	sym->type = ip->type;
 	sym->flags |= SINITLST;
@@ -273,7 +277,7 @@ initlist(Type *tp)
 
 	if (tp->op == ARY && !(tp->prop & TDEFINED)) {
 		tp->n.elem = in.max;
-		tp->prop |= TDEFINED;
+		deftype(tp);
 	}
 	if (tp->op == ARY || tp->op == STRUCT)
 		in.max = tp->n.elem;

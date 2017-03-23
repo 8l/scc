@@ -6,7 +6,6 @@ description: test of initialization of incomplete arrays
 error:
 output:
 V1	I	#N3
-V2	V1	#N2
 G3	V2	"arr1	(
 	#I2
 	#I7

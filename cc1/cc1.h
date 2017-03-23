@@ -3,25 +3,39 @@
 #define INPUTSIZ LINESIZ
 
 #define GLOBALCTX 0
+#define PARAMCTX  1
 
 #define NR_USWITCHES 20
 
 /*
  * Definition of enumerations
  */
+enum {
+	NOALLOC,
+	ALLOC
+};
 
 enum typeprops {
 	TDEFINED = 1 << 0,    /* type defined */
 	TSIGNED  = 1 << 1,    /* signedness of the type */
-	TPRINTED = 1 << 2,    /* the type was already printed */
-	TINTEGER = 1 << 3,    /* the type is INT of enum */
-	TARITH   = 1 << 4,    /* the type is INT, ENUM or FLOAT */
-	TAGGREG  = 1 << 5,    /* the type is struct or union */
-	TK_R     = 1 << 6,    /* this is a K&R-function */
+	TINTEGER = 1 << 2,    /* the type is INT of enum */
+	TARITH   = 1 << 3,    /* the type is INT, ENUM or FLOAT */
+	TAGGREG  = 1 << 4,    /* the type is struct or union */
+	TK_R     = 1 << 5,    /* this is a K&R-function */
+	TELLIPSIS= 1 << 6,    /* this function has an ellipsis par */
+	TFUNDEF  = 1 << 7,    /* function definition */
+};
+
+enum inputtype {
+	IMACRO = 1 << 0,      /* macro expansion type */
+	IFILE  = 1 << 1,      /* input file type */
+	ISTDIN = 1 << 2,      /* stdin type */
+	IEOF   = 1 << 3,      /* EOF mark */
+	ITYPE  = IMACRO | IFILE | ISTDIN,
 };
 
 /* data type letters */
-enum {
+enum ns {
 	L_INT8      = 'C',
 	L_INT16     = 'I',
 	L_INT32     = 'W',
@@ -43,6 +57,7 @@ enum {
 	L_ARRAY     = 'V',
 	L_UNION     = 'U',
 	L_STRUCT    = 'S',
+	L_VA_ARG    = '1',
 };
 
 /* recovery points */
@@ -54,7 +69,7 @@ enum {
 };
 
 /* type constructors */
-enum {
+enum typeop {
 	FTN = 1,
 	PTR,
 	ARY,
@@ -62,8 +77,9 @@ enum {
 };
 
 /* namespaces */
-enum {
-	NS_IDEN = 1,
+enum namespaces {
+	NS_DUMMY,
+	NS_IDEN,
 	NS_TAG,
 	NS_LABEL,
 	NS_CPP,
@@ -153,6 +169,7 @@ enum tokens {
 	FLOAT,
 	INT,
 	BOOL,
+	VA_LIST,
 	STRUCT,
 	UNION,
 	CHAR,
@@ -183,6 +200,7 @@ enum tokens {
 	IFNDEF,
 	UNDEF,
 	ENDIF,
+	BUILTIN,
 	EOFTOK
 };
 
@@ -242,11 +260,14 @@ enum op {
 	OFUN,
 	OPAR,
 	OCALL,
+	OCALLE,
 	ORET,
 	ODECL,
 	OBSWITCH,
 	OESWITCH,
-	OINIT
+	OINIT,
+	OBUILTIN,
+	OTYP,
 };
 
 /*
@@ -269,6 +290,11 @@ struct limits {
 	} min;
 };
 
+struct builtin {
+	char *str;
+	Node *(*fun)(Symbol *);
+};
+
 struct keyword {
 	char *str;
 	unsigned char token, value;
@@ -276,15 +302,14 @@ struct keyword {
 
 struct type {
 	unsigned char op;           /* type builder operator */
-	char ns;                    /* namespace for struct members */
+	unsigned char ns;           /* namespace for struct members */
 	short id;                   /* type id, used in dcls */
 	char letter;                /* letter of the type */
-	unsigned int prop;          /* type properties */
-	unsigned long size;         /* sizeof the type */
+	unsigned char prop;         /* type properties */
 	unsigned char align;        /* align of the type */
+	unsigned long size;         /* sizeof the type */
 	Type *type;                 /* base type */
 	Symbol *tag;                /* symbol of the strug tag */
-	Type *next;                 /* next element in the hash */
 	union {
 		Type **pars;            /* Function type parameters */
 		Symbol **fields;        /* fields of aggregate type */
@@ -293,6 +318,8 @@ struct type {
 		unsigned char rank;     /* convertion rank */
 		TINT elem;              /* number of type parameters */
 	} n;
+	Type *next;                 /* local list pointer */
+	Type *h_next;               /* hash collision list */
 };
 
 struct symbol {
@@ -300,6 +327,7 @@ struct symbol {
 	Type *type;
 	unsigned short id;
 	unsigned char ctx;
+	unsigned char hide;
 	char ns;
 	unsigned char token;
 	short flags;
@@ -311,6 +339,7 @@ struct symbol {
 		unsigned char token;
 		Node **init;
 		Symbol **pars;
+		Node *(*fun)(Symbol *);
 	} u;
 	struct symbol *next;
 	struct symbol *hash;
@@ -335,11 +364,13 @@ struct yystype {
 };
 
 struct input {
-	char *fname;
+	char flags;
+	unsigned lineno;
+	char *filenam;
 	FILE *fp;
+	Symbol *hide;
 	char *line, *begin, *p;
 	struct input *next;
-	unsigned short nline;
 };
 
 /* error.c */
@@ -348,6 +379,7 @@ extern void warn(char *fmt, ...);
 extern void unexpected(void);
 extern void errorp(char *fmt, ...);
 extern void cpperror(char *fmt, ...);
+extern Type *deftype(Type *tp);
 
 /* types.c */
 extern int eqtype(Type *tp1, Type *tp2, int eqflag);
@@ -356,18 +388,21 @@ extern Type *mktype(Type *tp, int op, TINT nelem, Type *data[]);
 extern Type *duptype(Type *base);
 extern struct limits *getlimits(Type *tp);
 extern void typesize(Type *tp);
+extern void flushtypes(void);
 
 /* symbol.c */
-extern void dumpstab(char *msg);
-extern Symbol *lookup(int ns, char *name);
+extern void dumpstab(Symbol **tbl, char *msg);
+extern Symbol *lookup(int ns, char *name, int alloc);
 extern Symbol *nextsym(Symbol *sym, int ns);
 extern Symbol *install(int ns, Symbol *sym);
-extern Symbol *newsym(int ns);
+extern Symbol *newsym(int ns, char *name);
 extern void pushctx(void), popctx(void);
 extern void killsym(Symbol *sym);
 extern Symbol *newlabel(void);
 extern void keywords(struct keyword *key, int ns);
+extern void builtins(struct builtin *builts);
 extern Symbol *newstring(char *s, size_t len);
+extern unsigned newid(void);
 
 /* stmt.c */
 extern void compound(Symbol *lbreak, Symbol *lcont, Switch *sw);
@@ -379,34 +414,34 @@ extern void decl(void);
 /* lex.c */
 extern char ahead(void);
 extern unsigned next(void);
-extern int moreinput(void);
 extern void expect(unsigned tok);
 extern void discard(void);
-extern int addinput(char *fname);
-extern void allocinput(char *fname, FILE *fp, char *line);
+extern int addinput(char *fname, Symbol *hide, char *buffer);
 extern void delinput(void);
 extern void setsafe(int type);
 extern void ilex(void);
+extern int setloc(char *fname, unsigned line);
 #define accept(t) ((yytoken == (t)) ? next() : 0)
 
 /* code.c */
+extern void prtree(Node *np);
 extern void emit(unsigned, void *);
 extern Node *node(unsigned op, Type *tp, Node *left, Node *rigth);
 extern Node *varnode(Symbol *sym);
 extern Node *constnode(Symbol *sym);
 extern Node *sizeofnode(Type *tp);
 extern void freetree(Node *np);
+extern void icode(void);
 #define BTYPE(np) ((np)->type->op)
 
 /* fold.c */
-extern Node *simplify(int op, Type *tp, Node *lp, Node *rp);
-extern Node *castcode(Node *np, Type *newtp);
+extern Node *simplify(Node *np);
 extern TUINT ones(int nbytes);
 
 /* expr.c */
 extern Node *decay(Node *), *negate(Node *np), *assign(void);
-extern Node *convert(Node *np, Type *tp1, char iscast);
-extern Node *iconstexpr(void), *condexpr(void), *expr(void);
+extern Node *convert(Node *np, Type *tp1, int iscast);
+extern Node *constexpr(void), *condexpr(int neg), *expr(void);
 extern int isnodecmp(int op);
 extern int negop(int op);
 extern int cmpnode(Node *np, TUINT val);
@@ -423,6 +458,14 @@ extern void incdir(char *dir);
 extern void outcpp(void);
 extern void defdefine(char *macro, char *val, char *source);
 extern void undefmacro(char *s);
+extern void ppragmaln(void);
+
+/* builtin.c */
+extern void ibuilts(void);
+
+/* arch.c */
+extern void iarch(void);
+extern int valid_va_list(Type *tp);
 
 /*
  * Definition of global variables
@@ -431,12 +474,16 @@ extern struct yystype yylval;
 extern char yytext[];
 extern unsigned yytoken;
 extern unsigned short yylen;
-extern int cppoff, disexpand;
+extern int disexpand;
 extern unsigned cppctx;
 extern Input *input;
-extern int lexmode, namespace, onlycpp;
+extern int lexmode, namespace;
+extern int onlycpp, onlyheader;
 extern unsigned curctx;
 extern Symbol *curfun, *zero, *one;
+extern char *infile;
+extern unsigned lineno;
+extern char filenam[FILENAME_MAX];
 
 extern Type *voidtype, *pvoidtype, *booltype,
             *uchartype,   *chartype, *schartype,
@@ -446,4 +493,4 @@ extern Type *voidtype, *pvoidtype, *booltype,
             *longtype,    *ulongtype,
             *ullongtype,  *llongtype,
             *floattype,   *doubletype,  *ldoubletype,
-            *ellipsistype;
+            *ellipsistype, *va_list_type, *va_type;

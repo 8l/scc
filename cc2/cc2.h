@@ -1,17 +1,19 @@
 /* See LICENSE file for copyright and license details. */
 
 enum iflags {
-	BBENTRY =    1,
+	BBENTRY =    1,        /* basic block entry */
 };
 
 enum tflags {
-	SIGNF   =    1,
-	INTF    =    2,
-	STRF    =    8,
-	UNIONF  =    16,
-	FUNF    =    32,
-	PARF    =    64,
-	INITF   =   128
+	SIGNF   =     1 << 0,  /* Signed type */
+	INTF    =     1 << 1,  /* integer type */
+	FLOATF  =     1 << 2,  /* float type */
+	STRF    =     1 << 3,  /* string */
+	AGGRF   =     1 << 4,  /* aggregate */
+	FUNF    =     1 << 5,  /* function */
+	PARF    =     1 << 6,  /* parameter */
+	INITF   =     1 << 7,  /* initializer flag */
+	ELLIPS  =     1 << 8,  /* vararg function */
 };
 
 enum sclass {
@@ -83,6 +85,7 @@ enum op {
 	OASSIG   = ':',
 	OSNEG    = '_',
 	OCALL    = 'c',
+	OCALLE   = 'z',
 	OPAR     = 'p',
 	OFIELD   = '.',
 	OCOMMA   = ',',
@@ -96,6 +99,7 @@ enum op {
 	OCAST    = 'g',
 	OINC     = 'i',
 	ODEC     = 'd',
+	OBUILTIN = 'm',
 	/*statements */
 	ONOP     = 'q',
 	OJMP     = 'j',
@@ -109,6 +113,13 @@ enum op {
 	OESWITCH = 't',
 	OBFUN    = 'x',
 	OEFUN    = 'k',
+};
+
+enum builtins {
+	BVA_START = 's',
+	BVA_END   = 'e',
+	BVA_ARG   = 'a',
+	BVA_COPY  = 'c',
 };
 
 enum nerrors {
@@ -127,6 +138,7 @@ enum nerrors {
 	EWTACKO,       /* switch stack overflow */
 	EWTACKU,       /* switch stack underflow */
 	ENOSWTC,       /* Out of switch statement */
+	EBBUILT,       /* Unknown builtin */
 	ENUMERR
 };
 
@@ -139,7 +151,7 @@ typedef struct inst Inst;
 struct type {
 	unsigned long size;
 	unsigned long align;
-	char flags;
+	short flags;
 };
 
 struct symbol {
@@ -187,11 +199,11 @@ struct addr {
 };
 
 struct inst {
-        unsigned char op;
+	unsigned char op;
 	unsigned char flags;
 	Symbol *label;
-        Inst *next, *prev;
-        Addr from1, from2, to;
+	Inst *next, *prev;
+	Addr from1, from2, to;
 };
 
 /* main.c */
@@ -216,7 +228,8 @@ extern void writeout(void), endinit(void), newfun(void);
 extern void code(int op, Node *to, Node *from1, Node *from2);
 extern void defvar(Symbol *), defpar(Symbol *), defglobal(Symbol *);
 extern void setlabel(Symbol *sym), getbblocks(void);
-extern Node *label2node(Node *np, Symbol *sym), *constnode(TUINT n, Type *tp);
+extern Node *label2node(Node *np, Symbol *sym);
+extern Node *constnode(Node *np, TUINT n, Type *tp);
 extern Symbol *newlabel(void);
 
 /* node.c */
@@ -226,8 +239,10 @@ extern void apply(Node *(*fun)(Node *));
 extern void cleannodes(void);
 extern void delnode(Node *np);
 extern void deltree(Node *np);
+extern void prtree(Node *np), prforest(char *msg);
 extern Node *newnode(int op);
 extern Node *addstmt(Node *np, int flags);
+extern Node *delstmt(void);
 extern Node *nextstmt(void);
 
 /* symbol.c */

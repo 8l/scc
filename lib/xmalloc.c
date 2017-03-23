@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./lib/xmalloc.c";
 #include <stdlib.h>
 #include "../inc/cc.h"
 

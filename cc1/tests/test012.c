@@ -14,7 +14,7 @@ A3	I	"x
 	s	A3
 	v	L5	#I0
 L5
-	k	L4
+	t	L4
 L4
 	s	A3
 	v	L7	#I0
@@ -26,9 +26,9 @@ L9
 	f	L11
 L11
 	h	#I1
-	k	L8
+	t	L8
 L8
-	k	L6
+	t	L6
 L6
 	h	#I2
 L10
@@ -36,7 +36,7 @@ L10
 	v	L13	#I1
 L13
 	h	#I3
-	k	L12
+	t	L12
 L12
 	s	A3
 	A3	#I2	:I
@@ -44,7 +44,7 @@ L15
 	v	L16	#I1
 L16
 	h	#I4
-	k	L14
+	t	L14
 L14
 	s	A3
 	v	L18	#I0
@@ -56,7 +56,7 @@ L19
 	f	L20
 L20
 	h	#I1
-	k	L17
+	t	L17
 L17
 }
 */

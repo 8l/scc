@@ -14,7 +14,7 @@ case $# in
 *)
 	for i
 	do
-		../cc1 -I./ -w $i  >$out 2>$err
+		../cc1-z80 -I./ -w $i  >$out 2>$err
 		(echo '/^error/+;/^output/-c'
 		cat $err
 		printf ".\n"

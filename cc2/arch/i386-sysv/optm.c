@@ -1,5 +1,7 @@
 /* See LICENSE file for copyright and license details. */
-#include "arch.h"
+static char sccsid[] = "@(#) ./cc2/arch/i386-sysv/optm.c";
+
+#include "../../../inc/cc.h"
 #include "../../cc2.h"
 
 Node *

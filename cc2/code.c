@@ -1,9 +1,9 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/code.c";
 #include <stdlib.h>
 #include <string.h>
 
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc2.h"
 
 Inst *pc, *prog;
@@ -74,8 +74,6 @@ label2node(Node *np, Symbol *sym)
 		sym = newlabel();
 	if (!np)
 		np = newnode(OLABEL);
-	else
-		memset(np, 0, sizeof(np));
 	np->op = OLABEL;
 	np->u.sym = sym;
 
@@ -83,11 +81,13 @@ label2node(Node *np, Symbol *sym)
 }
 
 Node *
-constnode(TUINT n, Type *tp)
+constnode(Node *np, TUINT n, Type *tp)
 {
-	Node *np;
-
-	np = newnode(OCONST);
+	if (!np)
+		np = newnode(OCONST);
+	np->op = OCONST;
+	np->left = NULL;
+	np->right = NULL;
 	np->type = *tp;
 	np->u.i = n;
 	return np;

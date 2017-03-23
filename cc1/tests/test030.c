@@ -5,14 +5,14 @@ name: TEST030
 description: Basic test for vararg functions
 error:
 output:
-G14	I	F	"f1
-{
-S2	"foo	#N24	#N2
+S2	"foo	#N18	#N2
 M3	I	"i	#N0
 M4	I	"j	#N2
 M5	I	"k	#N4
 M7	P	"p	#N6
-M8	J	"v	#NE
+M8	J	"v	#N8
+G14	I	F	"f1
+{
 A9	S2	"f
 A11	P	"p
 A12	I	"n

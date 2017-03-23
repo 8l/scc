@@ -1,25 +1,35 @@
 /* See LICENSE file for copyright and license details. */
-#include <setjmp.h>
+static char sccsid[] = "@(#) ./cc1/decl.c";
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "../inc/sizes.h"
+#include <cstd.h>
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc1.h"
 
 #define NOSCLASS  0
 
+#define NOREP 0
+#define REP 1
+#define QUIET   1
+#define NOQUIET 0
+
+#define NR_DCL_TYP (NR_DECLARATORS+NR_FUNPARAM)
+
 struct declarators {
-	unsigned char nr;
+	unsigned nr;
+	unsigned ns;
+	struct decl *dcl;
+	unsigned nr_types;
+	Type **tpars;
+	Symbol **pars;
 	struct declarator {
 		unsigned char op;
 		TINT  nelem;
 		Symbol *sym;
 		Type **tpars;
-		Symbol **pars;
 	} d [NR_DECLARATORS];
 };
 
@@ -28,10 +38,23 @@ struct decl {
 	int sclass;
 	int qualifier;
 	Symbol *sym;
-	Symbol **pars;
 	Type *type;
 	Type *parent;
+	Type *buftpars[NR_DCL_TYP];
 };
+
+static void
+endfundcl(Type *tp, Symbol **pars)
+{
+	if (tp->prop&TK_R && *pars)
+		warn("parameter names (without types) in function declaration");
+	/*
+	 * avoid non used warnings in prototypes
+	 */
+	while (*pars)
+		(*pars++)->flags |= SUSED;
+	popctx();
+}
 
 static void
 push(struct declarators *dp, int op, ...)
@@ -54,9 +77,8 @@ push(struct declarators *dp, int op, ...)
 		break;
 	case KRFTN:
 	case FTN:
-		p->nelem = va_arg(va, TINT);
+		p->nelem = va_arg(va, unsigned);
 		p->tpars = va_arg(va, Type **);
-		p->pars = va_arg(va, Symbol **);
 		break;
 	case IDEN:
 		p->sym = va_arg(va, Symbol *);
@@ -78,18 +100,10 @@ pop(struct declarators *dp, struct decl *dcl)
 		dcl->sym = p->sym;
 		return 1;
 	}
-	if (dcl->type->op == FTN) {
-		/*
-		 * constructor applied to a
-		 * function. We  don't need
-		 * the parameter symbols anymore.
-		 */
-		free(dcl->pars);
-		popctx();
-		dcl->pars = NULL;
-	}
-	if (p->op == FTN || p->op == KRFTN)
-		dcl->pars = p->pars;
+
+	if (dcl->type->op == FTN)
+		endfundcl(dcl->type, dp->pars);
+
 	dcl->type = mktype(dcl->type, p->op, p->nelem, p->tpars);
 	return 1;
 }
@@ -102,7 +116,7 @@ arydcl(struct declarators *dp)
 
 	expect('[');
 	if (yytoken != ']') {
-		if ((np = iconstexpr()) == NULL) {
+		if ((np = constexpr()) == NULL) {
 			errorp("invalid storage size");
 		} else {
 			if ((n = np->sym->u.i) <= 0) {
@@ -136,12 +150,150 @@ empty(Symbol *sym, Type *tp, int param)
 	return 0;
 }
 
+static void
+bad_storage(Type *tp, char *name)
+{
+	if (tp->op != FTN)
+		errorp("incorrect storage class for file-scope declaration");
+	else
+		errorp("invalid storage class for function '%s'", name);
+}
+
+static Symbol *
+redcl(Symbol *sym, Type *tp, int sclass)
+{
+	int flags;
+	char *name = sym->name;
+
+	if (!eqtype(sym->type, tp, 1)) {
+		errorp("conflicting types for '%s'", name);
+		return sym;
+	}
+
+	if (sym->token == TYPEIDEN && sclass != TYPEDEF ||
+	    sym->token != TYPEIDEN && sclass == TYPEDEF) {
+		goto redeclaration;
+	}
+	if (curctx != GLOBALCTX && tp->op != FTN) {
+		/* is it the redeclaration of a local variable? */
+		if ((sym->flags & SEXTERN) && sclass == EXTERN)
+			return sym;
+		goto redeclaration;
+	}
+
+	flags = sym->flags;
+	switch (sclass) {
+	case REGISTER:
+	case AUTO:
+		bad_storage(tp, name);
+		break;
+	case NOSCLASS:
+		if ((flags & SPRIVATE) == 0) {
+			if (flags & SEXTERN)
+				flags &= ~(SEXTERN|SEMITTED);
+			flags |= SGLOBAL;
+			break;
+		}
+		errorp("non-static declaration of '%s' follows static declaration",
+		       name);
+		break;
+	case TYPEDEF:
+	case EXTERN:
+		break;
+	case STATIC:
+		if ((flags & (SGLOBAL|SEXTERN)) == 0) {
+			flags |= SPRIVATE;
+			break;
+		}
+		errorp("static declaration of '%s' follows non-static declaration",
+		       name);
+		break;
+	}
+	sym->flags = flags;
+
+	return sym;
+
+redeclaration:
+	errorp("redeclaration of '%s'", name);
+	return sym;
+}
+
+static Symbol *
+identifier(struct decl *dcl)
+{
+	Symbol *sym = dcl->sym;
+	Type *tp = dcl->type;
+	int sclass = dcl->sclass;
+	char *name = sym->name;
+
+	if (empty(sym, tp, 0))
+		return sym;
+
+	/* TODO: Add warning about ANSI limits */
+	if (!(tp->prop & TDEFINED)                &&
+	    sclass != EXTERN && sclass != TYPEDEF &&
+	    !(tp->op == ARY && yytoken == '=')) {
+		errorp("declared variable '%s' of incomplete type", name);
+	}
+
+	if (tp->op == FTN) {
+		if (sclass == NOSCLASS)
+			sclass = EXTERN;
+		if (!strcmp(name, "main") && tp->type != inttype) {
+			errorp("main shall be defined with a return type of int");
+			errorp("please contact __20h__ on irc.freenode.net (#bitreich-en) via IRC");
+		}
+	}
+
+	if (sym->flags & SDECLARED) {
+		sym = redcl(dcl->sym, tp, sclass);
+	} else {
+		int flags = sym->flags | SDECLARED;
+
+		sym->type = tp;
+
+		switch (sclass) {
+		case REGISTER:
+		case AUTO:
+			if (curctx != GLOBALCTX && tp->op != FTN) {
+				flags |= (sclass == REGISTER) ? SREGISTER : SAUTO;
+				break;
+			}
+			bad_storage(tp, name);
+		case NOSCLASS:
+			if (tp->op == FTN)
+				flags |= SEXTERN;
+			else
+				flags |= (curctx == GLOBALCTX) ? SGLOBAL : SAUTO;
+			break;
+		case EXTERN:
+			flags |= SEXTERN;
+			break;
+		case STATIC:
+			flags |= (curctx == GLOBALCTX) ? SPRIVATE : SLOCAL;
+			break;
+		case TYPEDEF:
+			flags |= STYPEDEF;
+			sym->u.token = sym->token = TYPEIDEN;
+			break;
+		}
+		sym->flags = flags;
+	}
+
+	if (accept('='))
+		initializer(sym, sym->type);
+	if (!(sym->flags & (SGLOBAL|SEXTERN)) && tp->op != FTN)
+		sym->flags |= SDEFINED;
+	if (sym->token == IDEN && tp->op != FTN)
+		emit(ODECL, sym);
+	return sym;
+}
+
 static Symbol *
 parameter(struct decl *dcl)
 {
 	Symbol *sym = dcl->sym;
 	Type *funtp = dcl->parent, *tp = dcl->type;
-	TINT n = funtp->n.elem;
 	char *name = sym->name;
 	int flags;
 
@@ -162,11 +314,7 @@ parameter(struct decl *dcl)
 
 	switch (tp->op) {
 	case VOID:
-		if (n != 0 || (funtp->prop & TK_R)) {
-			errorp("incorrect void parameter");
-			return NULL;
-		}
-		funtp->n.elem = -1;
+		funtp->n.elem = 1;
 		if (dcl->sclass)
 			errorp("void as unique parameter may not be qualified");
 		return NULL;
@@ -178,18 +326,17 @@ parameter(struct decl *dcl)
 		return NULL;
 	}
 	if (!empty(sym, tp, 1)) {
-		Symbol *p = install(NS_IDEN, sym);
-		if (!p && !(funtp->prop & TK_R)) {
+		int isdcl = sym->flags&SDECLARED, isk_r = funtp->prop & TK_R;
+		if (isdcl && !isk_r) {
 			errorp("redefinition of parameter '%s'", name);
 			return NULL;
 		}
-		if (p && (funtp->prop & TK_R)) {
-			errorp("declaration for parameter ‘%s’ but no such parameter",
+		if (!isdcl && isk_r) {
+			errorp("declaration for parameter '%s' but no such parameter",
 			       sym->name);
 			return NULL;
 		}
-		if (p)
-			sym = p;
+		sym->flags |= SDECLARED;
 	}
 
 	sym->type = tp;
@@ -203,136 +350,225 @@ static Symbol *dodcl(int rep,
                      unsigned ns,
                      Type *type);
 
-static void
-krfun(Type *tp, Type *types[], Symbol *syms[], int *ntypes, int *nsyms)
+static int
+krpars(Symbol *pars[], unsigned *nparsp)
 {
-	int n = 0;
 	Symbol *sym;
 	int toomany = 0;
-
-	if (yytoken != ')') {
-		do {
-			sym = yylval.sym;
-			expect(IDEN);
-			sym->type = inttype;
-			sym->flags |= SAUTO;
-			if ((sym = install(NS_IDEN, sym)) == NULL) {
-				errorp("redefinition of parameter '%s'",
-				       yylval.sym->name);
-				continue;
-			}
-			if (n < NR_FUNPARAM) {
-				++n;
-				*syms++ = sym;
-				continue;
-			}
-			if (!toomany)
-				errorp("too much parameters in function definition");
-			toomany = 1;
-		} while (accept(','));
-	}
-
-	*nsyms = n;
-	*ntypes = 1;
-	types[0] = ellipsistype;
-}
-
-static void
-ansifun(Type *tp, Type *types[], Symbol *syms[], int *ntypes, int *nsyms)
-{
-	int n = 0;
-	Symbol *sym;
-	int toomany = 0, toovoid = 0;
+	unsigned npars = 0;
 
 	do {
-		if (n == -1 && !toovoid) {
-			errorp("'void' must be the only parameter");
-			toovoid = 1;
-		}
-		if (accept(ELLIPSIS)) {
-			if (n == 0)
-				errorp("a named argument is requiered before '...'");
-			++n;
-			*syms = NULL;
-			*types++ = ellipsistype;
-			break;
-		}
-		if ((sym = dodcl(0, parameter, NS_IDEN, tp)) == NULL)
-			continue;
-		if (tp->n.elem == -1) {
-			n = -1;
+		sym = yylval.sym;
+		expect(IDEN);
+		sym->flags |= SAUTO;
+		if ((sym = install(NS_IDEN, sym)) == NULL) {
+			errorp("redefinition of parameter '%s'",
+			       yylval.sym->name);
 			continue;
 		}
-		if (n < NR_FUNPARAM) {
-			*syms++ = sym;
-			*types++ = sym->type;
-			++n;
+		if (npars < NR_FUNPARAM) {
+			++npars;
+			*pars++ = sym;
 			continue;
 		}
 		if (!toomany)
-			errorp("too many parameters in function definition");
 		toomany = 1;
 	} while (accept(','));
 
-	*nsyms = n;
-	*ntypes = n;
+	*nparsp = npars;
+	return toomany;
+}
+
+static void
+krfun(struct declarators *dp,
+      Symbol *pars[], unsigned *ntypep, unsigned *nparsp)
+{
+	int toomany = 0;
+
+
+	if (yytoken != ')')
+		toomany = krpars(pars, nparsp);
+	else
+		*nparsp = 0;
+
+	*ntypep = 1;
+	if (dp->nr_types == NR_DCL_TYP) {
+		toomany = 1;
+	} else {
+		++dp->nr_types;
+		*dp->tpars++ = ellipsistype;
+	}
+
+	if (toomany)
+		errorp("too many parameters in function definition");
+}
+
+static void
+ansifun(struct declarators *dp,
+        Symbol *pars[], unsigned *ntypep, unsigned *nparsp)
+{
+	Symbol *sym;
+	unsigned npars, ntype, toomany, distoomany, voidpar;
+	Type type, *tp;
+
+	type.n.elem = 0;
+	type.prop = 0;
+	npars = ntype = toomany = distoomany = voidpar = 0;
+
+	do {
+		if (accept(ELLIPSIS)) {
+			if (ntype < 1)
+				errorp("a named argument is requiered before '...'");
+			if (yytoken != ')')
+				errorp("... must be the last parameter");
+			sym = NULL;
+			tp = ellipsistype;
+		} else if ((sym = dodcl(NOREP, parameter, NS_IDEN, &type)) == NULL) {
+			if (type.n.elem == 1 && ntype > 1)
+				voidpar = 1;
+			sym = NULL;
+			tp = NULL;
+		} else {
+			tp = sym->type;
+		}
+
+		if (sym) {
+			if (npars == NR_FUNPARAM) {
+				toomany = 1;
+			} else {
+				npars++;
+				*pars++ = sym;
+			}
+		}
+
+		if (tp) {
+			if (dp->nr_types == NR_DCL_TYP) {
+				toomany = 1;
+			} else {
+				ntype++;
+				dp->nr_types++;
+				*dp->tpars++ = tp;
+			}
+		}
+
+	} while (accept(','));
+
+	if (toomany == 1)
+		errorp("too many parameters in function definition");
+	if (voidpar && ntype > 1)
+		errorp("'void' must be the only parameter");
+	*ntypep = ntype;
+	*nparsp = npars;
+}
+
+static int
+funbody(Symbol *sym, Symbol *pars[])
+{
+	Type *tp;
+	Symbol **bp, *p;
+
+	if (!sym)
+		return 0;
+	tp = sym->type;
+	if (tp->op != FTN)
+		return 0;
+
+	switch (yytoken) {
+	case '{':
+	case TYPE:
+	case TYPEIDEN:
+		if (curctx != PARAMCTX)
+			errorp("nested function declaration");
+		if (sym && sym->ns == NS_IDEN)
+			break;
+	default:
+		emit(ODECL, sym);
+		endfundcl(tp, pars);
+		return  0;
+	}
+
+	tp->prop |= TFUNDEF;
+	curfun = sym;
+	if (sym->type->prop & TK_R) {
+		while (yytoken != '{') {
+			dodcl(REP, parameter, NS_IDEN, sym->type);
+			expect(';');
+		}
+		for (bp = pars; p = *bp; ++bp) {
+			if (p->type == NULL) {
+				warn("type of '%s' defaults to int", p->name);
+				p->type = inttype;
+			}
+		}
+	}
+	if (sym->flags & STYPEDEF)
+		errorp("function definition declared 'typedef'");
+	if (sym->flags & SDEFINED)
+		errorp("redefinition of '%s'", sym->name);
+	if (sym->flags & SEXTERN) {
+		sym->flags &= ~SEXTERN;
+		sym->flags |= SGLOBAL;
+	}
+	sym->flags |= SDEFINED;
+	sym->flags &= ~SEMITTED;
+	sym->u.pars = pars;
+	emit(OFUN, sym);
+	compound(NULL, NULL, NULL);
+	emit(OEFUN, NULL);
+	popctx();
+	flushtypes();
+	curfun = NULL;
+	return 1;
 }
 
 static void
 fundcl(struct declarators *dp)
 {
-	Type *types[NR_FUNPARAM], type;
-	Symbol *syms[NR_FUNPARAM+1], **pars;
-	int k_r, ntypes, nsyms;
-	size_t size;
+	Type **types = dp->tpars;
+	unsigned npars, ntypes, typefun;
+	void (*fun)(struct declarators *, Symbol **, unsigned *, unsigned *);
 
 	pushctx();
 	expect('(');
-	type.n.elem = 0;
-	type.prop = 0;
-
-	k_r = (yytoken == ')' || yytoken == IDEN);
-	(k_r ? krfun : ansifun)(&type, types, syms, &ntypes, &nsyms);
+	if (yytoken == ')' || yytoken == IDEN) {
+		typefun = KRFTN;
+		fun = krfun;
+	} else {
+		typefun = FTN;
+		fun = ansifun;
+	}
+	(*fun)(dp, dp->pars, &ntypes, &npars);
+	dp->pars[npars] = NULL;
 	expect(')');
 
-	type.n.elem = ntypes;
-	if (ntypes <= 0) {
-		type.p.pars = NULL;
-	} else {
-		size = ntypes * sizeof(Type *);
-		type.p.pars = memcpy(xmalloc(size), types, size);
-	}
-	if (nsyms <= 0) {
-		pars = NULL;
-	} else {
-		size = (nsyms + 1) * sizeof(Symbol *);
-		pars = memcpy(xmalloc(size), syms, size);
-		pars[nsyms] = NULL;
-	}
-	push(dp, (k_r) ? KRFTN : FTN, type.n.elem, type.p.pars, pars);
+	push(dp, typefun, ntypes, types);
 }
 
-static void declarator(struct declarators *dp, unsigned ns);
+static void declarator(struct declarators *dp);
 
 static void
-directdcl(struct declarators *dp, unsigned ns)
+directdcl(struct declarators *dp)
 {
-	Symbol *sym;
+	Symbol *p, *sym;
 	static int nested;
 
 	if (accept('(')) {
 		if (nested == NR_SUBTYPE)
 			error("too many declarators nested by parentheses");
 		++nested;
-		declarator(dp, ns);
+		declarator(dp);
 		--nested;
 		expect(')');
 	} else {
 		if (yytoken == IDEN || yytoken == TYPEIDEN) {
 			sym = yylval.sym;
+			if (p = install(dp->ns, sym)) {
+				sym = p;
+				sym->flags &= ~SDECLARED;
+			}
 			next();
 		} else {
-			sym = newsym(ns);
+			sym = newsym(dp->ns, NULL);
 		}
 		push(dp, IDEN, sym);
 	}
@@ -347,7 +583,7 @@ directdcl(struct declarators *dp, unsigned ns)
 }
 
 static void
-declarator(struct declarators *dp, unsigned ns)
+declarator(struct declarators *dp)
 {
 	unsigned  n;
 
@@ -356,7 +592,7 @@ declarator(struct declarators *dp, unsigned ns)
 			/* nothing */;
 	}
 
-	directdcl(dp, ns);
+	directdcl(dp);
 
 	while (n--)
 		push(dp, PTR);
@@ -401,6 +637,7 @@ specifier(int *sclass, int *qualifier)
 				dcl = structdcl;
 				p = &type;
 				break;
+			case VA_LIST:
 			case VOID:
 			case BOOL:
 			case CHAR:
@@ -460,11 +697,13 @@ static Symbol *
 newtag(void)
 {
 	Symbol *sym;
-	int op, tag = yylval.token;
-	static unsigned ns = NS_STRUCTS;
+	int ns, op, tag = yylval.token;
+	static unsigned tpns = NS_STRUCTS;
 
+	ns = namespace;
 	namespace = NS_TAG;
 	next();
+	namespace = ns;
 
 	switch (yytoken) {
 	case IDEN:
@@ -472,20 +711,19 @@ newtag(void)
 		sym = yylval.sym;
 		if ((sym->flags & SDECLARED) == 0)
 			install(NS_TAG, yylval.sym);
-		namespace = NS_IDEN;
 		next();
 		break;
 	default:
-		sym = newsym(NS_TAG);
+		sym = newsym(NS_TAG, NULL);
 		break;
 	}
 	if (!sym->type) {
 		Type *tp;
 
-		if (ns == NS_STRUCTS + NR_MAXSTRUCTS)
+		if (tpns == NS_STRUCTS + NR_MAXSTRUCTS)
 			error("too many tags declared");
 		tp = mktype(NULL, tag, 0, NULL);
-		tp->ns = ns++;
+		tp->ns = tpns++;
 		sym->type = tp;
 		tp->tag = sym;
 		DBG("declared tag '%s' with ns = %d\n",
@@ -497,8 +735,6 @@ newtag(void)
 	return sym;
 }
 
-/* TODO: bitfields */
-
 static void fieldlist(Type *tp);
 
 static Type *
@@ -509,19 +745,17 @@ structdcl(void)
 	static int nested;
 	int ns;
 
-	ns = namespace;
 	sym = newtag();
 	tp = sym->type;
+
+	if (!accept('{'))
+		return tp;
+
+	ns = namespace;
 	namespace = tp->ns;
 
-	if (!accept('{')) {
-		namespace = ns;
-		return tp;
-	}
-
-	if (tp->prop & TDEFINED)
+	if (tp->prop & TDEFINED && sym->ctx == curctx)
 		error("redefinition of struct/union '%s'", sym->name);
-	tp->prop |= TDEFINED;
 
 	if (nested == NR_STRUCT_LEVEL)
 		error("too many levels of nested structure or union definitions");
@@ -532,7 +766,7 @@ structdcl(void)
 	}
 	--nested;
 
-	typesize(tp);
+	deftype(tp);
 	namespace = ns;
 	expect('}');
 	return tp;
@@ -554,7 +788,7 @@ enumdcl(void)
 		goto restore_name;
 	if (tp->prop & TDEFINED)
 		errorp("redefinition of enumeration '%s'", tagsym->name);
-	tp->prop |= TDEFINED;
+	deftype(tp);
 	namespace = NS_IDEN;
 
 	/* TODO: check incorrect values in val */
@@ -568,7 +802,7 @@ enumdcl(void)
 			toomany = 1;
 		}
 		if (accept('=')) {
-			Node *np = iconstexpr();
+			Node *np = constexpr();
 
 			if (np == NULL)
 				errorp("invalid enumeration value");
@@ -611,20 +845,42 @@ type(struct decl *dcl)
 static Symbol *
 field(struct decl *dcl)
 {
+	static char *anon = "<anonymous>";
 	Symbol *sym = dcl->sym;
-	char *name = sym->name;
+	char *name = (sym->name) ? sym->name : anon;
 	Type *structp = dcl->parent, *tp = dcl->type;
 	TINT n = structp->n.elem;
 	int err = 0;
 
-	if (empty(sym, tp, 0))
+	if (accept(':')) {
+		Node *np;
+		TINT n;
+
+		if ((np = constexpr()) == NULL) {
+			unexpected();
+			n = 0;
+		} else {
+			n = np->sym->u.i;
+			freetree(np);
+		}
+		if (n == 0 && name != anon)
+			errorp("zero width for bit-field '%s'", name);
+		if (tp != booltype && tp != inttype && tp != uinttype)
+			errorp("bit-field '%s' has invalid type", name);
+		if (n < 0)
+			errorp("negative width in bit-field '%s'", name);
+		else if (n > tp->size*8)
+			errorp("width of '%s' exceeds its type", name);
+	} else if (empty(sym, tp, 0)) {
 		return sym;
+	}
+
 	if (tp->op == FTN) {
-		errorp("invalid type in struct/union");
+		errorp("invalid type '%s' in struct/union", name);
 		err = 1;
 	}
 	if (dcl->sclass) {
-		errorp("storage class in struct/union field");
+		errorp("storage class in struct/union field '%s'", name);
 		err = 1;
 	}
 	if (!(tp->prop & TDEFINED)) {
@@ -634,11 +890,11 @@ field(struct decl *dcl)
 	if (err)
 		return sym;
 
-	if ((sym = install(dcl->ns, sym)) == NULL)
+	if (sym->flags & SDECLARED)
 		error("duplicated member '%s'", name);
+	sym->flags |= SFIELD|SDECLARED;
 	sym->type = tp;
 
-	sym->flags |= SFIELD;
 	if (n == NR_FIELDS)
 		error("too many fields in struct/union");
 	DBG("New field '%s' in namespace %d\n", name, structp->ns);
@@ -649,160 +905,10 @@ field(struct decl *dcl)
 	return sym;
 }
 
-static void
-bad_storage(Type *tp, char *name)
-{
-	if (tp->op != FTN)
-		errorp("incorrect storage class for file-scope declaration");
-	else
-		errorp("invalid storage class for function '%s'", name);
-}
-
-static Symbol *
-redcl(Symbol *sym, Type *tp, Symbol **pars, int sclass)
-{
-	int flags;
-	char *name = sym->name;
-
-	if (!eqtype(sym->type, tp, 1)) {
-		errorp("conflicting types for '%s'", name);
-		return sym;
-	}
-
-	if (sym->token == TYPEIDEN && sclass != TYPEDEF ||
-	    sym->token != TYPEIDEN && sclass == TYPEDEF) {
-		goto redeclaration;
-	}
-	if (curctx != GLOBALCTX && tp->op != FTN) {
-		/* is it the redeclaration of a local variable? */
-		if ((sym->flags & SEXTERN) && sclass == EXTERN)
-			return sym;
-		goto redeclaration;
-	}
-
-	sym->u.pars = pars;
-
-	flags = sym->flags;
-	switch (sclass) {
-	case REGISTER:
-	case AUTO:
-		bad_storage(tp, name);
-		break;
-	case NOSCLASS:
-		if ((flags & SPRIVATE) == 0) {
-			flags &= ~SEXTERN;
-			flags |= SGLOBAL;
-			break;
-		}
-		errorp("non-static declaration of '%s' follows static declaration",
-		       name);
-		break;
-	case TYPEDEF:
-	case EXTERN:
-		break;
-	case STATIC:
-		if ((flags & (SGLOBAL|SEXTERN)) == 0) {
-			flags |= SPRIVATE;
-			break;
-		}
-		errorp("static declaration of '%s' follows non-static declaration",
-		       name);
-		break;
-	}
-	sym->flags = flags;
-
-	return sym;
-
-redeclaration:
-	errorp("redeclaration of '%s'", name);
-	return sym;
-}
-
-static Symbol *
-identifier(struct decl *dcl)
-{
-	Symbol *sym = dcl->sym;
-	Type *tp = dcl->type;
-	int sclass = dcl->sclass;
-	char *name = sym->name;
-
-	if (empty(sym, tp, 0))
-		return sym;
-
-	/* TODO: Add warning about ANSI limits */
-	if (!(tp->prop & TDEFINED)                &&
-	    sclass != EXTERN && sclass != TYPEDEF &&
-	    !(tp->op == ARY && yytoken == '=')) {
-		errorp("declared variable '%s' of incomplete type", name);
-	}
-
-	if (tp->op != FTN) {
-		sym = install(NS_IDEN, sym);
-	} else {
-		if (sclass == NOSCLASS)
-			sclass = EXTERN;
-		/*
-		 * Ugly workaround to solve function declarations.
-		 * A new context is added for the parameters,
-		 * so at this point curctx is incremented by
-		 * one since sym was parsed.
-		 */
-		--curctx;
-		sym = install(NS_IDEN, sym);
-		++curctx;
-		if (!strcmp(name, "main") && tp->type != inttype)
-			errorp("please contact __20h__ on irc.oftc.net (#suckless) via IRC");
-	}
-
-	if (sym == NULL) {
-		sym = redcl(dcl->sym, tp, dcl->pars, sclass);
-	} else {
-		short flags = sym->flags;
-
-		sym->type = tp;
-		sym->u.pars = dcl->pars;
-
-		switch (sclass) {
-		case REGISTER:
-		case AUTO:
-			if (curctx != GLOBALCTX && tp->op != FTN) {
-				flags |= (sclass == REGISTER) ? SREGISTER : SAUTO;
-				break;
-			}
-			bad_storage(tp, name);
-		case NOSCLASS:
-			if (tp->op == FTN)
-				flags |= SEXTERN;
-			else
-				flags |= (curctx == GLOBALCTX) ? SGLOBAL : SAUTO;
-			break;
-		case EXTERN:
-			flags |= SEXTERN;
-			break;
-		case STATIC:
-			flags |= (curctx == GLOBALCTX) ? SPRIVATE : SLOCAL;
-			break;
-		case TYPEDEF:
-			flags |= STYPEDEF;
-			sym->u.token = sym->token = TYPEIDEN;
-			break;
-		}
-		sym->flags = flags;
-	}
-
-	if (accept('='))
-		initializer(sym, sym->type);
-	if (!(sym->flags & (SGLOBAL|SEXTERN)) && tp->op != FTN)
-		sym->flags |= SDEFINED;
-	if (sym->token == IDEN && sym->type->op != FTN)
-		emit(ODECL, sym);
-	return sym;
-}
-
 static Symbol *
 dodcl(int rep, Symbol *(*fun)(struct decl *), unsigned ns, Type *parent)
 {
-	Symbol *sym;
+	Symbol *sym, *pars[NR_FUNPARAM+1];
 	Type *base;
 	struct decl dcl;
 	struct declarators stack;
@@ -812,15 +918,20 @@ dodcl(int rep, Symbol *(*fun)(struct decl *), unsigned ns, Type *parent)
 	base = specifier(&dcl.sclass, &dcl.qualifier);
 
 	do {
-		stack.nr = 0;
-		dcl.pars = NULL;
 		dcl.type = base;
+		stack.nr_types = stack.nr = 0;
+		stack.tpars = dcl.buftpars;
+		stack.dcl = &dcl;
+		stack.ns = ns;
+		stack.pars = pars;
 
-		declarator(&stack, ns);
+		declarator(&stack);
 
 		while (pop(&stack, &dcl))
 			/* nothing */;
 		sym = (*fun)(&dcl);
+		if (funbody(sym, pars))
+			return sym;
 	} while (rep && accept(','));
 
 	return sym;
@@ -829,72 +940,26 @@ dodcl(int rep, Symbol *(*fun)(struct decl *), unsigned ns, Type *parent)
 void
 decl(void)
 {
-	Symbol **p, *par, *sym, *ocurfun;
+	Symbol *sym;
 
 	if (accept(';'))
 		return;
-	sym = dodcl(1, identifier, NS_IDEN, NULL);
-
-	if (sym->type->op != FTN) {
-		expect(';');
+	sym = dodcl(REP, identifier, NS_IDEN, NULL);
+	if (sym->type->prop & TFUNDEF)
 		return;
-	}
-
-	ocurfun = curfun;
-	curfun = sym;
-	/*
-	 * Functions only can appear at global context,
-	 * but due to parameter context, we have to check
-	 * against GLOBALCTX+1
-	 */
-	if (curctx != GLOBALCTX+1 || yytoken == ';') {
-		emit(ODECL, sym);
-		/*
-		 * avoid non used warnings in prototypes
-		 */
-		for (p = sym->u.pars;  p && *p; ++p)
-			(*p)->flags |= SUSED;
-		popctx();
-		expect(';');
-		free(sym->u.pars);
-		sym->u.pars = NULL;
-		curfun = ocurfun;
-		return;
-	}
-	if (sym->type->prop & TK_R) {
-		while (yytoken != '{') {
-			par = dodcl(1, parameter, NS_IDEN, sym->type);
-			expect(';');
-		}
-	}
-
-	if (sym->flags & STYPEDEF)
-		errorp("function definition declared 'typedef'");
-	if (sym->flags & SDEFINED)
-		errorp("redefinition of '%s'", sym->name);
-	if (sym->flags & SEXTERN) {
-		sym->flags &= ~SEXTERN;
-		sym->flags |= SGLOBAL;
-	}
-
-	sym->flags |= SDEFINED;
-	sym->flags &= ~SEMITTED;
-	emit(OFUN, sym);
-	compound(NULL, NULL, NULL);
-	emit(OEFUN, NULL);
-	curfun = ocurfun;
+	expect(';');
 }
 
 static void
 fieldlist(Type *tp)
 {
 	if (yytoken != ';')
-		dodcl(1, field, tp->ns, tp);
+		dodcl(REP, field, tp->ns, tp);
 	expect(';');
 }
 
 Type *
 typename(void)
 {
-	return dodcl(0, type, 0, NULL)->type;
+	return dodcl(NOREP, type, NS_DUMMY, NULL)->type;
 }

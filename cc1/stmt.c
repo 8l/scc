@@ -1,12 +1,15 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/stmt.c";
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdio.h>
 
+#include <cstd.h>
 #include "../inc/cc.h"
-#include "../inc/sizes.h"
-#include "arch.h"
 #include "cc1.h"
+
+#define NEGATE   1
+#define NONEGATE 0
 
 Symbol *curfun;
 
@@ -20,7 +23,7 @@ label(void)
 	switch (yytoken) {
 	case IDEN:
 	case TYPEIDEN:
-		sym = lookup(NS_LABEL, yytext);
+		sym = lookup(NS_LABEL, yytext, ALLOC);
 		if (sym->flags & SDEFINED)
 			error("label '%s' already defined", yytext);
 		if ((sym->flags & SDECLARED) == 0)
@@ -55,12 +58,12 @@ stmtexp(Symbol *lbreak, Symbol *lcont, Switch *lswitch)
 }
 
 static Node *
-condition(void)
+condition(int neg)
 {
 	Node *np;
 
 	expect('(');
-	np = condexpr();
+	np = condexpr(neg);
 	expect(')');
 
 	return np;
@@ -69,76 +72,102 @@ condition(void)
 static void
 While(Symbol *lbreak, Symbol *lcont, Switch *lswitch)
 {
-	Symbol *begin, *cond, *end;
+	Symbol *begin;
 	Node *np;
 
 	begin = newlabel();
-	end = newlabel();
-	cond = newlabel();
+	lcont = newlabel();
+	lbreak = newlabel();
 
 	expect(WHILE);
-	np = condition();
-	emit(OJUMP, cond);
+	np = condition(NONEGATE);
+
+	emit(OJUMP, lcont);
+
 	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
-	stmt(end, begin, lswitch);
-	emit(OLABEL, cond);
+	stmt(lbreak, lcont, lswitch);
+	emit(OLABEL, lcont);
 	emit(OBRANCH, begin);
 	emit(OEXPR, np);
 	emit(OELOOP, NULL);
-	emit(OLABEL, end);
+
+	emit(OLABEL, lbreak);
 }
 
 static void
 For(Symbol *lbreak, Symbol *lcont, Switch *lswitch)
 {
-	Symbol *begin, *cond, *end;
-	Node *econd, *einc, *einit;
+	Symbol *begin, *cond;
+	Node *econd, *einc;
 
 	begin = newlabel();
-	end = newlabel();
+	lcont = newlabel();
 	cond = newlabel();
+	lbreak = newlabel();
+
+	pushctx();
 
 	expect(FOR);
 	expect('(');
-	einit = (yytoken != ';') ? expr() : NULL;
-	expect(';');
-	econd = (yytoken != ';') ? condexpr() : NULL;
+	switch (yytoken) {
+	case TYPE:
+	case TYPEIDEN:
+	case TQUALIFIER:
+	case SCLASS:
+		decl();
+		break;
+	default:
+		emit(OEXPR, expr());
+	case ';':
+		expect(';');
+		break;
+	}
+	econd = (yytoken != ';') ? condexpr(NONEGATE) : NULL;
 	expect(';');
 	einc = (yytoken != ')') ? expr() : NULL;
 	expect(')');
 
-	emit(OEXPR, einit);
 	emit(OJUMP, cond);
+
 	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
-	stmt(end, begin, lswitch);
+	stmt(lbreak, lcont, lswitch);
+	emit(OLABEL, lcont);
 	emit(OEXPR, einc);
 	emit(OLABEL, cond);
 	emit((econd) ? OBRANCH : OJUMP, begin);
 	emit(OEXPR, econd);
 	emit(OELOOP, NULL);
-	emit(OLABEL, end);
+
+	emit(OLABEL, lbreak);
+
+	popctx();
 }
 
 static void
 Dowhile(Symbol *lbreak, Symbol *lcont, Switch *lswitch)
 {
-	Symbol *begin, *end;
+	Symbol *begin;
 	Node *np;
 
 	begin = newlabel();
-	end = newlabel();
+	lcont = newlabel();
+	lbreak = newlabel();
+
 	expect(DO);
+
 	emit(OBLOOP, NULL);
 	emit(OLABEL, begin);
-	stmt(end, begin, lswitch);
+	stmt(lbreak, lcont, lswitch);
 	expect(WHILE);
-	np = condition();
+	np = condition(NONEGATE);
+	emit(OLABEL, lcont);
 	emit(OBRANCH, begin);
 	emit(OEXPR, np);
 	emit(OELOOP, NULL);
-	emit(OLABEL, end);
+
+	emit(OLABEL, lbreak);
 }
 
 static void
@@ -239,7 +268,7 @@ Case(Symbol *lbreak, Symbol *lcont, Switch *sw)
 	Symbol *label;
 
 	expect(CASE);
-	if ((np = iconstexpr()) == NULL)
+	if ((np = constexpr()) == NULL)
 		errorp("case label does not reduce to an integer constant");
 	if (!sw) {
 		errorp("case label not within a switch statement");
@@ -279,9 +308,9 @@ If(Symbol *lbreak, Symbol *lcont, Switch *lswitch)
 
 	lelse = newlabel();
 	expect(IF);
-	np = condition();
+	np = condition(NEGATE);
 	emit(OBRANCH, lelse);
-	emit(OEXPR, negate(np));
+	emit(OEXPR, np);
 	stmt(lbreak, lcont, lswitch);
 	if (accept(ELSE)) {
 		end = newlabel();
@@ -333,12 +362,6 @@ compound(Symbol *lbreak, Symbol *lcont, Switch *lswitch)
 	--nested;
 
 	popctx();
-	/*
-	 * curctx == GLOBALCTX+1 means we are at the end of a function
-	 * so we have to pop the context related to the parameters
-	 */
-	if (curctx == GLOBALCTX+1)
-		popctx();
 	expect('}');
 }
 

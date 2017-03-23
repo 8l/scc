@@ -4,7 +4,7 @@
 name: TEST065
 description: Test decay mixed with * operators
 error:
-test065.c:65: error: decrement of pointer to an incomplete type
+test065.c:65: error: increment of pointer to an incomplete type
 test065.c:65: error: invalid use of undefined type
 test065.c:66: warning: 'argv' defined but not used
 output:

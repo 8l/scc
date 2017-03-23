@@ -1,32 +1,35 @@
 # See LICENSE file for copyright and license details.
 .POSIX:
 
+CSTDINC = -I../inc/$(STD)
+
 include ../config.mk
 
 OBJS = types.o decl.o lex.o error.o symbol.o main.o expr.o \
-	code.o stmt.o cpp.o fold.o init.o arch/$(ARCH)/arch.o
+       code.o stmt.o cpp.o fold.o init.o builtin.o \
+       arch/$(ARCH)/arch.o
 
-all: cc1
-
-../inc/sizes.h:
-	cp ../inc/sizes_$(STD).h $@
+all: cc1-$(ARCH)
 
 cpp.o: stallman.msg
+arch/$(ARCH)/arch.o: ../inc/sysincludes.h
+$(OBJS): cc1.h ../inc/cc.h ../inc/$(STD)/cstd.h
 
-$(OBJS): cc1.h ../inc/cc.h ../inc/sizes.h arch/$(ARCH)/arch.h
+../inc/sysincludes.h:
+	cp -f ../inc/sysincludes.def.h ../inc/sysincludes.h
 
 ../lib/libcc.a:
 	cd ../lib && $(MAKE) -e
 
-cc1: $(OBJS) ../lib/libcc.a
+cc1-$(ARCH): $(OBJS) ../lib/libcc.a
 	$(CC) $(SCC_LDFLAGS) $(OBJS) ../lib/libcc.a -o $@
 
-cpp: cc1
-	ln -f cc1 cpp
+cpp: cc1-$(ARCH)
+	ln -f $< cpp
 
 test:
 	cd tests && ./chktest.sh *.c
 
 clean:
 	rm -f $(OBJS)
-	rm -f cc1 cpp
+	rm -f cc1-* cpp

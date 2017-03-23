@@ -1,5 +1,5 @@
 /* See LICENSE file for copyright and license details. */
-#include <inttypes.h>
+static char sccsid[] = "@(#) ./lib/die.c";
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>

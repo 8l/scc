@@ -5,7 +5,7 @@ name: TEST043
 description: Test for double typedef (taken from plan9 kernel)
 error:
 output:
-S2	"Clock0link	#NC	#N2
+S2	"Clock0link	#N8	#N2
 M6	P	"clock	#N0
 M8	P	"link	#N2
 G9	S2	"cl0

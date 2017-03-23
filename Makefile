@@ -4,62 +4,67 @@
 
 include config.mk
 
-DIRS  = lib cc1 cc2 driver/$(DRIVER)
-ARCHS = z80 i386-sysv amd64-sysv qbe
+DIRS  = lib cc1 cc2 driver/$(DRIVER) libc/src
 
-all:
-	for i in $(DIRS); \
-	do \
-		(cd $$i && $(MAKE) -e); \
-	done
-	cp -f cc1/cc1 bin/cc1
-	cp -f cc2/cc2 bin/cc2
-	cp -f driver/$(DRIVER)/scc bin/scc
-
-multi:
+all: scc-driver
 	for i in $(ARCHS); \
 	do \
 		$(MAKE) $$i || exit; \
 	done
 
+scc-driver:
+	cd driver/$(DRIVER)/ && $(MAKE) scc
+	ln -f driver/$(DRIVER)/scc bin/scc
+
 $(ARCHS):
+	pwd=$$PWD ;\
 	for i in cc1 cc2; \
 	do \
-		(cd $$i; \
-		ARCH=$@ $(MAKE) -e clean; \
-		ARCH=$@ $(MAKE) -e $$i || exit); \
+		cd $$i; \
+		ARCH=$@ $(MAKE) -e $$i-$@ || exit; \
+		cd $$pwd ;\
 	done
-	ln -f cc1/cc1 bin/cc1-$@
-	ln -f cc2/cc2 bin/cc2-$@
+	ln -f cc1/cc1-$@ bin/
+	ln -f cc2/cc2-$@ bin/
+
+libc/src/libc.a:
+
+libc: libc/src/libc.a
+	cd libc/src && $(MAKE) -e CC=scc
+
+tests: all
+	cd tests && $(MAKE) -e all
 
 install: all
-	mkdir -p $(PREFIX)/libexec/scc/
-	mkdir -p $(PREFIX)/bin/
-	mkdir -p $(PREFIX)/include/scc
-	cp -f bin/cc* $(PREFIX)/libexec/scc/
-	cp -f bin/cc1 $(PREFIX)/bin/cpp
-	cp -f bin/scc $(PREFIX)/bin/
-	cp -fr libc/include/* $(PREFIX)/include/scc/
-	find $(PREFIX)/include/scc/ -type f | xargs chmod 644
-	cd $(PREFIX)/libexec/scc/ && chmod 755 cc* && strip cc*
-	cd $(PREFIX)/bin && chmod 755 cpp scc && strip cpp scc
+	mkdir -p $(DESTDIR)/$(PREFIX)/libexec/scc/
+	mkdir -p $(DESTDIR)/$(PREFIX)/bin/
+	mkdir -p $(DESTDIR)/$(PREFIX)/include/scc/
+	cp -f bin/cc?-* $(DESTDIR)/$(PREFIX)/libexec/scc/
+	cp -f bin/cpp.sh $(DESTDIR)/$(PREFIX)/bin/scpp
+	cp -f bin/scc $(DESTDIR)/$(PREFIX)/bin/
+	cp -fr libc/include/* $(DESTDIR)/$(PREFIX)/include/scc/
+	find $(DESTDIR)/$(PREFIX)/include/scc/ -type f | xargs chmod 644
+	cd $(DESTDIR)/$(PREFIX)/libexec/scc/ && chmod 755 cc* && strip cc*
+	cd $(DESTDIR)/$(PREFIX)/bin && chmod 755 scpp scc && strip scc
 
 uninstall:
-	rm -rf $(PREFIX)/libexec/scc/
-	rm -f $(PREFIX)/bin/scc
-	rm -f $(PREFIX)/bin/cpp
+	rm -rf $(DESTDIR)/$(PREFIX)/include/scc/
+	rm -rf $(DESTDIR)/$(PREFIX)/libexec/scc/
+	rm -f $(DESTDIR)/$(PREFIX)/bin/scc
+	rm -f $(DESTDIR)/$(PREFIX)/bin/scpp
 
-clean:
+clean-helper:
 	for i in $(DIRS); \
 	do \
-		(cd $$i && $(MAKE) $@ || exit); \
+		(cd $$i && $(MAKE) -e clean || exit); \
 	done
 
-multi-clean:
+clean:
 	for i in $(ARCHS); \
 	do \
-		ARCH=$$i $(MAKE) -e clean || exit; \
+		ARCH=$$i $(MAKE) -e clean-helper || exit; \
 	done
-
-distclean: multi-clean
 	rm -f bin/cc* bin/scc
+
+distclean: clean
+	rm -f inc/sysincludes.h

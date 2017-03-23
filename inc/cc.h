@@ -1,9 +1,10 @@
 /* See LICENSE file for copyright and license details. */
-#include <sys/types.h>
+#include <stddef.h>
+
+extern int debug;
 
 #ifndef NDEBUG
-extern int debug;
-#define DBG(fmt, ...) dbg(fmt, __VA_ARGS__)
+#define DBG(...) dbg(__VA_ARGS__)
 #define DBGON() (debug = 1)
 #else
 #define DBG(...)
@@ -13,6 +14,10 @@ extern int debug;
 #ifndef PREFIX
 #define PREFIX "/usr/local/"
 #endif
+
+#define TINT        long long
+#define TUINT       unsigned long long
+#define TFLOAT      double
 
 struct items {
 	char **s;

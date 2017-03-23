@@ -9,13 +9,13 @@ X4	I	F	"printf
 G6	I	F	"main
 {
 \
-V9	K	#N13
-Y8	V9	"	(
+V8	K	#ND
+Y9	V8	"	(
 	#"hello world
 	#K0A
 	#K00
 )
-	X4	Y8	'P	pP	cI
+	X4	Y9	'P	pP	cI
 	h	#I0
 }
 */

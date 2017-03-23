@@ -1,10 +1,10 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc2/node.c";
 #include <stdlib.h>
 #include <string.h>
 
 #include "../inc/cc.h"
 
-#include "arch.h"
 #include "cc2.h"
 
 #define NNODES   32
@@ -45,6 +45,41 @@ newnode(int op)
 
 	return np;
 }
+
+#ifndef NDEBUG
+#include <stdio.h>
+
+static void
+prnode(Node *np)
+{
+	if (np->left)
+		prnode(np->left);
+	if (np->right)
+		prnode(np->right);
+	fprintf(stderr, "\t%c%lu", np->op, np->type.size);
+}
+
+void
+prtree(Node *np)
+{
+	prnode(np);
+	putc('\n', stderr);
+}
+
+void
+prforest(char *msg)
+{
+	Node *np;
+
+	if (!curfun)
+		return;
+
+	fprintf(stderr, "%s {\n", msg);
+	for (np = curfun->u.stmt; np; np = np->next)
+		prtree(np);
+	fputs("}\n", stderr);
+}
+#endif
 
 Node *
 addstmt(Node *np, int flag)

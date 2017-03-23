@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+static char sccsid[] = "@(#) ./cc1/main.c";
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,26 +8,18 @@
 
 #include "../inc/arg.h"
 #include "../inc/cc.h"
-#include "arch.h"
 #include "cc1.h"
 
-char *argv0;
+char *argv0, *infile;
 
 int warnings;
 jmp_buf recover;
 
-static char *name, *output;
 static struct items uflags;
-int onlycpp;
+int onlycpp, onlyheader;
+
 
 extern int failure;
-
-static void
-clean(void)
-{
-	if (failure && output)
-		remove(output);
-}
 
 static void
 defmacro(char *macro)
@@ -44,29 +37,26 @@ defmacro(char *macro)
 static void
 usage(void)
 {
-	die(!strcmp(name, "cpp") ?
-	    "usage: cpp [-wd] [-D def[=val]]... [-U def]... [-I dir]... "
-	    "[input]" :
-	    "usage: cc1 [-Ewd] [-D def[=val]]... [-U def]... [-I dir]... "
-	    "[-o output] [input]");
+	die("usage: cc1 [-Ewd] [-D def[=val]]... [-U def]... "
+	    "[-I dir]... [-o output] [input]");
 }
 
 int
 main(int argc, char *argv[])
 {
-	char *cp;
 	int i;
 
-	atexit(clean);
-	icpp();
 	ilex();
-
-	/* if run as cpp, only run the preprocessor */
-	name = (cp = strrchr(*argv, '/')) ? cp + 1 : *argv;
+	icpp();
+	icode();
+	ibuilts();
 
 	ARGBEGIN {
 	case 'D':
 		defmacro(EARGF(usage()));
+		break;
+	case 'M':
+		onlyheader = 1;
 		break;
 	case 'E':
 		onlycpp = 1;
@@ -80,9 +70,6 @@ main(int argc, char *argv[])
 	case 'd':
 		DBGON();
 		break;
-	case 'o':
-		output = EARGF(usage());
-		break;
 	case 'w':
 		warnings = 1;
 		break;
@@ -93,26 +80,25 @@ main(int argc, char *argv[])
 	if (argc > 1)
 		usage();
 
-	if (output && !freopen(output, "w", stdout))
-		die("error opening output: %s", strerror(errno));
-
-	if (!strcmp(name, "cpp"))
-		onlycpp = 1;
-
 	for (i = 0; i < uflags.n; ++i)
 		undefmacro(uflags.s[i]);
 
-	if (!addinput(*argv)) {
+	infile = (*argv) ? *argv : "<stdin>";
+	if (!addinput(*argv, NULL, NULL)) {
 		die("error: failed to open input file '%s': %s",
 		    *argv, strerror(errno));
 	}
-	if (onlycpp) {
+
+	/*
+	 * we cannot initialize arch until we have an
+	 * output stream, because we maybe want to emit new types
+	 */
+	iarch();
+	if (onlycpp || onlyheader) {
 		outcpp();
 	} else {
-		next();
-
-		while (yytoken != EOFTOK)
-			decl();
+		for (next(); yytoken != EOFTOK; decl())
+			/* nothing */;
 	}
 
 	return failure;
